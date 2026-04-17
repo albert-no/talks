@@ -127,7 +127,7 @@ style: |
     position: absolute;
     top: 36px; right: 48px;
     width: 80px; height: 80px;
-    background: url('../reference/kor-eng2.png') no-repeat center / contain;
+    background: url('reference/kor-eng2.png') no-repeat center / contain;
   }
 
   /* ── Section divider slide ── */

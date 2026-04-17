@@ -288,6 +288,30 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 .slide.active > *:nth-child(4) { animation-delay: 0.18s; }
 .slide.active > *:nth-child(5) { animation-delay: 0.24s; }
 .slide.active > *:nth-child(6) { animation-delay: 0.30s; }
+
+/* ── Print: one slide per page (Cmd+P → Save as PDF) ── */
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+  html, body { width: 1280px; height: auto; overflow: visible; background: #fff; }
+  .deck {
+    position: static !important;
+    top: auto !important; left: auto !important;
+    transform: none !important;
+    width: 1280px; height: auto;
+  }
+  .slide {
+    position: relative !important;
+    inset: auto !important;
+    display: flex !important;
+    width: 1280px; height: 720px;
+    page-break-after: always;
+    break-after: page;
+    overflow: hidden;
+  }
+  .slide:last-of-type { page-break-after: auto; break-after: auto; }
+  .slide > * { animation: none !important; }
+  .progress-bar, .slide-num { display: none !important; }
+}
 </style>
 </head>
 <body>
