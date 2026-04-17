@@ -13,23 +13,24 @@
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── Palette ── */
+/* ── Yonsei University palette ── */
 :root {
-  --navy:      #010144;
-  --navy-mid:  #0a0a5c;
-  --blue:      #0000C9;
-  --blue-light:#3d3dff;
-  --blue-glow: rgba(0,0,201,0.25);
-  --charcoal:  #242525;
-  --dark:      #1f1f1f;
-  --slate:     #353B3E;
-  --gray-text: #C1C7CD;
-  --light:     #F1F1F1;
+  --yonsei-blue: #003876;
+  --navy:      #003876;
+  --navy-mid:  #004a99;
+  --blue:      #003876;
+  --blue-light:#1a5296;
+  --blue-glow: rgba(0,56,118,0.12);
+  --charcoal:  #1a1a1a;
+  --dark:      #2d2d2d;
+  --slate:     #e8ecf0;
+  --gray-text: #666666;
+  --light:     #f4f6f9;
   --white:     #FFFFFF;
-  --accent:    #00C9C9;
-  --accent2:   #6B8AFF;
-  --warn:      #FF6B6B;
-  --success:   #4ECB71;
+  --accent:    #005baa;
+  --accent2:   #003876;
+  --warn:      #d94040;
+  --success:   #2e8b57;
 }
 
 html, body {
@@ -38,8 +39,8 @@ html, body {
   font-family: 'Noto Sans', Arial, sans-serif;
   font-weight: 300;
   letter-spacing: -0.01em;
-  background: var(--navy);
-  color: var(--white);
+  background: var(--white);
+  color: var(--charcoal);
 }
 
 /* ── Slide engine ── */
@@ -58,11 +59,11 @@ html, body {
 .slide.active { display: flex; }
 
 /* ── Backgrounds ── */
-.bg-navy   { background: linear-gradient(160deg, var(--navy) 0%, #020266 100%); }
-.bg-dark   { background: linear-gradient(160deg, var(--charcoal) 0%, var(--dark) 100%); }
-.bg-deep   { background: linear-gradient(160deg, var(--navy) 0%, var(--charcoal) 100%); }
-.bg-light  { background: var(--light); color: var(--navy); }
-.bg-accent { background: linear-gradient(160deg, var(--blue) 0%, var(--navy) 100%); }
+.bg-navy   { background: var(--white); color: var(--charcoal); }
+.bg-dark   { background: var(--white); color: var(--charcoal); }
+.bg-deep   { background: var(--white); color: var(--charcoal); }
+.bg-light  { background: var(--light); color: var(--charcoal); }
+.bg-accent { background: var(--yonsei-blue); color: var(--white); }
 
 /* ── Typography ── */
 h1 { font-size: 2.6rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
@@ -73,10 +74,10 @@ p, li { font-size: 1.1rem; line-height: 1.6; }
 .small { font-size: 0.9rem; color: var(--gray-text); }
 .tiny  { font-size: 0.8rem; color: var(--gray-text); }
 
-strong { color: var(--accent2); font-weight: 600; }
-em { color: var(--gray-text); font-style: italic; }
-.bg-light strong { color: var(--blue); }
-.bg-light em { color: var(--slate); }
+strong { color: var(--yonsei-blue); font-weight: 600; }
+em { color: var(--gray-text); font-style: normal; }
+.bg-accent strong { color: var(--white); }
+.bg-accent em { color: rgba(255,255,255,0.7); }
 
 /* ── Decorative ── */
 .pill {
@@ -88,9 +89,9 @@ em { color: var(--gray-text); font-style: italic; }
   color: var(--blue-light);
   margin: 4px 4px 4px 0;
 }
-.bg-dark .pill, .bg-deep .pill, .bg-navy .pill, .bg-accent .pill {
-  color: var(--accent2);
-  border-color: var(--accent2);
+.bg-accent .pill {
+  color: var(--white);
+  border-color: rgba(255,255,255,0.5);
 }
 .pill-fill {
   background: var(--blue);
@@ -104,19 +105,17 @@ em { color: var(--gray-text); font-style: italic; }
   border-radius: 2px;
   margin: 12px 0 18px;
 }
-.bg-light .divider { background: var(--blue); }
+.bg-accent .divider { background: var(--white); }
 
 .card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--light);
+  border: 1px solid var(--slate);
   border-radius: 12px;
   padding: 24px 28px;
-  backdrop-filter: blur(8px);
 }
-.bg-light .card {
-  background: var(--white);
-  border: 1px solid #ddd;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+.bg-accent .card {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 /* ── Grid helpers ── */
@@ -136,37 +135,38 @@ ul li::before {
   position: absolute; left: 0; top: 10px;
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: var(--blue);
+  background: var(--yonsei-blue);
 }
-.bg-light ul li::before { background: var(--blue); }
+.bg-accent ul li::before { background: var(--white); }
 ul.check li::before { content: '✓'; background: none; color: var(--success); font-weight: 700; top: 0; width: auto; height: auto; }
-ul.arrow li::before { content: '→'; background: none; color: var(--blue-light); font-weight: 500; top: 0; width: auto; height: auto; border-radius: 0; }
+ul.arrow li::before { content: '→'; background: none; color: var(--yonsei-blue); font-weight: 500; top: 0; width: auto; height: auto; border-radius: 0; }
 ul.num { counter-reset: li; }
-ul.num li::before { counter-increment: li; content: counter(li); background: var(--blue); color: #fff; font-size: 0.7rem; font-weight: 700; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; top: 3px; border-radius: 50%; }
+ul.num li::before { counter-increment: li; content: counter(li); background: var(--yonsei-blue); color: #fff; font-size: 0.7rem; font-weight: 700; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; top: 3px; border-radius: 50%; }
 
 /* ── Highlight box ── */
 .highlight {
-  background: linear-gradient(135deg, rgba(0,0,201,0.15) 0%, rgba(0,0,201,0.05) 100%);
-  border-left: 3px solid var(--blue);
+  background: linear-gradient(135deg, rgba(0,56,118,0.07) 0%, rgba(0,56,118,0.02) 100%);
+  border-left: 3px solid var(--yonsei-blue);
   padding: 16px 20px;
   border-radius: 0 8px 8px 0;
   margin: 12px 0;
 }
-.bg-light .highlight {
-  background: linear-gradient(135deg, rgba(0,0,201,0.08) 0%, rgba(0,0,201,0.02) 100%);
+.bg-accent .highlight {
+  background: rgba(255,255,255,0.1);
+  border-left-color: var(--white);
 }
 
 /* ── Math ── */
 .math-block {
-  background: rgba(0,0,0,0.25);
+  background: var(--light);
   border-radius: 8px;
   padding: 18px 24px;
   margin: 12px 0;
   text-align: center;
   font-size: 1.15rem;
 }
-.bg-light .math-block {
-  background: rgba(0,0,201,0.04);
+.bg-accent .math-block {
+  background: rgba(255,255,255,0.1);
 }
 
 /* ── Diagram boxes ── */
@@ -185,14 +185,14 @@ ul.num li::before { counter-increment: li; content: counter(li); background: var
   min-width: 100px;
 }
 .diagram-box.filled { background: var(--blue); color: var(--white); border-color: var(--blue); }
-.diagram-arrow { font-size: 1.3rem; color: var(--gray-text); }
+.diagram-arrow { font-size: 1.3rem; color: #999; }
 
 /* ── Table ── */
 table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
-th, td { padding: 10px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
-th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.bg-light th { color: var(--blue); }
-.bg-light th, .bg-light td { border-bottom: 1px solid #e0e0e0; }
+th, td { padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--slate); }
+th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.bg-accent th, .bg-accent td { border-bottom: 1px solid rgba(255,255,255,0.15); }
+.bg-accent th { color: rgba(255,255,255,0.8); }
 
 /* ── Progress bar (fixed to viewport bottom) ── */
 .progress-bar {
@@ -206,19 +206,19 @@ th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform
 /* ── Slide number (fixed to viewport bottom) ── */
 .slide-num {
   position: fixed; bottom: 10px; right: 16px;
-  font-size: 0.85rem; color: rgba(255,255,255,0.7);
+  font-size: 0.85rem; color: #999;
   font-weight: 500; z-index: 1000;
   padding: 4px 12px;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.05);
   border-radius: 4px;
-  backdrop-filter: blur(4px);
   font-family: 'Noto Sans', monospace;
 }
 
 /* ── Title slide special ── */
-.title-slide { justify-content: center; align-items: flex-start; padding: 72px 88px; }
-.title-slide h1 { font-size: 3rem; margin-bottom: 20px; }
+.title-slide { justify-content: center; align-items: flex-start; padding: 72px 88px; border-top: 5px solid var(--yonsei-blue); }
+.title-slide h1 { font-size: 3rem; margin-bottom: 20px; color: var(--yonsei-blue); }
 .title-slide .subtitle { font-size: 1.35rem; }
+.title-logo { position: absolute; top: 36px; right: 48px; height: 80px; }
 
 /* ── Section divider ── */
 .section-slide { justify-content: center; align-items: center; text-align: center; }
@@ -240,8 +240,8 @@ th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform
   background: radial-gradient(circle at top right, var(--blue-glow) 0%, transparent 70%);
   pointer-events: none;
 }
-.bg-light .slide::before {
-  background: radial-gradient(circle at top right, rgba(0,0,201,0.06) 0%, transparent 70%);
+.bg-accent .slide::before {
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 70%);
 }
 
 /* ── Token visualization ── */
@@ -254,18 +254,18 @@ th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform
   font-weight: 500;
   margin: 2px;
 }
-.token-mask  { background: var(--slate); color: var(--gray-text); border: 1px dashed rgba(255,255,255,0.2); }
-.token-gen   { background: var(--blue); color: var(--white); }
-.token-fixed { background: rgba(255,255,255,0.08); color: var(--white); }
+.token-mask  { background: var(--slate); color: var(--gray-text); border: 1px dashed #ccc; }
+.token-gen   { background: var(--yonsei-blue); color: var(--white); }
+.token-fixed { background: #e0e4e8; color: var(--charcoal); }
 .token-eos   { background: var(--warn); color: var(--white); }
-.token-pad   { background: var(--accent); color: var(--navy); }
+.token-pad   { background: var(--accent); color: var(--white); }
 .token-pad2  { background: #8B5CF6; color: var(--white); }
-.token-pad3  { background: #F59E0B; color: var(--navy); }
-.token-safe  { background: var(--success); color: var(--navy); }
+.token-pad3  { background: #F59E0B; color: var(--charcoal); }
+.token-safe  { background: var(--success); color: var(--white); }
 
 /* ── Pseudocode ── */
 .code-block {
-  background: rgba(0,0,0,0.35);
+  background: var(--light);
   border-radius: 8px;
   padding: 18px 24px;
   margin: 12px 0;
@@ -273,11 +273,11 @@ th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform
   font-size: 0.85rem;
   line-height: 1.7;
   white-space: pre-wrap;
-  color: var(--gray-text);
+  color: var(--charcoal);
 }
-.code-block .kw { color: var(--accent2); font-weight: 600; }
+.code-block .kw { color: var(--yonsei-blue); font-weight: 600; }
 .code-block .fn { color: var(--accent); }
-.code-block .cm { color: #666; font-style: italic; }
+.code-block .cm { color: #999; font-style: italic; }
 .code-block .str { color: var(--success); }
 
 /* ── Animations ── */
@@ -299,7 +299,8 @@ th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform
 <!-- ════════════════════════════════════════════════════════════════ -->
 
 <!-- SLIDE 1 — Title -->
-<div class="slide title-slide bg-navy active">
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
   <div class="pill pill-fill" style="margin-bottom:28px;">Tutorial · 4 hours</div>
   <h1>Membership Inference Attacks:<br>From Genomic Data to LLM Memorization</h1>
   <div class="divider"></div>
@@ -4664,7 +4665,7 @@ th { font-weight: 500; color: var(--accent2); font-size: 0.85rem; text-transform
 </div>
 
 <!-- SLIDE 200 — Thank You -->
-<div class="slide section-slide bg-navy">
+<div class="slide section-slide bg-accent">
   <h1>Thank You</h1>
   <div class="divider" style="margin:16px auto 24px;"></div>
   <p style="font-size:1.15rem; font-weight:400;">Albert No &nbsp;·&nbsp; Yonsei University</p>

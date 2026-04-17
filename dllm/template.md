@@ -6,11 +6,13 @@ style: |
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600&display=swap');
 
   :root {
-    --blue:    #0000C9;
-    --text:    #1a1a1a;
-    --muted:   #666666;
-    --subtle:  #f4f4f6;
-    --line:    #e2e2e6;
+    --yonsei-blue: #003876;
+    --blue:        #003876;
+    --blue-light:  #1a5296;
+    --text:        #1a1a1a;
+    --muted:       #666666;
+    --subtle:      #f4f6f9;
+    --line:        #d9e1ea;
   }
 
   /* ── Base ── */
@@ -118,6 +120,15 @@ style: |
   }
   section.title h1 { font-size: 2.8rem; margin-bottom: 16px; }
   section.title p  { color: var(--muted); font-size: 1.05rem; }
+
+  /* ── Yonsei logo on title slide ── */
+  section.title::after {
+    content: '';
+    position: absolute;
+    top: 36px; right: 48px;
+    width: 80px; height: 80px;
+    background: url('../reference/kor-eng2.png') no-repeat center / contain;
+  }
 
   /* ── Section divider slide ── */
   section.divider {
