@@ -4,292 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Why Diffusion LLMs Behave Differently—and How to Control Them</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-  onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\(',right:'\)',display:false},{left:'\[',right:'\]',display:true}],throwOnError:false});"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ── Yonsei University palette ── */
-:root {
-  --yonsei-blue: #003876;
-  --navy:      #003876;
-  --navy-mid:  #004a99;
-  --blue:      #003876;
-  --blue-light:#1a5296;
-  --blue-glow: rgba(0,56,118,0.12);
-  --charcoal:  #1a1a1a;
-  --dark:      #2d2d2d;
-  --slate:     #e8ecf0;
-  --gray-text: #666666;
-  --light:     #f4f6f9;
-  --white:     #FFFFFF;
-  --accent:    #005baa;
-  --accent2:   #003876;
-  --warn:      #d94040;
-  --success:   #2e8b57;
-}
-
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  font-family: 'Noto Sans', Arial, sans-serif;
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  background: var(--white);
-  color: var(--charcoal);
-}
-
-/* ── Slide engine ── */
-.deck {
-  width: 1280px; height: 720px;
-  position: absolute;
-  top: 50%; left: 50%;
-  transform-origin: center center;
-  /* scaled by JS */
-}
-.slide {
-  position: absolute; inset: 0;
-  display: none; flex-direction: column;
-  padding: 56px 72px 48px;
-  overflow: hidden;
-}
-.slide.active { display: flex; }
-
-/* ── Backgrounds ── */
-.bg-navy   { background: var(--white); color: var(--charcoal); }
-.bg-dark   { background: var(--white); color: var(--charcoal); }
-.bg-deep   { background: var(--white); color: var(--charcoal); }
-.bg-light  { background: var(--light); color: var(--charcoal); }
-.bg-accent { background: var(--yonsei-blue); color: var(--white); }
-
-/* ── Typography ── */
-h1 { font-size: 2.6rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
-h2 { font-size: 1.85rem; font-weight: 500; line-height: 1.2; letter-spacing: -0.03em; margin-bottom: 14px; }
-h3 { font-size: 1.35rem; font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; margin-bottom: 10px; }
-p, li { font-size: 1.1rem; line-height: 1.6; }
-.subtitle { font-size: 1.25rem; font-weight: 300; color: var(--gray-text); margin-bottom: 12px; }
-.small { font-size: 0.9rem; color: var(--gray-text); }
-.tiny  { font-size: 0.8rem; color: var(--gray-text); }
-
-strong { color: var(--yonsei-blue); font-weight: 600; }
-em { color: var(--gray-text); font-style: normal; }
-
-/* ── Decorative ── */
-.pill {
-  display: inline-block;
-  padding: 6px 20px;
-  border-radius: 3.667em;
-  border: 1.5px solid var(--blue);
-  font-size: 0.85rem; font-weight: 500;
-  color: var(--blue-light);
-  margin: 4px 4px 4px 0;
-}
-.bg-accent .pill {
-  color: var(--white);
-  border-color: rgba(255,255,255,0.5);
-}
-.pill-fill {
-  background: var(--blue);
-  color: var(--white);
-  border-color: var(--blue);
-}
-
-.divider {
-  width: 64px; height: 3px;
-  background: var(--blue);
-  border-radius: 2px;
-  margin: 12px 0 18px;
-}
-.bg-accent .divider { background: var(--white); }
-
-.card {
-  background: var(--light);
-  border: 1px solid var(--slate);
-  border-radius: 12px;
-  padding: 24px 28px;
-}
-.bg-accent .card {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-/* ── Grid helpers ── */
-.cols { display: flex; gap: 32px; flex: 1; align-items: stretch; }
-.cols > * { flex: 1; }
-.col-2-3 { flex: 2; }
-.col-1-3 { flex: 1; }
-
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
-
-/* ── Lists ── */
-ul { list-style: none; padding: 0; }
-ul li { padding-left: 24px; position: relative; margin-bottom: 8px; }
-ul li::before {
-  content: '';
-  position: absolute; left: 0; top: 10px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--yonsei-blue);
-}
-.bg-accent ul li::before { background: var(--white); }
-ul.check li::before { content: '✓'; background: none; color: var(--success); font-weight: 700; top: 0; width: auto; height: auto; }
-ul.arrow li::before { content: '→'; background: none; color: var(--yonsei-blue); font-weight: 500; top: 0; width: auto; height: auto; border-radius: 0; }
-ul.num { counter-reset: li; }
-ul.num li::before { counter-increment: li; content: counter(li); background: var(--yonsei-blue); color: #fff; font-size: 0.7rem; font-weight: 700; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; top: 3px; border-radius: 50%; }
-
-/* ── Highlight box ── */
-.highlight {
-  background: linear-gradient(135deg, rgba(0,56,118,0.07) 0%, rgba(0,56,118,0.02) 100%);
-  border-left: 3px solid var(--yonsei-blue);
-  padding: 16px 20px;
-  border-radius: 0 8px 8px 0;
-  margin: 12px 0;
-}
-.bg-accent .highlight {
-  background: rgba(255,255,255,0.1);
-  border-left-color: var(--white);
-}
-
-/* ── Math ── */
-.math-block {
-  background: var(--light);
-  border-radius: 8px;
-  padding: 18px 24px;
-  margin: 12px 0;
-  text-align: center;
-  font-size: 1.15rem;
-}
-.bg-accent .math-block {
-  background: rgba(255,255,255,0.1);
-}
-
-/* ── Diagram boxes ── */
-.diagram-flow {
-  display: flex; align-items: center; gap: 12px;
-  flex-wrap: wrap;
-  margin: 16px 0;
-}
-.diagram-box {
-  padding: 12px 22px;
-  border-radius: 10px;
-  border: 1.5px solid var(--blue);
-  font-weight: 500;
-  font-size: 0.95rem;
-  text-align: center;
-  min-width: 100px;
-}
-.diagram-box.filled { background: var(--blue); color: var(--white); border-color: var(--blue); }
-.diagram-arrow { font-size: 1.3rem; color: #999; }
-
-/* ── Table ── */
-table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
-th, td { padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--slate); }
-th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.bg-accent th, .bg-accent td { border-bottom: 1px solid rgba(255,255,255,0.15); }
-.bg-accent th { color: rgba(255,255,255,0.8); }
-
-/* ── Progress bar ── */
-.progress-bar {
-  position: absolute; bottom: 0; left: 0;
-  height: 3px; background: var(--blue);
-  transition: width 0.3s ease;
-  z-index: 100;
-}
-
-/* ── Slide number ── */
-.slide-num {
-  position: absolute; bottom: 14px; right: 28px;
-  font-size: 0.75rem; color: #bbb;
-  font-weight: 400; z-index: 100;
-}
-
-/* ── Title slide special ── */
-.title-slide { justify-content: center; align-items: flex-start; padding: 72px 88px; border-top: 5px solid var(--yonsei-blue); }
-.title-slide h1 { font-size: 3rem; margin-bottom: 20px; color: var(--yonsei-blue); }
-.title-slide .subtitle { font-size: 1.35rem; }
-.title-logo { position: absolute; top: 36px; right: 48px; height: 80px; }
-
-/* ── Section divider ── */
-.section-slide { justify-content: center; align-items: center; text-align: center; }
-.section-slide h1 { font-size: 2.8rem; }
-.section-slide .divider { margin: 16px auto 20px; }
-
-/* ── Spacers ── */
-.spacer-sm { height: 12px; }
-.spacer { height: 20px; }
-.spacer-lg { height: 32px; }
-.flex-grow { flex: 1; }
-
-/* ── Decorative corner accents ── */
-.slide::before {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 180px; height: 180px;
-  background: radial-gradient(circle at top right, var(--blue-glow) 0%, transparent 70%);
-  pointer-events: none;
-}
-.bg-accent .slide::before {
-  background: radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 70%);
-}
-
-/* ── Token visualization ── */
-.token {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-family: 'Noto Sans', monospace;
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin: 2px;
-}
-.token-mask  { background: var(--slate); color: var(--gray-text); border: 1px dashed #ccc; }
-.token-gen   { background: var(--yonsei-blue); color: var(--white); }
-.token-fixed { background: #e0e4e8; color: var(--charcoal); }
-.token-eos   { background: var(--warn); color: var(--white); }
-.token-pad   { background: var(--accent); color: var(--white); }
-.token-pad2  { background: #8B5CF6; color: var(--white); }
-.token-pad3  { background: #F59E0B; color: var(--charcoal); }
-.token-safe  { background: var(--success); color: var(--white); }
-
-/* ── Animations ── */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-.slide.active > * { animation: fadeIn 0.4s ease both; }
-.slide.active > *:nth-child(2) { animation-delay: 0.06s; }
-.slide.active > *:nth-child(3) { animation-delay: 0.12s; }
-.slide.active > *:nth-child(4) { animation-delay: 0.18s; }
-.slide.active > *:nth-child(5) { animation-delay: 0.24s; }
-.slide.active > *:nth-child(6) { animation-delay: 0.30s; }
-
-/* ── Print: one slide per page (Cmd+P → Save as PDF) ── */
-@media print {
-  @page { size: 1280px 720px; margin: 0; }
-  html, body { width: 1280px; height: auto; overflow: visible; background: #fff; }
-  .deck {
-    position: static !important;
-    top: auto !important; left: auto !important;
-    transform: none !important;
-    width: 1280px; height: auto;
-  }
-  .slide {
-    position: relative !important;
-    inset: auto !important;
-    display: flex !important;
-    width: 1280px; height: 720px;
-    page-break-after: always;
-    break-after: page;
-    overflow: hidden;
-  }
-  .slide:last-of-type { page-break-after: auto; break-after: auto; }
-  .slide > * { animation: none !important; }
-  .progress-bar, .slide-num { display: none !important; }
-}
-</style>
 </head>
 <body>
 
@@ -476,10 +197,10 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 <!-- SLIDE 7 — Field Progress: Section -->
 <!-- ════════════════════════════════════════════════════════ -->
 <div class="slide section-slide bg-accent">
-  <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8); margin-bottom:20px;">Part I</div>
+  <div class="pill" style="border-color:var(--white-40); color:var(--white-80); margin-bottom:20px;">Part I</div>
   <h1>Recent Progress in the Field</h1>
-  <div class="divider" style="background:rgba(255,255,255,0.5);"></div>
-  <p class="subtitle" style="color:rgba(255,255,255,0.7);">From principled training to competitive LLM-scale systems</p>
+  <div class="divider" style="background:var(--white-50);"></div>
+  <p class="subtitle" style="color:var(--white-70);">From principled training to competitive LLM-scale systems</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
@@ -766,10 +487,10 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 <!-- SLIDE 16 — Transition -->
 <!-- ════════════════════════════════════════════════════════ -->
 <div class="slide section-slide bg-accent">
-  <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8); margin-bottom:20px;">Part II</div>
+  <div class="pill" style="border-color:var(--white-40); color:var(--white-80); margin-bottom:20px;">Part II</div>
   <h1>Our Lab's Work:<br>Understanding &amp; Controlling dLLMs</h1>
-  <div class="divider" style="background:rgba(255,255,255,0.5);"></div>
-  <p class="subtitle" style="color:rgba(255,255,255,0.7);">Robustness · Safety · Attribution · Inductive Biases · Decoding</p>
+  <div class="divider" style="background:var(--white-50);"></div>
+  <p class="subtitle" style="color:var(--white-70);">Robustness · Safety · Attribution · Inductive Biases · Decoding</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
@@ -781,15 +502,15 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
   <p class="subtitle">Our recent work spans five complementary research directions</p>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box filled">Robustness<br><span class="tiny" style="color:rgba(255,255,255,0.7);">Rainbow Padding</span></div>
+    <div class="diagram-box filled">Robustness<br><span class="tiny" style="color:var(--white-70);">Rainbow Padding</span></div>
     <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Safety<br><span class="tiny" style="color:rgba(255,255,255,0.7);">A2D</span></div>
+    <div class="diagram-box filled">Safety<br><span class="tiny" style="color:var(--white-70);">A2D</span></div>
     <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Attribution<br><span class="tiny" style="color:rgba(255,255,255,0.7);">dgMARK</span></div>
+    <div class="diagram-box filled">Attribution<br><span class="tiny" style="color:var(--white-70);">dgMARK</span></div>
     <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Understanding<br><span class="tiny" style="color:rgba(255,255,255,0.7);">Reversal Curse</span></div>
+    <div class="diagram-box filled">Understanding<br><span class="tiny" style="color:var(--white-70);">Reversal Curse</span></div>
     <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Decoding<br><span class="tiny" style="color:rgba(255,255,255,0.7);">DAPD</span></div>
+    <div class="diagram-box filled">Decoding<br><span class="tiny" style="color:var(--white-70);">DAPD</span></div>
   </div>
   <div class="spacer-lg"></div>
   <div class="grid-3" style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap:12px;">
@@ -1134,7 +855,7 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
           <tr><td>LLaDA-8B-Inst</td><td>SFT</td><td style="color:var(--warn);">High</td></tr>
           <tr><td>LLaDA-8B-Inst</td><td>DPO</td><td style="color:var(--warn);">Moderate</td></tr>
           <tr><td>LLaDA-8B-Inst</td><td><strong>A2D</strong></td><td style="color:var(--success);"><strong>1.3%</strong></td></tr>
-          <tr style="border-top:2px solid rgba(255,255,255,0.15);"><td>Dream-v0-Inst-7B</td><td>Baseline</td><td style="color:var(--warn);">&gt;80%</td></tr>
+          <tr style="border-top:2px solid var(--white-15);"><td>Dream-v0-Inst-7B</td><td>Baseline</td><td style="color:var(--warn);">&gt;80%</td></tr>
           <tr><td>Dream-v0-Inst-7B</td><td><strong>A2D</strong></td><td style="color:var(--success);"><strong>0.0%</strong></td></tr>
         </tbody>
       </table>
@@ -1176,7 +897,7 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
     </div>
     <div class="spacer"></div>
     <div class="diagram-flow" style="justify-content:center;">
-      <div class="diagram-box filled">A2D<br><span class="tiny" style="color:rgba(255,255,255,0.7);">Token-level [EOS] alignment</span></div>
+      <div class="diagram-box filled">A2D<br><span class="tiny" style="color:var(--white-70);">Token-level [EOS] alignment</span></div>
       <div class="diagram-arrow" style="color:var(--success);">✓→</div>
       <div class="diagram-box" style="border-color:var(--success);">dLLM<br><span class="tiny">Safe at any order/step</span></div>
     </div>
@@ -1481,7 +1202,7 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
           <tr><th>Config</th><th>Reversal</th></tr>
           <tr><td>AR objective + causal attn</td><td style="color:var(--warn);">Fails</td></tr>
           <tr><td>Masked obj + causal attn</td><td style="color:var(--warn);">Still fails</td></tr>
-          <tr><td>AR objective + bidirectional</td><td style="color:#F59E0B;">Partial</td></tr>
+          <tr><td>AR objective + bidirectional</td><td style="color:var(--amber);">Partial</td></tr>
           <tr><td>Masked obj + bidirectional</td><td style="color:var(--success);"><strong>Mitigated</strong></td></tr>
         </tbody>
         </table>
@@ -1714,10 +1435,10 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 <!-- SLIDE 40 — Unified View -->
 <!-- ════════════════════════════════════════════════════════ -->
 <div class="slide section-slide bg-accent">
-  <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8); margin-bottom:20px;">Synthesis</div>
+  <div class="pill" style="border-color:var(--white-40); color:var(--white-80); margin-bottom:20px;">Synthesis</div>
   <h1>Putting It All Together</h1>
-  <div class="divider" style="background:rgba(255,255,255,0.5);"></div>
-  <p class="subtitle" style="color:rgba(255,255,255,0.7);">A unified picture of dLLM control</p>
+  <div class="divider" style="background:var(--white-50);"></div>
+  <p class="subtitle" style="color:var(--white-70);">A unified picture of dLLM control</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
@@ -1870,15 +1591,15 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 <!-- ════════════════════════════════════════════════════════ -->
 <div class="slide section-slide bg-accent">
   <h1>Thank You</h1>
-  <div class="divider" style="background:rgba(255,255,255,0.5);"></div>
-  <p class="subtitle" style="color:rgba(255,255,255,0.8); font-size:1.3rem;">Questions?</p>
+  <div class="divider" style="background:var(--white-50);"></div>
+  <p class="subtitle" style="color:var(--white-80); font-size:1.3rem;">Questions?</p>
   <div class="spacer-lg"></div>
   <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-    <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8);">Rainbow Padding — ICLR 2026</div>
-    <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8);">A2D — ICLR 2026</div>
-    <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8);">dgMARK — arXiv:2601.22985</div>
-    <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8);">Reversal Curse — arXiv:2602.02133</div>
-    <div class="pill" style="border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8);">DAPD — arXiv:2603.12996</div>
+    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">Rainbow Padding — ICLR 2026</div>
+    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">A2D — ICLR 2026</div>
+    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">dgMARK — arXiv:2601.22985</div>
+    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">Reversal Curse — arXiv:2602.02133</div>
+    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">DAPD — arXiv:2603.12996</div>
   </div>
   <div class="spacer-lg"></div>
   <p style="font-size:1.1rem; font-weight:400;">Albert No &nbsp;·&nbsp; Yonsei University</p>
@@ -1891,58 +1612,6 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 </div><!-- end deck -->
 
 <!-- ── Navigation ── -->
-<script>
-(function() {
-  const deck = document.querySelector('.deck');
-  const BASE_W = 1280, BASE_H = 720;
-
-  function scaleDeck() {
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const scale = Math.min(vw / BASE_W, vh / BASE_H);
-    deck.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
-  }
-  window.addEventListener('resize', scaleDeck);
-  scaleDeck();
-
-  const slides = document.querySelectorAll('.slide');
-  const total = slides.length;
-  let current = 0;
-
-  function show(n) {
-    slides[current].classList.remove('active');
-    current = Math.max(0, Math.min(total - 1, n));
-    slides[current].classList.add('active');
-    document.getElementById('slideNum').textContent = (current + 1) + ' / ' + total;
-    document.getElementById('progressBar').style.width = ((current + 1) / total * 100) + '%';
-  }
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
-      e.preventDefault(); show(current + 1);
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-      e.preventDefault(); show(current - 1);
-    } else if (e.key === 'Home') {
-      e.preventDefault(); show(0);
-    } else if (e.key === 'End') {
-      e.preventDefault(); show(total - 1);
-    }
-  });
-
-  // Touch / click navigation
-  let touchStartX = 0;
-  document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; });
-  document.addEventListener('touchend', function(e) {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) > 50) { dx < 0 ? show(current + 1) : show(current - 1); }
-  });
-
-  // Click right half = next, left half = prev
-  document.addEventListener('click', function(e) {
-    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
-    e.clientX > window.innerWidth / 2 ? show(current + 1) : show(current - 1);
-  });
-})();
-</script>
-
+<script src="../reference/deck.js"></script>
 </body>
 </html>

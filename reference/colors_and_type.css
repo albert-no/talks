@@ -1,0 +1,231 @@
+/* ════════════════════════════════════════════════════════════════
+   AI-ISL Talks — Color & Type Foundation
+   Canonical tokens used by all decks, slides, and UI.
+   Matches Yonsei University brand + `deck.css` source of truth.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Yonsei official typeface system ──
+   Provided as TrueType (.TTF) in fonts/.
+   - YonseiLight / YonseiBold: Latin display weights (English wordmarks, headlines)
+   - YonseiBody (연세본문체): Korean+Latin body text
+   - YonseiLogo: symbol font for the institutional mark only (not text) */
+@font-face {
+  font-family: 'Yonsei';
+  src: url('fonts/YonseiLight.TTF') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yonsei';
+  src: url('fonts/YonseiBold.TTF') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'YonseiBody';
+  src: url('fonts/YonseiBody.TTF') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'YonseiLogo';
+  src: url('fonts/YonseiLogo.TTF') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Noto Sans retained as a universal fallback (weights 300–700). */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+
+.yonsei-logo {
+  font-family: 'YonseiLogo', 'Yonsei', 'Noto Sans', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.yonsei-display {
+  font-family: 'Yonsei', 'Noto Sans', sans-serif;
+}
+.yonsei-body {
+  font-family: 'YonseiBody', 'Noto Sans', sans-serif;
+}
+
+:root {
+  /* ── Brand + accent colors ── */
+  --yonsei-blue: #003876;   /* Primary. Headings, dividers, strong */
+  --navy:        #003876;
+  --navy-mid:    #004a99;
+  --blue:        #003876;
+  --blue-light:  #1a5296;   /* Secondary accent */
+  --blue-glow:   rgba(0,56,118,0.12);
+  --accent:      #005baa;   /* Tertiary — use sparingly */
+  --accent2:     #003876;
+
+  /* ── Neutral scale ── */
+  --charcoal:    #1a1a1a;   /* Body text */
+  --dark:        #2d2d2d;   /* Reserved */
+  --gray-text:   #666666;   /* Muted copy (em, subtitle, .small) */
+  --slate:       #e8ecf0;   /* Borders, table rules */
+  --line:        #d9e1ea;   /* Marp table rule */
+  --light:       #f4f6f9;   /* Card bg, math bg */
+  --subtle:      #f4f6f9;
+  --white:       #FFFFFF;
+
+  /* ── Semantic colors ── */
+  --success:     #2e8b57;   /* ul.check, token-safe — affirmative only */
+  --warn:        #d94040;   /* token-eos, urgent — never body copy */
+  --amber:       #F59E0B;   /* token-pad3 fill */
+
+  /* ── Yonsei-blue opacity ladder (progressive-fill diagrams, overlays) ── */
+  --yonsei-blue-05: rgba(0,56,118,0.05);
+  --yonsei-blue-12: rgba(0,56,118,0.12);
+  --yonsei-blue-20: rgba(0,56,118,0.20);
+  --yonsei-blue-30: rgba(0,56,118,0.30);
+  --yonsei-blue-40: rgba(0,56,118,0.40);
+  --yonsei-blue-50: rgba(0,56,118,0.50);
+  --yonsei-blue-60: rgba(0,56,118,0.60);
+  --yonsei-blue-75: rgba(0,56,118,0.75);
+
+  /* ── White opacity ladder (for .bg-accent inversions) ── */
+  --white-10: rgba(255,255,255,0.10);
+  --white-15: rgba(255,255,255,0.15);
+  --white-40: rgba(255,255,255,0.40);
+  --white-50: rgba(255,255,255,0.50);
+  --white-60: rgba(255,255,255,0.60);
+  --white-70: rgba(255,255,255,0.70);
+  --white-80: rgba(255,255,255,0.80);
+
+  /* ── Black opacity ── */
+  --black-15: rgba(0,0,0,0.15);
+
+  /* ── Type families ── */
+  --font-sans:    'Yonsei', 'Noto Sans', Arial, sans-serif;
+  --font-body:    'YonseiBody', 'Yonsei', 'Noto Sans', sans-serif;
+  --font-display: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+  --font-logo:    'YonseiLogo', 'Yonsei', sans-serif;
+  --font-mono:    'Noto Sans', 'SF Mono', Menlo, monospace;
+
+  /* ── Type scale (rem) ── */
+  --fs-h1:       2.6rem;    /* Content h1. Title slide = 3rem override. */
+  --fs-h1-title: 3rem;
+  --fs-h2:       1.85rem;
+  --fs-h3:       1.35rem;
+  --fs-body:     1.1rem;
+  --fs-subtitle: 1.25rem;
+  --fs-small:    0.9rem;
+  --fs-tiny:     0.8rem;
+  --fs-bigword:  5rem;      /* .end-slide .big-word */
+
+  /* ── Weights ── */
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ── Tracking ── */
+  --lh-tight:    1.15;
+  --lh-snug:     1.2;
+  --lh-body:     1.6;
+  --ls-headline: -0.04em;
+  --ls-h2:       -0.03em;
+  --ls-h3:       -0.02em;
+  --ls-body:     -0.01em;
+  --ls-caps:     0.12em;    /* Brand footer, uppercase meta */
+
+  /* ── Spacing (deck-level) ── */
+  --slide-pad-y-top:    56px;
+  --slide-pad-y-bot:    48px;
+  --slide-pad-x:        72px;
+  --title-pad-y:        72px;
+  --title-pad-x:        88px;
+  --section-left-pad:   96px;
+  --spacer-sm:          12px;
+  --spacer:             20px;
+  --spacer-lg:          32px;
+  --grid-gap:           24px;
+  --cols-gap:           32px;
+
+  /* ── Radius ── */
+  --r-card:      12px;
+  --r-diagram:   10px;
+  --r-block:     8px;
+  --r-token:     6px;
+  --r-divider:   2px;
+  --r-pill:      3.667em;
+
+  /* ── Motion ── */
+  --ease:            ease;
+  --dur-fade:        0.4s;
+  --stagger:         0.06s;
+
+  /* ── Z-index ── */
+  --z-ui:        100;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Base + semantic element styles (portable — not scoped to .slide)
+   Match the deck look for ad-hoc HTML pages, UI kits, README cards.
+   ════════════════════════════════════════════════════════════════ */
+
+html, body {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-light);
+  letter-spacing: var(--ls-body);
+  color: var(--charcoal);
+  background: var(--white);
+}
+
+h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-headline);
+  margin-bottom: 16px;
+}
+h2 {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-h2);
+  margin-bottom: 14px;
+}
+h3 {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  letter-spacing: var(--ls-h3);
+  margin-bottom: 10px;
+}
+
+p, li {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.subtitle { font-size: var(--fs-subtitle); font-weight: var(--fw-light); color: var(--gray-text); margin-bottom: 12px; }
+.small    { font-size: var(--fs-small);    color: var(--gray-text); }
+.tiny     { font-size: var(--fs-tiny);     color: var(--gray-text); }
+
+strong    { color: var(--yonsei-blue); font-weight: var(--fw-semibold); }
+em        { color: var(--gray-text);   font-style: normal; }
+
+/* Semantic helper: a blue rule under h2, outside deck context */
+.rule-divider {
+  width: 64px; height: 3px;
+  background: var(--blue);
+  border-radius: var(--r-divider);
+  margin: 12px 0 18px;
+}
+
+/* Caps / meta label */
+.caps {
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-tiny);
+  color: var(--gray-text);
+}

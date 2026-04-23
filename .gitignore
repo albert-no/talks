@@ -1,1 +1,6 @@
-.claude/settings.local.json
+.DS_Store
+scripts/.cache/
+
+# Standalone bundles are generated on demand by scripts/bundle.py for
+# distribution/hand-off — never committed.
+*.standalone.html

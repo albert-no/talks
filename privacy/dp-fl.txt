@@ -1,0 +1,208 @@
+NeurIPS 2023
+
+-- 1 of 35 --
+
+FederatedLearning
+Collect Gradient
+and update parameters
+Compute Gradient and upload
+
+-- 2 of 35 --
+
+FederatedLearning:Challenges
+Collect Gradient
+and update parameters
+Compute Gradient and upload
+Compression
+Privacy
+Utility
+
+-- 3 of 35 --
+
+MeanEstimation
+Collect vector
+and compute mean
+Privatize & Compress vector and upload
+Compression (b bits)
+Privacy (LDP)
+Utility (MSE)
+
+-- 4 of 35 --
+
+LDPvsDP
+DP Trusted Server
+LDP
+Unfaithful Server
+
+-- 5 of 35 --
+
+LDP:GaussianMechanism
+Privatize individual vector
+Gaussian Mechanism
+is suboptimal
+
+-- 6 of 35 --
+
+PrivUnit:PrivacyvsUtility
+without Compression
+
+-- 7 of 35 --
+
+PrivUnitisOptimal
+ICML 2022 Oral
+
+-- 8 of 35 --
+
+Privacy-Communication-Utility
+Toward Exact Optimality
+
+-- 9 of 35 --
+
+NeurIPS 2020
+AISTATS 2022
+ICML 2022
+OrderOptimalResults
+
+-- 10 of 35 --
+
+Goal:
+Rate: Minimum Bits
+Utility: Minimum MSE
+Privacy: LDP
+ProblemSetup
+
+-- 11 of 35 --
+
+LDPwithSharedRandomness
+
+-- 12 of 35 --
+
+MeanEstimation:Privacy-Utility
+&Compression
+Compression
+DP-Encoder
+Unbiased
+Utilty
+
+-- 13 of 35 --
+
+Proofismostlyfrom
+
+-- 14 of 35 --
+
+MainResultI:CanonicalProtocols
+Can decode separately
+can focus single user case
+
+-- 15 of 35 --
+
+MainResultI:CanonicalProtocols
+Single Encoder
+Single Decoder
+Error
+
+-- 16 of 35 --
+
+MainResultII:Codebookbasedscheme
+Optimal way of using shared randomness
+Codebook
+decoder
+
+-- 17 of 35 --
+
+MainResultII:Codebookbasedscheme
+Optimal way of using shared randomness
+Codebook
+Codebook based
+(random) encoder
+Codebook based
+decoder
+
+-- 18 of 35 --
+
+MainResultII:Codebookbasedscheme
+Codebook
+Codebook based
+(random) encoder
+Codebook based
+decoder
+Motivated from Coding Theory
+
+-- 19 of 35 --
+
+MainResultIII:RotationallySymmetricCodebook
+
+-- 20 of 35 --
+
+CodebookDesignisusuallyChallenging
+What if M < d ?
+In Compression problems,
+M >> d and it is hard
+
+-- 21 of 35 --
+
+RotationallySymmetricSymplexCodebook(RRSC)
+(random orthogonal
+matrix)X
+
+-- 22 of 35 --
+
+RotationallySymmetricSymplexCodebook(RRSC)
+
+-- 23 of 35 --
+
+MainResultIV:k-closestencoding
+It is optimal for RRSC
+
+-- 24 of 35 --
+
+RRSCtoPrivUnit
+RRSC PrivUnit
+What if M increases
+
+-- 25 of 35 --
+
+NeurIPS 2020
+AISTATS 2022
+ICML 2022
+UnifiedFramework
+
+-- 26 of 35 --
+
+Experiments
+
+-- 27 of 35 --
+
+Conjecture
+
+-- 28 of 35 --
+
+Questions?
+
+-- 29 of 35 --
+
+AlternativeDP
+Renyi Differential Privacy
+
+-- 30 of 35 --
+
+Diffusion+DP
+
+-- 31 of 35 --
+
+
+
+-- 32 of 35 --
+
+
+
+-- 33 of 35 --
+
+
+
+-- 34 of 35 --
+
+
+
+-- 35 of 35 --
+

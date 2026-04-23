@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:kangwooklee.com)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:spylab.ai)",
+      "WebFetch(domain:journals.plos.org)",
+      "WebSearch",
+      "Bash(python3)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "Bash(python3 -c ' *)",
+      "Read(//private/tmp/**)",
+      "Bash(open /Users/albertno/albertcode/talks/mia/MIA.html)",
+      "Bash(git mv *)"
+    ]
+  }
+}

@@ -1,8 +1,12 @@
 # Talks Design System
 
-Canonical spec for all decks in this repo. Applies to both **custom HTML decks** (e.g. `dllm/dllm.html`, `mia/MIA.html`) and the **Marp markdown** template (`template.md`). When the two disagree, the HTML deck style block is the source of truth — Marp follows it.
+Canonical spec for all decks in this repo. Applies to both **custom HTML decks** (e.g. `dllm/dllm.html`, `mia/MIA.html`, `privacy/DP-FL.html`) and the **Marp markdown** template (`template.md`). When the two disagree, `reference/deck.css` is the source of truth — Marp follows it.
 
 Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and built; this file tells you *what things look like* and *which class to use*.
+
+**Source files:** the canonical tokens and components live in `reference/colors_and_type.css` (font loading + CSS variables) and `reference/deck.css` (slide engine + components). Decks link to these via `<link rel="stylesheet" href="../reference/…">`. Do not duplicate.
+
+**Type scale note (2026-04).** The type scale below is the MID presentation scale — larger than the original compact scale to be readable from the back of a lecture hall. `h1` 3.6rem, `h2` 2.7rem, body 1.55rem. Bullet dots and diagram boxes are correspondingly larger.
 
 ---
 
@@ -30,17 +34,17 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 ### 1.2 Typography
 
-Font family: `'Noto Sans', Arial, sans-serif`. Loaded from Google Fonts, weights `300 400 500 600` (custom HTML decks also pull `700`).
+Font family: Yonsei official typeface (`'Yonsei', 'Noto Sans', Arial, sans-serif`). Yonsei TTFs ship locally in `reference/fonts/` and are declared via `@font-face` in `colors_and_type.css` (Light 300, Bold 700, plus `YonseiBody` for Korean body copy and `YonseiLogo` for the wordmark). Noto Sans is a web-safe fallback from Google Fonts; the offline bundler strips it.
 
 | Role | Size | Weight | Tracking | Line height |
 |---|---|---|---|---|
-| `h1` | 2.6rem (3rem on title) | 600 | -0.04em | 1.15 |
-| `h2` | 1.85rem | 500 | -0.03em | 1.2 |
-| `h3` | 1.35rem | 500 | -0.02em | 1.3 |
-| body `p`, `li` | 1.1rem | 300–400 | -0.01em | 1.6 |
-| `.subtitle` | 1.25rem (1.35rem on title) | 300 | — | — |
-| `.small` | 0.9rem | — | — | — |
-| `.tiny` | 0.8rem | — | — | — |
+| `h1` | 3.6rem (4rem on title, 4.2rem on left-section) | 700 | -0.04em | 1.08 |
+| `h2` | 2.7rem | 700 | -0.03em | 1.12 |
+| `h3` | 1.85rem | 700 | -0.02em | 1.22 |
+| body `p`, `li` | 1.55rem | 300–400 | -0.01em | 1.5 |
+| `.subtitle` | 1.75rem (1.9rem on title) | 300 | — | — |
+| `.small` | 1.15rem | — | — | — |
+| `.tiny` | 0.95rem | — | — | — |
 
 Accent rules: `strong` → blue + weight 600. `em` → `--gray-text`, **not italic**. These are semantic — never hardcode colors inline when the right accent will do.
 
@@ -474,7 +478,9 @@ New components must document: name, purpose, default + inverted (`.bg-accent`) a
 
 ## 7. Source files
 
-- **Canonical style block:** `dllm/dllm.html` (lines ~13–292).
-- **Engine + print CSS:** same file (engine at bottom, print CSS just before `</style>`).
-- **Marp equivalent:** `template.md` — stays in sync with the HTML tokens, but Marp can't do the full component set (no cards, no token chips, no diagram-flow).
-- **Brand assets:** `reference/kor-eng2.png` (Yonsei emblem), `reference/kor-eng2.pdf` (vector), `reference/ppt_A.pdf` (official Yonsei template — consult for future extensions only).
+- **Canonical CSS:** `reference/colors_and_type.css` (font-face + tokens) and `reference/deck.css` (engine + components). Decks link to these; they are not duplicated per deck.
+- **Canonical JS:** `reference/deck.js`.
+- **Fonts:** `reference/fonts/Yonsei{Light,Bold,Body,Logo}.TTF`.
+- **Marp equivalent:** `template.md` — stays in sync with the CSS tokens, but Marp can't do the full component set (no cards, no token chips, no diagram-flow).
+- **Brand assets:** `reference/kor-eng2.png` (Yonsei emblem), `reference/kor-eng2.pdf` (vector).
+- **Build:** `scripts/new-talk.sh <name>` creates a new deck, `scripts/bundle.py <deck.html>` produces the truly-offline `.standalone.html` sibling.

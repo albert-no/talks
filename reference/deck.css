@@ -61,14 +61,14 @@ html, body {
 .bg-light  { background: var(--light); color: var(--charcoal); }
 .bg-accent { background: var(--yonsei-blue); color: var(--white); }
 
-/* ── Typography (§1.2) ── */
-h1 { font-size: 2.6rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
-h2 { font-size: 1.85rem; font-weight: 500; line-height: 1.2; letter-spacing: -0.03em; margin-bottom: 14px; }
-h3 { font-size: 1.35rem; font-weight: 500; line-height: 1.3; letter-spacing: -0.02em; margin-bottom: 10px; }
-p, li { font-size: 1.1rem; line-height: 1.6; }
-.subtitle { font-size: 1.25rem; font-weight: 300; color: var(--gray-text); margin-bottom: 12px; }
-.small { font-size: 0.9rem; color: var(--gray-text); }
-.tiny  { font-size: 0.8rem; color: var(--gray-text); }
+/* ── Typography — MID presentation scale (halfway between original compact & LARGE) ── */
+h1 { font-size: 3.6rem;  font-weight: 700; line-height: 1.08; letter-spacing: -0.04em; margin-bottom: 22px; }
+h2 { font-size: 2.7rem;  font-weight: 700; line-height: 1.12; letter-spacing: -0.03em; margin-bottom: 20px; }
+h3 { font-size: 1.85rem; font-weight: 700; line-height: 1.22; letter-spacing: -0.02em; margin-bottom: 12px; }
+p, li { font-size: 1.55rem; line-height: 1.5; }
+.subtitle { font-size: 1.75rem; font-weight: 300; color: var(--gray-text); margin-bottom: 16px; }
+.small { font-size: 1.15rem; color: var(--gray-text); }
+.tiny  { font-size: 0.95rem; color: var(--gray-text); }
 
 strong { color: var(--yonsei-blue); font-weight: 600; }
 em { color: var(--gray-text); font-style: normal; }
@@ -76,10 +76,10 @@ em { color: var(--gray-text); font-style: normal; }
 /* ── Pill (§2.5) ── */
 .pill {
   display: inline-block;
-  padding: 6px 20px;
+  padding: 9px 24px;
   border-radius: 3.667em;
-  border: 1.5px solid var(--blue);
-  font-size: 0.85rem; font-weight: 500;
+  border: 2px solid var(--blue);
+  font-size: 1rem; font-weight: 600;
   color: var(--blue-light);
   margin: 4px 4px 4px 0;
 }
@@ -88,10 +88,10 @@ em { color: var(--gray-text); font-style: normal; }
 
 /* ── Divider (§2.4) ── */
 .divider {
-  width: 64px; height: 3px;
+  width: 80px; height: 4px;
   background: var(--blue);
   border-radius: 2px;
-  margin: 12px 0 18px;
+  margin: 16px 0 24px;
 }
 .bg-accent .divider { background: var(--white); }
 
@@ -100,7 +100,7 @@ em { color: var(--gray-text); font-style: normal; }
   background: var(--light);
   border: 1px solid var(--slate);
   border-radius: 12px;
-  padding: 24px 28px;
+  padding: 32px 36px;
 }
 .bg-accent .card {
   background: rgba(255,255,255,0.12);
@@ -118,11 +118,11 @@ em { color: var(--gray-text); font-style: normal; }
 
 /* ── Lists (§2.9) ── */
 ul { list-style: none; padding: 0; }
-ul li { padding-left: 24px; position: relative; margin-bottom: 8px; }
+ul li { padding-left: 32px; position: relative; margin-bottom: 14px; }
 ul li::before {
   content: '';
-  position: absolute; left: 0; top: 10px;
-  width: 8px; height: 8px;
+  position: absolute; left: 0; top: 16px;
+  width: 12px; height: 12px;
   border-radius: 50%;
   background: var(--yonsei-blue);
 }
@@ -135,10 +135,11 @@ ul.num li::before { counter-increment: li; content: counter(li); background: var
 /* ── Highlight (§2.7) ── */
 .highlight {
   background: linear-gradient(135deg, rgba(0,56,118,0.07) 0%, rgba(0,56,118,0.02) 100%);
-  border-left: 3px solid var(--yonsei-blue);
-  padding: 16px 20px;
+  border-left: 5px solid var(--yonsei-blue);
+  padding: 22px 26px;
   border-radius: 0 8px 8px 0;
-  margin: 12px 0;
+  margin: 18px 0;
+  font-size: 1.55rem;
 }
 .bg-accent .highlight {
   background: rgba(255,255,255,0.1);
@@ -149,31 +150,31 @@ ul.num li::before { counter-increment: li; content: counter(li); background: var
 .math-block {
   background: var(--light);
   border-radius: 8px;
-  padding: 18px 24px;
-  margin: 12px 0;
+  padding: 22px 28px;
+  margin: 16px 0;
   text-align: center;
-  font-size: 1.15rem;
+  font-size: 1.7rem;
 }
 .bg-accent .math-block { background: rgba(255,255,255,0.1); }
 
 /* ── Diagram (§2.11) ── */
 .diagram-flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
 .diagram-box {
-  padding: 12px 22px;
+  padding: 14px 22px;
   border-radius: 10px;
-  border: 1.5px solid var(--blue);
-  font-weight: 500;
-  font-size: 0.95rem;
+  border: 2px solid var(--blue);
+  font-weight: 600;
+  font-size: 1.15rem;
   text-align: center;
-  min-width: 100px;
+  min-width: 120px;
 }
 .diagram-box.filled { background: var(--blue); color: var(--white); border-color: var(--blue); }
-.diagram-arrow { font-size: 1.3rem; color: #999; }
+.diagram-arrow { font-size: 1.6rem; color: #999; }
 
 /* ── Table (§2.13) ── */
-table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
-th, td { padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--slate); }
-th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+table { border-collapse: collapse; width: 100%; font-size: 1.65rem; }
+th, td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--slate); }
+th { font-weight: 700; color: var(--yonsei-blue); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .bg-accent th, .bg-accent td { border-bottom: 1px solid rgba(255,255,255,0.15); }
 .bg-accent th { color: rgba(255,255,255,0.8); }
 
@@ -192,13 +193,13 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 
 /* ── Title slide (§2.2) ── */
 .title-slide { justify-content: center; align-items: flex-start; padding: 72px 88px; border-top: 5px solid var(--yonsei-blue); }
-.title-slide h1 { font-size: 3rem; margin-bottom: 20px; color: var(--yonsei-blue); }
-.title-slide .subtitle { font-size: 1.35rem; }
-.title-logo { position: absolute; top: 36px; right: 48px; height: 80px; }
+.title-slide h1 { font-size: 4rem; margin-bottom: 24px; color: var(--yonsei-blue); }
+.title-slide .subtitle { font-size: 1.9rem; }
+.title-logo { position: absolute; top: 36px; right: 48px; height: 72px; }
 
 /* ── Section divider — centered (§2.3) ── */
 .section-slide { justify-content: center; align-items: center; text-align: center; }
-.section-slide h1 { font-size: 2.8rem; }
+.section-slide h1 { font-size: 4rem; }
 .section-slide .divider { margin: 16px auto 20px; }
 
 /* ── Section divider — left, numbered (§2.17) ── */
@@ -208,14 +209,14 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
   padding: 96px 96px;
 }
 .section-slide.left .section-num {
-  font-size: 1.6rem; font-weight: 600;
+  font-size: 2.2rem; font-weight: 700;
   color: var(--yonsei-blue);
   letter-spacing: -0.02em;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
-.section-slide.left h1 { font-size: 3rem; margin-bottom: 0; }
-.section-slide.left .divider { margin: 14px 0 18px; }
-.section-slide.left .subtitle { font-size: 1.2rem; color: var(--gray-text); }
+.section-slide.left h1 { font-size: 4.2rem; margin-bottom: 0; }
+.section-slide.left .divider { margin: 18px 0 22px; }
+.section-slide.left .subtitle { font-size: 1.75rem; color: var(--gray-text); }
 .section-slide.left.bg-accent .section-num { color: var(--white); }
 
 /* ── Brand footer (§2.15) ── */
@@ -239,30 +240,30 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
   align-items: center;
 }
 .toc-num {
-  font-size: 1.6rem; font-weight: 600;
+  font-size: 2.4rem; font-weight: 700;
   color: var(--yonsei-blue); letter-spacing: -0.02em;
 }
 .toc-rule {
   background: var(--yonsei-blue);
   align-self: stretch;
-  min-height: 40px;
+  min-height: 56px;
   border-radius: 2px;
 }
-.toc-label { font-size: 1.25rem; font-weight: 500; color: var(--charcoal); }
-.toc-sub { font-size: 0.95rem; color: var(--gray-text); margin-top: 2px; }
+.toc-label { font-size: 1.85rem; font-weight: 600; color: var(--charcoal); }
+.toc-sub { font-size: 1.25rem; color: var(--gray-text); margin-top: 4px; }
 
 /* ── End / closer (§2.18) ── */
 .end-slide { justify-content: center; align-items: center; text-align: center; }
 .end-slide .big-word {
-  font-size: 5rem; font-weight: 600;
+  font-size: 5.5rem; font-weight: 700;
   color: var(--yonsei-blue);
   letter-spacing: -0.04em;
   line-height: 1;
 }
 .end-slide .big-word-sub {
-  margin-top: 18px;
+  margin-top: 20px;
   color: var(--gray-text);
-  font-size: 1.1rem;
+  font-size: 1.65rem;
 }
 
 /* ── Spacers (§1.3) ── */
@@ -287,12 +288,12 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 /* ── Token visualization (§2.12) ── */
 .token {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 7px 14px;
   border-radius: 6px;
   font-family: 'Noto Sans', monospace;
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin: 2px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 3px;
 }
 .token-mask  { background: var(--slate); color: var(--gray-text); border: 1px dashed #ccc; }
 .token-gen   { background: var(--yonsei-blue); color: var(--white); }
@@ -300,7 +301,7 @@ th { font-weight: 500; color: var(--yonsei-blue); font-size: 0.85rem; text-trans
 .token-eos   { background: var(--warn); color: var(--white); }
 .token-pad   { background: var(--accent); color: var(--white); }
 .token-pad2  { background: #8B5CF6; color: var(--white); }
-.token-pad3  { background: #F59E0B; color: var(--charcoal); }
+.token-pad3  { background: var(--amber); color: var(--charcoal); }
 .token-safe  { background: var(--success); color: var(--white); }
 
 /* ── Animations (§1.5) ── */

@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:arxiv.org)"
+      "WebFetch(domain:arxiv.org)",
+      "Bash(chmod +x /Users/albertno/albertcode/talks/scripts/bundle.py)",
+      "Bash(python3 scripts/.convert_deck.py inlined dllm/dllm.html)",
+      "Bash(python3 scripts/.convert_deck.py inlined mia/MIA.html)",
+      "Bash(python3 scripts/.convert_deck.py linked privacy/DP-FL.html)",
+      "Bash(sed -n '1,16p' dllm/dllm.html)",
+      "Bash(sed -n '1,16p' mia/MIA.html)",
+      "Bash(python3 -c \"import pathlib; s=pathlib.Path\\('dllm/dllm.html'\\).read_text\\(\\); import re; m=re.search\\(r'onload=\\\\\"[^\\\\\"]+\\\\\"', s\\); print\\(repr\\(m.group\\(0\\)[:300]\\)\\)\")",
+      "Bash(python3 scripts/bundle.py --all)",
+      "Bash(python3 scripts/lint-deck.py --all)",
+      "Bash(python3 /Users/albertno/albertcode/talks/scripts/lint-deck.py --all)",
+      "Bash(python3 scripts/.recolor.py dllm/dllm.html mia/MIA.html privacy/DP-FL.html)"
     ]
   }
 }
