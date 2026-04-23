@@ -8,6 +8,10 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 **Type scale note (2026-04).** The type scale below is the MID presentation scale — larger than the original compact scale to be readable from the back of a lecture hall. `h1` 3.6rem, `h2` 2.7rem, body 1.55rem. Bullet dots and diagram boxes are correspondingly larger.
 
+**Reference target.** Kangwook Lee's BLISS seminar deck (<https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html>) is our readability benchmark. Zoomed-in captures of his rendering live in `reference/kangwook1.png`–`kangwook4.png`; the fonts in those shots are the *minimum acceptable* visual weight for our decks. If your slide renders noticeably smaller than those, something is wrong — most likely a per-deck `<style>` is shadowing the canonical tokens.
+
+**Rule: don't shadow canonical tokens per-deck.** A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Deck-local rules may only size **component classes** (`.card .desc`, `.paper-card .title`, `.sr-box p`, etc.), and those sizes should be expressed as fractions of the canonical body — roughly `1.05rem`–`1.3rem` for in-card copy. When content doesn't fit, reduce content — never shrink type.
+
 ---
 
 ## 1. Design Tokens
@@ -388,6 +392,13 @@ Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Backg
 | Let the engine handle nav — don't add custom click targets. | Bind click handlers directly on slides. |
 | Pair `h2` with `.divider` on every content slide. | Skip the divider; the slide feels unanchored. |
 | Put title-logo and title-slide together. | Use `.title-logo` on non-title slides. |
+| Scale component-internal text in the `1.05rem–1.35rem` range (relative to canonical body at 1.55rem). | Redefine `p` / `li` / `h2` / `h3` / `.small` / `.tiny` / `.math-block` in a per-deck `<style>`. Those are canonical; deck.css owns them. |
+| When a slide feels cramped, cut content or split the slide. | Shrink the type scale to cram in more. The Kangwook reference shots (`reference/kangwook*.png`) show the minimum acceptable size. |
+| Build math-labelled diagrams as HTML (flex/grid + divs) with a thin SVG overlay for arrows only. | Put `$x_i$` inside an SVG `<text>` — KaTeX auto-render skips SVG text and the literal `$x_i$` will show. |
+| Use `$$…$$` (display math) inside a `.math-block` for `\begin{cases}` and other multi-row constructs. | Use `$…$\displaystyle$…$` with `white-space:nowrap` + `overflow-x:auto` to force layout — the cases overflow gets clipped at the right edge. |
+| Prefer static step-labeled diagrams (①②③④ badges) so everything is visible at once. | Ship continuous SMIL / CSS animation for talks — the audience waits through each loop. Keep auto-animation for self-paced web versions only. |
+| Anchor absolute-positioned decorative content to `right` / `top` and leave ≥ 40 px clear in the bottom-left. | Absolute-position floats to `bottom-left`, where the auto-injected `.brand-footer` (Yonsei wordmark) already lives. |
+| Let `.slide` keep its canonical `position: absolute; inset: 0`. Child `position:absolute` elements anchor to it automatically. | Write `style="position:relative"` on a `.slide` to give children a positioning context. It overrides `inset:0`, so the slide no longer fills the deck and `.brand-footer` lands out of place. |
 
 ### 5.3 Slide recipes
 
@@ -462,6 +473,30 @@ Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Backg
 </div>
 ```
 
+**Diagram with math-rendered labels (HTML + SVG-arrows pattern)**
+
+When the diagram needs KaTeX-rendered labels (e.g. `$C_1$`, `$g_i$`, `$M(x_i)$`), build the structural layer in HTML and use SVG only for arrows. The `.fl4-*` classes in `privacy/DP-FL.html` (slide 4) and the `.ldp-*` classes (slide 9) are the reference.
+```
+<div class="diag-wrap">
+  <div class="diag-server">Server · holds $\theta$</div>
+  <svg class="diag-arrows" viewBox="0 0 600 110" preserveAspectRatio="none">
+    <g stroke="#003876" stroke-width="2" fill="none" marker-end="url(#ar)">
+      <path d="…"/> …
+    </g>
+  </svg>
+  <div class="diag-clients">
+    <div class="diag-client">
+      <div class="dot">$C_1$</div>
+      <div class="lbl">① compute $g_1$ from $D_1$</div>
+    </div>
+    …
+  </div>
+</div>
+```
+- The arrow SVG uses `preserveAspectRatio="none"` and a wide viewBox so the arcs stretch with the HTML boxes.
+- Labels ("① compute $g_1$ from $D_1$") are plain HTML — KaTeX auto-render picks them up and turns the `$…$` into math.
+- Component-level font sizes for the boxes should stay in the `1.1rem – 1.35rem` range; don't override canonical `p` / `li` inside the diagram.
+
 ---
 
 ## 6. Extension checklist
@@ -476,7 +511,61 @@ New components must document: name, purpose, default + inverted (`.bg-accent`) a
 
 ---
 
-## 7. Source files
+## 7. Common pitfalls (lessons learned)
+
+These are the mistakes that keep reappearing in per-deck work. `CLAUDE.md` has the short form; this section explains why.
+
+### 7.1 Fonts "look small" → somebody shadowed the canonical tokens
+
+Symptom: body text / headings on a deck look noticeably smaller than the Kangwook reference (`reference/kangwook*.png`) or smaller than a sibling deck.
+
+Cause: a per-deck `<style>` block redefined `p`, `li`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size`. Canonical values live in `reference/deck.css` and were tuned for back-of-room readability after the deck's `transform: scale()` is applied.
+
+Fix: delete those overrides. Component-scoped sizes (e.g. `.sr-box p`, `.paper-card .desc`) are fine in the `1.05rem–1.35rem` range, but canonical tokens are off-limits.
+
+### 7.2 Brand footer moves around → a slide opted out of `inset: 0`
+
+Symptom: the "Yonsei University" wordmark drifts vertically or horizontally, or disappears, on specific slides.
+
+Cause: that slide has an inline `style="position:relative"`. `.slide` is canonically `position: absolute; inset: 0`; overriding it to `relative` breaks the fill. Children with `position: absolute` already anchor to the slide (since `absolute` *is* a positioned value) — you don't need to force `relative`.
+
+Fix: remove the `position:relative` override. Anchor any absolutely-positioned decorative content (images, overlays) to `right`/`top` and leave the bottom-left clear for the footer.
+
+### 7.3 "$g_1$" shows as literal text → label is in SVG `<text>`
+
+Symptom: inline math inside a diagram renders as `$g_1$` instead of italic *g* with a subscript.
+
+Cause: the label sits inside an SVG `<text>` element. KaTeX auto-render walks the HTML DOM; it doesn't descend into SVG text nodes.
+
+Fix: move the math-bearing labels to HTML. Use an HTML+CSS layout for the diagram structure (flex/grid, div "boxes", CSS-styled circles) and a thin SVG overlay for arrows only. Reference implementations: `.fl4-*` (slide 4), `.ldp-*` (slide 9), `.rdm-*` (slide 30) in `privacy/DP-FL.html`.
+
+### 7.4 Cases block gets clipped → shorten content or switch to `$$…$$`
+
+Symptom: the right column of `\begin{cases}` (typically "otherwise" / "if …") is cut off at the slide's right edge.
+
+Cause: the math-block uses `$\displaystyle …$` with `white-space:nowrap; overflow-x:auto` to coerce layout, and the rendered width exceeds the container.
+
+Fix: use `$$…$$` (display math) inside a plain `.math-block` — KaTeX will size itself naturally. Shorten the cases labels to math form: `m \in \text{top-}k` instead of `\text{if } \langle v, U_m\rangle \text{ is among the top } k$; `\text{else}` instead of `\text{otherwise}`. If it still overflows, the slide has too much content — cut a bullet.
+
+### 7.5 Animation for live talks is a mistake
+
+Symptom: during a talk, the audience is waiting for the animation to finish before the speaker can make the next point.
+
+Cause: SMIL `animateMotion` / CSS keyframe cycles loop indefinitely and dictate pacing that the speaker doesn't control.
+
+Fix: make the diagram static and label every step with ①②③④ badges placed directly on the relevant elements. The speaker controls pacing by talking through the steps in order. Keep auto-animation for self-paced web versions of the deck.
+
+### 7.6 Standalone bundle renders equations as raw `$...$` strings
+
+Symptom: `<deck>.standalone.html` shows literal `$x_i$` text; the authoring source renders fine.
+
+Cause (historical, fixed 2026-04): `scripts/bundle.py` re-emits the KaTeX `onload="renderMathInElement(document.body, {delimiters:[{left:'$$',…}]});"` handler into a small inline script. Its earlier regex `onload=["\']([^"\']+)["\']` treated both quote types as terminators, so the handler was truncated at the first inner `'` and never called.
+
+Fix (in the code): the regex now uses alternation — `onload=(?:"([^"]*)"|'([^']*)')` — and takes whichever group matched. Verify after bundling with `chrome --headless --dump-dom <standalone>.html | grep -c 'class="katex"'` — should be ≥ 1 for any deck with math.
+
+---
+
+## 8. Source files
 
 - **Canonical CSS:** `reference/colors_and_type.css` (font-face + tokens) and `reference/deck.css` (engine + components). Decks link to these; they are not duplicated per deck.
 - **Canonical JS:** `reference/deck.js`.

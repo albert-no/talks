@@ -31,7 +31,9 @@
       "Bash(python3 scripts/bundle.py privacy/DP-FL.html)",
       "Bash(awk 'NR>=600 && NR<=640' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
       "Bash(awk 'NR==615' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
-      "Bash(awk 'NR>=610 && NR<=620' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)"
+      "Bash(awk 'NR>=610 && NR<=620' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
+      "Bash(curl -sL -o /tmp/kangwook.html \"https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html\")",
+      "Bash(awk '/<style>/,/<\\\\/style>/' /tmp/kangwook.html)"
     ]
   }
 }
