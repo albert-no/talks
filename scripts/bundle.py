@@ -148,7 +148,7 @@ RE_SCRIPT_SRC = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 RE_SCRIPT_ATTR_SRC = re.compile(r'\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
-RE_SCRIPT_ONLOAD = re.compile(r'\bonload=["\']([^"\']+)["\']', re.IGNORECASE)
+RE_SCRIPT_ONLOAD = re.compile(r'\bonload=(?:"([^"]*)"|\'([^\']*)\')', re.IGNORECASE)
 RE_IMG = re.compile(r'<img\b[^>]*>', re.IGNORECASE)
 RE_IMG_SRC = re.compile(r'\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
 RE_BRAND = re.compile(r'(\bdata-brand-logo=)["\']([^"\']+)["\']', re.IGNORECASE)
@@ -197,7 +197,7 @@ def bundle(html_path: Path, out_path: Path) -> None:
         # guarded by DOMContentLoaded so document.body exists.
         onload_m = RE_SCRIPT_ONLOAD.search(tag)
         if onload_m:
-            handler = onload_m.group(1).replace("</script>", "<\\/script>")
+            handler = (onload_m.group(1) or onload_m.group(2) or "").replace("</script>", "<\\/script>")
             out += (
                 "\n<script>"
                 "if (document.readyState === 'loading') "

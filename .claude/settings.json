@@ -27,7 +27,11 @@
       "Bash(python3 scripts/lint-deck.py privacy/DP-FL.html)",
       "Bash(curl -sL -o /tmp/dprdm.pdf \"https://arxiv.org/pdf/2403.14421\")",
       "Bash(pdftotext /tmp/dprdm.pdf -)",
-      "Bash(awk '/^3 /{flag=1} flag{print} /^4 /{exit}')"
+      "Bash(awk '/^3 /{flag=1} flag{print} /^4 /{exit}')",
+      "Bash(python3 scripts/bundle.py privacy/DP-FL.html)",
+      "Bash(awk 'NR>=600 && NR<=640' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
+      "Bash(awk 'NR==615' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
+      "Bash(awk 'NR>=610 && NR<=620' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)"
     ]
   }
 }
