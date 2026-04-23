@@ -52,6 +52,8 @@ Font family: Yonsei official typeface (`'Yonsei', 'Noto Sans', Arial, sans-serif
 
 Accent rules: `strong` → blue + weight 600. `em` → `--gray-text`, **not italic**. These are semantic — never hardcode colors inline when the right accent will do.
 
+**Widow/orphan control (2026-04).** `deck.css` applies `text-wrap: balance` to `h1`, `h2`, `h3`, and `.subtitle`, and `text-wrap: pretty` to `p`, `li`, `.small`, and `.tiny`. This lets the browser rebalance line breaks so that headings split evenly and body paragraphs don't leave a single dangling word on the last line. Decks should not override these on the canonical selectors. See §7.9 and §7.10 for the associated authoring rules (no em-dashes as connectors; no orphan words).
+
 > **No italic, ever (prose).** Yonsei ships only four `font-style: normal` TTFs and we import Noto Sans without italic, so the browser synthesizes oblique by skewing normal glyphs — kerning breaks, adjacent words visually glue (e.g. "all positions" reads "allpositions"). Don't use `<i>`, inline `font-style: italic`, or rely on default `em` italic. In LaTeX math, wrap English phrases in `\text{…}`; bare words in math mode inherit the italic math face with zero spacing. See §7.6.
 
 ### 1.3 Spacing
@@ -596,7 +598,33 @@ Fix:
 - **In KaTeX math, English phrases belong in `\text{…}`.** `\text{all positions}` gives real spaces; bare `all positions` in math mode renders each letter in the italic math face with zero inter-letter space. Identifier letters stay italic (correct math typography); the rule only applies to English phrases.
 - **If prose that isn't in math mode still renders italic, suspect §7.6** before blaming the font stack.
 
-### 7.8 Standalone bundle renders equations as raw `$...$` strings
+### 7.9 Em-dashes break lines awkwardly → use colons, commas, or parens
+
+Symptom: a title, subtitle, bullet, or card reads "X — Y" and the line breaks between the dash and one of the clauses, or the side shorter than the break leaves a single word dangling on the next line.
+
+Cause: at slide font sizes, the em-dash (`—`), en-dash (`–`), and double-hyphen (`--`) each function as a strong break point. The browser treats them as preferred wrap locations, so whichever clause is shorter is disproportionately likely to wrap, and the dash itself frequently ends up at the start or end of its own line.
+
+Fix:
+- Rewrite the connector. A colon works when the dash was introducing a definition or expansion (`"Bidirectional attention: every token attends to every other"`). A comma works when the dash was a soft pause (`"Random masking, so the model sees all orderings"`). A period works when the dash was doing the work of a full stop. Parentheses work when the clause was parenthetical (`"… (a new watermarking channel)"`).
+- Keep dashes only where they are part of a technical glyph: `7–8B`, `fill-in-the-middle`, arrows (`→`, `↔`), `↕ shared weights`.
+- This rule applies to slide prose. Prose in repo docs (`CLAUDE.md`, this file) is not slide-rendered and can keep em-dashes.
+
+Audit: `grep -nE ' — | -- | – ' <deck>.html` should return essentially nothing after this pass.
+
+### 7.10 Dangling single words at the end of a line
+
+Symptom: a bullet reads "…from toy-scale to competitive 7B+ systems in <2 years" and the final "years" or "2 years" wraps alone to its own line. Or an h3 reads "Architectural inductive biases" and "biases" lands on line two by itself.
+
+Cause: the natural wrap point puts the last 1–2 words on a line of their own. Without widow control, the browser doesn't know to pull one more word down to keep the last line readable.
+
+Fix, in order of preference:
+1. **Rely on CSS first.** `deck.css` sets `text-wrap: pretty` on body text and `text-wrap: balance` on headings. The browser rebalances automatically. Preview in Chrome 117+ / Safari 17.4+ (print-to-PDF uses the same engine) — most orphans disappear without further action.
+2. **Remove any em-dash in the line.** An em-dash is the single most common structural cause of an orphan; replacing `"X — Y"` with `"X: Y"` often fixes the orphan on its own.
+3. **Shorten or restructure.** Trim a redundant qualifier, split the sentence, or reword to a shorter noun phrase.
+4. **Glue the final words with `&nbsp;`.** For a bullet ending in "…in <2 years", write `in &lt;2&nbsp;years` so the last two tokens wrap as a unit. Use sparingly — only for technical phrases that must stay together (`"7B+ systems"`, `"<2 years"`, `"≈80% ASR"`).
+5. **Never `<br>` as a workaround.** A forced break is fragile: it creates an orphan at a different width and prints oddly.
+
+### 7.11 Standalone bundle renders equations as raw `$...$` strings
 
 Symptom: `<deck>.standalone.html` shows literal `$x_i$` text; the authoring source renders fine.
 
