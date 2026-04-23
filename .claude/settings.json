@@ -12,7 +12,8 @@
       "Bash(python3 scripts/bundle.py --all)",
       "Bash(python3 scripts/lint-deck.py --all)",
       "Bash(python3 /Users/albertno/albertcode/talks/scripts/lint-deck.py --all)",
-      "Bash(python3 scripts/.recolor.py dllm/dllm.html mia/MIA.html privacy/DP-FL.html)"
+      "Bash(python3 scripts/.recolor.py dllm/dllm.html mia/MIA.html privacy/DP-FL.html)",
+      "Bash(python3 scripts/lint-deck.py privacy/DP-FL.html reference/deck-skeleton.html)"
     ]
   }
 }

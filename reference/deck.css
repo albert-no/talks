@@ -116,13 +116,18 @@ em { color: var(--gray-text); font-style: normal; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
 
-/* ── Lists (§2.9) ── */
+/* ── Lists (§2.9) ──
+   Bullet geometry is em-based so it stays aligned when li font-size
+   shrinks (e.g. a deck-local `.tight li { font-size: 1rem }`). */
 ul { list-style: none; padding: 0; }
-ul li { padding-left: 32px; position: relative; margin-bottom: 14px; }
+ul li { padding-left: 1.5em; position: relative; margin-bottom: 0.55em; }
 ul li::before {
   content: '';
-  position: absolute; left: 0; top: 16px;
-  width: 12px; height: 12px;
+  position: absolute;
+  left: 0;
+  top: 0.58em;          /* visual center on first text line */
+  width: 0.5em;
+  height: 0.5em;
   border-radius: 50%;
   background: var(--yonsei-blue);
 }
@@ -130,7 +135,14 @@ ul li::before {
 ul.check li::before { content: '✓'; background: none; color: var(--success); font-weight: 700; top: 0; width: auto; height: auto; }
 ul.arrow li::before { content: '→'; background: none; color: var(--yonsei-blue); font-weight: 500; top: 0; width: auto; height: auto; border-radius: 0; }
 ul.num { counter-reset: li; }
-ul.num li::before { counter-increment: li; content: counter(li); background: var(--yonsei-blue); color: #fff; font-size: 0.7rem; font-weight: 700; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; top: 3px; border-radius: 50%; }
+ul.num li::before {
+  counter-increment: li; content: counter(li);
+  background: var(--yonsei-blue); color: var(--white);
+  font-size: 0.7em; font-weight: 700;
+  width: 1.4em; height: 1.4em;
+  display: flex; align-items: center; justify-content: center;
+  top: 0.32em; border-radius: 50%;
+}
 
 /* ── Highlight (§2.7) ── */
 .highlight {
@@ -218,6 +230,12 @@ th { font-weight: 700; color: var(--yonsei-blue); font-size: 1.2rem; text-transf
 .section-slide.left .divider { margin: 18px 0 22px; }
 .section-slide.left .subtitle { font-size: 1.75rem; color: var(--gray-text); }
 .section-slide.left.bg-accent .section-num { color: var(--white); }
+/* Section subtitle must stay readable on accent (deep blue) bg. */
+.section-slide.bg-accent .subtitle,
+.section-slide.left.bg-accent .subtitle {
+  color: var(--white);
+  font-weight: 400;
+}
 
 /* ── Brand footer (§2.15) ── */
 .brand-footer {
