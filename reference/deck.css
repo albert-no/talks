@@ -311,9 +311,11 @@ th { font-weight: 700; color: var(--yonsei-blue); font-size: 1.2rem; text-transf
   font-family: 'Noto Sans', monospace;
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.2;
   margin: 3px;
+  vertical-align: middle;
 }
-.token-mask  { background: var(--slate); color: var(--gray-text); border: 1px dashed #ccc; }
+.token-mask  { background: var(--slate); color: var(--gray-text); outline: 1px dashed #ccc; outline-offset: -1px; }
 .token-gen   { background: var(--yonsei-blue); color: var(--white); }
 .token-fixed { background: #e0e4e8; color: var(--charcoal); }
 .token-eos   { background: var(--warn); color: var(--white); }

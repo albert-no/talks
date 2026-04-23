@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
-  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\(',right:'\)',display:false},{left:'\[',right:'\]',display:true}],throwOnError:false});"></script>
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -98,14 +98,13 @@
   <div class="divider"></div>
   <div class="cols">
     <div>
-      <p>Instead of generating text left-to-right, dLLMs start from a <strong>fully masked</strong> sequence and iteratively <strong>unmask</strong> tokens in <strong>any order</strong>.</p>
+      <p>Instead of generating left-to-right, dLLMs start from a <strong>fully masked</strong> sequence and iteratively <strong>unmask</strong> tokens in <strong>any order</strong>.</p>
       <div class="spacer"></div>
       <div class="math-block">$$x_T = [\texttt{M}]^N \;\xrightarrow{\text{denoise}}\; x_{T-1} \;\xrightarrow{\text{denoise}}\; \cdots \;\xrightarrow{\text{denoise}}\; x_0$$</div>
       <div class="spacer"></div>
       <ul>
-        <li><strong>Forward process:</strong> progressively mask tokens until fully corrupted</li>
-        <li><strong>Reverse process:</strong> learn to predict masked tokens conditioned on visible ones</li>
-        <li>Training objective: predict each masked token given all unmasked tokens</li>
+        <li><strong>Forward:</strong> progressively mask tokens</li>
+        <li><strong>Reverse:</strong> predict masked tokens from visible context</li>
       </ul>
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
@@ -136,9 +135,12 @@
 <!-- SLIDE 5 — AR vs Diffusion -->
 <!-- ════════════════════════════════════════════════════════ -->
 <div class="slide bg-navy">
+  <style>
+    .ar-diff-table td, .ar-diff-table th { padding: 8px 18px; }
+  </style>
   <h2>Autoregressive vs. Diffusion LLMs</h2>
   <div class="divider"></div>
-  <table>
+  <table class="ar-diff-table">
     <thead>
       <tr><th></th><th>Autoregressive LLM</th><th>Diffusion LLM</th></tr>
     </thead>
@@ -148,7 +150,7 @@
       <tr><td><strong>Factorization</strong></td><td>$p(x) = \prod_i p(x_i \mid x_{&lt;i})$</td><td>$p(x) = \int p(x_0 \mid x_t)\, q(x_t)\, dt$</td></tr>
       <tr><td><strong>Context</strong></td><td>Left context only</td><td>Full bidirectional context</td></tr>
       <tr><td><strong>Parallelism</strong></td><td>Sequential at inference</td><td>Parallel multi-token decoding</td></tr>
-      <tr><td><strong>Training signal</strong></td><td>Next-token prediction</td><td>Masked-token prediction (all positions)</td></tr>
+      <tr><td><strong>Training signal</strong></td><td>Next-token prediction</td><td>Mask prediction at any position</td></tr>
       <tr><td><strong>Reversal curse</strong></td><td>Strong failure</td><td>Significantly mitigated</td></tr>
     </tbody>
   </table>
@@ -164,16 +166,16 @@
     <div>
       <h3>Architectural inductive biases</h3>
       <ul>
-        <li><strong>Bidirectional attention</strong> — every token attends to every other token, enabling richer contextual reasoning</li>
-        <li><strong>Weight sharing</strong> couples forward and reverse information flow</li>
-        <li>No causal mask → different attention patterns emerge</li>
+        <li><strong>Bidirectional attention</strong> — every token attends to every other</li>
+        <li><strong>Weight sharing</strong> couples forward and reverse flow</li>
+        <li>No causal mask → new attention patterns</li>
       </ul>
       <div class="spacer"></div>
       <h3>Training dynamics</h3>
       <ul>
-        <li><strong>Random masking</strong> at every training step → model sees all possible orderings</li>
-        <li>Gradient alignment between forward and reverse tasks</li>
-        <li>Learns <em>order-agnostic</em> representations</li>
+        <li><strong>Random masking</strong> → model sees all orderings</li>
+        <li>Gradient alignment across forward / reverse</li>
+        <li>Learns <strong>order-agnostic</strong> representations</li>
       </ul>
     </div>
     <div>
@@ -213,7 +215,7 @@
   <div class="cols">
     <div>
       <h3>Key idea</h3>
-      <p>Introduced <strong>score entropy</strong> — a new loss function for training discrete diffusion models that directly parameterizes the <em>concrete score</em> (ratio of transition probabilities).</p>
+      <p>Introduced <strong>score entropy</strong> — a new loss function for training discrete diffusion models that directly parameterizes the <strong>concrete score</strong> (ratio of transition probabilities).</p>
       <div class="spacer"></div>
       <div class="math-block">$$\mathcal{L}_{\text{SE}} = \mathbb{E}_{t,x_0,x_t}\left[\sum_{y \neq x_t} s_\theta(y \mid x_t, t) - \log s_\theta(x_0 \mid x_t, t)\right]$$</div>
       <div class="spacer"></div>
@@ -758,7 +760,7 @@
         <div class="spacer-sm"></div>
         <ul class="arrow">
           <li>Tokens can be generated in any order</li>
-          <li>Harmful content can be filled in <em>after</em> safe content is placed</li>
+          <li>Harmful content can be filled in <strong>after</strong> safe content is placed</li>
           <li>Prefilling attacks fix partial responses, bypassing initial refusal</li>
         </ul>
         <div class="spacer"></div>
@@ -961,7 +963,7 @@
       </ul>
       <div class="spacer"></div>
       <div class="highlight">
-        <p><strong>Key property:</strong> dgMARK never reweights probabilities — only changes <em>which positions</em> unmask first.</p>
+        <p><strong>Key property:</strong> dgMARK never reweights probabilities — only changes <strong>which positions</strong> unmask first.</p>
       </div>
     </div>
     <div>
@@ -1048,7 +1050,7 @@
       <div class="card" style="margin-bottom:16px;">
         <p class="small"><strong>Hypothesis:</strong> "The any-order training objective (random masking) lets the model see both directions during training"</p>
         <div class="spacer-sm"></div>
-        <p class="small" style="color:var(--warn);"><strong>But wait:</strong> Observing "[MASK] is B" during training does <em>not</em> necessarily teach the model "B is [MASK]" — these are different conditioning patterns.</p>
+        <p class="small" style="color:var(--warn);"><strong>But wait:</strong> Observing "[MASK] is B" during training does <strong>not</strong> necessarily teach the model "B is [MASK]" — these are different conditioning patterns.</p>
       </div>
       <div class="highlight">
         <p><strong>Our question:</strong> if not the objective, what explains the mitigation?</p>
@@ -1094,7 +1096,7 @@
           <div class="diagram-box">Reverse: B → A<br><span class="tiny">Attention: B attends to A</span></div>
         </div>
         <div class="spacer-sm"></div>
-        <p class="small">Same $W_Q, W_K, W_V$ weights participate in both directions → learning one direction <em>implicitly helps</em> the other.</p>
+        <p class="small">Same $W_Q, W_K, W_V$ weights participate in both directions → learning one direction <strong>implicitly helps</strong> the other.</p>
       </div>
     </div>
   </div>
@@ -1136,7 +1138,7 @@
         <ul class="check">
           <li>No causal mask → both directions active</li>
           <li>Weight sharing creates coupling</li>
-          <li>Forward training <em>implicitly</em> helps reverse</li>
+          <li>Forward training <strong>implicitly</strong> helps reverse</li>
         </ul>
       </div>
     </div>

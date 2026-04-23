@@ -11,7 +11,8 @@
       "Bash(python3 -c ' *)",
       "Read(//private/tmp/**)",
       "Bash(open /Users/albertno/albertcode/talks/mia/MIA.html)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(python3 /Users/albertno/albertcode/talks/scripts/lint-deck.py /Users/albertno/albertcode/talks/dllm/dllm.html)"
     ]
   }
 }

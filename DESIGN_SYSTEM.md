@@ -52,6 +52,8 @@ Font family: Yonsei official typeface (`'Yonsei', 'Noto Sans', Arial, sans-serif
 
 Accent rules: `strong` → blue + weight 600. `em` → `--gray-text`, **not italic**. These are semantic — never hardcode colors inline when the right accent will do.
 
+> **No italic, ever (prose).** Yonsei ships only four `font-style: normal` TTFs and we import Noto Sans without italic, so the browser synthesizes oblique by skewing normal glyphs — kerning breaks, adjacent words visually glue (e.g. "all positions" reads "allpositions"). Don't use `<i>`, inline `font-style: italic`, or rely on default `em` italic. In LaTeX math, wrap English phrases in `\text{…}`; bare words in math mode inherit the italic math face with zero spacing. See §7.6.
+
 ### 1.3 Spacing
 
 Slide padding: `56px 72px 48px` (top / sides / bottom). Title slide uses `72px 88px`. Don't change these — they anchor the print-to-PDF layout.
@@ -555,7 +557,46 @@ Cause: SMIL `animateMotion` / CSS keyframe cycles loop indefinitely and dictate 
 
 Fix: make the diagram static and label every step with ①②③④ badges placed directly on the relevant elements. The speaker controls pacing by talking through the steps in order. Keep auto-animation for self-paced web versions of the deck.
 
-### 7.6 Standalone bundle renders equations as raw `$...$` strings
+### 7.6 Parenthesized text renders as italic math → KaTeX delimiter escape bug
+
+Symptom: plain prose with `(...)` or `[...]` renders in italic math font with no inter-letter space. Examples: `(learned or heuristic)` shows as `learnedorheuristic`, `[M]` inside a `.token-mask` shows a slanted italic `M` distinct in height from the upright `is`/`blue` word tokens next to it.
+
+Cause: the KaTeX auto-render `onload` handler defines four delimiter pairs. The latter two are supposed to be LaTeX-style `\(...\)` and `\[...\]`. In the HTML attribute, they must be written **double-escaped** so the JS string parser leaves a literal backslash in place:
+
+```html
+<!-- CORRECT — double backslash -->
+onload="renderMathInElement(document.body,{delimiters:[
+  {left:'$$',right:'$$',display:true},
+  {left:'$', right:'$', display:false},
+  {left:'\\(',right:'\\)',display:false},
+  {left:'\\[',right:'\\]',display:true}
+],throwOnError:false});"
+
+<!-- WRONG — single backslash -->
+{left:'\(',right:'\)',display:false},
+{left:'\[',right:'\]',display:true}
+```
+
+With the wrong form, the JS string parser treats `\(` as an unrecognized escape and silently drops the backslash. KaTeX then sees its left delimiter as a bare `(` (and `)`, `[`, `]`), so any parenthesized or bracketed prose gets rendered as inline math — italic math font, no word spacing, different line metrics from surrounding text.
+
+Fix:
+- Use the double-backslash form in every deck's `onload` attribute. `reference/deck-skeleton.html` has the correct version; `scripts/new-talk.sh` will propagate it for new talks.
+- Audit existing decks: `for f in */*.html; do grep -H "renderMathInElement" "$f" | grep -c "\\\\\\\\(" ; done`. Each deck must show a `\\\\(` occurrence, not `'\\(` (single).
+- After fixing, hard-reload with DevTools "Disable cache" — the handler runs on script onload, not on page DOM-ready, so stale behavior isn't obvious from a casual refresh.
+
+### 7.7 Italic prose collapses spaces → Yonsei has no italic face
+
+Symptom: a word or phrase rendered with `font-style: italic` (via `<i>` or inline `style="font-style:italic"`) reads as a single glued string.
+
+Cause: `reference/colors_and_type.css` registers four Yonsei TTFs, all with `font-style: normal` — there is no italic face. The Noto Sans import only pulls weights 300–700, again without italic. When the browser is asked to render italic it falls back to *synthesized oblique*: it skews the normal glyphs by ~12°. Synthesized oblique inherits the upright metrics, so kerning pairs and side-bearings are wrong, and on tight lines (table rows, card copy) adjacent words visually merge.
+
+Fix:
+- **No italic in prose.** `em` is globally `font-style: normal; color: var(--gray-text)` — that is the intended "muted" look. Use `<strong>` (Yonsei Blue accent) for emphasis instead.
+- **No `<i>`, no inline `font-style: italic`.** If you catch these in a deck, rip them out.
+- **In KaTeX math, English phrases belong in `\text{…}`.** `\text{all positions}` gives real spaces; bare `all positions` in math mode renders each letter in the italic math face with zero inter-letter space. Identifier letters stay italic (correct math typography); the rule only applies to English phrases.
+- **If prose that isn't in math mode still renders italic, suspect §7.6** before blaming the font stack.
+
+### 7.8 Standalone bundle renders equations as raw `$...$` strings
 
 Symptom: `<deck>.standalone.html` shows literal `$x_i$` text; the authoring source renders fine.
 
