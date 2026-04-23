@@ -13,7 +13,21 @@
       "Bash(python3 scripts/lint-deck.py --all)",
       "Bash(python3 /Users/albertno/albertcode/talks/scripts/lint-deck.py --all)",
       "Bash(python3 scripts/.recolor.py dllm/dllm.html mia/MIA.html privacy/DP-FL.html)",
-      "Bash(python3 scripts/lint-deck.py privacy/DP-FL.html reference/deck-skeleton.html)"
+      "Bash(python3 scripts/lint-deck.py privacy/DP-FL.html reference/deck-skeleton.html)",
+      "Bash(pdftotext -f 7 -l 7 /Users/albertno/albertcode/talks/privacy/dp-fl.pdf -)",
+      "Bash(python3 -c \"import fitz; print\\(fitz.__version__\\)\")",
+      "Bash(brew install *)",
+      "Bash(mkdir -p /tmp/dpfl_pages)",
+      "Bash(pdftoppm -r 150 -f 7 -l 7 /Users/albertno/albertcode/talks/privacy/dp-fl.pdf /tmp/dpfl_pages/page -png)",
+      "Bash(pdftoppm -r 150 -f 17 -l 18 /Users/albertno/albertcode/talks/privacy/dp-fl.pdf /tmp/dpfl_pages/page -png)",
+      "Bash(pdftoppm -r 150 -f 23 -l 24 /Users/albertno/albertcode/talks/privacy/dp-fl.pdf /tmp/dpfl_pages/page -png)",
+      "Read(//tmp/**)",
+      "WebFetch(domain:openreview.net)",
+      "Bash(pdftotext /Users/albertno/.claude/projects/-Users-albertno-albertcode-talks/1ef2940d-9108-4381-b5e7-68c1725f898f/tool-results/webfetch-1776914288160-bzy6y1.pdf -)",
+      "Bash(python3 scripts/lint-deck.py privacy/DP-FL.html)",
+      "Bash(curl -sL -o /tmp/dprdm.pdf \"https://arxiv.org/pdf/2403.14421\")",
+      "Bash(pdftotext /tmp/dprdm.pdf -)",
+      "Bash(awk '/^3 /{flag=1} flag{print} /^4 /{exit}')"
     ]
   }
 }
