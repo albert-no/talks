@@ -33,7 +33,12 @@
       "Bash(awk 'NR==615' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
       "Bash(awk 'NR>=610 && NR<=620' /Users/albertno/albertcode/talks/privacy/DP-FL.standalone.html)",
       "Bash(curl -sL -o /tmp/kangwook.html \"https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html\")",
-      "Bash(awk '/<style>/,/<\\\\/style>/' /tmp/kangwook.html)"
+      "Bash(awk '/<style>/,/<\\\\/style>/' /tmp/kangwook.html)",
+      "Bash(git rm *)",
+      "Bash(git fetch *)",
+      "Bash(git restore *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)"
     ]
   }
 }
