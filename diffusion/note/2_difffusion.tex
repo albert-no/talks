@@ -1,0 +1,1511 @@
+\documentclass[11pt, a4paper]{article}
+% 2. Add the geometry package to take control of your margins
+% 1 inch is a standard, clean margin, but you can change this to 2.5cm, etc.
+\usepackage[margin=1in]{geometry}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+% \usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{xcolor}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{exercise}{Exercise}
+\newtheorem{corollary}{Corollary}
+\newtheorem{claim}{Claim}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{lemma}{Lemma}
+
+\newcommand{\fA}{\field{A}} 
+\newcommand{\fB}{\field{B}} 
+\newcommand{\E}[1]{\mathify{\mathbb{E}\left[#1\right]}}
+
+\include{macro}
+
+\renewcommand{\blue}[1]{\textcolor{blue}{#1}}
+
+
+\begin{document}
+
+\title{Lecture Notes: Diffusion Generative Models}
+\author{}
+\date{}
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   Diffusion   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Generative Model} \label{sec:diffusion-generative}
+What is generative model?
+Consider a generative model that produces realistic image of human face.
+Suppose the model always outputs the same specific image of Albert, 
+then we may not want such generative model.
+
+A good generative model should generate realistic output (of course),
+however, at the same time, it should be able to mimic the diversity of input.
+Your human face generator should be able to output of various types of faces (race, age, sex, etc).
+In other words, generative model is not only learning realistic samples, 
+it is learning the distribution of the dataset.
+
+On the other hand, sampling (or generating sample) is not always trivial even when we know the distribution.
+Suppose you have the following density:
+\begin{align}
+    f(x) = \frac{1}{\pi} \frac{\gamma}{x^2+\gamma^2}
+\end{align}
+for some $\gamma>0$.
+This is called Cauchy distribution with parameter $\gamma>0$.
+
+\begin{exercise}
+    Prove that $f(x)$ is a valid probability density.
+\end{exercise}
+
+In this case, it is non-trivial to generate samples $X\sim f(x)$ even when we have a complete characterization of distribution.
+However, in the scalar case, we can use \emph{inverse transform sampling} based on the uniform distribution.
+
+Suppose $F_X$ be a cumulative density function of random variable $X$, and $U\sim Unif[0, 1]$ be an uniform distribution.
+Since \(F_X\) is non-decreasing and \(\Pr(U\leq u)=u\) for \(0\leq u \leq 1\), we have:
+\begin{equation*}
+    \Pr(F_X^{-1}(U)\leq x) = \Pr(U\leq F_X(x)) = F_X(x),
+\end{equation*}
+which implies:
+\begin{align*}
+    F_X^{-1}(U) \sim f(x).
+\end{align*}
+In other words, if we sample uniform random variable $U$, then apply $F^{-1}_X$, then we can achieve a sample that has a distribution $f(x)$.
+
+Then how do we generate a uniform random variable?
+One way is to approximate it using binary expansion:
+\begin{align*}
+    U \approx 0.U_1 U_2 U_3 \cdots {U_n}_{(2)}, \quad\text{where}\quad U_i\sim\mathrm{Bernoulli}\left(\frac{1}{2}\right)
+\end{align*}
+By generating a sequence of fair coin flips, we can construct a random number that closely follows the uniform distribution on \([0,1]\).
+
+However, for multidimensional random vector $\bX=(X_1, \dots, X_n)$, it is hard to sample from distribution
+even when we have an exact formula of probability density.
+
+In most generative models, which ``learns distribution of dataset'', does not explicitly learn the probability density function.
+It often learns a ``transformation'' from samples (that are easy to generate) to a target distribution (e.g., Generative Adversarial Networks).
+
+Notation: Uppercase $X$ usually denotes a random variable, and lowercase $x$ often denotes a realization of it.
+For example, a probability density function $f_X(x)$ takes lowercase $x$ as an input,
+since it provides a density value at specific point $x$.
+
+%%% 1D Diffusion Model
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{1D Diffusion Model}
+%%% Variance Exploding
+\subsection{Variance Exploding}
+For simplicity let start from 1-dimensional case.
+Let $X\in\fR$ be a random variable that we want to learn.
+The density function $f_X(x)$ is unknown but we have samples (or we can sample $X$).
+Consider the following random process (called forward process)
+\begin{align}
+    X^{(n)} =   X^{(n-1)} + Z^{(n)}
+\end{align}
+where $X^{(0)} = X$ and $Z^{(n)}\sim\cN(0, \sigma^2)$ is independent Gaussian noise with mean zero and variable $\sigma^2$.
+It is equivalent to where we are gradually adding noise to the input image.
+\begin{figure}
+    \centering
+    \includegraphics[width=.9\textwidth]{images/ddpm.png}
+    \caption{The directed graphical model considered in DDPM~\cite{ho2020denoising}.}
+\end{figure}
+
+\begin{remark}
+    Note that the forward process does not have to be computed sequentially.
+    We can corrupt a sample $X^{(0)}$ with $n$-times in a single step
+    \begin{align}
+        X^{(n)} = X^{(0)} + \sqrt{n} Z
+    \end{align}
+    where $Z\sim\cN(0, \sigma^2)$.
+    This fact is useful in training the denoiser $f_\theta$.
+\end{remark}
+
+When $n$ grows, the $nZ$ term dominates and $X^{(n)}$ behaves like Gaussian.
+Yes, this is informal, but we will see the formal proof for variance preserving (VP) process.
+The above process is called variance exploding (VE) process as variance of $X^{(n)}$ explodes.
+
+For large enough $N$, we can approximate the distribution of $X^{(N)}$ by
+\begin{align}
+    X^{(N)} \sim \cN(\tilde{\mu}, \tilde{\sigma}).
+\end{align}
+Clearly, $\tilde{\mu} = \mu_0$ and $\tilde{\sigma}^2 = \sigma_0^2 + N\sigma^2$ where $\mu_0$ and $\sigma_0^2$ are mean and variance of $X_0$.
+
+\begin{remark}
+Estimating $\tilde{\mu}$ and $\tilde{\sigma}$ is much easier than estimating the distribution.
+Moreover, we will have explicit formula for $\tilde{\mu}$ and $\tilde{\sigma}$ for the VP process.
+\end{remark}
+
+The key here is that, we can sample from the distribution $\cN(\tilde{\mu}, \tilde{\sigma})$,
+Let $\tX^{(N)}$ be the sample from the distribution $\cN(\tilde{\mu}, \tilde{\sigma})$.
+Our goal is to reverse the process from $X^{(N)}$ to obtain $\tX^{(N-1)}, \dots, \tX^{(1)}, \tX^{(0)}$ 
+and hoping $\tX^{(0)} \stackrel{(d)}{\approx} X$ (similar in distribution).
+
+Now, consider the reverse sampling (also referred to as the reverse process).  
+For each step \( 1 \leq n \leq N \), we aim to model the reverse conditional distribution \( P_{X^{(n-1)}|X^{(n)}} \). (From this point forward, we denote the density function of \( X \) by \( P_X \) rather than \( f_X \).)  
+
+For notational simplicity, let \( X = \tX^{(n-1)} \), \( Z = \tZ^{(n)} \), and \( Y = \tX^{(n)} \), so that \( Y = X + Z \) and \( Y|X \sim \mathcal{N}(X, \sigma^2) \).  
+Our goal is to characterize the distribution of \( X|Y \).  
+By Bayes' theorem, we have:
+\[
+P_{X|Y}(x|y) = \frac{P_{Y|X}(y|x) P_X(x)}{P_Y(y)}.
+\]
+
+
+To evaluate this expression, we begin by approximating \( P_X(x) \) and \( P_Y(y) \):
+\begin{align*}
+    P_X(x)
+    & = P_X(y) + P'_X(y)(x - y) + O(\|x - y\|^2) \\
+    & \approx P_X(y) + P'_X(y)(x - y),
+\end{align*}
+where the approximation relies on the assumption that \( \sigma^2 \ll 1 \).
+
+Next, we approximate the marginal density \( P_Y(y) \) as follows:
+\begin{align*}
+    P_Y(y)
+    & = \int P_{Y|X}(y|x) P_X(x) \, dx \\
+    & \approx \int \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{(x - y)^2}{2\sigma^2} \right) \left(P_X(y) + P'_X(y)(x - y)\right) dx \\
+    & = P_X(y) + P'_X(y) \, \fE_{X \sim \mathcal{N}(y, \sigma^2)}[X - y] \\
+    & = P_X(y),
+\end{align*}
+
+Substituting these approximations into Bayes' rule yields:
+\begin{align*}
+    P_{X|Y}(x|y)
+    & = \frac{P_{Y|X}(y|x) P_X(x)}{P_Y(y)} \\
+    & \approx \frac{P_{Y|X}(y|x)\left(P_X(y) + P'_X(y)(x - y)\right)}{P_X(y)} \\
+    & = P_{Y|X}(y|x)\left(1 + \frac{P'_X(y)}{P_X(y)} (x - y)\right) \\
+    & \approx \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{(x - y)^2}{2\sigma^2} \right) \exp\left( \frac{P'_X(y)}{P_X(y)} (x - y) \right) \\
+    & \approx \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{1}{2\sigma^2} \left((x - y)^2 - 2\sigma^2 \frac{P'_X(y)}{P_X(y)} (x - y) + \left(\sigma^2 \frac{P'_X(y)}{P_X(y)}\right)^2 \right) \right) \\
+    & = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{1}{2\sigma^2} \left(x - y - \sigma^2 \frac{P'_X(y)}{P_X(y)}\right)^2 \right).
+\end{align*}
+
+Noting that \( \frac{P'_X(y)}{P_X(y)} = \frac{\partial}{\partial y} \log P_X(y) \), we conclude that
+\[
+X|Y \; \overset{\text{approx.}}{\sim} \; \mathcal{N}\left(Y + \sigma^2 \frac{\partial}{\partial y} \log P_X(Y), \; \sigma^2\right).
+\]
+
+This implies that when the noise variance \( \sigma^2 \) is small, the reverse conditional distribution can be well-approximated by a Gaussian.  
+Based on this, we can generate samples from the reverse process via:
+\[
+\tx^{(n-1)} = \tx^{(n)} + \sigma^2 \frac{\partial}{\partial \tx^{(n)}} \log P_{X^{(n)}} (\tx^{(n)}) + \tz^{(n)},
+\]
+where \( \tz^{(n)} \sim \mathcal{N}(0, \sigma^2) \) is an independent Gaussian noise.
+
+
+\begin{remark}
+    One might wonder whether we can generate samples by subtracting noise instead of adding it. That is, consider the process:
+    \begin{align}
+        \tX^{(n-1)} = \tX^{(n)} - \tZ^{(n)}.
+    \end{align}
+    However, this approach does not constitute a denoising process. Since the noise distribution is symmetric, i.e., \( -\tZ^{(n)} \overset{(d)}{=} \tZ^{(n)} \), subtracting noise is distributionally equivalent to adding it. In other words, the process still corresponds to further corrupting the sample with noise, not reversing it.
+\end{remark}
+
+\begin{remark}
+    It is different from optimal denoising.
+    For example, let $X$ be a random variable and $Y= X+N$ where $N$ be independent noise.
+    Then, the minimum mean squared estimation that minimizes
+    \begin{align}
+        \Expec{(\hat{X}(Y)- X)^2}
+    \end{align}
+    is achieved by $\hat{X}(Y) = \Expec{X|Y}$, i.e., deterministic.
+    In the above example, the reverse process is different from the optimal denoising step.
+    The key here is ``distribution matching'' which is seemingly similar to denoising when $\sigma$ is small.
+\end{remark}
+
+\begin{exercise}
+    Show that the minimum mean square estimate is $\hat{X}(Y) = \Expec{X|Y}$.
+    You can start from
+    \begin{align}
+        \Expec{(\hat{X}(Y)-X)^2} = \Expec{((\hat{X}(Y)-\Expec{X|Y}) +(\Expec{X|Y}-X) )^2}
+    \end{align}
+\end{exercise}
+
+Consider the single sample $x^{(0)}=x$ and its corrupted version $x^{(N)}$.
+If we sample from $X^{(N)} = x^{(N)}$ and generate $X^{(0)}$ through optimum denoising, we may not (and will not) get sample that is similar to original $x$.
+This is also an indication of the reverse diffusion is not an optimum denoising (in mean squared error sense).
+
+\begin{example}
+    Let $X\sim \cN(0, \sigma_x^2)$ and $Y=X+Z$ where $Z\sim\cN(0, \sigma_z^2)$.
+    Then, the optimal denoiser is
+    \begin{align}
+        \hat{X}(Y) =& \Expec{X|Y}\\
+        =& \frac{\sigma_x^2}{\sigma_x^2 + \sigma_z^2} Y.
+    \end{align}
+    Since $Y\sim \cN(0, \sigma_x^2 + \sigma_z^2)$, we have
+    \begin{align}
+        \Expec{X|Y} \sim \cN\left(0, \frac{\sigma_x^4}{\sigma_x^2+\sigma_z^2}\right)
+    \end{align}
+    which does not match to the original distribution of $X$.
+    However, if we generate
+    \begin{align}
+        \tilde{X} = \Expec{X|Y} + \tilde{Z}
+    \end{align}
+    where $\tilde{Z}\sim\cN(0, \frac{\sigma_x^2\sigma_z^2}{\sigma_x^2+\sigma_z^2})$,
+    then the distribution of $\tX\sim\cN(0, \sigma^2)$ matches to the original distribution.
+\end{example}
+
+\begin{remark}
+    As we will see in the simulation results, we do not need any neural networks to be trained for reverse process
+    if we have full information of ``score function'' $\frac{\partial}{\partial \tx^{(n)}} \log P_{\tX^{(n)}} (\tx^{(n)})$ for all $n$ and all $\tx^{(n)}$.
+    However, it is (of course) not the case in practice, and that is why we need to train a neural network to learn this score function.
+\end{remark}
+
+
+
+Suppose we do not have access to the probability density function or the score function defined as  
+\[
+s(x^{(n)}; n) = \frac{\partial}{\partial x^{(n)}} \log P_{\tX^{(n)}} (x^{(n)}),
+\]
+where the score function explicitly depends on \(n\) due to the time-dependent marginal distribution \(P_{\tX^{(n)}}\).
+
+In such a case, we can instead train a neural network \(f_\theta(x^{(n)}; n)\) to approximate the original (clean) data point \(x^{(0)}\) from its noisy counterpart \(x^{(n)}\), obtained after \(n\) steps of noising. By minimizing the expected squared error between the network output and the original data,
+\[
+\|f_\theta(x^{(n)}; n) - x^{(0)}\|^2,
+\]
+the trained network learns to estimate the conditional expectation:
+\[
+f_{\theta}(x^{(n)};n) \approx \fE[X^{(0)} | X^{(n)} = x^{(n)}].
+\]
+Notably, this learning process does not require knowledge of the underlying data distribution or the score function.
+
+
+\begin{exercise}[Tweedie's Formula~\cite{efron2011tweedie}]
+    Let $X$ be a random variable and $Z~\sim\cN(0, \sigma^2)$ be an independent Gaussian noise.
+    Let $Y= X+Z$ be noise corrupted version of $X$, show that
+    \begin{align}
+        \fE[X|Y=y]  = y + \sigma^2 \frac{\partial}{\partial y} \log P_{Y}(y).
+    \end{align}
+    You can start from 
+    \begin{align}
+        P_Y(y) = \int P_X(x) P_Z(y-x)\, dz 
+    \end{align}
+    and compare it with $\frac{\partial}{\partial y} P_Y(y)$
+\end{exercise}
+
+Using Tweedie's formula, we have
+\begin{align}
+    f_{\theta}(x;n) \approx x + n\sigma^2 \frac{\partial}{\partial x} \log P_{X^{(n)}}(x).
+\end{align}
+Thus, we can obtain an approximation for the score function as
+\begin{align}
+    s_\theta(x;n) = \frac{f_{\theta}(x; n) - x}{n\sigma^2}.
+\end{align}
+
+
+
+%%% Variance Preserving
+\subsection{Variance Preserving}
+The above noise addition process will have gigantic variance of $X_N$,
+and this is why it is called variance exploding (VE) process.
+Clearly, adding noise at each time will keep increasing the variance.
+We can have alternative formula that preserves the variance by scaling.
+Let
+\begin{align}
+    X^{(n)} \sim \cN\left(\sqrt{1-\beta_n} X^{(n-1)},\beta_n \right)
+\end{align}
+or 
+\begin{align}
+    X^{(n)} = \sqrt{1-\beta_n} X^{(n-1)} + \sqrt{\beta_n }Z^{(n)}
+\end{align}
+where $0<\beta_n<1$ for $1\leq n\leq N$ and $Z^{(n)}\sim\cN(0, 1)$ is an independent Gaussian noise.
+
+\begin{exercise}
+    Show that the variance is preserved in the above relation.
+    What will be the variance of $X^{(N)}$ when $N\rightarrow \infty$?
+\end{exercise}
+
+\begin{exercise}
+    For fixed $\beta_n\equiv \beta$, show that $X^{(N)}$ converges to Gaussian distribution as $N\rightarrow \infty$.
+\end{exercise}
+\begin{proof}
+    Consider the moment generating function
+    \begin{align}
+        M_{X^{(n)}}(t) =& \Expec{\exp(t X^{(n)})}\\
+        =& \Expec{\exp(t \sqrt{1-\beta_n} X^{(n-1)})} \Expec{\exp(t \sqrt{\beta_n}Z^{(n)})}\\
+        =& \Expec{\exp(t \sqrt{1-\beta_n}X^{(n-1)})} \exp\left(\frac{\sigma^2\beta_n}{2}t^2\right)\\
+        =& \cdots \\
+        =& \Expec{\exp(t \sqrt{\bar{\alpha}_n} X^{(0)})} \exp\left(\frac{(1-\bar{\alpha}_n)\sigma^2}{2}t^2\right)
+    \end{align}
+    where $\bar{\alpha}_n = \prod_{i=1}^n (1-\beta_i)$.
+    For fixed $\beta_i\equiv \beta$, it is clear that $\bar{\alpha}_n \rightarrow 0$ and the moment generating function
+    converges to that of standard Gaussian.
+    Also, even when $\beta_n$ is nonuniform, as long as $\bar{\alpha}_n\rightarrow 0$, the random variable $X^{(N)}$ converges to standard Gaussian in distribution.
+\end{proof}
+
+\begin{remark}
+    Note that the forward process does not have to be computed sequentially.
+    We can corrupt a sample $X^{(0)}$ with $n$-times in a single step
+    \begin{align}
+        X^{(n)} = \sqrt{\bar{\alpha}_n} X^{(0)} + \sqrt{1-\bar{\alpha}_n} Z
+    \end{align}
+    where $Z\sim\cN(0, 1)$.
+    Again, this is useful in training $f_\theta$.
+\end{remark}
+
+This is called Denoising Diffusion Probabilistic Models (DDPM)~\cite{ho2020denoising} (note that it has $>20000$ citations).
+In the original paper, the authors claimed that the true reverse distribution can be approximated (for small $\beta_n$)
+\begin{align}
+    X^{(n-1)} | X^{(n)} \sim \cN(\mu(X^{(n)}, n), \beta_n)
+\end{align}
+where
+\begin{align}
+    \mu(X^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}} \left(X^{(n)} + \beta_n \frac{\partial}{\partial x} \log P_{X^{(n)}}(X^{(n)})\right).
+\end{align}
+Note that the $\mu(X^{(n)}, n)$ is from the Tweedie's formula, and we can similarly show that the variance of $X^{(n-1)}|X^{(n)}$ is also $\beta_n$ with a negligible high order term.
+Similarly, since we do not know the true score function, it estimates
+\begin{align}
+    \mu_\theta(X^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}} \left(X^{(n)} + \beta_n s_\theta(X^{(n)}, n)\right).
+\end{align}
+\begin{figure}
+    \centering
+    \includegraphics[width=.9\textwidth]{images/ddpm.png}
+    \caption{The directed graphical model considered in DDPM~\cite{ho2020denoising}.}
+\end{figure}
+
+
+%%% DDPM
+The above model is called Denoising Diffusion Probabilistic Models (DDPM)~\cite{ho2020denoising}.
+DDPM is discretized version of variance preserving diffusion model (we will see the continuous version of it soon).
+Recall that the forward and reverse processes are
+\begin{align}
+    X^{(n)}|X^{(n-1)} &\sim \cN(\sqrt{1-\beta_n}X^{(n-1)}, \beta_n)\\
+    X^{(n-1)}|X^{(n)} &\approx \cN(\mu(X^{(n)}, n), \beta_n)
+\end{align}
+where 
+\begin{align}
+    \mu(X^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}} (X_n + \beta_n \frac{\partial}{\partial{X^{(n)}}}\log P_{X^{(n)}} (X^{(n)})).
+\end{align}
+The DDPM learns
+\begin{align}
+    \mu_\theta (X^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}} (X_n + \beta_n s_\theta(X^{(n)}, n)).
+\end{align}
+
+The DDPM loss can also be achieved via variational lower bound.
+Let $X^{(i:j)} = (X^{(i)}, \dots, X^{(j)})$, and $q$ be the distribution of the forward process while $p_{\theta}$ be the distribution of the learned reverse process.
+Then, the forward distribution is 
+\begin{align}
+    X^{(0)} \sim& q(X^{(0)})\\
+    q(X^{(1:N)}|X^{(0)}) =& \prod_{n=1}^N q(X^{(n)}|X^{(n-1)})
+\end{align}
+where the reverse distribution is
+\begin{align}
+    X^{(N)}\sim&\; p(X^{(N)})=\cN(0, 1)\\
+    p_{\theta} (X^{(0:N)}) =&\; p(X^{(N)}) \prod_{n=1}^N p_{\theta}(X^{(n-1)}|X^{(n)})\\
+    p_{\theta}(X^{(0)}) =&\; \int p_{\theta}(X^{(0:N)})\, dX^{(1:N)}.
+\end{align}
+
+The goal of generative model is minimizing negative log-likelihood \(-\log p_\theta(X^{(0)})\). (Why? See Exercise~\ref{ML}.)
+\begin{align}
+    -\log p_{\theta}(X^{(0)}) =& -\log \int p_{\theta}(X^{(0:N)})\, dX^{(1:N)}\\
+    =& -\log \left[\int \frac{p_{\theta}(X^{(0:N)})}{q(X^{(1:N)}|X^{(0)})} q(X^{(1:N)}|X^{(0)})\, dX^{(1:N)}\right]\\
+    =& -\log \fE_q\left[\left.\frac{p_{\theta}(X^{(0:N)})}{q(X^{(1:N)}|X^{(0)})} \right|X^{(0)}\right]\\
+    \leq& \fE_q\left[-\log \left.\frac{p_{\theta}(X^{(0:N)})}{q(X^{(1:N)}|X^{(0)})} \right|X^{(0)}\right].
+\end{align}
+The final inequality follows from Jensen's inequality. The idea is that instead of minimizing neagtive log-likelihood directly,
+we minimize the variational lower bound (which is indeed an upperbound in this case):
+
+\begin{exercise}[Maximum Likelihood] \label{ML}
+    Let $p_{\theta}$ be Berounoulli distribution with unknown parameter $\theta$.
+    Suppose we have samples $C_1, \dots, C_n\sim p_{\theta}$.
+    What is the maximum likelihood estimate of $\theta$?
+\end{exercise}
+
+Then, the sample mean of likelihood is an approximation of $\fE_q[-\log p_{\theta}(X^{(0)})]$, which is upperbounded by
+\begin{align}
+    &\fE_q\left[-\log p_{\theta}(X^{(0)})\right] \\
+    \leq& \fE_q\left[-\log \frac{p_{\theta}(X^{(0:N)})}{q(X^{(1:N)}|X^{(0)})} \right]\\
+    =& \fE_q\left[-\log p (X^{(N)}) - \sum_{n=1}^N \log \frac{p_{\theta}(X^{(n-1)}|X^{(n)})}{q(X^{(n)}|X^{(n-1)})} \right]\\
+    =& \fE_q\left[-\log p (X^{(N)}) - \sum_{n=2}^N \log \frac{p_{\theta}(X^{(n-1)}|X^{(n)})}{q(X^{(n)}|X^{(n-1)})} -\log \frac{p_{\theta}(X^{(0)}|X^{(1)})}{q(X^{(1)}|X^{(0)})}\right]
+\end{align}
+Note that the expectation is with respect to $X^{(0:T)}\sim q$.
+From Markov property, we have $q(X^{(n)}|X^{(n-1)}) q(X^{(n-1)}|X^{(0)}) = q(X^{(n-1)}|X^{(n)}, X^{(0)}) q(X^{(n)}|X^{(0)})$.
+\begin{exercise}
+    Show that $q(X^{(n)}|X^{(n-1)}) q(X^{(n-1)}|X^{(0)}) = q(X^{(n-1)}|X^{(n)}, X^{(0)}) q(X^{(n)}|X^{(0)})$.
+\end{exercise}
+Thus,
+\begin{align}
+    &\fE_q\left[-\log p_{\theta}(X^{(0)})\right] \\
+    =& \fE_q\left[-\log p (X^{(N)}) 
+        - \sum_{n=2}^N \log \frac{p_{\theta}(X^{(n-1)}|X^{(n)})}{q(X^{(n-1)}|X^{(n)}, X^{(0)})}\frac{q(X^{(n-1)}|X^{(0)})}{q(X^{(n)}|X^{(0)})} 
+        -\log \frac{p_{\theta}(X^{(0)}|X^{(1)})}{q(X^{(1)}|X^{(0)})}\right]\\
+    =& \fE_q\left[-\log \frac{p(X^{(N)})}{q(X^{(N)}|X^{(0)})} - \sum_{n=2}^N \log \frac{p_{\theta}(X^{(n-1)}|X^{(n)})}{q(X^{(n-1)}|X^{(n)}, X^{(0)})} -\log p_{\theta}(X^{(0)}|X^{(1)})\right]\label{eq:markovq}
+\end{align}
+
+
+The first term of \eqref{eq:markovq} becomes
+\begin{align}
+    L_N \stackrel{\Delta}{=} \fE_q\left[-\log \frac{p_\theta (X^{(N)})}{q(X^{(N)}|X^{(0)})}\right]
+    &= \fE_{X^{(0)}\sim q}\left[D_\mathrm{KL}(q(X^{(N)}|X^{(0)}) \| p(X^{(N)}))\right].
+\end{align}
+where the expectation is with respect to $X^{(0)}$.
+
+The second term of \eqref{eq:markovq} becomes
+\begin{align}
+    &\fE_q\left[- \sum_{n=2}^N \log \frac{p_{\theta}(X^{(n-1)}|X^{(n)})}{q(X^{(n-1)}|X^{(n)}, X^{(0)})}\right]\\
+    =& \sum_{n=2}^N \fE_q \left[ D_\mathrm{KL} (q(X^{(n-1)}|X^{(n)}, X^{(0)}) \| p_{\theta}(X^{(n-1)}|X^{(n)})\right]\\
+    =& \sum_{n=2}^N \fE_q \left[ D_\mathrm{KL} (q(X^{(n-1)}|X^{(n)}, X^{(0)}) \| p_{\theta}(X^{(n-1)}|X^{(n)})\right]\\
+    \stackrel{\Delta}{=}& \sum_{n=2}^N L_{n-1}
+\end{align}
+where the expectation is on conditional $X^{(n)}$ and $X^{(0)}$ for each expectation.
+
+Finally, the last term of \eqref{eq:markovq} is
+\begin{align}
+    L_0 = \fE_q\left[-\log p_{\theta}(X^{(0)}|X^{(1)})\right].
+\end{align}
+
+Since $L_N$ is independent of $\theta$ and $L_0$ is negligible (compared to $L_1, \dots, L_{N-1}$), we often consider the second term only:
+\begin{align}
+    L = \sum_{n=2}^N L_{n-1}
+\end{align}
+
+\begin{exercise}
+    Show that 
+    \begin{align}
+        q(X^{(n-1)}|X^{(n)}, X^{(0)}) = \cN(\mu_n(X^{(n)}|X^{(0)}), \beta_n)
+    \end{align}
+    where
+    \begin{align}
+        \mu_n(X^{(n)}|X^{(0)}) = \frac{1}{\sqrt{1-\beta_n}} \left(X^{(n)} + \beta_n \frac{\partial}{\partial_{X^{(n)}}} \log q (X^{(n)}|X^{(0)})\right)
+    \end{align}
+    Hint: Given $X^{(0)}$, all distributions are Gaussian, and you may start with
+    \begin{align}
+        q(X^{(n-1)}|X^{(n)}, X^{(0)}) = \frac{q(X^{(n)}|X^{(n-1)}, X^{(0)}) q(X^{(n-1)}|X^{(0)})}{q(X^{(n)}|X^{(0)})}.
+    \end{align}
+    Also note that we have an analytic formula for
+    \begin{align}
+        \frac{\partial}{\partial X^{(n)}} \log q (X^{(n)}|X^{(0)})
+    \end{align}
+\end{exercise}
+
+The following exercise provides an explicit formula for KL divergence between Gaussian distributions
+\begin{exercise}
+    Show that
+    \begin{align}
+        D_{\mathrm{KL}}\left(\cN(\mu_0, \sigma_0^2I) \|\cN(\mu_1, \sigma_1^2I) \right)
+        = \frac{1}{2\sigma_1^2} \|\mu_1-\mu_0\|^2 + \frac{d}{2}\left(\frac{\sigma_0^2}{\sigma_1^2}-1\right) + d\log \frac{\sigma_1}{\sigma_0}.
+    \end{align}
+    where $d$ is dimension of multidimensional Gaussian distribution and $\mu_0, \mu_1\in\fR^d, \sigma_1, \sigma_2>0$.
+\end{exercise}
+Thus, we have
+\begin{align}
+    L_{n-1} =& \frac{1}{2\beta_n} \|\mu_n(X^{(n)}|X^{(0)}) - \mu_{\theta}(X^{(n)}, n)\|^2\\
+    =& \frac{\beta_n}{2(1-\beta_n)} \left\|\frac{\partial}{\partial X^{(n)}} \log q_{n|0}(X^{(n)}|X^{(0)}) - s_{\theta}(X^{(n)}, n)\right\|^2\\
+    =& \frac{\beta_n}{2(1-\beta_n)} \left\|\frac{X^{(n)} - \sqrt{\bar{\alpha}_n}X^{(0)}}{1-\bar{\alpha}_n} - \frac{\epsilon_{\theta}(X^{(n)}, n)}{\sqrt{1-\bar{\alpha}_n}}\right\|^2\\
+    =& \frac{\beta_n}{2(1-\beta_n)(1-\bar{\alpha}_n)} \left\|\epsilon_n - \epsilon_{\theta}(\sqrt{\bar{\alpha}_n} X^{(0)} + \sqrt{1-\bar{\alpha}_n}\epsilon_n, n)\right\|^2
+\end{align}
+where $X^{(n)} \stackrel{(d)}{=} \sqrt{\bar{\alpha}_n}X^{(0)} + \sqrt{1-\bar{\alpha}_n} \epsilon_n$ with $\epsilon_n\sim\cN(0, 1)$.
+
+
+
+
+Thus, the training procedure is simply iteratively appying
+\begin{enumerate}
+    \item Pick $X^{(0)}$ from data
+    \item Sample $n\sim\mbox{Unif}(\{1, \dots, N\})$
+    \item Sample $\epsilon\sim \cN(0, 1)$
+    \item Compute $X^{(n)} = \sqrt{\bar{\alpha}_n} X^{(0)} + \sqrt{1-\bar{\alpha}_n} \epsilon$.
+    \item Call optimizer to minimize (apply SGD) $\tilde{\lambda}_n \|\epsilon - \epsilon_\theta(X^{(n)}, n)\|^2$
+\end{enumerate}
+
+Note that for small $\beta_n$'s and large $N$ (so that $\bar{\alpha}_N$ is small),
+the terminal variable $X^{(N)}$ is approximately $\cN(0, 1)$.
+Thus, with learned $\epsilon_\theta(X^{(n)}, n)$, the sampling process of DDPM is 
+\begin{enumerate}
+    \item Sample $X^{(N)} \sim \cN(0, 1)$
+    \item For $n= N, N-1, \dots, 1$
+    \begin{enumerate}
+        \item Sample $Z^{(n)} \sim \cN(0, 1)$
+        \item Compute $X^{(n-1)} = \frac{1}{\sqrt{1-\beta_n}} \left(X^{(n)} - \frac{\beta_n}{\sqrt{1-\bar{\alpha}_n}}\epsilon_\theta(X^{(n)}, n)\right) + \sqrt{\beta_n} Z^{(n)}$
+    \end{enumerate}
+\end{enumerate}
+
+\begin{remark}
+    There are couple of sources of error: 1) reverse process is only approximately Gaussian,
+    2) learned score function is not exact, and 3) the terminal distribution is not exactly Gaussian.
+\end{remark}
+
+%%% Stochastic Differential Equation
+\subsection{Stochastic Differential Equation}
+Both variance exploding (VE) and variance preserving (VP) can be expressed via stochastic differential equation (SDE).
+Consider the variance exploding (VE) case first where the variance of noise $\sigma^2\rightarrow 0$ is nearly zero.
+In this limit, we use $X_t, X_{t-\Delta t}, \sigma^2 Z_t$ instead of $X^{(n+1)}, X^{(n)}, Z^{(n)}$, then
+\begin{align}
+    X_{t} = X_{t-\Delta t} + \beta Z^{(n)}
+\end{align}
+where $Z^{(n)}\sim \cN(0, \Delta t)$, and we replace it bystandard Brownian motion $dZ_t$.
+Brownian motion is cumulative Gaussian noise of infinitesimal variances where $Z_t-Z_{t-\Delta t}\sim \cN(0, \Delta t)$.
+This is equivalently
+\begin{align}
+    dX_{t} = \sqrt{\beta} dZ_t.
+\end{align}
+
+Similarly, the variance preserving (VP) case 
+\begin{align}
+    X_{t} =& \sqrt{1-\beta_n}X_{t-\Delta t} + \sqrt{\beta_n}Z_n\\
+    \approx& \left(1-\frac{\beta_t dt}{2}\right)X_{t-\Delta t} + \sqrt{\beta_t} dZ_t
+\end{align}
+where $\beta_n = \beta_t dt$.
+Note that $Z_n~\sim \cN(0, 1)$ and the Brownian motion (roughly speaking) satisfies $dZ_t\sim\cN(0, dt)$.
+Equivalently, we have
+\begin{align}
+    dX_{t} = -\frac{\beta_t}{2} X_t dt + \sqrt{\beta_t}dZ_t.
+\end{align}
+
+More generally, we have the following SDE formula
+\begin{align}
+    dX_t = f(X_t, t)dt + g(t) dZ_t
+\end{align}
+whose discretized version is
+\begin{align}
+    X_{k+1} = X_k + \Delta t f(X_k, k\Delta t) + g(k\Delta t)\sqrt{\Delta t}Z_k.
+\end{align}
+
+We can solve SDE via
+\begin{align}
+    X_t = X_0 + \int_0^t f(X_s, s)\, ds + \int_0^t g(s)\, dW_s
+\end{align}
+where 
+\begin{align}
+    \int_0^t g(s)\, dW_s = \lim_{\epsilon\rightarrow 0} \sum_{k=0}^{\lfloor t/\epsilon\rfloor} g(\epsilon k) \sqrt{\epsilon}Z_{k}
+\end{align}
+is called It\^o stochastic integral.
+
+However, unlike regular ODE where we can analytically express the path $X_t$, SDE produces a random process.
+Thus, the solution of SDE should be a probability distribution,
+more precisely, a joint distribution of $\{X_t\}_{t=0}^T$.
+For diffusion probabilistic models, we will consider a weaker notion: the marginal probability
+distributions $\{p_t\}_{t=0}^T$ such that $X_t\sim p_t$ for $0\leq t\leq T$.
+We are interested in the evolution of $p_t$ from $t=0$ to $t=T$.
+
+This evolution can be expressed via Fokker-Plank equation.
+\begin{align}
+    \partial_t p_t = -\partial_x(fp_t) + \frac{g^2}{2}\partial_x^2 (p_t)
+\end{align}
+which implies
+\begin{align}
+    \partial_t p_t(x) = -\partial_x(f(x, t)p_t(x)) + \frac{g^2(t)}{2}\partial_x^2 (p_t(x)).
+\end{align}
+
+Rough derivation is following.
+For any $\phi$ (smoothe and compact),
+\begin{align}
+    \partial_t\fE_{X_t\sim p_t} [\phi(X)]
+    \approx&  \frac{1}{\epsilon}\left(\fE_{X\sim p_{t+\epsilon}} [\phi(X)] - \fE_{X\sim p_{t}} [\phi(X)]\right)\\
+    \approx&  \frac{1}{\epsilon}\left(\fE_{X\sim p_{t}} [\phi(X + \epsilon f +\sqrt{\epsilon}gZ] - \fE_{X\sim p_{t}} [\phi(X)]\right)\\
+    \approx&  \frac{1}{\epsilon}\left(\fE_{X\sim p_{t}} [\epsilon \phi'(X) f(X, t) + \sqrt{\epsilon}\phi'(X)g(t)Z\right.\nonumber\\
+    &+ \left.\frac{1}{2}\phi''(X)g^2(t)\epsilon Z^2 + O(\epsilon^{3/2})]\right)\\
+    \approx&  \fE_{X\sim p_{t}} [\phi'(X) f(X, t) +  \frac{1}{2}\phi''(X)g^2(t)]
+\end{align}
+where $Z\sim \cN(0, 1)$.
+
+From integration by part, 
+\begin{align}
+    \partial_t \int \phi(x) p_t(x)\, dx =& \int \phi'(x)f(x, t)p_t(x)\, dx + \frac{1}{2}\int \phi''(x)g^2(t)p_t(x)\, dx\\
+    \leftrightarrow \int \phi(x) \partial_t p_t(x)\, dx =& \int \phi(x)(-\partial_x (f p_t))\, dx + \frac{1}{2}\int \phi(x)g^2(t)\partial_x^2 (p_t)\, dx
+\end{align}
+where the boundary condition is $p(\pm \infty)=0$ and $\nabla p(\pm \infty)=0$.
+Finally, we have
+\begin{align}
+    \partial_t p_t = -\partial_x(fp_t) + \frac{g^2}{2}\partial_x^2 (p_t).
+\end{align}
+
+Now, we will show the forward SDE and reverse SDE has the same marginal distribution evolution.
+\begin{theorem}[Anderson's reverse SDE time theorem~\cite{anderson1982reverse}]
+Given the forward SDE
+\begin{align}
+    dX_t = f(X_t, t)dt + g(t)dZ_t
+\end{align}
+where $X_0\sim p_0$,
+the corresponding reverse-time SDE is
+\begin{align}
+    d\bar{X}_t = (f(\bar{X}_t, t) - g^2(t) \nabla_x\log p_t(\bar{X}_t))dt+g(t) d\bar{Z}_t.
+\end{align}
+with $\bar{X}_T\sim p_T$ where $d\bar{Z}_t$ is the reverse time Brownian motion and $p_T$ is a distribution of $X_T$ from forward SDE.
+
+Alternatively, define $\{Y_t\}_{t=0}^T$ where $Y_t= \bar{X}_{T-t}$via
+\begin{align}
+    dY_t =  - (f(Y_t, T-t) - g^2(T-t)\nabla_x p_{T-t}(Y_t))dt + g(T-t)dZ_t
+\end{align}
+with $Y_0\sim p_T$.
+Then,
+\begin{align}
+    X_t \stackrel{D}{=} \bar{X}_t =Y_{T-t}.
+\end{align}
+\end{theorem}
+Note that $dZ_t \stackrel{D}{=} -dZ_t$.
+
+\begin{remark}
+    The above theorem holds for general multidimensional cases.
+    For single dimensional distributions, we have
+\begin{align}
+    d\bar{X}_t = (f(\bar{X}_t, t) - g^2(t) \partial_x\log p_t(\bar{X}_t))dt+g(t) d\bar{Z}_t.
+\end{align}
+\end{remark}
+
+The proof is simple application of FP equation.
+\begin{proof}
+    Let $\{q_t\}_{t=0}^T$ be marginal densities of $\{Y_t\}_{t=0}^T$.
+    Then, $\{q_t\}_{t=0}^T$ satisfies the FP equation
+    \begin{align}
+        \partial_t q_t(y) = \partial_y \left((f(y, T-t) - g^2(T-t)\partial_y \log p_{T-t}(y))q_t(y)\right) + \frac{g^2(T-t)}{2} \partial_y^2(q_t(y))
+    \end{align}
+    Let $\{\bar{p}_t\}_{t=0}^T$ be marginal densities of $\{\bar{X}_t\}_{t=0}^T$.
+    Since $\bar{p}_{T-t} = q_t$, then $\{\bar{p}_t\}_{t=0}^T$ satisfies the FP equation
+    \begin{align}
+        \partial_t \bar{p}_t(x) = -\partial_x \left((f(x, t) - g^2(t)\partial_x \log p_{t}(x))\bar{p}_t(x)\right) - \frac{g^2(t)}{2} \partial_x^2(\bar{p}_t(x)).
+        \label{eq:reverse SDE}
+    \end{align}
+
+    The final step of the proof is proving that $p_t$ solves the above reverse FP equation.
+    \begin{align}
+        &-\partial_x \left((f(x, t) - g^2(t)\partial_x \log p_{t}(x))p_t(x)\right) - \frac{g^2(t)}{2} \partial_x^2(p_t(x))\\
+        =& -\partial_x (fp_t) + g^2(t)\partial_x (\partial_x\log p_{t}(x)p_t(x)) - \frac{g^2(t)}{2} \partial_x^2(p_t(x))\\
+        =& -\partial_x (fp_t) + g^2(t)\partial_x (\partial_x p_{t}(x)) - \frac{g^2(t)}{2} \partial_x^2(p_t(x))\\
+        =&  -\partial_x (f p_t) + \frac{g^2(t)}{2}\partial_x^2 (p_t(x))\\
+        =& \partial_x p_t
+    \end{align}
+    where the last equation is from forward FP equation.
+    Finally, $p_t$ also satisfies \eqref{eq:reverse SDE}, and therefore $p_t = \bar{p}_t$.
+\end{proof}
+
+%%% Score Matching
+\subsection{Score Matching}
+We can generate sample using reverse SDE, starting from Gaussian sample $X_T$.
+However, we need $\partial_x \log p_t(x)$.
+At first glance, it sounds weird since the whole point of generative model is from hardness of learning distribution $p_X(x)$ directly.
+However, learning the score is (surprisingly) more tractable.
+More precisely, we learn the score function via neural network $s_\theta(x, t)$.
+The natural loss function would be
+\begin{align}
+    \cL(\theta) = \int_0^T \lambda(t) \fE_{X_t}\left[ \| s_\theta(X_t, t)  - \partial_{X_t} \log p_t(X_t)\|^2 \right]\, dt
+\end{align}
+where $\lambda(t)>0$ is a weighing factor.
+This is because we want to learn score function for all $0\leq t\leq T$.
+However, we do not have an access to $p_t$, and we need alternative formula.
+
+\begin{theorem}[Score Matching~\cite{vincent2011connection}]
+    We have equivalent formula
+    \begin{align}
+        \cL(\theta) = \int_0^T \lambda(t) \fE_{X_0}\left[\fE_{X_t|X_0}\left[ \| s_\theta(X_t, t)  - \partial_{X_t} \log p_{t|0}(X_t|X_0)\|^2 \right]\right]\, dt + C
+        \label{eq:matching1}
+    \end{align}
+    for some constant $C$ which are independent of $\theta$.
+\end{theorem}
+We do not know $p_t$, but we do know $p_{t|0}(X_t|X_0)$ since it is noise corruption process (adding Gaussian noise).
+Thus, an alternative formula~\eqref{eq:matching1} is tractable.
+
+\begin{proof}
+    \begin{align}
+        \partial_{X_t} \log p_t (X_t) 
+        =&  \frac{\partial_{X_t} p_t(X_t)}{p_t(X_t)}\\
+        =&  \left(\partial_{X_t} \int p_{t|0}(X_t|X_0)p_0(X_0) \, dX_0 \right)\cdot \frac{1}{p_t(X_t)} \\
+        =&  \left(\int\partial_{X_t}  p_{t|0}(X_t|X_0)p_0(X_0) \, dX_0 \right)\cdot \frac{1}{p_t(X_t)} \\
+        =&  \left(\int\left(\partial_{X_t}  \log p_{t|0}(X_t|X_0)\right)p_0(X_0)p_{t|0}(X_t|X_0) \, dX_0 \right)\cdot \frac{1}{p_t(X_t)} \\
+        =&  \int\left(\partial_{X_t}  \log p_{t|0}(X_t|X_0)\right)\frac{p_0(X_0)p_{t|0}(X_t|X_0)}{p_t(X_t)} \, dX_0  \\
+        =&  \int\left(\partial_{X_t}  \log p_{t|0}(X_t|X_0)\right)p_{0|t}(X_0|X_t) \, dX_0  \\
+        =&  \fE_{X_0|X_t}\left[\partial_{X_t}  \log p_{t|0}(X_t|X_0)\suchthat X_t\right].
+    \end{align}
+
+Then, the loss function would be
+\begin{align}
+    \cL(\theta) =& \int_0^T \lambda(t) \fE_{X_t}\left[ \| s_\theta(X_t, t)  - \partial_{X_t} \log p_t(X_t)\|^2 \right]\, dt\\
+    =& \int_0^T \lambda(t) \fE_{X_t}\left[ \| s_\theta(X_t, t) \|^2  - 2 \langle s_\theta(X_t, t), \partial_{X_t} \log p_t(X_t)\rangle \right]\, dt + C\\
+    =& \int_0^T \lambda(t) \fE_{X_t}\left[ \| s_\theta(X_t, t) \|^2 \right. \nonumber\\
+    &\left.- 2 \langle s_\theta(X_t, t), \fE_{X_0|X_t}\left[\partial_{X_t}  \log p_{t|0}(X_t|X_0)\suchthat X_t\right] \rangle \right]\, dt + C\\
+    =& \int_0^T \lambda(t) \fE_{X_t}\left[ \fE_{X_0|X_t}\left[ \| s_\theta(X_t, t) \|^2 
+    - 2 \langle s_\theta(X_t, t), \partial_{X_t}  \log p_{t|0}(X_t|X_0) \rangle \suchthat X_t\right]\right]\, dt + C\\
+    =& \int_0^T \lambda(t) \fE_{X_t}\left[\fE_{X_0|X_t}\left[ \| s_\theta(X_t, t)  - \partial_{X_t} \log p_{t|0}(X_t|X_0)\|^2 \suchthat X_t\right]\right]\, dt + C'\\
+    =& \int_0^T \lambda(t) \fE_{X_0}\left[\fE_{X_t|X_0}\left[ \| s_\theta(X_t, t)  - \partial_{X_t} \log p_{t|0}(X_t|X_0)\|^2 \right]\right]\, dt + C'
+\end{align}
+\end{proof}
+
+
+% There is another alternative formula using Hutchinson estimator
+% \begin{theorem}[Sliced score matching]
+%     For mean zero and unit variance random variable $V$,
+%     \begin{align}
+%         \cL(\theta) = \int_0^T \lambda(t) \fE_{X_t}\left[ \| s_\theta(X_t, t)  + 2 \fE_V\left[\left.\frac{d}{dh} V s_{\theta} (X_t+hV, t)\right|_{h=0}\right]\right]\, dt + C
+%         \label{eq:sliced matching}
+%     \end{align}
+% \end{theorem}
+% \begin{proof}
+%     Similar to the proof of the above score matching, it is enough to consider the inner product term.
+%     \begin{align}
+%         &-\fE_{X_t}\left[\langle s_{\theta}(X_t, t), \partial_{X_t} \log p_t(X_t)\rangle\right] \nonumber\\
+%         &\quad = -\int\langle s_{\theta}(x, t), \partial_{x} \log p_t(x)\rangle p_t(x)\, dx\\
+%         &\quad = -\int\langle s_{\theta}(x, t), \partial_{x} p_t(x)\rangle \, dx\\
+%         &\quad = \int\langle \partial_x s_{\theta}(x, t), p_t(x)\rangle \, dx\\
+%         &\quad = \fE_{X_t}\left[ \partial_{X_t} s_{\theta}(X_t, t)\right] \\
+%         &\quad = \fE_{X_t}\fE_V\left[\left.\frac{d}{dh} V s_{\theta} (X_t+hV, t)\right|_{h=0}\right].
+%     \end{align}
+%     We will see in multidimensional sliced score matching why it is called sliced score matching.
+% \end{proof}
+
+In (regular) score matching, the conditional score function $\partial{X_t} \log p_{t|0}(X_t|X_0)$ is implementable for reasonable $f$ and $g$.
+For example, the Orstein-Uhlenbeck process
+\begin{align}
+    dX_t = -\beta X_t dt + \sigma dW_t
+\end{align}
+is one such example where
+\begin{align}
+    p_{t|0} (X_t|X_0) \sim \cN\left( e^{-\beta t}X_0, \frac{\sigma^2}{2\beta} (1-e^{-2\beta t})\right).
+\end{align}
+In both cases, we have
+\begin{align}
+    X_t \stackrel{(d)}{=} \gamma_t X_0 - \sigma_t \epsilon
+\end{align}
+for some $\gamma_t, \sigma_t$ and $\epsilon\sim \cN(0, I)$.
+Then, the score function is given by
+\begin{align}
+    \nabla \log p_{t|0}(X_t|X_0) =& \frac{\gamma_t X_0 - X_t}{\sigma_t^2}\\
+    \stackrel{(d)}{=}& \frac{\epsilon}{\sigma_t}.
+\end{align}
+With reparameterization trick, we can define
+\begin{align}
+    s_{\theta}(X_t, t) = \frac{\epsilon_\theta(X_t, t)}{\sigma_t}.
+\end{align}
+Finally, the loss function (of regular score matching) becomes
+    \begin{align}
+        \tilde{\cL}(\theta) 
+        =& \int_{0}^T \lambda(t) \fE_{X_0}\left[\fE_{X_t|X_0}\left[ \| s_\theta(X_t, t)  - \partial_{X_t} \log p_{t|0}(X_t|X_0)\|^2 \suchthat X_0\right]\right]\, dt.\\
+        =& \int_{0}^T \frac{\lambda(t)}{\sigma_t^2} \fE_{X_0}\left[\fE_{\epsilon}\left[ \| \epsilon_\theta(\gamma_tX_0 - \sigma_t\epsilon, t) - \epsilon\|^2 \suchthat X_0\right]\right]\, dt.\\
+        =& T\cdot  \fE_{X_0, \epsilon, t\sim\mbox{Unif$(0,T)$}}\left[\frac{\lambda(t)}{\sigma_t^2} \| \epsilon_\theta(\gamma_tX_0 - \sigma_t\epsilon, t) - \epsilon\|^2 \right].
+    \end{align}
+Effectively, the reparameterized network $\epsilon_\theta(X_t, t)$ predicts the noise $\epsilon$ from noisy data $X_t \stackrel{(d)}{=} \gamma_t X_0 - \sigma \epsilon$
+where the score function $s_\theta$ predicts the scaled noise $\sigma_t\epsilon$.
+In practice, it is more common to implement $\epsilon_\theta$ instead of $s_\theta$ (although they are equivalent up to constant scale factor).
+
+\begin{remark}
+    Note that at $t=0$, the SDE has $\sigma_t=0$ and the loss blows up.
+    In practice, a common choice is to train loss from $t=t_0>0$, i.e.,
+    \begin{align}
+        \tilde{\cL}(\theta) 
+        =& \fE_{X_0, \,\epsilon,\, t\sim\mbox{Unif$(t_0,T)$}}\left[\frac{\lambda(t)}{\sigma_t^2} \| \epsilon_\theta(\gamma_tX_0 - \sigma_t\epsilon, t) - \epsilon\|^2 \right].
+    \end{align}
+\end{remark}
+
+
+We can compute the loss function for DDPM~\cite{ho2020denoising} again.
+Recall the reparameterization trick
+\begin{align}
+\bar{\alpha}_n =&\; \prod_{i=1}^n (1-\beta_n)\\
+X^{(n)} \stackrel{(d)}{=} &\; \sqrt{\bar{\alpha}_n} X_0 - \sqrt{1-\bar{\alpha}_n} \epsilon_n\\
+\epsilon_n \sim&\; \cN(0, 1)\\
+\epsilon_\theta =&\; \sqrt{1-\bar{\alpha}_n} s_{\theta}\\
+\tilde{\lambda}_n =&\; \frac{\lambda_n \beta_n^2}{1-\bar{\alpha}_n}
+\end{align}
+
+Recall that the loss function from VLB is
+\begin{align}
+    \cL(\theta)
+    =&\sum_{n=1}^N \tilde{\lambda}_n \fE_{X^{(0)}, \epsilon\sim\cN(0, 1)}\left[\left\| \epsilon - \epsilon_{\theta}(\sqrt{\bar{\alpha}_n}X^{(0)} - \sqrt{1-\bar{\alpha}_n}\epsilon, n)\right\|^2\right]
+\end{align}
+
+This coincides with the loss derived from score matching.
+
+
+%%% (Multi-dimensional) Diffusion Model
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{(Multi-dimensional) Diffusion Model}
+
+Now, lets do the same for the multi-dimensional case.
+Let $\bX=(X_1, \dots, X_d)\in\fR^d$ be a random vector that we want to learn.
+The density function is $P_{\bX}(\bx)$.
+The variance exploding forward process is 
+\begin{align}
+    \bX^{(n)} = \begin{pmatrix} X^{(n)}_1 \\ \vdots\\bx^{(n)}_d \end{pmatrix}
+    = \begin{pmatrix} X^{(n-1)}_1 \\ \vdots\\bx^{(n-1)}_d \end{pmatrix}
+    + \begin{pmatrix} Z^{(n)}_1 \\ \vdots \\ Z^{(n)}_d \end{pmatrix}
+\end{align}
+where $\bX^{(0)} = \bX$ and $Z^{(n)}_1, Z^{(n)}_2, \dots, Z^{(n)}_d\sim\cN(0, \sigma^2)$ are independent Gaussian random variables 
+with mean zero and variable $\sigma^2$.
+As forward process progresses, the Gaussian noise dominates (again) and the terminal distribution will be approximately i.i.d.~Gaussian.
+Even for multidimensional Gaussian, estimating mean vector and covariance matrix is relatively easy.
+
+
+Similar to 1D case, we can approximate the reverse process by
+\begin{align}
+    \left(\tbX^{(n-1)} | \tbX^{(n)}=\tbx^{(n)} \right)\sim \cN\left(\tbx^{(n)} + \sigma^2 \nabla \log P_{\tbX^{(n)}}(\tbx^{(n)}), \sigma^2 I\right).
+\end{align}
+The key step is (again) approximation of $P_{\bX^{(n-1)}}(\bx)$ by 
+\begin{align}
+    P_{\tbX^{(n-1)}}(\tbx) =& P_{\tbX^{(n-1)}}(\tbx^{(n)}) + \langle \nabla P_{\tbX^{(n-1)}}(\tbx^{(n)}), \tbx-\tbx^{(n)}\rangle + O(\|\tbx-\tbx^{(n)}\|^2).
+\end{align}
+The reverse process to obtain $\tbX^{(N-1)}$ to $\tbX^{(0)}$ 
+and hoping $\tbX^{(0)} \stackrel{(d)}{\approx} X$ (similar in distribution).
+
+Recall that the result matches with Anderson's reverse SDE.
+\begin{align}
+    d\bar{\bX}_t = (f(\bar{\bX}_t, t) - g^2(t) \nabla_{\bx}\log p_t(\bar{\bX}_t))dt+g(t) d\bar{\bZ}_t.
+\end{align}
+
+Note that the Tweedie's formula also holds for multi-dimensional case.
+\begin{lemma}[Tweedie's formula, multidimension case]
+Let $\bX$ be a random vector and $\bZ$ be i.i.d.~Gaussian with zero mean and variance $\sigma^2$.
+For $\bY = \bX + \bZ$, we have
+\begin{align}
+    \Expec{\bX|\bY} = \bY + \sigma^2 \nabla_{\by} \log P_{\bY} (\by).
+\end{align}
+\end{lemma}
+
+Thus, if diffusion model is trained to learn ``denoising,'' it essentially learns
+\begin{align}
+    f_{\theta}(\bx^{(n)}, n) \approx& \Expec{\bX^{(0)}| \bX^{(n)}=\bx^{(n)}}\\
+    =& \bx^{(n)} + n\sigma^2 \nabla_{\bx^{(n)}} \log P_{\bX^{(n)}}(\bx^{(n)}).
+\end{align}
+Thus, we can approximate score function by
+\begin{align}
+    s_{\theta}(\bx^{(n)}, n) = \frac{f_{\theta}(\bx^{(n)}, n) - \bx^{(n)}}{n\sigma^2}.
+\end{align}
+
+
+
+%%% DDPM
+\subsection{(Multidimensional) DDPM~\cite{ho2020denoising}}
+DDPM formula would be the same except the noise is now i.i.d.~Gaussian with covariance $\sigma^2 I$.
+The forward and reverse processes are
+\begin{align}
+    \bX^{(n)}|\bX^{(n-1)} &\sim \cN(\sqrt{1-\beta_n}\bX^{(n-1)}, \beta_nI)\\
+    \bX^{(n-1)}|\bX^{(n)} &\approx \cN(\mu(\bX^{(n)}, n), \beta_nI)
+\end{align}
+where 
+\begin{align}
+    \mu(\bX^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}} (\bX_n + \beta_n \nabla_{\bX^{(n)}}\log P_{\bX^{(n)}} (\bX^{(n)})).
+\end{align}
+
+\begin{remark}
+    In multidimensional setup, the distribution of $\bX^{(N)}$ converges to not only Gaussian in marginal sense,
+    it converges to the i.i.d.~Gaussian distribution.
+\end{remark}
+\begin{exercise}
+    Show that $\bX^{(N)}$ converges to $\cN(0, I)$ as $N\rightarrow\infty$.
+\end{exercise}
+
+The DDPM learns
+\begin{align}
+    \mu_\theta (\bX^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}} (\bX_n + \beta_n s_\theta(\bX^{(n)}, n)).
+\end{align}
+
+We have the same loss function derived from variational lower bound:
+\begin{align}
+    L =& \sum_{n=2}^N L_{n-1}\\
+    L_{n-1} =& \frac{\beta_n}{2(1-\beta_n)(1-\bar{\alpha}_n)} \left\|\epsilon_n - \epsilon_{\theta}(\sqrt{\bar{\alpha}_n} \bX^{(0)} + \sqrt{1-\bar{\alpha}_n}\epsilon_n, n)\right\|^2
+\end{align}
+where $\bX^{(n)} \stackrel{(d)}{=} \sqrt{\bar{\alpha}_n}\bX^{(0)} + \sqrt{1-\bar{\alpha}_n} \epsilon_n$ with $\epsilon_n\sim\cN(0, I)$.
+
+Lets recap the training procedure:
+\begin{enumerate}
+    \item Pick $\bX^{(0)}$ from data
+    \item Sample $n\sim\mbox{Unif}(\{1, \dots, N\})$
+    \item Sample $\epsilon\sim \cN(0, I)$
+    \item Compute $\bX^{(n)} = \sqrt{\bar{\alpha}_n} \bX^{(0)} + \sqrt{1-\bar{\alpha}_n} \epsilon$.
+    \item Call optimizer to minimize (apply SGD) $\tilde{\lambda}_n \|\epsilon - \epsilon_\theta(\bX^{(n)}, n)\|^2$
+\end{enumerate}
+With learned $\epsilon_\theta(\bX^{(n)}, n)$, the sampling process of DDPM is 
+\begin{enumerate}
+    \item Sample $X^{(N)} \sim \cN(0, I)$
+    \item For $n= N, N-1, \dots, 1$
+    \begin{enumerate}
+        \item Sample $\bZ^{(n)} \sim \cN(0, I)$
+        \item Compute $\bX^{(n-1)} = \frac{1}{\sqrt{1-\beta_n}} \left(\bX^{(n)} - \frac{\beta_n}{\sqrt{1-\bar{\alpha}_n}}\epsilon_\theta(\bX^{(n)}, n)\right) + \sqrt{\beta_n} \bZ^{(n)}$
+    \end{enumerate}
+\end{enumerate}
+
+
+%%% SDE
+\subsection{Stochastic Differential Equation (SDE)}
+For $f(\bX_t, t)\in\fR^d, g(t) \in \fR^{d\times d}$, we have the following general SDE formula (covers VP and VE)
+\begin{align}
+    d\bX_t = f(\bX_t, t)dt + g(t) d\bZ_t
+\end{align}
+whose discretized version is
+\begin{align}
+    \bX_{k+1} = \bX_k + \Delta t f(\bX_k, k\Delta t) + g(k\Delta t)\sqrt{\Delta t}\bZ_k.
+\end{align}
+
+Recall that the solution of SDE should be a probability distribution,
+where the marginal probability distributions $\{p_t\}_{t=0}^T$ such that $X_t\sim p_t$ for $0\leq t\leq T$.
+The evolution of $\{p_t\}$ can be expressed via Fokker-Plank equation.
+\begin{align}
+    \partial_t p_t = -\nabla_{\bx}\circ(fp_t) + \frac{1}{2} \Tr(g^\intercal H_{p_t} g)
+\end{align}
+where $H_{p_t}$ is the Hessian of $p_t(\bx)$.
+
+\begin{remark}
+    If $g(t) = \rho(t) I$ for $\rho(t)\in\fR$, then FP is simply 
+    \begin{align}
+        \partial_t p_t = -\nabla_{\bx}\circ(fp_t) + \frac{\rho(t)^2}{2} \Delta p_t
+    \end{align}
+    where $\Delta p_t = \nabla\circ \nabla p_t = \sum_{i=1}^d \frac{\partial^2}{\partial_{x_i}^2}$ is Laplacian.
+\end{remark}
+
+Recall that the 1-D FP equation was.
+\begin{align}
+    \partial_t p_t = -\partial_x(fp_t) + \frac{g^2}{2}\partial_\bx^2 (p_t)
+\end{align}
+which implies
+\begin{align}
+    \partial_t p_t(\bx) = -\partial_\bx(f(\bx, t)p_t(\bx)) + \frac{g^2(t)}{2}\partial_\bx^2 (p_t(\bx)).
+\end{align}
+
+Anderson's theroem still holds and we have a reverse process with matching marginal distributions.
+\begin{align}
+    d\bar{\bX}_t = (f(\bar{\bX}_t, t) - g^2(t) \nabla_\bx\log p_t(\bar{\bX}_t))dt+g(t) d\bar{\bZ}_t.
+\end{align}
+with $\bar{\bX}_T\sim p_T$ where $d\bar{\bZ}_t$ is the reverse time Brownian motion and $p_T$ is a distribution of $\bX_T$ from forward SDE.
+Alternatively, define $\{\bY_t\}_{t=0}^T$ where $\bY_t= \bar{\bX}_{T-t}$via
+\begin{align}
+    d\bY_t =  - (f(\bY_t, T-t) - g^2(T-t)\nabla_\bx p_{T-t}(\bY_t))dt + g(T-t)d\bZ_t
+\end{align}
+with $\bY_0\sim p_T$.
+Then,
+\begin{align}
+    \bX_t \stackrel{D}{=} \bar{\bX}_t =\bY_{T-t}.
+\end{align}
+
+
+
+
+%%% Score Matching
+\subsection{Score Matching}
+We have the same score matching theorem in multidimensional case
+\begin{theorem}[(Multidimensional) Score Matching~\cite{vincent2011connection}]
+    We have equivalent formula
+    \begin{align}
+        \cL(\theta) = \int_0^T \lambda(t) \fE_{\bX_0}\left[\fE_{\bX_t|\bX_0}\left[ \| s_\theta(\bX_t, t)  - \nabla_{\bX_t} \log p_{t|0}(\bX_t|\bX_0)\|^2 \right]\right]\, dt + C
+    \end{align}
+    for some constant $C$ which are independent of $\theta$.
+\end{theorem}
+The proof is more or less the same.
+Similar to a single dimensional case, we can also derive the loss function of DDPM from score matching result.
+
+% We have seen an alternative ``sliced score matching'' in single dimension case.
+% The multidimensional version of sliced score matching requires the following lemma.
+% \begin{lemma}[Hutchinson estimator]
+%     Let $\bV\in\fR^n$ be a random vector such that
+%     \begin{align}
+%         \Expec{V_i V_j} = \delta_{ij} = \begin{cases}
+%             1 &\mbox{ if $i=j$}\\
+%             0 &\mbox{ if $i\neq j$}
+%         \end{cases}
+%     \end{align}
+%     Then, for $n\times n$ matrix $A$,
+%     \begin{align}
+%         \Expec{\bV^\intercal A \bV} = \Tr(A).
+%     \end{align}
+%     I.e., $\bV^\intercal A \bV $  is an unbiased estimator of $\Tr(A)$.
+% \end{lemma}
+% If we do not have an explicit formula of matrix $A$, we can use Hutchinson's estimator.
+% Random vector $\bV$ can be i.i.d.~Gaussian $\cN(0, 1)$, or i.i.d.~Bernoulli($1/2$).
+% \begin{proof}
+% \begin{align}
+%         \Expec{\bV^\intercal A \bV} =& \Expec{\Tr(\bV^\intercal A \bV)} \\
+%         =& \Expec{\Tr(A \bV\bV^\intercal )} \\
+%         =& \Tr(\Expec{A \bV\bV^\intercal }) \\
+%         =& \Tr(A\Expec{\bV\bV^\intercal }) \\
+%         =& \Tr(A).
+% \end{align}
+% \end{proof}
+
+% Now, we are ready for multidimensional sliced score matching~\cite{song2020sliced}.
+% \begin{theorem}[Sliced score matching (multi dimensional)]
+%     \begin{align}
+%         \cL(\theta) = \int_0^T \lambda(t) \fE_{X_t}\left[ \| s_\theta(X_t, t)  + 2 \fE_V\left[\left.\frac{d}{dh} \bV^\intercal s_{\theta} (X_t+h\bV, t)\right|_{h=0}\right]\right]\, dt + C
+%     \end{align}
+% \end{theorem}
+
+% \begin{proof}
+%     Similar to the proof of the above score matching, it is enough to consider the inner product term.
+%     \begin{align}
+%         -\fE_{\bX_t}\left[\langle s_{\theta}(\bX_t, t), \nabla_{\bX_t} \log p_t(\bX_t)\rangle\right]
+%         =& -\int\langle s_{\theta}(\bx, t), \nabla_{\bx} \log p_t(\bx)\rangle p_t(\bx)\, d\bx\\
+%         =& -\int\langle s_{\theta}(\bx, t), \nabla_{\bx} p_t(\bx)\rangle \, d\bx\\
+%         =& \int\langle \nabla\cdot s_{\theta}(\bx, t), p_t(\bx)\rangle \, d\bx \label{eq:int by part}\\
+%         =& \int  \nabla\cdot s_{\theta}(\bx, t), p_t(\bx) \, d\bx \\
+%         =& \fE_{\bX_t}\left[ \nabla \cdot s_{\theta}(\bX_t, t)\right] \\
+%         =& \fE_{\bX_t}\left[ \Tr(D_\bx s_{\theta}(\bX_t, t))\right] \\
+%         =& \fE_{\bX_t}\left[ \fE_{\bV}[\bV^\intercal D_\bx s_{\theta}(\bX_t, t))\bV]\right] \\
+%         =& \fE_{\bX_t} \fE_{\bV}\left[\bV^\intercal \left.\frac{d}{dh} s_{\theta}(\bX_t+h \bV, t))\right|_{h=0}\right].
+%     \end{align}
+%     where \eqref{eq:int by part} is from integration by part
+%     \begin{align}
+%         \nabla \cdot (u\bV) = u(\nabla\cdot V) + \nabla u \cdot \bV.
+%     \end{align}
+% \end{proof}
+
+
+
+
+%%% DDIM
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Denoising Diffusion Implicit Model (DDIM)~\cite{song2020denoising}}
+\begin{figure}
+    \centering
+    \includegraphics[width=.95\textwidth]{images/ddim.png}
+    \caption{DDPM~\cite{ho2020denoising} vs.~DDIM~\cite{song2020denoising}}
+\end{figure}
+Note that the DDPM objective only depends on the marginal $q(X^{(n)}|X^{(0)})$,
+and it does not depend on the joint distribution of entire $X^{(0:n)}$.
+Thus, we can modify the generation distribution $q$ while having the same marginal $q(X^{(n)}|X^{(0)}) = \cN(\sqrt{\bar{\alpha}_n} X^{(0)}, (1-\bar{\alpha}_n)I)$.
+
+The DDIM has non-Markovian forward process (what is Markovian?).
+Given the sample $X^{(0)}=X$, the forward process $q$ is
+\begin{align}
+    q(X^{(N)}|X^{(0)}) =&  \cN(\sqrt{\bar{\alpha}_N} X^{(0)}, (1-\bar{\alpha}_N)I)\\
+    q(X^{(n)}|X^{(n+1)}, X^{(0)}) =& \cN(\sqrt{\bar{\alpha}_n} X^{(0)} + \frac{\sqrt{1-\bar{\alpha}_n 
+    - \sigma_{n+1}^2}}{\sqrt{1-\bar{\alpha}_{n+1}}} (X^{(n+1)}-\sqrt{\bar{\alpha}_{n+1}} X^{(0)}), \sigma_{n+1}^2 I)\label{eq:ddim forward}
+\end{align}
+for $\sigma_n\geq 0$.
+\begin{exercise}
+    Show that \eqref{eq:ddim forward} matches the marginal distribution of DDPM.
+\end{exercise}
+If we have $\sigma_n \equiv 0$, then the forward process is deterministic.
+
+DDIM trains the error network $\epsilon_{\theta}(X^{(n)}, n)$ that predicts $\epsilon_n=Z^{(n)}$ where
+\begin{align}
+    X^{(n)} \stackrel{\Delta}{=} \sqrt{\alpha}_n X^{(0)} + \sqrt{1-\bar{\alpha}_n} Z^{(n)}.
+\end{align}
+Since we can estimate $\hat{X}^{(0)}$ by
+\begin{align}
+    \hat{X}^{(0)} = \frac{1}{\sqrt{\bar{\alpha}_n}} (X^{(n)} - \sqrt{1-\bar{\alpha}_n} \epsilon_{\theta}(X^{(n)}, n)),
+\end{align}
+DDIM sampling can be done by
+\begin{align}
+    p_{\theta}(X^{(n)}|X^{(n+1)}) =& q(X^{(n)}|X^{(n+1)}, \hat{X}^{(0)}).
+\end{align}
+In other words,
+\begin{align}
+    X^{(n)} =& \sqrt{\bar{\alpha}_{n}} \left(\frac{X^{(n+1)} - \sqrt{1-\bar{\alpha}_{n+1}} \epsilon_{\theta} (X^{(n+1)}, n+1)}{\bar{\alpha}_{n+1}}\right) \nonumber\\
+    &+ \sqrt{1-\bar{\alpha}_n - \sigma^2_{n+1}} \epsilon_{\theta}(X^{(n+1)}, n+1) + \sigma_n Z^{(n)}.
+\end{align}
+Then, the sampling process becomes deterministic if $\sigma_n\equiv 0$.
+This deterministic generation is called discretization of the ODE (ordinary differential equation) sampling.
+
+Note that training a Denoising Diffusion Implicit Model (DDIM) can be done in exactly the same manner 
+as a Denoising Diffusion Probabilistic Model (DDPM), with the difference only in the sampling process.
+
+
+
+
+
+
+
+%%% Guidance
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Guidance}
+Consider the case where the diffusion model is trained on dataset with various labels (e.g., ImageNET~\cite{deng2009imagenet}, CIFAR10~\cite{krizhevsky2009learning}).
+Then, we may want to generate a sample with specific label $y$, i.e., sample from $P_{X|Y}(x|y)$.
+Moreover, in multimodal models such as DALL$\cdot$E2 that generates an image from prompt,
+we may also want to generate a specific image instead of random image from $P_X$.
+A common technique to generate a specific image, conditioned on label or prompt, is guidance.
+
+%%% Classifier Guidance
+\subsection{Classifier Guidance}
+Let $Y$ be the class label of $\bX$ and $(\bX, Y)\sim P_{\bX,Y}$.
+One naive approach is to train score model $s_{\theta}(\bX|Y=y) = \nabla_{\bx} \log P_{\bX|Y}(\bx|y)$ for all $y$
+and generate sample according to $P_{\bX|Y}(\bx|y)$.
+More precisely, we want to run a reverse process with $\nabla_{\bx^{(n)}} \log P_{\bX^{(n)}|Y}(\bx^{(n)}|y)$  instead of $\nabla_{\bx^{(n)}} \log P_{\bX^{(n)}}(\bX^{(n)})$.
+However, this requires training score networks multiple times (for all $y$).
+
+From the Bayes' rule, we have
+\begin{align}
+    P_{\bX|Y}(\bx|y) =& \frac{P_{\bX}(\bx)P_{Y|\bX}(y|\bx)}{P_Y(y)}\\
+    \nabla_x \log P_{\bX|Y}(\bx|y) =& \nabla_{\bx} \log P_\bX(\bx) + \nabla_{\bx}\log P_{Y|\bX}(y|\bx).
+\end{align}
+Thus, 
+\begin{align}
+    \nabla_{\bx^{(n)}}\log P_{\bX^{(n)}|Y}(\bx^{(n)}|y) =&     \nabla_{\bx^{(n)}}\log {P_{\bX^{(n)}}(\bx^{(n)})}+    \nabla_{\bx^{(n)}}\log{P_{Y|\bX^{(n)}}(y|\bx^{(n)})}.
+\end{align}
+
+The idea of classifier guidance is re-use the pretrained score model
+\begin{align}
+    s_{\theta}(\bX^{(n)}, n) = \nabla_{\bX^{(n)}} \log P_{\bX^{(n)}} (\bX^{(n)}).
+\end{align}
+% Since $\bX^{(n)} - \bX^{(0)} - Y$ forms a Markov chain, we have
+% \begin{align}
+%     P_{\bX^{(n)}} (\bX^{(n)}|Y) = P_{\bX^{(n)}}(\bX^{(n)}|\bX^{(0)}, Y)P_0(\bX^{(0)}|Y)
+%     = P_{\bX^{(n)}}(\bX^{(n)}|\bX^{(0)})P_0(\bX^{(0)}|Y)
+% \end{align}
+% \noa{marginalize?}
+
+The classifier guidance assumes that we can train a time-dependent classifier which predicts the label $Y$ based on $\bX^{(n)}$, i.e., it provides
+\begin{align}
+    c_{\phi}(\bX^{(n)}, Y, n) \approx P_{\bX^{(n)}}(Y|\bX^{(n)}).
+\end{align}
+
+\begin{remark}
+    In original SDE paper~\cite{song2021scorebased},
+    the authors claimed that the output of the classifier $Y^{(n)}$ can be approximately equal to true label $y$ for $n$ small.
+    Intuition is that it is enough to approximate $Y^{(n)}\approx y$ for small $n$ since the generating process is roughly
+    \begin{itemize}
+        \item at early stage of generation (large $n$), it roughly generate the structure (not specific to label)
+        \item at the end of generation process (for small $n$), it guide to a sample corresponds to a specific label $y$.
+    \end{itemize}
+    
+\end{remark}
+
+Except the fact that $c_\phi$ takes an additional input $n$ (indicates the noise level of $\bX^{(n)}$) it is a regular classifier.
+We can train as if it is a regular classifier.
+The generation can be done via reverse SDE process (or discretized version of it)
+\begin{align}
+    d\bar{\bX}^{(t)} = (f - g^2 (\nabla_{\bar{\bX}^{(t)}} \log p_t (\bar{\bX}^{(t)}) + \nabla_{\bar{\bX}^{(t)}} \log p_t (Y|\bar{\bX}^{(t)}))dt + g d\bar{\bZ}^{(t)}
+\end{align}
+where we replace the conditional distribution by the estimate from classifier
+\begin{align}
+    d\bar{\bX}^{(t)} = (f - g^2 (\nabla_{\bar{\bX}^{(t)}} \log p_t (\bar{\bX}^{(t)}) + \nabla_{\bar{\bX}^{(t)}} c_\phi (\bX^{(t)}, Y, t) dt + g d\bar{\bZ}^{(t)}.
+\end{align}
+
+In practice, it helps to scale the guidance term by a constant factor $\omega>1$~\cite{dhariwal2021diffusion}.
+\begin{align}
+    d\bar{\bX}^{(t)} = (f - g^2 (\nabla_{\bar{\bX}^{(t)}} \log p_t (\bar{\bX}^{(t)}) 
+    + \omega \nabla_{\bar{\bX}^{(t)}} \log p_t (Y|\bar{\bX}^{(t)}))dt + g d\bar{\bZ}^{(t)}
+\end{align}
+
+%%% Inpainting
+\subsection{Inpainting}
+\begin{figure}
+    \centering
+    \includegraphics[width=.9\textwidth]{images/inpainting.png}
+    \caption{inpainting and colorization~\cite{song2021scorebased}}
+\end{figure}
+Let $\Omega$ be a pixel subsampling operation where $Y = \Omega(X^{(0)})$.
+For remaining part, we use $\bar{\Omega}$.
+Our goal is to generate the remaining part of image where $Y = \Omega(X^{(0)})$ is fixed.
+Let $Z^{(t)} = \bar{\Omega}(X^{(t)})$, then it follows the same SDE
+\begin{align}
+    dZ^{(t)} = \bar{f}(Z^{(t)}, t) dt + \bar{g}(t) d\bar{W}^{(t)},    
+\end{align}
+where $Z_0 = \bar{\Omega}(X^{(0)})$, $\bar{f} = \bar{\Omega}(f), \bar{g} = \bar{\Omega}(g)$, and $\bar{W}^{(t)} = \bar{\Omega}(W^{(t)})$.
+Note that the Brownian motion is coordinate-wise independent (we are adding i.i.d.~Gaussian noise to each pixel),
+$\bar{W}^{(t)}$ is simply the lower dimensional Brownian motion.
+Since we want conditional sampling given $Y$, we have
+\begin{align}
+    &p_t (Z^{(t)}|\Omega(X^{(0)}) = Y)\\
+    &=\int p_t(Z^{(t)}|\Omega(X^{(t)}), \Omega(X^{(0)})) p_t(\Omega(X^{(t)})|\Omega(X^{(0)}))\, d\Omega(X^{(t)})\\
+    &=\fE_{\Omega(X^{(t)})\sim p_t(\Omega(X^{(t)})|\Omega(X^{(0)}))}\left[p_t(Z^{(t)}|\Omega(X^{(t)}), \Omega(X^{(0)})) \right]\\
+    &\approx\fE_{\Omega(X^{(t)})\sim p_t(\Omega(X^{(t)})|\Omega(X^{(0)}))}\left[p_t(Z^{(t)}|\Omega(X^{(t)})) \right]\\
+    &\approx p_t(Z^{(t)}|\hat{\Omega}(X^{(t)}))
+\end{align}
+where $\hat{\Omega}(X^{(t)})$ is noise corrupted sample of $\Omega(X^{(0)})$.
+The first approximation is from the observation that $\Omega(X^{(t)})$ contains enough information  of $Z^{(t)}$ compared to $\Omega(X^{(0)})$.
+
+The second approximation is a single sample approximation of the expected value.
+Thus, we guide the sampling process using
+\begin{align}
+    \nabla_{Z^{(t)}} \log p_t(Z^{(t)}|\Omega(X^{(0)})=Y) 
+    &\approx \nabla_{Z^{(t)}} \log p_t(Z^{(t)}|\hat{\Omega}(X^{(t)}))\\
+    &= \nabla_{Z^{(t)}} \log p_t([Z^{(t)};\hat{\Omega}(X^{(t)})])
+\end{align}
+Note $[Z^{(t)};\hat{\Omega}(X^{(t)})]$ forms a full dimensional vector where we can compute the score function.
+Thus, for $Y = \Omega(X^{(0)})$, the (discretized) inpainting can be done by
+\begin{enumerate}
+    \item Sample  $X^{(N)}$
+    \item For $n = N, N-1, \cdots, 1$
+    \begin{enumerate}
+        \item Sample $\epsilon_n \sim \cN(0, I)$
+        \item $\zeta_n = \beta_n Y + \gamma_n \epsilon_n$
+        \item Sample $\epsilon'_n \sim \cN(0, I)$
+        \item Sample via
+        \begin{align}
+            \bar{Z}^{(n-1)} = \bar{Z}^{(n)} - \Delta t (-\beta \bar{Z}^{(n)} - \sigma^2 \bar{\Omega}(s_{\theta}([\bar{Z}^{(n)}; \zeta_n], n\Delta t)))
+                +\sigma\sqrt{\Delta n}\epsilon'_n
+        \end{align}
+    \end{enumerate}
+\end{enumerate}
+
+
+%%% Classifier-free Guidance
+\subsection{Classifier-free Guidance~\cite{ho2022classifier}}
+Recall that the classifier guidance requires to to train a classifier,
+where classifier takes $\bX^{(t)}$ as an input for various noise level $\sigma^2_t$.
+
+Given the trained score function, classifier guidance is based on 
+\begin{align}
+    d\bar{\bX}^{(t)} = (f - g^2 (\nabla_{\bar{\bX}^{(t)}} \log p_t (\bar{\bX}^{(t)}) 
+    + \omega \nabla_{\bar{\bX}^{(t)}} \log p_t (Y|\bar{\bX}^{(t)}))dt + g d\bar{\bZ}^{(t)}
+\end{align}
+which replaced the conditional score function by
+\begin{align}
+\nabla_{\bar{\bX}^{(t)}} \log p_t (\bar{\bX}^{(t)} ) + \omega \nabla_{\bar{\bX}^{(t)}} \log p_t (Y|\bar{\bX}^{(t)}))dt
+\end{align}
+which is also equivalent to
+\begin{align}
+\nabla_{\bar{\bX}^{(t)}} \log p_t (\bar{\bX}^{(t)} |Y ) + (\omega-1) \nabla_{\bar{\bX}^{(t)}} \log p_t (Y|\bar{\bX}^{(t)}))dt.
+\end{align}
+
+Classifier guidance rely on additional classifier, which is another neural network to train and compute the gradient for guidance.
+Instead, classifier-free guidance is an alternative method of modifying conditional score but without extra classifier.
+The key idea is to train a single model that learns unconditional score function $\nabla_{\bx^{(n)}} \log P_{\bX^{(n)}}(\bx^{(n)})$ and
+conditional score function $\nabla_{\bx^{(n)}} \log P_{\bX^{(n)}|y}(\bx^{(n)}|y)$ for all $y$.
+More precisely, the score function that we want to train is $\epsilon_\theta(\bX^{(n)}, y)$ where
+$\epsilon_\theta(\bX^{(n)}, y)$ corresponds to the conditional score function with label $y$
+and we allow $y=\emptyset$ so that $\epsilon_\theta(\bX^{(n)}, \emptyset)$ represents the unconditional score function.
+
+Then, the sampling is performed using
+\begin{align}
+    \omega \epsilon_{\theta}(\bX^{(n)}, y) -  (\omega-1) \epsilon_{\theta}(\bX^{(n)}, \emptyset) 
+\end{align}
+for weight parameter $\omega > 1$.
+\begin{remark}
+    A possible interpretation of classifier-free guidance is that we guide a sample under label $y$ with weight $\omega$,
+    then pull back the sample with unconditional score function with weight $\omega-1$.
+    Overall, the sample moved towards the label $y$ with effective weight of 1.
+\end{remark}
+
+Note that the classifier guidance does not require to train score function.
+However, the training procedure is now modified for classifier-free guidance.
+Given the sample $(\bX, Y)$, we replace $Y=\emptyset$ with given probability (to learn unconditional score function as well).
+Then, similar to the original DDPM training, we minimize
+\begin{align}
+     \tilde{\lambda}_n \| \epsilon - \epsilon_{\theta}(\bX^{(n)}, y, n)\|^2.
+\end{align}
+
+% The classifier guidance with weight parameter $\omega$, we sample from the following effective distribution
+% \begin{align}
+%     P(\bX|Y) \propto P(
+% \end{align}
+% \noa{TBD}
+
+
+\section{Discrete Diffusion Models}
+\subsection{Discrete-Time Discrete Diffusion}
+% Discrete state space에서도 diffusion generative model을 만들려 함. Diffusion을 하려면 data에 noise를 주어 input data에 상관없이 항상 noised된 상태로 수렴해야 함. 근데 discrete data는 그들끼리 연산이 불가능하기 때문에(예: 단어) condtinuous의 경우처럼 noise를 주지 못함. 그래서 discrete의 경우는 data간의 transition을 noising process로 삼음.
+
+% State space를 \(\cX=\{1,2,\ldots,K\}\)라 하고 time \(t=0,1,\ldots\)일 때의 data를 \(X_t\)로 표시하고 대응되는 probability mass vector를 \(p_t\)라 하자. 즉,
+% \[
+% p_t= \left[ \begin{matrix}
+%     \Pr(X_t=1) \\
+%     \Pr(X_t=2) \\
+%     \vdots \\
+%     \Pr(X_t=K)
+% \end{matrix} \right] \in [0,1]^K
+% \]
+% Transition probability로 noise를 준다는 말은 모든 \(\Pr(X_{t+1}=y\,|\,X_t=x)\)를 정의하는 것이다. \(\Pr(X_{t+1}=y\,|\,X_t=x)\)를 어떤 matrix \(Q_t\)의 \((y,x)\)-entry로 생각하면 다음과 같이 표현할 수 있다:
+% \begin{align*}
+%     p_{t+1}=Q_tp_t, \quad t=0,1,2,\ldots
+% \end{align*}
+% 이런 의미에서 \(Q_t\)를 \emph{transition matrix}라 부른다. 
+
+% 위 과정이 적절한 diffusion noising process가 되기 위해선 모든 \(p_t\)가 valid한 probability mass vector여야 하며 \(p_t\)가 수렴해야 한다. 즉,
+% \[
+% \exists \;\pi \quad\text{s.t.}\quad \forall p_0, \quad p_T=Q_T\cdots Q_2 Q_1 p_0 \rightarrow \pi \quad\text{as}\quad T\rightarrow\infty
+% \]
+
+% 가장 흔한 \(Q_t\)의 선택은 uniform과 absorb(mask). 두 경우 모두 \(Q_t=Q\) for all \(t\)를 가정하며,
+% \begin{equation*}
+%     Q_\text{uniform} = \left[ \begin{matrix}
+%         1-\epsilon & \frac{\epsilon}{K-1} & \cdots & \frac{\epsilon}{K-1} \\
+%         \frac{\epsilon}{K-1} & 1-\epsilon & \cdots & \frac{\epsilon}{K-1} \\
+%         \vdots & \vdots & \ddots & \vdots \\
+%         \frac{\epsilon}{K-1} & \frac{\epsilon}{K-1} & \cdots & 1-\epsilon
+%     \end{matrix} \right],
+%     \quad Q_\text{absorb} = \left[ \begin{matrix}
+%         1-\epsilon & 0 & \cdots & 0 & 0 \\
+%         0 & 1-\epsilon & \cdots & 0 & 0 \\
+%         \vdots & \vdots & \ddots & \vdots & \vdots \\
+%         0 & 0 & \cdots & 1-\epsilon & 0 \\
+%         \epsilon & \epsilon & \cdots & \epsilon & 0
+%     \end{matrix} \right]
+% \end{equation*}
+% 즉 Uniform과 Absorb는 각각 다음의 transition을 갖는다:
+% \begin{align*}
+%     \text{Uniform:}\quad &\Pr(X_{t+1}=y\,|\,X_t=x) = \begin{cases}
+%         1-\epsilon & \text{if}\quad y=x \\
+%         \frac{\epsilon}{K-1} & \text{if}\quad y\neq x
+%     \end{cases} \\
+%     \text{Absorb:}\quad &\Pr(X_{t+1}=y\,|\,X_t=x) = \begin{cases}
+%         1-\epsilon & \text{if}\quad y=x\neq [\bM] \\
+%         \epsilon & \text{if}\quad x\neq y=[\bM] \\
+%         1 & \text{if}\quad x=y=[\bM] \\
+%         0 & \text{otherwise}
+%         \end{cases}
+% \end{align*}
+% Note that \(Q_\text{uniform}\)의 크기는 \(K\times K\), \(Q_\text{absorb}\)의 크기는 \((K+1)\times(K+1)\). Absorb의 size는 mask token \([\bM]\) 때문.
+
+We aim to define a diffusion generative model in a discrete state space. To this end, it is necessary to introduce noise into the input data such that, as time \(t\rightarrow\infty\) the process converges to a common noised distribution that is independent of the input.
+However, unlike in the continuous setting, discrete data does not admit arithmetic operations such as addition, making it impossible to inject noise in the same manner as in continuous diffusion models.
+
+Thus, in the case of discrete data, we consider probabilistic transitions between data points as the noising process.
+
+Let the state space be \(\mathcal{X} = \{1, 2, \ldots, K\}\) and let \(X_t\) denote the data at time \(t = 0, 1, 2, \ldots\). Let \(p_t\) be the corresponding probability mass vector, i.e.,
+\[
+p_t= \left[ \begin{matrix}
+    \Pr(X_t=1) \\
+    \Pr(X_t=2) \\
+    \vdots \\
+    \Pr(X_t=K)
+\end{matrix} \right] \in [0,1]^K
+\]
+
+Defining transition probabilities means specifying all \(\Pr(X_{t+1} = y \mid X_t = x)\). We may regard \(\Pr(X_{t+1} = y \mid X_t = x)\) as the \((y, x)\)-entry of some matrix \(Q_t\), in which case we can express the update of the probability vector as:
+\[
+p_{t+1} = Q_t p_t, \quad t = 0,1,2,\ldots
+\]
+For this reason, we refer to \(Q_t\) as the \emph{transition matrix}.
+
+For this process to serve as a valid diffusion noising process, each \(p_t\) must remain a valid probability mass vector, and the sequence \(p_t\) should converge to a stationary distribution. That is,
+\[
+\exists \;\pi \;\,\text{s.t.}\quad \forall p_0, \; p_T = Q_T \cdots Q_2 Q_1 p_0 \rightarrow \pi \;\,\text{as} \;\, T \rightarrow \infty
+\]
+
+Two of the most common choices for the transition matrix \(Q_t\) are the \emph{uniform} and \emph{absorbing (masking)} types. In both cases, we typically assume a time-homogeneous setting where \(Q_t = Q\) for all \(t\).
+
+\paragraph{Uniform Transition}
+
+\[
+Q_\text{uniform} = \left[ \begin{matrix}
+    1-\epsilon & \frac{\epsilon}{K-1} & \cdots & \frac{\epsilon}{K-1} \\
+    \frac{\epsilon}{K-1} & 1-\epsilon & \cdots & \frac{\epsilon}{K-1} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    \frac{\epsilon}{K-1} & \frac{\epsilon}{K-1} & \cdots & 1-\epsilon
+\end{matrix} \right]
+\]
+
+That is, the transition probabilities are given by:
+\[
+\Pr(X_{t+1} = y \mid X_t = x) = \begin{cases}
+    1 - \epsilon & \text{if } y = x \\
+    \frac{\epsilon}{K - 1} & \text{if } y \ne x
+\end{cases}
+\]
+
+\paragraph{Absorbing (Masking) Transition}
+
+\[
+Q_\text{absorb} = \left[ \begin{matrix}
+    1 - \epsilon & 0 & \cdots & 0 & 0 \\
+    0 & 1 - \epsilon & \cdots & 0 & 0 \\
+    \vdots & \vdots & \ddots & \vdots & \vdots \\
+    0 & 0 & \cdots & 1 - \epsilon & 0 \\
+    \epsilon & \epsilon & \cdots & \epsilon & 1
+\end{matrix} \right]
+\]
+
+Accordingly, the transition probabilities are defined as:
+\[
+\Pr(X_{t+1} = y \mid X_t = x) = \begin{cases}
+    1 - \epsilon & \text{if } y = x \ne [\bM] \\
+    \epsilon & \text{if } x \ne y = [\bM] \\
+    1 & \text{if } x = y = [\bM] \\
+    0 & \text{otherwise}
+\end{cases}
+\]
+
+Here, \([\bM]\) denotes a special \emph{mask token}, which functions as an \emph{absorbing state} such that once a token is masked, it remains masked in all future timesteps. As a result, the size of \(Q_\text{absorb}\) is \((K + 1) \times (K + 1)\), reflecting the inclusion of the mask token.
+
+
+\subsection{Score Entropy Discrete Diffusion Model}
+
+As in Gaussian diffusion, where the discrete-time forward process can be extended to a continuous-time stochastic differential equation (SDE), the discrete diffusion forward process discussed in the last subsection can similarly be extended to a continuous-time formulation. This yields the following ordinary differential equation (ODE):
+\[
+\frac{dp_t}{dt}=Q_t p_t, \quad p_0=p_\text{data}
+\]
+
+To ensure that this defines a valid noising process, certain restrictions must be imposed. Also, closed-form expressions of \(Q_t\) that generalize the uniform and absorbing diffusion processes are known (we omit the details here).
+
+The reverse process corresponding to the above forward process can be analytically described by:
+\begin{equation*}
+        \frac{dp_{T-t}}{dt}=\overline{Q}_{T-t}p_{T-t}, \;\text{ where}\; \begin{cases}
+        \overline{Q}_t(y,x)=\dfrac{p_t(y)}{p_t(x)}Q_t(x,y) \;\text{ if}\;\; x \neq y \\
+        \overline{Q}_t(x,x)=-\sum_{y \neq x}\overline{Q}_t(y,x)
+    \end{cases}
+\end{equation*}
+
+The entries of the reverse transition rate matrix \(\overline{Q}_t\) can be interpreted as follows. For the case \(y \neq x\), the reverse transition probability is derived from Bayes' rule:
+\[
+p_{t-\Delta t|t}(y|x)=p_{t|t-\Delta t}(x|y)\frac{p_{t-\Delta t}(y)}{p_t(x)}
+\]
+By dividing both sides by \(\Delta t\) and taking the limit as \(\Delta t \rightarrow 0\), we obtain the expression \(\overline{Q}_t(y,x)=\dfrac{p_t(y)}{p_t(x)}Q_t(x,y)\). The diagonal element \(\overline{Q}_t(x,x)=-\sum_{y \neq x}\overline{Q}_t(y,x)\) ensures mass conservation of \(p_t\), i.e., it ensures \(\sum_{i=1}^K p_t(i)=1\) at all times.
+
+In continuous diffusion, sampling is performed by estimating the score function \( \nabla_{\mathbf{x}_t} \log P_{\mathbf{X}_t}(\mathbf{x}_t) \).
+Analogously, in discrete diffusion, modeling the reverse process requires
+estimating the marginal ratio \(\frac{p_t(y)}{p_t(x)}\), which serves as the discrete counterpart of the score function and is denoted by \(s(x,t)_y\).
+Explicitly, the score function is given by:
+\[
+s(x,t)= \left[ \begin{matrix}
+    \frac{p_t(1)}{p_t(x)} \\
+    \frac{p_t(2)}{p_t(x)} \\
+    \vdots \\
+    \frac{p_t(K)}{p_t(x)}
+    \end{matrix} \right] \in [0,\infty)^K
+\]
+The score function \(s(x,t)\) is then approximated by a neural network \(s_\theta(x,t)\).
+
+One early attempt to learn this score function was the method of \emph{Concrete Score Matching}~\cite{meng2022concrete}. Analogous to the \(\ell^2\) loss used in continuous diffusion,
+\[
+\|s_\theta(\bx_t,t)-\nabla_{\bx_t} \log P_{\bX_t}(\bx_t)\|^2,
+\]
+concrete score matching minimizes the following objective:
+\[
+\sum_{y\neq x} \left(s_\theta(x_t,t)_y-\frac{p_t(y)}{p_t(x)}\right)^2.
+\]
+However, this squared error loss does not penalize negative values of \(s_\theta(x_t,t)_y\), which can hinder learning performance.
+
+A successful objective for learning the ratio \(\frac{p_t(y)}{p_t(x)}\) is the \textbf{Score Entropy Loss}, first introduced in \cite{lou2024discretediffusionmodelingestimating}, awarded Best Paper at ICML 2024:
+\[
+\cL_\text{SE}(\theta)=\fE_{x_t\sim p_t}\left[ \sum_{y\neq x_t} w_{x_t,y}\left(s_\theta(x_t,t)_y-\frac{p_t(y)}{p_t(x)}\log s_\theta(x_t,t)_y 
++C\left(\frac{p_t(y)}{p_t(x)}\right) \right) \right]
+\]
+Here, \(w_{x_t,y}\) are arbitrary nonnegative weights, and \(C(a)=a(\log a-1)\). It can be shown that if \(w_{x_t,y}>0\) for all \(x_t\) and \(y\), the minimizer \(\theta^\star\) of this loss satisfies \(s_{\theta^\star}(x_t,t)_y=\frac{p_t(y)}{p_t(x)}\). Moreover, we can see that the term \(\log s_\theta(x_t,t)_y\) prevents any nonpositive estimates of the score function.
+
+Nevertheless, since the ratio \(\frac{p_t(y)}{p_t(x)}\) is unknown, the score entropy loss is intractable in practice. An alternative yet equivalent formulation is the following \emph{Implicit Score Entropy Loss}:
+\[
+\cL_\text{ISE}(\theta) = \fE_{x_t\sim p_t} \left[ \sum_{y\neq x_t} w_{x_t,y}s_\theta(x_t,t)_y - w_{y,x_t}\log s_\theta(y,t)_{x_t} \right]
+\]
+However, Monte Carlo estimation of this loss requires sampling an \(x_t\) and evaluating \(s_\theta(y,t)_{x_t}\) for all \(y\neq x_t\), which becomes intractable in high-dimensional settings.
+A commonly used approximation is to sample \(y\) uniformly, but this increases the variance of the estimator and may hinder training stability.
+This issue parallels challenges encountered in continuous diffusion, which have been addressed through sliced score matching.
+Motivated by this, we introduce an equivalent but tractable objective: the \emph{Denoising Score Entropy Loss}: \(\cL_\text{DSE}(\theta)\) is defined to be
+\begin{align*}
+    \fE_{x_0\sim p_0,\,x_t\sim p_{t|0}(\cdot|x_0)}\left[ \sum_{y\neq x_t} w_{x_t,y} \left(s_\theta(x_t,t)_y - \frac{p_{t|0}(y|x_0)}{p_{t|0}(x_t|x_0)} \log s_\theta(x_t,t)_y \right) \right]
+\end{align*}
+
+
+This loss is tractable and provably equivalent to the original score entropy loss, enabling effective approximation of \(s_\theta\) to the true marginal ratio.
+
+Using the learned score function, one can define a parametrized reverse process and employ it for reverse-time sampling.
+
+\subsection{Practical Sequence Space}
+
+In practice, the state space we consider typically takes the form of a sequence space:
+\[
+\mathcal{X} = \{1, 2, \ldots, K\}^L,
+\]
+where \(1, 2, \ldots, K\) represent vocabulary tokens and \(L\) denotes the sequence length.  
+We denote a sequence by a boldface vector \(\mathbf{x}_t\), and each token at position \(i\) by \(x_t^i\), so that \(\mathbf{x}_t = x_t^1 x_t^2 \cdots x_t^L\).
+
+A key computational challenge in this setting is that the transition rate matrix \(Q_t\) for the forward ODE has exponential size, namely \(K^L \times K^L\), leading to intractability.  
+This issue can be mitigated by assuming that each token is perturbed independently according to an identical transition rate matrix of the form \(Q_t^\text{tok} = \sigma(t) Q^\text{tok}\).  
+Under this assumption, simulation of the forward process becomes significantly more tractable.
+
+Moreover, this assumption implies the following sparsity condition:
+\[
+Q_t(\mathbf{y}, \mathbf{x}) = 0 \quad \text{if} \quad d_\text{H}(\mathbf{y}, \mathbf{x}) \geq 2,
+\]
+where \(d_\text{H}\) denotes the Hamming distance (i.e., the number of differing tokens between two sequences).  
+This follows from the fact that, under the ODE framework, the probability of more than one token changing simultaneously in an infinitesimal time interval is negligible compared to the probability of a single-token change.
+
+Turning to the reverse process, the reverse transition rate is given by:
+\[
+\overline{Q}_t(\mathbf{y}, \mathbf{x}) = \frac{p_t(\mathbf{y})}{p_t(\mathbf{x})} Q_t(\mathbf{x}, \mathbf{y}) \quad \text{if} \quad \mathbf{x} \neq \mathbf{y}.
+\]
+To approximate \(\overline{Q}_t(\mathbf{y}, \mathbf{x})\), we substitute the unknown marginal ratio \(\frac{p_t(\mathbf{y})}{p_t(\mathbf{x})}\) with the learned score function \(s_\theta(\mathbf{x}, t)_{\mathbf{y}}\).  
+However, since \(Q_t(\mathbf{x}, \mathbf{y}) = 0\) whenever \(d_\text{H}(\mathbf{x}, \mathbf{y}) \geq 2\), it follows that \(\overline{Q}^\theta_t(\mathbf{y}, \mathbf{x}) = 0\) as well, and thus the corresponding \(s_\theta(\mathbf{x}, t)_{\mathbf{y}}\)'s are not required for modeling the reverse process.
+
+Consequently, it is sufficient to train the score network only for sequence pairs \((\mathbf{x}, \hat{\mathbf{x}})\) such that \(d_\text{H}(\mathbf{x}, \hat{\mathbf{x}}) = 1\).
+
+
+
+{\small
+\bibliographystyle{plain}
+\bibliography{lecturenote_ref}
+% \bibliography{refs}
+}
+
+\end{document}

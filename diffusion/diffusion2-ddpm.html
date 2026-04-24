@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion 2 — DDPM</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+/* Deck-specific: numbered-exercise list + step lists for algorithms. */
+.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
+.exercise-list > li {
+  counter-increment: exn;
+  padding: 14px 18px 14px 64px;
+  position: relative;
+  margin-bottom: 12px;
+  background: var(--light);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 8px 8px 0;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+.exercise-list > li::before {
+  content: "Q" counter(exn);
+  position: absolute;
+  left: 18px; top: 14px;
+  font-weight: 600;
+  color: var(--yonsei-blue);
+  letter-spacing: -0.02em;
+}
+.algo-box {
+  background: var(--light);
+  border: 1px solid var(--slate);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 22px;
+  font-size: 1.2rem;
+}
+.algo-box .algo-title {
+  font-weight: 600;
+  color: var(--yonsei-blue);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.algo-box ol { padding-left: 24px; margin: 0; }
+.algo-box li { margin-bottom: 6px; line-height: 1.45; }
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lecture 2 of 5</div>
+  <h1>Variance Preserving Diffusion<br>and DDPM</h1>
+  <div class="divider"></div>
+  <p class="subtitle">From the forward process to the variational lower bound</p>
+  <div class="spacer-lg"></div>
+  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p class="small" style="margin-top:6px;">2026</p>
+</div>
+
+<!-- SLIDE 2: Contents -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Variance preserving (VP) process</div>
+        <div class="toc-sub">Scaled noise and convergence to standard Gaussian</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">DDPM reverse model</div>
+        <div class="toc-sub">Gaussian approximation via Tweedie</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Variational lower bound</div>
+        <div class="toc-sub">Jensen, Markov identity, three-term decomposition</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Training and sampling algorithms</div>
+        <div class="toc-sub">The $\epsilon$-prediction loss in practice</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 01: Variance preserving process
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>The Variance Preserving Process</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Scaled noise so variance does not explode</p>
+</div>
+
+<!-- SLIDE: Why VP -->
+<div class="slide">
+  <h2>Why variance preserving?</h2>
+  <div class="divider"></div>
+  <p>The VE process $X^{(n)} = X^{(n-1)} + Z^{(n)}$ has variance $\sigma_0^2 + n\sigma^2 \to \infty$. The terminal distribution depends on the data variance.</p>
+  <div class="spacer"></div>
+  <p>We prefer a process whose terminal distribution is <strong>fixed</strong>, ideally $\mathcal{N}(0,1)$, independent of the data. Then we can sample the starting point for reverse generation trivially.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>Idea:</strong> shrink $X^{(n-1)}$ before adding noise, so the contribution of $X^{(0)}$ decays while the noise accumulates to unit variance.</p>
+  </div>
+</div>
+
+<!-- SLIDE: VP forward definition -->
+<div class="slide">
+  <h2>VP forward process</h2>
+  <div class="divider"></div>
+  <p>Fix a schedule $\{\beta_n\}_{n=1}^N$ with $0 &lt; \beta_n &lt; 1$. The <strong>variance preserving</strong> process is</p>
+  <div class="math-block">$$X^{(n)} = \sqrt{1-\beta_n}\,X^{(n-1)} + \sqrt{\beta_n}\,Z^{(n)},\quad Z^{(n)} \sim \mathcal{N}(0,1)\ \text{i.i.d.}$$</div>
+  <p>Equivalently,</p>
+  <div class="math-block">$$X^{(n)}\,|\,X^{(n-1)} \;\sim\; \mathcal{N}\!\left(\sqrt{1-\beta_n}\,X^{(n-1)},\; \beta_n\right).$$</div>
+  <p class="small">If $\mathrm{Var}(X^{(n-1)}) = 1$, then $\mathrm{Var}(X^{(n)}) = (1-\beta_n)\cdot 1 + \beta_n = 1$. Unit variance is preserved, hence the name.</p>
+</div>
+
+<!-- SLIDE: One-shot corruption -->
+<div class="slide">
+  <h2>$n$ steps in a single shot</h2>
+  <div class="divider"></div>
+  <p>Define $\bar{\alpha}_n = \prod_{i=1}^n (1-\beta_i)$. Unrolling the recursion,</p>
+  <div class="math-block">$$X^{(n)} \;\stackrel{(d)}{=}\; \sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,Z,\quad Z \sim \mathcal{N}(0,1).$$</div>
+  <p>Two consequences:</p>
+  <ul>
+    <li>Training at any noise level is a single Gaussian draw.</li>
+    <li>As $\bar{\alpha}_n \to 0$, the signal fades and the noise approaches $\mathcal{N}(0,1)$.</li>
+  </ul>
+</div>
+
+<!-- SLIDE: MGF proof -->
+<div class="slide">
+  <h2>Convergence to $\mathcal{N}(0,1)$: MGF proof</h2>
+  <div class="divider"></div>
+  <p>Using independence of $X^{(n-1)}$ and $Z^{(n)}$,</p>
+  <div class="math-block">$$\begin{aligned}
+    M_{X^{(n)}}(t)
+    &amp;= \mathbb{E}\bigl[e^{t\sqrt{1-\beta_n}X^{(n-1)}}\bigr]\,\mathbb{E}\bigl[e^{t\sqrt{\beta_n}Z^{(n)}}\bigr] \\
+    &amp;= \mathbb{E}\bigl[e^{t\sqrt{1-\beta_n}X^{(n-1)}}\bigr]\,e^{\beta_n t^2/2} \\
+    &amp;= \cdots \\
+    &amp;= \mathbb{E}\bigl[e^{t\sqrt{\bar{\alpha}_n}X^{(0)}}\bigr]\,e^{(1-\bar{\alpha}_n)\,t^2/2}.
+  \end{aligned}$$</div>
+  <p>If $\bar{\alpha}_n \to 0$, the first factor tends to $\mathbb{E}[1] = 1$ and the second to $e^{t^2/2}$. That is the MGF of $\mathcal{N}(0,1)$.</p>
+  <div class="highlight">
+    <p><strong>Conclusion:</strong> for any schedule with $\bar{\alpha}_n \to 0$, the terminal $X^{(N)}$ converges in distribution to standard Gaussian, independent of the data law.</p>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 02: DDPM reverse
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>DDPM Reverse Model</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Gaussian approximation via Tweedie</p>
+</div>
+
+<!-- SLIDE: DDPM reverse formulation -->
+<div class="slide">
+  <h2>Reverse conditional, VP version</h2>
+  <div class="divider"></div>
+  <p>Apply the same Bayes-plus-Tweedie argument from Lecture 1. For small $\beta_n$ the reverse conditional is again approximately Gaussian:</p>
+  <div class="math-block">$$X^{(n-1)}\,|\,X^{(n)} \;\approx\; \mathcal{N}\bigl(\mu(X^{(n)}, n),\; \beta_n\bigr),$$</div>
+  <p>where</p>
+  <div class="math-block">$$\mu(X^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}}\left(X^{(n)} + \beta_n\,\frac{\partial}{\partial x}\log P_{X^{(n)}}(X^{(n)})\right).$$</div>
+  <p class="small">This is the DDPM template from Ho, Jain &amp; Abbeel (2020). The mean depends on the <strong>score function</strong>, exactly as in VE. The novelty is the scalar factors induced by the VP drift.</p>
+</div>
+
+<!-- SLIDE: Learned mean -->
+<div class="slide">
+  <h2>What the network learns</h2>
+  <div class="divider"></div>
+  <p>Replace the unknown score by a neural approximation $s_\theta(X^{(n)}, n)$:</p>
+  <div class="math-block">$$\mu_\theta(X^{(n)}, n) = \frac{1}{\sqrt{1-\beta_n}}\left(X^{(n)} + \beta_n\,s_\theta(X^{(n)}, n)\right).$$</div>
+  <p>Given $\mu_\theta$, sampling uses</p>
+  <div class="math-block">$$p_\theta(X^{(n-1)}\,|\,X^{(n)}) = \mathcal{N}\bigl(\mu_\theta(X^{(n)}, n),\; \beta_n\bigr).$$</div>
+  <p>All that is left is picking a loss for $s_\theta$. We derive it from <strong>maximum likelihood</strong>.</p>
+</div>
+
+<!-- ====================================================================
+     PART 03: Variational lower bound
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Variational Lower Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Jensen, Markov identity, three-term decomposition</p>
+</div>
+
+<!-- SLIDE: Notation -->
+<div class="slide">
+  <h2>Notation</h2>
+  <div class="divider"></div>
+  <p>Write $X^{(i:j)} = (X^{(i)}, \ldots, X^{(j)})$. Let $q$ denote the <strong>forward</strong> distribution and $p_\theta$ the <strong>learned reverse</strong> distribution:</p>
+  <div class="math-block">$$\begin{aligned}
+    q\bigl(X^{(1:N)}\,|\,X^{(0)}\bigr) &amp;= \prod_{n=1}^{N} q\bigl(X^{(n)}\,|\,X^{(n-1)}\bigr), \\
+    p_\theta\bigl(X^{(0:N)}\bigr) &amp;= p\bigl(X^{(N)}\bigr)\prod_{n=1}^{N} p_\theta\bigl(X^{(n-1)}\,|\,X^{(n)}\bigr),\quad p(X^{(N)}) = \mathcal{N}(0,1).
+  \end{aligned}$$</div>
+  <p>The marginal $p_\theta(X^{(0)}) = \int p_\theta(X^{(0:N)})\,dX^{(1:N)}$ is intractable, so we bound it.</p>
+</div>
+
+<!-- SLIDE: Jensen bound -->
+<div class="slide">
+  <h2>From likelihood to the VLB</h2>
+  <div class="divider"></div>
+  <p>Insert $q(X^{(1:N)}\,|\,X^{(0)})$ and apply Jensen:</p>
+  <div class="math-block">$$\begin{aligned}
+    -\log p_\theta\bigl(X^{(0)}\bigr)
+    &amp;= -\log \int \frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\,q(X^{(1:N)}\,|\,X^{(0)})\,dX^{(1:N)} \\
+    &amp;= -\log \mathbb{E}_q\!\left[\frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\;\middle|\;X^{(0)}\right] \\
+    &amp;\leq \mathbb{E}_q\!\left[-\log \frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\;\middle|\;X^{(0)}\right].
+  \end{aligned}$$</div>
+  <p>The right-hand side is the <strong>variational upper bound</strong> on the negative log-likelihood we will minimize.</p>
+</div>
+
+<!-- SLIDE: Markov identity -->
+<div class="slide">
+  <h2>A Markov rewrite</h2>
+  <div class="divider"></div>
+  <p>Expand the ratio into products of conditionals:</p>
+  <div class="math-block">$$\mathbb{E}_q\!\left[-\log p(X^{(N)}) - \sum_{n=1}^{N}\log\frac{p_\theta(X^{(n-1)}\,|\,X^{(n)})}{q(X^{(n)}\,|\,X^{(n-1)})}\right].$$</div>
+  <p>Using the <strong>Markov identity</strong>, for $n \geq 2$,</p>
+  <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(n-1)}\bigr)\,q\bigl(X^{(n-1)}\,|\,X^{(0)}\bigr) = q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr)\,q\bigl(X^{(n)}\,|\,X^{(0)}\bigr),$$</div>
+  <p>so $q(X^{(n)}\,|\,X^{(n-1)})$ can be replaced with the $X^{(0)}$-conditional form.</p>
+</div>
+
+<!-- SLIDE: Three-term decomposition -->
+<div class="slide">
+  <h2>Three-term decomposition</h2>
+  <div class="divider"></div>
+  <p>After the Markov rewrite the bound becomes</p>
+  <div class="math-block">$$\mathbb{E}_q\!\left[-\log\frac{p(X^{(N)})}{q(X^{(N)}\,|\,X^{(0)})} - \sum_{n=2}^{N}\log\frac{p_\theta(X^{(n-1)}\,|\,X^{(n)})}{q(X^{(n-1)}\,|\,X^{(n)},X^{(0)})} - \log p_\theta(X^{(0)}\,|\,X^{(1)})\right].$$</div>
+  <p>Name the three groups of terms:</p>
+  <div class="math-block">$$L_N,\qquad \sum_{n=2}^{N} L_{n-1},\qquad L_0.$$</div>
+  <p>Each simplifies to a recognisable quantity.</p>
+</div>
+
+<!-- SLIDE: L_N term -->
+<div class="slide">
+  <h2>$L_N$: match the prior</h2>
+  <div class="divider"></div>
+  <div class="math-block">$$L_N \;=\; \mathbb{E}_{X^{(0)}\sim q}\Bigl[D_{\mathrm{KL}}\!\bigl(q(X^{(N)}\,|\,X^{(0)})\,\Vert\,p(X^{(N)})\bigr)\Bigr].$$</div>
+  <p>This measures how close the <strong>forward endpoint</strong> is to the standard Gaussian prior. It has no $\theta$ dependence, so it is a constant from the optimizer's point of view.</p>
+  <div class="highlight">
+    <p>We have already arranged for $L_N \to 0$: the VP schedule was designed so $X^{(N)}$ converges to $\mathcal{N}(0,1)$. $L_N$ is ignored during training.</p>
+  </div>
+</div>
+
+<!-- SLIDE: L_{n-1} term -->
+<div class="slide">
+  <h2>$L_{n-1}$: match each reverse step</h2>
+  <div class="divider"></div>
+  <div class="math-block">$$L_{n-1} \;=\; \mathbb{E}_q\Bigl[D_{\mathrm{KL}}\!\bigl(q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)})\,\Vert\,p_\theta(X^{(n-1)}\,|\,X^{(n)})\bigr)\Bigr].$$</div>
+  <p>Both sides are Gaussian (the target because of the next slide, the model by construction), so the KL is available in closed form.</p>
+  <div class="spacer"></div>
+  <p class="small">$L_0 = \mathbb{E}_q[-\log p_\theta(X^{(0)}\,|\,X^{(1)})]$ is a boundary term. Its contribution to the total loss is negligible compared to the sum, and we drop it in the main loss.</p>
+</div>
+
+<!-- SLIDE: q(X^{n-1} | X^n, X^0) is Gaussian -->
+<div class="slide">
+  <h2>Target posterior is Gaussian</h2>
+  <div class="divider"></div>
+  <p>Conditioned on $X^{(0)}$, all forward distributions are Gaussian. One can show</p>
+  <div class="math-block">$$q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr) \;=\; \mathcal{N}\bigl(\mu_n(X^{(n)}, X^{(0)}),\; \beta_n\bigr),$$</div>
+  <p>where</p>
+  <div class="math-block">$$\mu_n(X^{(n)}, X^{(0)}) = \frac{1}{\sqrt{1-\beta_n}}\left(X^{(n)} + \beta_n\,\frac{\partial}{\partial X^{(n)}}\log q(X^{(n)}\,|\,X^{(0)})\right).$$</div>
+  <p>The conditional score $\partial_x \log q(X^{(n)}\,|\,X^{(0)})$ is known in closed form because $q(X^{(n)}\,|\,X^{(0)})$ is the Gaussian $\mathcal{N}(\sqrt{\bar{\alpha}_n} X^{(0)}, 1-\bar{\alpha}_n)$.</p>
+</div>
+
+<!-- SLIDE: KL between Gaussians + simplification -->
+<div class="slide">
+  <h2>KL between matched-variance Gaussians</h2>
+  <div class="divider"></div>
+  <p>When both distributions have the same variance $\beta_n$, the KL reduces to the squared-mean mismatch:</p>
+  <div class="math-block">$$L_{n-1} = \frac{1}{2\beta_n}\,\bigl\|\mu_n(X^{(n)}, X^{(0)}) - \mu_\theta(X^{(n)}, n)\bigr\|^2.$$</div>
+  <p>Plugging in the two mean formulas and using $\partial_x \log q(X^{(n)}\,|\,X^{(0)}) = -\frac{X^{(n)} - \sqrt{\bar{\alpha}_n}X^{(0)}}{1-\bar{\alpha}_n}$:</p>
+  <div class="math-block">$$L_{n-1} = \frac{\beta_n}{2(1-\beta_n)}\left\|\frac{\partial}{\partial X^{(n)}}\log q(X^{(n)}\,|\,X^{(0)}) - s_\theta(X^{(n)}, n)\right\|^2.$$</div>
+</div>
+
+<!-- SLIDE: epsilon-prediction final form -->
+<div class="slide">
+  <h2>$\epsilon$-prediction reparameterization</h2>
+  <div class="divider"></div>
+  <p>Write $X^{(n)} \stackrel{(d)}{=} \sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,\epsilon_n$ and reparameterize the score as</p>
+  <div class="math-block">$$s_\theta(X^{(n)}, n) = -\,\frac{\epsilon_\theta(X^{(n)}, n)}{\sqrt{1-\bar{\alpha}_n}}.$$</div>
+  <p>Then the per-step loss becomes noise matching:</p>
+  <div class="math-block">$$L_{n-1} = \frac{\beta_n}{2(1-\beta_n)(1-\bar{\alpha}_n)}\left\|\epsilon_n - \epsilon_\theta\!\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,\epsilon_n,\; n\bigr)\right\|^2.$$</div>
+  <div class="highlight">
+    <p><strong>Final objective.</strong> The network $\epsilon_\theta$ predicts the Gaussian noise that was mixed into $X^{(0)}$. Training is a plain regression.</p>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 04: Algorithms
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Training and Sampling</h1>
+  <div class="divider"></div>
+  <p class="subtitle">The $\epsilon$-prediction loss in practice</p>
+</div>
+
+<!-- SLIDE: Training algo -->
+<div class="slide">
+  <h2>Training algorithm</h2>
+  <div class="divider"></div>
+  <div class="algo-box">
+    <div class="algo-title">DDPM Training</div>
+    <ol>
+      <li>Sample $X^{(0)}$ from the data.</li>
+      <li>Sample $n \sim \text{Unif}\{1, \ldots, N\}$.</li>
+      <li>Sample $\epsilon \sim \mathcal{N}(0,1)$.</li>
+      <li>Form the noisy input $X^{(n)} = \sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,\epsilon$.</li>
+      <li>Take a gradient step on $\tilde{\lambda}_n\,\bigl\|\epsilon - \epsilon_\theta(X^{(n)}, n)\bigr\|^2$.</li>
+    </ol>
+  </div>
+  <div class="spacer"></div>
+  <p class="small">In the original DDPM paper, $\tilde{\lambda}_n$ is set to 1 (unweighted). The weight that drops out of the VLB is absorbed into the tuning.</p>
+</div>
+
+<!-- SLIDE: Sampling algo -->
+<div class="slide">
+  <h2>Sampling algorithm</h2>
+  <div class="divider"></div>
+  <div class="algo-box">
+    <div class="algo-title">DDPM Sampling</div>
+    <ol>
+      <li>Sample $X^{(N)} \sim \mathcal{N}(0,1)$.</li>
+      <li>For $n = N, N-1, \ldots, 1$:
+        <ol style="list-style:lower-alpha; padding-left:24px;">
+          <li>Sample $Z^{(n)} \sim \mathcal{N}(0,1)$.</li>
+          <li>Compute $X^{(n-1)} = \dfrac{1}{\sqrt{1-\beta_n}}\left(X^{(n)} - \dfrac{\beta_n}{\sqrt{1-\bar{\alpha}_n}}\,\epsilon_\theta(X^{(n)}, n)\right) + \sqrt{\beta_n}\,Z^{(n)}$.</li>
+        </ol>
+      </li>
+    </ol>
+  </div>
+  <div class="spacer"></div>
+  <p class="small">The update is exactly $\mu_\theta(X^{(n)}, n)$ plus the injected Gaussian noise that matches the reverse-conditional variance $\beta_n$.</p>
+</div>
+
+<!-- SLIDE: Sources of error -->
+<div class="slide">
+  <h2>Where the approximation can break</h2>
+  <div class="divider"></div>
+  <div class="grid-3">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Reverse is only approximate</h3>
+      <p class="small">The Gaussian form of $p_\theta(X^{(n-1)}\,|\,X^{(n)})$ relies on $\beta_n$ being small. Large step sizes break the approximation.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Score estimate is imperfect</h3>
+      <p class="small">$\epsilon_\theta$ is a neural network with finite capacity trained on finite data. Errors in the score carry through every sampling step.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Terminal is only approximately Gaussian</h3>
+      <p class="small">$X^{(N)}$ converges to $\mathcal{N}(0,1)$ only as $\bar{\alpha}_N \to 0$. We start sampling from a mismatched prior at finite $N$.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE: Recap -->
+<div class="slide">
+  <h2>Lecture recap</h2>
+  <div class="divider"></div>
+  <ul>
+    <li>VP forward: $X^{(n)} = \sqrt{1-\beta_n}\,X^{(n-1)} + \sqrt{\beta_n}\,Z^{(n)}$. Unit variance in, unit variance out.</li>
+    <li>Terminal distribution converges to $\mathcal{N}(0,1)$ whenever $\bar{\alpha}_n \to 0$ (MGF proof).</li>
+    <li>Reverse conditional is approximately Gaussian with mean given by the <strong>score function</strong>.</li>
+    <li>Variational lower bound decomposes into $L_N$ (constant) $+\ \sum L_{n-1}$ (matching) $+\ L_0$ (boundary, negligible).</li>
+    <li>The matching term collapses to <strong>$\epsilon$-prediction regression</strong>.</li>
+  </ul>
+  <div class="spacer"></div>
+  <p style="text-align:right;color:var(--gray-text);" class="small">Lecture 3 recasts the whole construction as a stochastic differential equation.</p>
+</div>
+
+<!-- SLIDE: Check it yourself -->
+<div class="slide">
+  <h2>Check it yourself</h2>
+  <div class="divider"></div>
+  <ol class="exercise-list">
+    <li>Verify that the VP update preserves variance: if $\mathrm{Var}(X^{(n-1)}) = 1$ then $\mathrm{Var}(X^{(n)}) = 1$. What is $\mathrm{Var}(X^{(N)})$ as $N \to \infty$ for a general schedule?</li>
+    <li>Prove the <strong>Markov identity</strong> $q(X^{(n)}\,|\,X^{(n-1)})\,q(X^{(n-1)}\,|\,X^{(0)}) = q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)})\,q(X^{(n)}\,|\,X^{(0)})$.</li>
+    <li>Derive the closed form $q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}) = \mathcal{N}(\mu_n, \beta_n)$. <em>Hint:</em> start from $q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}) = \dfrac{q(X^{(n)}\,|\,X^{(n-1)}, X^{(0)})\,q(X^{(n-1)}\,|\,X^{(0)})}{q(X^{(n)}\,|\,X^{(0)})}$; given $X^{(0)}$, every factor is Gaussian.</li>
+    <li>Show that $D_{\mathrm{KL}}\!\bigl(\mathcal{N}(\mu_0,\sigma_0^2 I)\,\Vert\,\mathcal{N}(\mu_1,\sigma_1^2 I)\bigr) = \tfrac{1}{2\sigma_1^2}\|\mu_1-\mu_0\|^2 + \tfrac{d}{2}(\tfrac{\sigma_0^2}{\sigma_1^2}-1) + d\log\tfrac{\sigma_1}{\sigma_0}$.</li>
+  </ol>
+</div>
+
+<!-- SLIDE: End / bridge -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">Next</div>
+  <p class="big-word-sub">Lecture 3: SDE Formulation &amp; Score Matching</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 24</div>
+
+</div><!-- end deck -->
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion 1 — Foundations</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+/* Deck-specific: numbered-exercise list for the "Check yourself" slide. */
+.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
+.exercise-list > li {
+  counter-increment: exn;
+  padding: 14px 18px 14px 64px;
+  position: relative;
+  margin-bottom: 12px;
+  background: var(--light);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 8px 8px 0;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+.exercise-list > li::before {
+  content: "Q" counter(exn);
+  position: absolute;
+  left: 18px; top: 14px;
+  font-weight: 600;
+  color: var(--yonsei-blue);
+  letter-spacing: -0.02em;
+}
+.step-badge {
+  display: inline-block;
+  min-width: 26px; height: 26px;
+  line-height: 26px; text-align: center;
+  border-radius: 50%;
+  background: var(--yonsei-blue); color: #fff;
+  font-weight: 600; font-size: 0.95rem;
+  margin-right: 8px;
+}
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lecture 1 of 5</div>
+  <h1>Diffusion Generative Models:<br>Foundations</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Forward noising, reverse process, and the score function</p>
+  <div class="spacer-lg"></div>
+  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p class="small" style="margin-top:6px;">2026</p>
+</div>
+
+<!-- SLIDE 2: Contents -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">What is a generative model?</div>
+        <div class="toc-sub">Learning distributions, not just realistic samples</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Variance exploding (VE) forward process</div>
+        <div class="toc-sub">1D diffusion: gradually adding Gaussian noise</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Reverse process via Bayes</div>
+        <div class="toc-sub">Taylor expansion, completing the square, score shift</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Score function and Tweedie's formula</div>
+        <div class="toc-sub">Learning score via denoising</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 01: What is a generative model?
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>What is a Generative Model?</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Diversity, distribution learning, and why sampling is hard</p>
+</div>
+
+<!-- SLIDE: Generative desiderata -->
+<div class="slide">
+  <h2>Realistic is not enough</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>A face generator that always outputs the same photo of <strong>Albert</strong> is technically realistic, but nobody wants it.</p>
+      <div class="spacer"></div>
+      <p>A good generative model must</p>
+      <ul>
+        <li>produce <strong>realistic</strong> samples, and</li>
+        <li>match the <strong>diversity</strong> of the data (race, age, sex, pose, $\ldots$).</li>
+      </ul>
+      <div class="spacer"></div>
+      <p>In short, it must learn the <strong>distribution</strong> of the dataset, not just individual points.</p>
+    </div>
+    <div>
+      <div class="highlight">
+        <p><strong>Generative model:</strong> a mechanism that produces samples whose joint law approximates the data distribution $P_X$.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE: Sampling is non-trivial (Cauchy) -->
+<div class="slide">
+  <h2>Sampling is non-trivial</h2>
+  <div class="divider"></div>
+  <p>Even with a closed-form density, drawing samples can be hard. Consider the <strong>Cauchy distribution</strong> with scale $\gamma &gt; 0$:</p>
+  <div class="math-block">$$f(x) = \frac{1}{\pi}\,\frac{\gamma}{x^2+\gamma^2}.$$</div>
+  <p>How do we produce $X \sim f$ given only this formula?</p>
+  <div class="spacer"></div>
+  <p class="small">A closed-form density tells us <em>how dense</em> the probability is at each point, but it doesn't directly tell us how to draw samples.</p>
+</div>
+
+<!-- SLIDE: Inverse transform sampling -->
+<div class="slide">
+  <h2>Inverse transform sampling (1D)</h2>
+  <div class="divider"></div>
+  <p>Let $F_X$ be the CDF of $X$ and $U \sim \text{Unif}[0,1]$. Because $F_X$ is non-decreasing and $\Pr(U\leq u)=u$:</p>
+  <div class="math-block">$$\Pr\bigl(F_X^{-1}(U)\leq x\bigr) = \Pr\bigl(U \leq F_X(x)\bigr) = F_X(x),$$</div>
+  <p style="text-align:center;">so $F_X^{-1}(U) \sim f_X$.</p>
+  <div class="spacer"></div>
+  <div class="cols">
+    <div>
+      <p><strong>How do we generate $U$?</strong> Binary expansion of fair coin flips:</p>
+      <div class="math-block" style="font-size:1.35rem;">$$U \approx 0.U_1 U_2 \cdots U_n\,{}_{(2)},\quad U_i \sim \text{Bernoulli}(\tfrac{1}{2}).$$</div>
+    </div>
+    <div>
+      <div class="card">
+        <h3 style="color:var(--blue-light);">Takeaway</h3>
+        <p class="small">In 1D we can sample from any distribution we can invert. The question is what breaks when we move to high dimension.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE: Curse of dimensionality -->
+<div class="slide">
+  <h2>High dimension: even exact densities are hard</h2>
+  <div class="divider"></div>
+  <p>For a random vector $\mathbf{X} = (X_1, \ldots, X_d)$, we cannot simply invert a CDF. Rejection sampling and MCMC scale poorly with $d$.</p>
+  <div class="spacer"></div>
+  <p>Most generative models do <strong>not</strong> explicitly learn the density $P_{\mathbf{X}}$. Instead they learn a <strong>transformation</strong> from an easy-to-sample source (Gaussian, uniform) to the target distribution.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>Diffusion models</strong> take this further: they learn a sequence of transformations that gradually turn data into noise, and then <strong>reverse</strong> the process at generation time.</p>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 02: Variance Exploding (VE) forward process
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Variance Exploding (VE) Forward Process</h1>
+  <div class="divider"></div>
+  <p class="subtitle">1D diffusion: gradually adding Gaussian noise</p>
+</div>
+
+<!-- SLIDE: VE forward definition -->
+<div class="slide">
+  <h2>The forward process</h2>
+  <div class="divider"></div>
+  <p>Let $X \in \mathbb{R}$ be a scalar random variable we want to learn, with unknown density $P_X$. Define the <strong>forward process</strong>:</p>
+  <div class="math-block">$$X^{(n)} = X^{(n-1)} + Z^{(n)},\quad X^{(0)} = X,\quad Z^{(n)} \sim \mathcal{N}(0,\sigma^2)\ \text{i.i.d.}$$</div>
+  <p>We gradually corrupt $X$ by Gaussian noise. Variance grows at every step, hence the name <strong>variance exploding</strong> (VE).</p>
+</div>
+
+<!-- SLIDE: Single-step corruption -->
+<div class="slide">
+  <h2>$n$ steps in a single shot</h2>
+  <div class="divider"></div>
+  <p>Because each $Z^{(n)}$ is independent Gaussian, the sum is Gaussian:</p>
+  <div class="math-block">$$X^{(n)} \stackrel{(d)}{=} X^{(0)} + \sqrt{n}\,Z,\quad Z \sim \mathcal{N}(0,\sigma^2).$$</div>
+  <p>This lets us train the denoiser at any noise level without running the full chain: pick $n$, sample $Z$, and jump directly to $X^{(n)}$.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>Training trick:</strong> the forward process collapses to a single sampling step. Diffusion training only ever simulates one transition at a time.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Terminal distribution -->
+<div class="slide">
+  <h2>Terminal distribution</h2>
+  <div class="divider"></div>
+  <p>Let $\mu_0, \sigma_0^2$ be the mean and variance of $X^{(0)}$. By linearity,</p>
+  <div class="math-block">$$\mathbb{E}[X^{(N)}] = \mu_0,\qquad \mathrm{Var}(X^{(N)}) = \sigma_0^2 + N\sigma^2.$$</div>
+  <p>For large $N$ the $N\sigma^2$ term dominates, and intuitively</p>
+  <div class="math-block">$$X^{(N)} \;\approx\; \mathcal{N}(\tilde{\mu},\tilde{\sigma}^2),\quad \tilde{\mu} = \mu_0,\ \tilde{\sigma}^2 = \sigma_0^2 + N\sigma^2.$$</div>
+  <p class="small">This argument is informal for VE. For variance-preserving (VP) diffusion in the next lecture we will give a formal MGF proof.</p>
+</div>
+
+<!-- SLIDE: Reverse process goal -->
+<div class="slide">
+  <h2>The goal: reverse the chain</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Sampling from $\mathcal{N}(\tilde{\mu},\tilde{\sigma}^2)$ is trivial. Let $\tilde{X}^{(N)}$ be such a draw.</p>
+      <div class="spacer"></div>
+      <p>We want a reverse rule</p>
+      <div class="math-block" style="font-size:1.4rem;">$$\tilde{X}^{(N)} \to \tilde{X}^{(N-1)} \to \cdots \to \tilde{X}^{(0)}$$</div>
+      <p>such that $\tilde{X}^{(0)} \stackrel{(d)}{\approx} X$.</p>
+    </div>
+    <div>
+      <div class="card">
+        <h3 style="color:var(--blue-light);">The task</h3>
+        <p class="small">For each step $n$, characterize the <strong>reverse conditional</strong></p>
+        <p style="text-align:center;">$P_{X^{(n-1)}\,|\,X^{(n)}}.$</p>
+        <p class="small">If we know it, we can sample the chain backwards.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 03: Reverse process via Bayes
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Reverse Process via Bayes</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Taylor expand, complete the square, read off a Gaussian</p>
+</div>
+
+<!-- SLIDE: Setup + Bayes -->
+<div class="slide">
+  <h2>Setup</h2>
+  <div class="divider"></div>
+  <p>Drop indices for clarity. Write $X = \tilde{X}^{(n-1)}$, $Z = \tilde{Z}^{(n)}$, $Y = \tilde{X}^{(n)}$, so</p>
+  <div class="math-block">$$Y = X + Z,\qquad Y\,|\,X \sim \mathcal{N}(X, \sigma^2).$$</div>
+  <p>We want $X\,|\,Y$. By Bayes:</p>
+  <div class="math-block">$$P_{X|Y}(x\,|\,y) = \frac{P_{Y|X}(y\,|\,x)\,P_X(x)}{P_Y(y)}.$$</div>
+  <p class="small">We know $P_{Y|X}$ (it is Gaussian by construction). We do not know $P_X$ or $P_Y$, but both can be expanded around $y$ when $\sigma^2 \ll 1$.</p>
+</div>
+
+<!-- SLIDE: Taylor expand P_X -->
+<div class="slide">
+  <h2>Step 1: Taylor expand $P_X(x)$ around $y$</h2>
+  <div class="divider"></div>
+  <p>Because $\sigma^2 \ll 1$, most of the mass of $P_{Y|X}$ sits within $O(\sigma)$ of $y$, so $x$ is close to $y$:</p>
+  <div class="math-block">$$P_X(x) = P_X(y) + P'_X(y)(x-y) + O\bigl(\|x-y\|^2\bigr) \;\approx\; P_X(y) + P'_X(y)(x-y).$$</div>
+  <p>We treat $P_X(y)$ as the zeroth-order value and $P'_X(y)(x-y)$ as a small linear correction.</p>
+</div>
+
+<!-- SLIDE: Approximate P_Y -->
+<div class="slide">
+  <h2>Step 2: Approximate $P_Y(y)$</h2>
+  <div class="divider"></div>
+  <p>Integrate the Taylor expansion against the Gaussian likelihood:</p>
+  <div class="math-block">$$\begin{aligned}
+    P_Y(y)
+    &amp;= \int P_{Y|X}(y\,|\,x)\,P_X(x)\,dx \\
+    &amp;\approx \int \frac{1}{\sqrt{2\pi\sigma^2}}\,e^{-\frac{(x-y)^2}{2\sigma^2}}\,\bigl(P_X(y) + P'_X(y)(x-y)\bigr)\,dx \\
+    &amp;= P_X(y) + P'_X(y)\,\mathbb{E}_{X\sim\mathcal{N}(y,\sigma^2)}[X-y] \\
+    &amp;= P_X(y).
+  \end{aligned}$$</div>
+  <p>The linear term integrates to zero because the Gaussian is symmetric about $y$.</p>
+</div>
+
+<!-- SLIDE: Substitute into Bayes -->
+<div class="slide">
+  <h2>Step 3: Substitute back</h2>
+  <div class="divider"></div>
+  <p>Using $P_Y(y) \approx P_X(y)$ and the Taylor expansion of $P_X(x)$:</p>
+  <div class="math-block">$$\begin{aligned}
+    P_{X|Y}(x\,|\,y)
+    &amp;\approx \frac{P_{Y|X}(y\,|\,x)\,\bigl(P_X(y) + P'_X(y)(x-y)\bigr)}{P_X(y)} \\
+    &amp;= P_{Y|X}(y\,|\,x)\left(1 + \frac{P'_X(y)}{P_X(y)}(x-y)\right) \\
+    &amp;\approx \frac{1}{\sqrt{2\pi\sigma^2}}\,e^{-\frac{(x-y)^2}{2\sigma^2}}\,\exp\!\left(\frac{P'_X(y)}{P_X(y)}(x-y)\right).
+  \end{aligned}$$</div>
+  <p class="small">Step <span class="step-badge">3</span>: we replaced $1 + a$ by $e^{a}$ for small $a$, because we only kept first-order terms anyway.</p>
+</div>
+
+<!-- SLIDE: Complete the square -->
+<div class="slide">
+  <h2>Step 4: Complete the square</h2>
+  <div class="divider"></div>
+  <p>Merge the two exponentials. The quadratic in the exponent becomes</p>
+  <div class="math-block">$$\begin{aligned}
+    &amp;(x-y)^2 \;-\; 2\sigma^2\,\frac{P'_X(y)}{P_X(y)}(x-y) \;+\; \left(\sigma^2\,\frac{P'_X(y)}{P_X(y)}\right)^2 \\
+    &amp;\qquad=\; \left(x - y - \sigma^2\,\frac{P'_X(y)}{P_X(y)}\right)^{\!2}.
+  \end{aligned}$$</div>
+  <p>So we recover a Gaussian in $x$:</p>
+  <div class="math-block">$$P_{X|Y}(x\,|\,y) \approx \frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{1}{2\sigma^2}\left(x-y-\sigma^2\,\frac{P'_X(y)}{P_X(y)}\right)^{\!2}\right).$$</div>
+</div>
+
+<!-- SLIDE: Main result -->
+<div class="slide">
+  <h2>Reverse conditional, compactly</h2>
+  <div class="divider"></div>
+  <p>Recognising $\dfrac{P'_X(y)}{P_X(y)} = \dfrac{\partial}{\partial y}\log P_X(y)$:</p>
+  <div class="math-block">$$X\,|\,Y \;\stackrel{\text{approx.}}{\sim}\; \mathcal{N}\!\left(Y + \sigma^2\,\frac{\partial}{\partial y}\log P_X(Y),\; \sigma^2\right).$$</div>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>Key insight:</strong> when $\sigma^2$ is small, the reverse conditional is again Gaussian, with a mean shifted by the <strong>score</strong> $\partial_y \log P_X$.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Reverse sampling rule -->
+<div class="slide">
+  <h2>Reverse sampling, step by step</h2>
+  <div class="divider"></div>
+  <p>For each step, draw the next reverse sample by</p>
+  <div class="math-block">$$\tilde{x}^{(n-1)} = \tilde{x}^{(n)} + \sigma^2\,\frac{\partial}{\partial \tilde{x}^{(n)}} \log P_{X^{(n)}}\!\bigl(\tilde{x}^{(n)}\bigr) + \tilde{z}^{(n)},$$</div>
+  <p>where $\tilde{z}^{(n)} \sim \mathcal{N}(0,\sigma^2)$.</p>
+  <div class="spacer"></div>
+  <p>Two ingredients:</p>
+  <ul>
+    <li>the <strong>score</strong> $\partial_x \log P_{X^{(n)}}(x)$ at every noise level $n$, and</li>
+    <li>fresh Gaussian noise at every step.</li>
+  </ul>
+</div>
+
+<!-- SLIDE: Remarks (subtract & MMSE) -->
+<div class="slide">
+  <h2>Two natural questions</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Why not subtract the noise?</h3>
+      <p>The noise distribution is symmetric, $-Z \stackrel{(d)}{=} Z$. Subtracting is distributionally the same as adding: you corrupt further, not denoise.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Why not use the MMSE estimator?</h3>
+      <p>MMSE gives $\hat{X}(Y) = \mathbb{E}[X\,|\,Y]$, which is <strong>deterministic</strong>. Its distribution has <strong>smaller variance</strong> than $X$, so it cannot match the target. The reverse process is not optimal denoising, it is <strong>distribution matching</strong>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE: Gaussian example of MMSE mismatch -->
+<div class="slide">
+  <h2>Gaussian example: MMSE vs. distribution matching</h2>
+  <div class="divider"></div>
+  <p>Let $X \sim \mathcal{N}(0,\sigma_x^2)$, $Y = X + Z$, $Z \sim \mathcal{N}(0,\sigma_z^2)$. Then</p>
+  <div class="math-block">$$\hat{X}(Y) = \mathbb{E}[X\,|\,Y] = \frac{\sigma_x^2}{\sigma_x^2 + \sigma_z^2}\,Y\;\sim\;\mathcal{N}\!\left(0,\,\frac{\sigma_x^4}{\sigma_x^2+\sigma_z^2}\right).$$</div>
+  <p>Variance is too small. To match $\mathrm{Var}(X) = \sigma_x^2$ we add fresh noise:</p>
+  <div class="math-block">$$\tilde{X} = \mathbb{E}[X\,|\,Y] + \tilde{Z},\quad \tilde{Z} \sim \mathcal{N}\!\left(0,\,\frac{\sigma_x^2\,\sigma_z^2}{\sigma_x^2 + \sigma_z^2}\right)\;\Rightarrow\;\tilde{X}\sim\mathcal{N}(0,\sigma_x^2).$$</div>
+  <p class="small">The reverse-process update $\tilde{x}+\sigma^2 s(\tilde{x},n)+\tilde{z}$ is doing exactly this in the small-$\sigma$ regime.</p>
+</div>
+
+<!-- ====================================================================
+     PART 04: Score function and Tweedie's formula
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Score Function &amp; Tweedie's Formula</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Learning the score via denoising</p>
+</div>
+
+<!-- SLIDE: The score function -->
+<div class="slide">
+  <h2>The score function</h2>
+  <div class="divider"></div>
+  <p>For each noise level $n$, define the <strong>score function</strong></p>
+  <div class="math-block">$$s(x;n) = \frac{\partial}{\partial x}\log P_{X^{(n)}}(x).$$</div>
+  <p>It depends on $n$ because the marginal $P_{X^{(n)}}$ changes with noise level.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>Observation:</strong> if we had exact access to $s(x;n)$ for every $n$ and every $x$, <em>no neural network is needed</em> for the reverse process. The bottleneck is estimating $s$ from data.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Learning the denoiser instead -->
+<div class="slide">
+  <h2>Train a denoiser, not the score directly</h2>
+  <div class="divider"></div>
+  <p>Given only samples, train a network $f_\theta(x^{(n)};n)$ to reconstruct $x^{(0)}$ from its noisy version $x^{(n)}$. With squared loss:</p>
+  <div class="math-block">$$\mathcal{L}(\theta) = \mathbb{E}\bigl[\,\|f_\theta(X^{(n)};n) - X^{(0)}\|^2\,\bigr].$$</div>
+  <p>The Bayes-optimal regressor for squared loss is the conditional expectation, so</p>
+  <div class="math-block">$$f_\theta(x^{(n)};n) \;\approx\; \mathbb{E}[X^{(0)}\,|\,X^{(n)}=x^{(n)}].$$</div>
+  <p>Crucially, this training objective never references the unknown $P_X$ or the score function.</p>
+</div>
+
+<!-- SLIDE: Tweedie's formula -->
+<div class="slide">
+  <h2>Tweedie's formula</h2>
+  <div class="divider"></div>
+  <p>Let $X$ be any random variable, $Z \sim \mathcal{N}(0,\sigma^2)$ independent, and $Y = X+Z$. Then</p>
+  <div class="math-block">$$\mathbb{E}[X\,|\,Y=y] \;=\; y + \sigma^2\,\frac{\partial}{\partial y}\log P_Y(y).$$</div>
+  <p>The formula is remarkable: the <strong>posterior mean</strong> of the clean variable is the noisy observation plus a term governed by the <strong>score of the noisy marginal</strong>.</p>
+  <div class="spacer"></div>
+  <p class="small">Proof sketch: start from $P_Y(y) = \int P_X(x)\,P_Z(y-x)\,dx$, compute $\partial_y P_Y$, and recognize $(y-x)/\sigma^2$ from the Gaussian. Details left as Q3.</p>
+</div>
+
+<!-- SLIDE: Denoiser to score -->
+<div class="slide">
+  <h2>From denoiser to score</h2>
+  <div class="divider"></div>
+  <p>Apply Tweedie to the VE process at noise level $n$, where the effective noise variance is $n\sigma^2$:</p>
+  <div class="math-block">$$f_\theta(x;n) \;\approx\; \mathbb{E}[X^{(0)}\,|\,X^{(n)}=x] \;=\; x + n\sigma^2\,\frac{\partial}{\partial x}\log P_{X^{(n)}}(x).$$</div>
+  <p>Solving for the score:</p>
+  <div class="math-block">$$s_\theta(x;n) \;=\; \frac{f_\theta(x;n) - x}{n\sigma^2}.$$</div>
+  <div class="highlight">
+    <p><strong>Summary:</strong> a denoising network is a score network in disguise. Training reduces to regression against the clean sample.</p>
+  </div>
+</div>
+
+<!-- SLIDE: What we have so far -->
+<div class="slide">
+  <h2>What we have so far</h2>
+  <div class="divider"></div>
+  <ul>
+    <li>A <strong>forward process</strong> that smoothly turns data into Gaussian noise.</li>
+    <li>A <strong>reverse rule</strong> that needs only the score function at each noise level.</li>
+    <li>A <strong>training recipe</strong>: learn a denoiser, convert to score via Tweedie.</li>
+  </ul>
+  <div class="spacer-lg"></div>
+  <p>What is missing:</p>
+  <ul>
+    <li>A version where the terminal distribution is <strong>exactly</strong> Gaussian, not just approximately.</li>
+    <li>A principled loss derived from maximum likelihood.</li>
+    <li>A continuous-time view connecting diffusion to SDEs.</li>
+  </ul>
+  <div class="spacer"></div>
+  <p style="text-align:right;color:var(--gray-text);" class="small">Lecture 2 covers the variance-preserving process and the DDPM variational bound.</p>
+</div>
+
+<!-- SLIDE: Check it yourself -->
+<div class="slide">
+  <h2>Check it yourself</h2>
+  <div class="divider"></div>
+  <ol class="exercise-list">
+    <li>Prove that the <strong>Cauchy density</strong> $f(x) = \tfrac{1}{\pi}\tfrac{\gamma}{x^2+\gamma^2}$ integrates to $1$, so it is a valid probability density.</li>
+    <li>Show that the MMSE estimator satisfies $\hat{X}(Y) = \mathbb{E}[X\,|\,Y]$. <em>Hint:</em> start from $\mathbb{E}\bigl[((\hat{X}(Y)-\mathbb{E}[X\,|\,Y]) + (\mathbb{E}[X\,|\,Y]-X))^2\bigr]$.</li>
+    <li>Derive <strong>Tweedie's formula</strong> $\mathbb{E}[X\,|\,Y=y] = y + \sigma^2\,\partial_y \log P_Y(y)$ starting from $P_Y(y) = \int P_X(x)\,P_Z(y-x)\,dx$ and comparing with $\partial_y P_Y(y)$.</li>
+  </ol>
+</div>
+
+<!-- SLIDE: End / bridge -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">Next</div>
+  <p class="big-word-sub">Lecture 2: Variance Preserving Diffusion &amp; DDPM</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 20</div>
+
+</div><!-- end deck -->
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>

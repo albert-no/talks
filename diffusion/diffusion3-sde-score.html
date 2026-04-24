@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion 3 — SDE and Score Matching</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+/* Deck-specific: numbered exercise list. */
+.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
+.exercise-list > li {
+  counter-increment: exn;
+  padding: 14px 18px 14px 64px;
+  position: relative;
+  margin-bottom: 12px;
+  background: var(--light);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 8px 8px 0;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+.exercise-list > li::before {
+  content: "Q" counter(exn);
+  position: absolute;
+  left: 18px; top: 14px;
+  font-weight: 600;
+  color: var(--yonsei-blue);
+  letter-spacing: -0.02em;
+}
+.thm-box {
+  background: var(--light);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 22px;
+}
+.thm-box .thm-title {
+  font-weight: 700;
+  color: var(--yonsei-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lecture 3 of 5</div>
+  <h1>SDE Formulation<br>and Score Matching</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Fokker–Planck, Anderson's reverse SDE, and the score-matching theorem</p>
+  <div class="spacer-lg"></div>
+  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p class="small" style="margin-top:6px;">2026</p>
+</div>
+
+<!-- SLIDE 2: Contents -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">From discrete to continuous</div>
+        <div class="toc-sub">VE / VP as SDE limits, Itô integrals</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Fokker–Planck equation</div>
+        <div class="toc-sub">Evolution of the marginal density $p_t$</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Anderson's reverse SDE</div>
+        <div class="toc-sub">Theorem and proof via FP matching</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Score matching</div>
+        <div class="toc-sub">Theorem, proof, reparameterization, multi-dim</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================================
+     PART 01: From discrete to continuous
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>From Discrete to Continuous</h1>
+  <div class="divider"></div>
+  <p class="subtitle">VE and VP as limits of a stochastic differential equation</p>
+</div>
+
+<!-- SLIDE: VE as SDE limit -->
+<div class="slide">
+  <h2>VE as an SDE</h2>
+  <div class="divider"></div>
+  <p>Take the VE update $X_{t} = X_{t-\Delta t} + \sqrt{\beta}\,Z_t$ with $Z_t \sim \mathcal{N}(0,\Delta t)$ and let $\Delta t \to 0$:</p>
+  <div class="math-block">$$dX_t = \sqrt{\beta}\,dZ_t.$$</div>
+  <p>Here $dZ_t$ is an increment of standard <strong>Brownian motion</strong>: $Z_t - Z_{t-\Delta t} \sim \mathcal{N}(0, \Delta t)$. In integrated form, $X_t = X_0 + \sqrt{\beta}\,Z_t$, matching the VE single-step corruption we derived earlier.</p>
+</div>
+
+<!-- SLIDE: VP as SDE limit -->
+<div class="slide">
+  <h2>VP as an SDE</h2>
+  <div class="divider"></div>
+  <p>The VP recursion is $X_t = \sqrt{1-\beta_n}\,X_{t-\Delta t} + \sqrt{\beta_n}\,Z_t$. Setting $\beta_n = \beta_t\,dt$ and Taylor-expanding $\sqrt{1-\beta_t\,dt} \approx 1 - \tfrac{\beta_t\,dt}{2}$:</p>
+  <div class="math-block">$$dX_t = -\frac{\beta_t}{2}\,X_t\,dt + \sqrt{\beta_t}\,dZ_t.$$</div>
+  <p>This is a linear <strong>Ornstein–Uhlenbeck</strong> SDE: a deterministic pull toward zero plus white noise. It is the continuous-time stand-in for DDPM.</p>
+</div>
+
+<!-- SLIDE: General SDE form -->
+<div class="slide">
+  <h2>General forward SDE</h2>
+  <div class="divider"></div>
+  <p>Both VE and VP fit the template</p>
+  <div class="math-block">$$dX_t = f(X_t, t)\,dt + g(t)\,dZ_t,$$</div>
+  <p>with drift $f$ and diffusion coefficient $g$. The explicit Euler–Maruyama discretization is</p>
+  <div class="math-block">$$X_{k+1} = X_k + \Delta t\,f(X_k, k\Delta t) + g(k\Delta t)\sqrt{\Delta t}\,Z_k.$$</div>
+  <div class="spacer"></div>
+  <div class="grid-2">
+    <div class="card"><h3 style="color:var(--blue-light);">VE</h3><p class="small">$f = 0$, $g(t) = \sqrt{\beta}$.</p></div>
+    <div class="card"><h3 style="color:var(--blue-light);">VP</h3><p class="small">$f(X_t, t) = -\tfrac{\beta_t}{2}X_t$, $g(t) = \sqrt{\beta_t}$.</p></div>
+  </div>
+</div>
+
+<!-- SLIDE: Solution is a distribution -->
+<div class="slide">
+  <h2>The solution is a distribution</h2>
+  <div class="divider"></div>
+  <p>Unlike an ODE, an SDE does not trace out a single path. It defines a stochastic process $\{X_t\}_{t \in [0,T]}$ via the <strong>Itô stochastic integral</strong>:</p>
+  <div class="math-block">$$X_t = X_0 + \int_0^t f(X_s, s)\,ds + \int_0^t g(s)\,dW_s,\qquad \int_0^t g(s)\,dW_s = \lim_{\varepsilon\to 0}\sum_{k=0}^{\lfloor t/\varepsilon\rfloor} g(\varepsilon k)\sqrt{\varepsilon}\,Z_k.$$</div>
+  <p>For diffusion models we do not need the full joint law of $\{X_t\}$. We only need the <strong>marginal densities</strong> $\{p_t\}_{t\in[0,T]}$ with $X_t \sim p_t$, and their evolution from $p_0$ to $p_T$.</p>
+</div>
+
+<!-- ====================================================================
+     PART 02: Fokker–Planck equation
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Fokker–Planck Equation</h1>
+  <div class="divider"></div>
+  <p class="subtitle">The PDE that governs $p_t$</p>
+</div>
+
+<!-- SLIDE: FP statement -->
+<div class="slide">
+  <h2>Fokker–Planck, 1D</h2>
+  <div class="divider"></div>
+  <div class="thm-box">
+    <div class="thm-title">Theorem (Fokker–Planck)</div>
+    <p>For the SDE $dX_t = f(X_t, t)\,dt + g(t)\,dZ_t$, the marginal density $p_t(x)$ satisfies</p>
+    <div class="math-block" style="margin:8px 0;">$$\partial_t\,p_t(x) = -\partial_x\bigl(f(x,t)\,p_t(x)\bigr) + \frac{g^2(t)}{2}\,\partial_x^2\,p_t(x).$$</div>
+  </div>
+  <div class="spacer"></div>
+  <p>This is a deterministic PDE for the probability density, no longer involving Brownian motion explicitly. We will derive it by testing against smooth functions and integrating by parts.</p>
+</div>
+
+<!-- SLIDE: FP derivation 1 -->
+<div class="slide">
+  <h2>Derivation: evolve expectations first</h2>
+  <div class="divider"></div>
+  <p>Let $\phi$ be smooth with compact support. Then</p>
+  <div class="math-block">$$\partial_t\,\mathbb{E}_{X_t \sim p_t}[\phi(X_t)] \approx \frac{1}{\varepsilon}\Bigl(\mathbb{E}_{X\sim p_{t+\varepsilon}}[\phi(X)] - \mathbb{E}_{X\sim p_t}[\phi(X)]\Bigr).$$</div>
+  <p>Over a small $\varepsilon$, we have $X_{t+\varepsilon} \approx X + \varepsilon f + \sqrt{\varepsilon}\,g\,Z$ with $Z\sim\mathcal{N}(0,1)$. Taylor-expand $\phi$ to second order:</p>
+  <div class="math-block">$$\phi(X + \varepsilon f + \sqrt{\varepsilon}\,g\,Z) = \phi(X) + \phi'(X)\,(\varepsilon f + \sqrt{\varepsilon}\,g\,Z) + \tfrac{1}{2}\phi''(X)\,(\sqrt{\varepsilon}\,g\,Z)^2 + O(\varepsilon^{3/2}).$$</div>
+</div>
+
+<!-- SLIDE: FP derivation 2 -->
+<div class="slide">
+  <h2>Derivation: collect surviving terms</h2>
+  <div class="divider"></div>
+  <p>Expectation kills the $\sqrt{\varepsilon}\,\phi'(X) g Z$ term (mean zero) and replaces $Z^2$ by $1$:</p>
+  <div class="math-block">$$\partial_t\,\mathbb{E}[\phi(X_t)] = \mathbb{E}_{X \sim p_t}\!\left[\phi'(X)\,f(X, t) + \tfrac{1}{2}\phi''(X)\,g^2(t)\right].$$</div>
+  <p>Rewrite as integrals and integrate by parts, using $p_t(\pm \infty) = 0$ and $\nabla p_t(\pm\infty) = 0$:</p>
+  <div class="math-block">$$\int \phi(x)\,\partial_t p_t(x)\,dx = \int \phi(x)\bigl[-\partial_x(f\,p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t\bigr]\,dx.$$</div>
+  <p>Since this holds for all test functions $\phi$, the integrands match pointwise. That is Fokker–Planck.</p>
+</div>
+
+<!-- ====================================================================
+     PART 03: Anderson's reverse SDE
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Anderson's Reverse SDE</h1>
+  <div class="divider"></div>
+  <p class="subtitle">A backward SDE with the same marginals as the forward one</p>
+</div>
+
+<!-- SLIDE: Anderson statement -->
+<div class="slide">
+  <h2>Anderson's theorem</h2>
+  <div class="divider"></div>
+  <div class="thm-box">
+    <div class="thm-title">Theorem (Anderson, 1982)</div>
+    <p>For the forward SDE $dX_t = f(X_t, t)\,dt + g(t)\,dZ_t$ with $X_0 \sim p_0$, the reverse-time SDE</p>
+    <div class="math-block" style="margin:8px 0;">$$d\bar{X}_t = \bigl(f(\bar{X}_t, t) - g^2(t)\,\partial_x \log p_t(\bar{X}_t)\bigr)\,dt + g(t)\,d\bar{Z}_t,\quad \bar{X}_T \sim p_T,$$</div>
+    <p>has the <strong>same marginals</strong> as the forward process: $\bar{X}_t \stackrel{(d)}{=} X_t$ for every $t \in [0,T]$. Here $d\bar{Z}_t$ is reverse-time Brownian motion.</p>
+  </div>
+  <div class="spacer"></div>
+  <p class="small">Equivalently, running $Y_t = \bar{X}_{T-t}$ forward in time from $Y_0 \sim p_T$ with drift $-(f - g^2\,\partial_x \log p_{T-t})$ and diffusion $g(T-t)$ produces the same marginals, reversed.</p>
+</div>
+
+<!-- SLIDE: Anderson proof setup -->
+<div class="slide">
+  <h2>Proof setup</h2>
+  <div class="divider"></div>
+  <p>Let $\{q_t\}$ denote the marginals of $Y_t$. By Fokker–Planck applied to $Y_t$:</p>
+  <div class="math-block">$$\partial_t q_t(y) = \partial_y\!\Bigl[\bigl(f(y, T-t) - g^2(T-t)\,\partial_y \log p_{T-t}(y)\bigr)\,q_t(y)\Bigr] + \frac{g^2(T-t)}{2}\,\partial_y^2 q_t(y).$$</div>
+  <p>Let $\bar{p}_t$ be the marginals of $\bar{X}_t$. Because $\bar{p}_{T-t} = q_t$, a change of variable $t \mapsto T-t$ gives the PDE for $\bar{p}_t$ in its own time:</p>
+  <div class="math-block">$$\partial_t \bar{p}_t(x) = -\partial_x\!\Bigl[\bigl(f(x, t) - g^2(t)\,\partial_x \log p_t(x)\bigr)\,\bar{p}_t(x)\Bigr] - \frac{g^2(t)}{2}\,\partial_x^2 \bar{p}_t(x).$$</div>
+</div>
+
+<!-- SLIDE: Anderson proof key step -->
+<div class="slide">
+  <h2>Key step: $p_t$ solves the reverse PDE</h2>
+  <div class="divider"></div>
+  <p>Plug $\bar{p}_t = p_t$ into the reverse PDE and expand the score-shift term:</p>
+  <div class="math-block">$$\begin{aligned}
+    &amp;-\partial_x\!\Bigl[\bigl(f - g^2\,\partial_x \log p_t\bigr)\,p_t\Bigr] - \tfrac{g^2}{2}\,\partial_x^2 p_t \\
+    &amp;\qquad= -\partial_x(f\,p_t) + g^2\,\partial_x\bigl((\partial_x \log p_t)\,p_t\bigr) - \tfrac{g^2}{2}\,\partial_x^2 p_t \\
+    &amp;\qquad= -\partial_x(f\,p_t) + g^2\,\partial_x(\partial_x p_t) - \tfrac{g^2}{2}\,\partial_x^2 p_t \\
+    &amp;\qquad= -\partial_x(f\,p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t \;=\; \partial_t p_t.
+  \end{aligned}$$</div>
+  <p>The middle equality uses $(\partial_x \log p_t)\,p_t = \partial_x p_t$. The last line is the <strong>forward</strong> Fokker–Planck. So $p_t$ indeed satisfies the reverse PDE, which implies $\bar{p}_t = p_t$ by uniqueness.</p>
+</div>
+
+<!-- SLIDE: Why it matters -->
+<div class="slide">
+  <h2>Why this matters for generation</h2>
+  <div class="divider"></div>
+  <p>Anderson's theorem is the <strong>continuous-time analog</strong> of the Bayes-based reverse step we derived in Lecture 1: to reverse diffusion we need the <strong>score function</strong> $\partial_x \log p_t$.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>Generation recipe.</strong> Sample $\bar{X}_T \sim p_T$ (a known Gaussian for VP), then run the reverse SDE with drift $f - g^2 s_\theta$ and diffusion $g$. Discretize however you like.</p>
+  </div>
+  <div class="spacer"></div>
+  <p class="small">The discrete DDPM sampling algorithm from Lecture 2 is exactly the Euler–Maruyama discretization of this reverse SDE at $\Delta t = $ one diffusion step.</p>
+</div>
+
+<!-- ====================================================================
+     PART 04: Score matching
+     ==================================================================== -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Score Matching</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Learning the score without knowing the marginals</p>
+</div>
+
+<!-- SLIDE: Why score matching is needed -->
+<div class="slide">
+  <h2>The natural loss is intractable</h2>
+  <div class="divider"></div>
+  <p>We would like to train $s_\theta$ against the true score at every time $t$:</p>
+  <div class="math-block">$$\mathcal{L}(\theta) = \int_0^T \lambda(t)\,\mathbb{E}_{X_t}\!\left[\bigl\|s_\theta(X_t, t) - \partial_x \log p_t(X_t)\bigr\|^2\right]dt.$$</div>
+  <p>We have samples from $p_t$ (run the forward process), but <strong>not</strong> the function $p_t$ itself, let alone its gradient. That makes the natural target untrainable.</p>
+  <div class="spacer"></div>
+  <p>The way out: rewrite the gradient of the marginal as an expectation over <strong>conditionals</strong> we do know.</p>
+</div>
+
+<!-- SLIDE: Score matching theorem -->
+<div class="slide">
+  <h2>Score matching theorem</h2>
+  <div class="divider"></div>
+  <div class="thm-box">
+    <div class="thm-title">Theorem (Vincent, 2011)</div>
+    <p>Up to a $\theta$-independent constant,</p>
+    <div class="math-block" style="margin:8px 0;">$$\mathcal{L}(\theta) = \int_0^T \lambda(t)\,\mathbb{E}_{X_0}\!\left[\mathbb{E}_{X_t\,|\,X_0}\!\left[\bigl\|s_\theta(X_t, t) - \partial_x \log p_{t\mid 0}(X_t\,|\,X_0)\bigr\|^2\right]\right] dt \;+\; C.$$</div>
+  </div>
+  <div class="spacer"></div>
+  <p>The <strong>conditional</strong> density $p_{t\mid 0}$ is known in closed form because it is just the noise-corruption kernel. For VP diffusion it is Gaussian, so its score is a trivial expression in $X_0$ and $X_t$.</p>
+</div>
+
+<!-- SLIDE: Proof step 1 -->
+<div class="slide">
+  <h2>Proof: marginal score = conditional expectation of conditional score</h2>
+  <div class="divider"></div>
+  <div class="math-block">$$\begin{aligned}
+    \partial_{X_t}\log p_t(X_t)
+    &amp;= \frac{\partial_{X_t}\,p_t(X_t)}{p_t(X_t)} \\
+    &amp;= \frac{1}{p_t(X_t)}\,\partial_{X_t}\!\int p_{t\mid 0}(X_t\,|\,X_0)\,p_0(X_0)\,dX_0 \\
+    &amp;= \int \partial_{X_t}\!\log p_{t\mid 0}(X_t\,|\,X_0)\cdot\frac{p_0(X_0)\,p_{t\mid 0}(X_t\,|\,X_0)}{p_t(X_t)}\,dX_0 \\
+    &amp;= \int \partial_{X_t}\!\log p_{t\mid 0}(X_t\,|\,X_0)\,p_{0\mid t}(X_0\,|\,X_t)\,dX_0 \\
+    &amp;= \mathbb{E}_{X_0\,|\,X_t}\!\bigl[\partial_{X_t}\!\log p_{t\mid 0}(X_t\,|\,X_0)\bigr].
+  \end{aligned}$$</div>
+  <p class="small">Line 3 uses $\partial_{X_t} p_{t\mid 0} = p_{t\mid 0}\,\partial_{X_t}\log p_{t\mid 0}$ (a log-derivative trick). Line 4 is Bayes.</p>
+</div>
+
+<!-- SLIDE: Proof step 2 -->
+<div class="slide">
+  <h2>Proof: plug into the loss</h2>
+  <div class="divider"></div>
+  <p>Expand the squared norm and focus on the cross term:</p>
+  <div class="math-block">$$\begin{aligned}
+    &amp;\mathbb{E}_{X_t}\!\left[\bigl\|s_\theta(X_t, t) - \partial_{X_t}\log p_t(X_t)\bigr\|^2\right] \\
+    &amp;\quad = \mathbb{E}_{X_t}\!\left[\|s_\theta\|^2 - 2\,\langle s_\theta,\,\partial_{X_t}\log p_t\rangle\right] + C \\
+    &amp;\quad = \mathbb{E}_{X_t}\!\left[\|s_\theta\|^2 - 2\,\langle s_\theta,\;\mathbb{E}_{X_0\,|\,X_t}[\partial_{X_t}\log p_{t\mid 0}]\rangle\right] + C \\
+    &amp;\quad = \mathbb{E}_{X_0}\!\mathbb{E}_{X_t\,|\,X_0}\!\left[\|s_\theta - \partial_{X_t}\log p_{t\mid 0}(X_t\,|\,X_0)\|^2\right] + C'.
+  \end{aligned}$$</div>
+  <p>Absorbing the $\|\partial_{X_t}\log p_t\|^2$ term into the constant completes the proof.</p>
+</div>
+
+<!-- SLIDE: Reparameterization -->
+<div class="slide">
+  <h2>$\epsilon$-reparameterization</h2>
+  <div class="divider"></div>
+  <p>For reasonable $f, g$, the noise kernel is Gaussian:</p>
+  <div class="math-block">$$X_t \stackrel{(d)}{=} \gamma_t\,X_0 - \sigma_t\,\epsilon,\quad \epsilon \sim \mathcal{N}(0, I),$$</div>
+  <p>so the conditional score is a closed-form expression in $\epsilon$:</p>
+  <div class="math-block">$$\nabla\log p_{t\mid 0}(X_t\,|\,X_0) = \frac{\gamma_t X_0 - X_t}{\sigma_t^2} \stackrel{(d)}{=} \frac{\epsilon}{\sigma_t}.$$</div>
+  <p>Reparameterize the network as $s_\theta(X_t, t) = \epsilon_\theta(X_t, t)\,/\,\sigma_t$. The loss becomes noise prediction:</p>
+  <div class="math-block">$$\tilde{\mathcal{L}}(\theta) = T\,\mathbb{E}_{X_0,\,\epsilon,\,t}\!\left[\frac{\lambda(t)}{\sigma_t^2}\,\bigl\|\epsilon_\theta(\gamma_t X_0 - \sigma_t\epsilon, t) - \epsilon\bigr\|^2\right].$$</div>
+</div>
+
+<!-- SLIDE: OU example -->
+<div class="slide">
+  <h2>Example: Ornstein–Uhlenbeck</h2>
+  <div class="divider"></div>
+  <p>For $dX_t = -\beta\,X_t\,dt + \sigma\,dW_t$, the conditional density is</p>
+  <div class="math-block">$$p_{t\mid 0}(X_t\,|\,X_0) = \mathcal{N}\!\left(e^{-\beta t}\,X_0,\;\frac{\sigma^2}{2\beta}(1 - e^{-2\beta t})\right),$$</div>
+  <p>so $\gamma_t = e^{-\beta t}$ and $\sigma_t^2 = \tfrac{\sigma^2}{2\beta}(1-e^{-2\beta t})$. The score kernel has a closed form; score matching reduces to regression on a Gaussian mixture parameterized by $X_0$.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p><strong>In practice,</strong> $\epsilon_\theta$ is trained instead of $s_\theta$ because it has a stable scale across time. The two are equivalent up to the factor $\sigma_t$.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Training-time floor -->
+<div class="slide">
+  <h2>A practical floor on $t$</h2>
+  <div class="divider"></div>
+  <p>At $t = 0$ the conditional has $\sigma_t = 0$, so the weight $\lambda(t)/\sigma_t^2$ blows up and the loss is ill-defined. A standard fix is to train from a strictly positive floor $t_0 &gt; 0$:</p>
+  <div class="math-block">$$\tilde{\mathcal{L}}(\theta) = \mathbb{E}_{X_0,\,\epsilon,\,t \sim \text{Unif}(t_0, T)}\!\left[\frac{\lambda(t)}{\sigma_t^2}\,\|\epsilon_\theta(\gamma_t X_0 - \sigma_t\epsilon, t) - \epsilon\|^2\right].$$</div>
+  <p class="small">The excluded tiny interval $[0, t_0)$ corresponds to nearly-clean data; empirically, training there is unstable and not particularly useful.</p>
+</div>
+
+<!-- SLIDE: Multi-dim extension -->
+<div class="slide">
+  <h2>Multi-dimensional extension</h2>
+  <div class="divider"></div>
+  <p>Every result in this lecture generalizes to $\mathbf{X} \in \mathbb{R}^d$ with $f: \mathbb{R}^d \times [0,T] \to \mathbb{R}^d$ and $g(t) \in \mathbb{R}^{d\times d}$ (often $g(t) = \rho(t)\,I$):</p>
+  <ul>
+    <li>Fokker–Planck becomes $\partial_t p_t = -\nabla_{\mathbf{x}}\cdot (f p_t) + \tfrac{1}{2}\,\mathrm{Tr}\!\bigl(g^\top H_{p_t} g\bigr)$, with Hessian $H_{p_t}$. For isotropic $g$ this simplifies to the Laplacian $\tfrac{\rho^2}{2}\Delta p_t$.</li>
+    <li>Anderson's reverse SDE uses the gradient score $\nabla_{\mathbf{x}}\log p_t$ in place of $\partial_x \log p_t$.</li>
+    <li>Score matching theorem holds verbatim with $\nabla_{\mathbf{X}_t}\log p_{t\mid 0}$.</li>
+  </ul>
+</div>
+
+<!-- SLIDE: DDPM vs score matching -->
+<div class="slide">
+  <h2>DDPM and score matching are the same loss</h2>
+  <div class="divider"></div>
+  <p>With the DDPM reparameterization</p>
+  <div class="math-block">$$\bar{\alpha}_n = \prod_{i=1}^n (1-\beta_i),\quad X^{(n)}\stackrel{(d)}{=}\sqrt{\bar{\alpha}_n}\,X^{(0)} - \sqrt{1-\bar{\alpha}_n}\,\epsilon_n,\quad \epsilon_\theta = \sqrt{1-\bar{\alpha}_n}\,s_\theta,\quad \tilde{\lambda}_n = \frac{\lambda_n\beta_n^2}{1-\bar{\alpha}_n},$$</div>
+  <p>the DDPM variational loss</p>
+  <div class="math-block">$$\mathcal{L}(\theta) = \sum_{n=1}^{N}\tilde{\lambda}_n\,\mathbb{E}\!\left[\bigl\|\epsilon - \epsilon_\theta\bigl(\sqrt{\bar{\alpha}_n}X^{(0)} - \sqrt{1-\bar{\alpha}_n}\epsilon,\; n\bigr)\bigr\|^2\right]$$</div>
+  <p>is the discretization of the score-matching objective.</p>
+  <div class="highlight">
+    <p><strong>Takeaway:</strong> DDPM is discrete-time score matching on the VP SDE, trained via $\epsilon$-prediction.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Recap -->
+<div class="slide">
+  <h2>Lecture recap</h2>
+  <div class="divider"></div>
+  <ul>
+    <li>VE and VP are limits of a general SDE $dX_t = f\,dt + g\,dZ_t$.</li>
+    <li>Marginal densities $p_t$ evolve by the <strong>Fokker–Planck</strong> PDE, derived from test-function expectations and integration by parts.</li>
+    <li><strong>Anderson's theorem</strong> gives a reverse-time SDE with matching marginals. Its drift depends on the <strong>score</strong> $\nabla \log p_t$.</li>
+    <li>The intractable loss $\|s_\theta - \nabla \log p_t\|^2$ equals the tractable <strong>score-matching</strong> loss using the known kernel $p_{t\mid 0}$, up to a constant.</li>
+    <li>In the $\epsilon$-parameterization, this is just noise regression. DDPM is a special case.</li>
+  </ul>
+</div>
+
+<!-- SLIDE: Check it yourself -->
+<div class="slide">
+  <h2>Check it yourself</h2>
+  <div class="divider"></div>
+  <ol class="exercise-list">
+    <li>Starting from the Euler–Maruyama discretization, carry out the second-order Taylor expansion and verify every term in the FP derivation (including the vanishing $\sqrt{\varepsilon}$ term and the boundary conditions on $p_t$).</li>
+    <li>For the Ornstein–Uhlenbeck SDE $dX_t = -\beta X_t\,dt + \sigma\,dW_t$, derive $p_{t\mid 0}(X_t\,|\,X_0) = \mathcal{N}\!\bigl(e^{-\beta t} X_0,\; \tfrac{\sigma^2}{2\beta}(1-e^{-2\beta t})\bigr)$.</li>
+    <li>Prove Anderson's theorem in the isotropic multi-dimensional case $g(t) = \rho(t)\,I$. Which steps of the 1D proof generalize unchanged?</li>
+    <li>Derive the multi-dimensional score-matching theorem by running the 1D argument component by component, then packaging the result into vector form.</li>
+  </ol>
+</div>
+
+<!-- SLIDE: End / bridge -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">Next</div>
+  <p class="big-word-sub">Lecture 4: DDIM &amp; Deterministic Sampling</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 26</div>
+
+</div><!-- end deck -->
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>
