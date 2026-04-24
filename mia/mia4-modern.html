@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIA 4 — Modern Likelihood-Ratio Attacks</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+/* Deck-specific: syntax-highlighted code block component. */
+.code-block {
+  background: var(--light);
+  border-radius: 8px;
+  padding: 18px 24px;
+  margin: 12px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--charcoal);
+}
+.code-block .kw { color: var(--yonsei-blue); font-weight: 600; }
+.code-block .fn { color: var(--accent); }
+.code-block .cm { color: #999; }
+.code-block .str { color: var(--success); }
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lecture 4 of 5</div>
+  <h1>Modern Membership<br>Inference Attacks</h1>
+  <div class="divider"></div>
+  <p class="subtitle">LiRA, RMIA, and the attack hierarchy</p>
+  <div class="spacer-lg"></div>
+  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p class="small" style="margin-top:6px;">2026</p>
+</div>
+
+<!-- SLIDE 2: Contents -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Defenses: brief recap</div>
+        <div class="toc-sub">Regularization, DP-SGD, tradeoffs</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Why early evaluations misled</div>
+        <div class="toc-sub">Per-sample risk, ROC at low FPR</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">LiRA (Carlini 2022)</div>
+        <div class="toc-sub">Per-example calibration</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Ye et al. 2022</div>
+        <div class="toc-sub">Unified attack hierarchy</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">RMIA (2023)</div>
+        <div class="toc-sub">Reference-free relative comparison</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">06</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Diffusion MIA</div>
+        <div class="toc-sub">Beyond classification</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Part divider: Defenses: A Brief Recap -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Defenses: A Brief Recap</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Regularization, DP-SGD, and the privacy-utility tradeoff</p>
+</div>
+<!-- SLIDE 97 — Defense Taxonomy -->
+<div class="slide bg-dark">
+  <h2>Defense Taxonomy</h2>
+  <div class="divider"></div>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card">
+      <h3>Regularization</h3>
+      <p style="font-size:0.9rem;">L2, dropout, early stopping, data augmentation</p>
+      <p class="small" style="margin-top:4px;">Reduces generalization gap → Yeom bound</p>
+    </div>
+    <div class="card">
+      <h3>Output Perturbation</h3>
+      <p style="font-size:0.9rem;">MemGuard, label smoothing, temperature scaling</p>
+      <p class="small" style="margin-top:4px;">Modify outputs to mask membership signal</p>
+    </div>
+    <div class="card">
+      <h3>Training-Time</h3>
+      <p style="font-size:0.9rem;">DP-SGD, mixup, adversarial regularization</p>
+      <p class="small" style="margin-top:4px;">Modify training to reduce memorization</p>
+    </div>
+    <div class="card">
+      <h3>Architecture Design</h3>
+      <p style="font-size:0.9rem;">Knowledge distillation, PATE</p>
+      <p class="small" style="margin-top:4px;">Structural approaches to limit leakage</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 103 — DP-SGD Brief -->
+<div class="slide bg-dark">
+  <h2>DP-SGD: The Formal Defense (Brief Reminder)</h2>
+  <div class="divider"></div>
+  <p>The only defense with <strong>formal guarantees</strong> against any adversary:</p>
+  <div class="math-block">
+    $$\tilde{g}_t = \frac{1}{B}\left(\sum_i \text{clip}(g_i, C) + \mathcal{N}(0, \sigma^2 C^2 I)\right)$$
+  </div>
+  <div class="spacer-sm"></div>
+  <div class="cols">
+    <div>
+      <h3 style="color:var(--success);">Strengths</h3>
+      <p style="font-size:0.9rem;">Bounds MI advantage via $(\varepsilon, \delta)$. Composable. Auditable.</p>
+    </div>
+    <div>
+      <h3 style="color:var(--warn);">Cost</h3>
+      <p style="font-size:0.9rem;">Significant accuracy drop at small $\varepsilon$. Computational overhead.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 104 — Defense Comparison -->
+<div class="slide bg-deep">
+  <h2>Defense Comparison Table</h2>
+  <div class="divider"></div>
+  <table style="font-size:0.85rem;">
+    <tr><th>Defense</th><th>MIA Reduction</th><th>Utility Cost</th><th>Formal?</th><th>Adaptive-Robust?</th></tr>
+    <tr><td>L2 + Dropout</td><td>Moderate</td><td>Low</td><td>No</td><td>Partially</td></tr>
+    <tr><td>Early Stopping</td><td>Moderate</td><td>Low</td><td>No</td><td>Partially</td></tr>
+    <tr><td>Label Smoothing</td><td>Low–Moderate</td><td>Very Low</td><td>No</td><td>No</td></tr>
+    <tr><td>MemGuard</td><td>High (non-adaptive)</td><td>Very Low</td><td>No</td><td><strong>No</strong></td></tr>
+    <tr><td>Distillation</td><td>Moderate</td><td>Moderate</td><td>No</td><td>Partially</td></tr>
+    <tr><td><strong>DP-SGD</strong></td><td><strong>High</strong></td><td><strong>High</strong></td><td><strong>Yes</strong></td><td><strong>Yes</strong></td></tr>
+  </table>
+</div>
+
+<!-- SLIDE 108 — Arms Race -->
+<div class="slide bg-deep">
+  <h2>The Arms Race</h2>
+  <div class="divider"></div>
+  <p>Every empirical defense is eventually broken by adaptive attacks:</p>
+  <div class="spacer-sm"></div>
+  <table style="font-size:0.9rem;">
+    <tr><th>Defense</th><th>Adaptive Counter</th></tr>
+    <tr><td>MemGuard (perturb confidence)</td><td>Retrain attack on perturbed outputs</td></tr>
+    <tr><td>Label smoothing</td><td>Use loss instead of confidence</td></tr>
+    <tr><td>Temperature scaling</td><td>Estimate original logits</td></tr>
+    <tr><td>Output rounding</td><td>Use label-only attacks</td></tr>
+  </table>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;"><strong>Lesson:</strong> Post-hoc output perturbation is an arms race. Only <strong>training-time defenses</strong> (DP-SGD) modify the fundamental information content.</p>
+  </div>
+</div>
+
+
+<!-- Part divider: Why Early Evaluations Misled Us -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Why Early Evaluations Misled Us</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Average accuracy hides per-sample risk</p>
+</div>
+<!-- SLIDE 116 — Problem with Early Evaluations -->
+<div class="slide bg-dark">
+  <h2>The Problem with Early Evaluations</h2>
+  <div class="divider"></div>
+  <p>Prior work reported MIA results using <strong>balanced accuracy</strong> at a 50% threshold:</p>
+  <div class="spacer-sm"></div>
+  <ul class="arrow">
+    <li>Inflated by easy examples that any attack can classify</li>
+    <li>Hides performance on hard (but important) cases</li>
+    <li>Not meaningful at low FPR — the practical regime</li>
+    <li>Doesn't capture per-sample heterogeneity</li>
+  </ul>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">The modern era of MIA begins with a <strong>re-evaluation</strong> of what it means for an attack to succeed — driven by Carlini et al.'s insistence on TPR at low FPR.</p>
+  </div>
+</div>
+
+<!-- SLIDE 117 — Label-Only Overview -->
+<div class="slide bg-deep">
+  <div class="pill">Choquette-Choo et al. 2020</div>
+  <h2>Label-Only Membership Inference</h2>
+  <div class="divider"></div>
+  <p>What if the API only returns the <strong>predicted label</strong> — no confidence scores?</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;"><strong>Challenge:</strong> A binary signal (correct/incorrect label) seems too weak for MIA. But it turns out to be sufficient.</p>
+  </div>
+  <div class="spacer"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Data Augmentation Attack</h3>
+      <p style="font-size:0.9rem;">Query with augmented versions of $x$. Count how often the label stays correct:</p>
+      <div class="math-block" style="font-size:0.9rem;">$$s(x) = \frac{1}{K}\sum_{k=1}^K \mathbf{1}[f_\theta(T_k(x)) = y]$$</div>
+      <p style="font-size:0.85rem;">Members are more robust to augmentation.</p>
+    </div>
+    <div class="card">
+      <h3>Boundary Attack</h3>
+      <p style="font-size:0.9rem;">Estimate distance to decision boundary:</p>
+      <div class="math-block" style="font-size:0.9rem;">$$d(x) = \min_\delta \|\delta\| \text{ s.t. } f_\theta(x+\delta) \neq y$$</div>
+      <p style="font-size:0.85rem;">Members are further from the boundary.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 118 — Label-Only Results -->
+<div class="slide bg-dark">
+  <div class="pill">Choquette-Choo et al. 2020</div>
+  <h2>Label-Only: Surprisingly Effective</h2>
+  <div class="divider"></div>
+  <div class="spacer-sm"></div>
+  <ul class="check">
+    <li>Performance <strong>surprisingly close</strong> to confidence-based attacks</li>
+    <li>Data augmentation attack requires only $K \sim 100$ queries per point</li>
+    <li>Boundary attack is more expensive but more precise</li>
+  </ul>
+  <div class="spacer"></div>
+  <div class="highlight" style="font-size:1.05rem; padding:20px 24px;">
+    <p><strong>Even the minimal signal of a predicted label leaks membership.</strong></p>
+  </div>
+  <div class="spacer"></div>
+  <p>This confirms Sablayrolles' theoretical result: restricting API access provides minimal privacy benefit. The membership signal is fundamental to how the model treats data.</p>
+</div>
+
+
+<!-- Part divider: LiRA: Carlini et al. 2022 -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>LiRA: Carlini et al. 2022</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Per-example likelihood-ratio calibration</p>
+</div>
+<!-- SLIDE 119 — Carlini Overview -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Membership Inference Attacks From First Principles</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>A <strong>landmark paper</strong> that redefined both the attack methodology and evaluation standards for MIA.</p>
+      <div class="spacer"></div>
+      <ul class="arrow">
+        <li>Introduced <strong>LiRA</strong> (Likelihood Ratio Attack)</li>
+        <li>Per-example calibration via shadow models</li>
+        <li>Established TPR at low FPR as the evaluation standard</li>
+        <li>Dramatically outperforms all prior attacks</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
+      <p style="font-size:0.95rem; text-align:center;"><em>"Membership Inference Attacks From First Principles"</em></p>
+      <div class="spacer-sm"></div>
+      <p class="small" style="text-align:center;">IEEE S&amp;P 2022</p>
+      <p class="small">Carlini, Chien, Nasr, Song, Terzis, Tramèr</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 120 — LiRA Framework -->
+<div class="slide bg-dark">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>LiRA: The Likelihood Ratio Attack</h2>
+  <div class="divider"></div>
+  <p>Core idea: compute the <strong>likelihood ratio of the loss</strong> under two hypotheses:</p>
+  <div class="math-block">
+    $$\Lambda(z) = \frac{p(\ell(f_\theta, z) \mid z \in D)}{p(\ell(f_\theta, z) \mid z \notin D)}$$
+  </div>
+  <div class="spacer-sm"></div>
+  <p>This is exactly the Neyman-Pearson optimal test (Slide 26), instantiated with the loss as the test statistic (justified by Sablayrolles).</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;"><strong>Key question:</strong> How do we estimate $p(\ell \mid \text{IN})$ and $p(\ell \mid \text{OUT})$ for a specific data point $z$?</p>
+  </div>
+</div>
+
+<!-- SLIDE 121 — Estimating Distributions -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Estimating the Distributions</h2>
+  <div class="divider"></div>
+  <p>Train $N$ shadow models with controlled membership of $z$:</p>
+  <div class="spacer-sm"></div>
+  <div class="cols">
+    <div class="card">
+      <h3>IN Models ($N/2$)</h3>
+      <p style="font-size:0.9rem;">Include $z$ in training data</p>
+      <p style="font-size:0.9rem;">Collect losses: $\{\ell_{\text{in}}^{(1)}, \ldots, \ell_{\text{in}}^{(N/2)}\}$</p>
+    </div>
+    <div class="card">
+      <h3>OUT Models ($N/2$)</h3>
+      <p style="font-size:0.9rem;">Exclude $z$ from training data</p>
+      <p style="font-size:0.9rem;">Collect losses: $\{\ell_{\text{out}}^{(1)}, \ldots, \ell_{\text{out}}^{(N/2)}\}$</p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <p>Fit <strong>Gaussian distributions</strong> to each set:</p>
+  <div class="math-block">
+    $$\ell_{\text{in}} \sim \mathcal{N}(\mu_{\text{in}}, \sigma_{\text{in}}^2) \qquad \ell_{\text{out}} \sim \mathcal{N}(\mu_{\text{out}}, \sigma_{\text{out}}^2)$$
+  </div>
+</div>
+
+<!-- SLIDE 122 — LiRA Formula -->
+<div class="slide bg-dark">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>LiRA: Mathematical Formulation</h2>
+  <div class="divider"></div>
+  <p>The likelihood ratio becomes a ratio of Gaussian PDFs:</p>
+  <div class="math-block">
+    $$\Lambda(z) = \frac{\phi(\ell; \mu_{\text{in}}, \sigma_{\text{in}})}{\phi(\ell; \mu_{\text{out}}, \sigma_{\text{out}})}$$
+  </div>
+  <p>where $\phi(\ell; \mu, \sigma) = \frac{1}{\sigma\sqrt{2\pi}} \exp\left(-\frac{(\ell - \mu)^2}{2\sigma^2}\right)$ and $\ell = \ell(f_\theta, z)$ is the target model's loss.</p>
+  <div class="spacer"></div>
+  <p>Taking the log:</p>
+  <div class="math-block">
+    $$\log \Lambda(z) = \frac{(\ell - \mu_{\text{out}})^2}{2\sigma_{\text{out}}^2} - \frac{(\ell - \mu_{\text{in}})^2}{2\sigma_{\text{in}}^2} + \log\frac{\sigma_{\text{out}}}{\sigma_{\text{in}}}$$
+  </div>
+</div>
+
+<!-- SLIDE 123 — Per-Example Calibration -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Per-Example Calibration</h2>
+  <div class="divider"></div>
+  <div class="spacer-sm"></div>
+  <div class="highlight" style="padding:24px 28px;">
+    <p style="font-size:1.05rem;"><strong>Key innovation:</strong> The distributions are computed <strong>per example</strong> $z$. Each data point gets its own $(\mu_{\text{in}}, \sigma_{\text{in}}, \mu_{\text{out}}, \sigma_{\text{out}})$.</p>
+  </div>
+  <div class="spacer"></div>
+  <p>Why this matters:</p>
+  <ul class="arrow">
+    <li>An "easy" example has low loss regardless of membership → needs tight thresholds</li>
+    <li>A "hard" example has high loss even as a member → needs different thresholds</li>
+    <li>A global threshold (Yeom) treats all examples the same — <strong>suboptimal</strong></li>
+    <li>Per-example calibration captures the <strong>difficulty of each data point</strong></li>
+  </ul>
+  <div class="spacer-sm"></div>
+  <p class="small">Analogy: "Not all questions on an exam are equally hard — you need per-question grading."</p>
+</div>
+
+<!-- SLIDE 124 — Online vs Offline -->
+<div class="slide bg-dark">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Online vs. Offline LiRA</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div class="card">
+      <h3>Online LiRA</h3>
+      <p style="font-size:0.9rem;">For each target $z$: train $N/2$ models with $z$ and $N/2$ without.</p>
+      <div class="spacer-sm"></div>
+      <p style="font-size:0.85rem;"><strong>Pro:</strong> Exact per-example distributions</p>
+      <p style="font-size:0.85rem;"><strong>Con:</strong> $O(N \cdot |D|)$ total models needed</p>
+    </div>
+    <div class="card">
+      <h3>Offline LiRA</h3>
+      <p style="font-size:0.9rem;">Train $N$ models on random subsets. Classify membership of $z$ post-hoc based on whether $z$ happened to be included.</p>
+      <div class="spacer-sm"></div>
+      <p style="font-size:0.85rem;"><strong>Pro:</strong> Only $N$ models total</p>
+      <p style="font-size:0.85rem;"><strong>Con:</strong> Noisier estimates</p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <p>In practice, offline LiRA with $N = 64$–$256$ models is standard.</p>
+</div>
+
+<!-- SLIDE 125 — Computational Cost -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Computational Cost</h2>
+  <div class="divider"></div>
+  <div class="spacer"></div>
+  <div class="math-block">
+    $$\text{Total cost} = N \times \text{(cost of training one model)}$$
+  </div>
+  <div class="spacer"></div>
+  <p>For $N = 256$ shadow models on a CIFAR-10 classifier:</p>
+  <ul class="arrow">
+    <li>~256× the compute of training one model</li>
+    <li>Each shadow model must be <strong>fully trained</strong> to convergence</li>
+    <li>All models train on overlapping but different subsets</li>
+  </ul>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;"><strong>The price of optimality:</strong> LiRA is the most accurate attack but also the most expensive. Later work (RMIA) will dramatically reduce this cost.</p>
+  </div>
+</div>
+
+<!-- SLIDE 126 — Why LiRA Works -->
+<div class="slide bg-dark">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Why LiRA Works: Visual Intuition</h2>
+  <div class="divider"></div>
+  <p>For a specific data point $z$, the loss distributions under IN and OUT are separated:</p>
+  <div class="spacer"></div>
+  <div class="cols">
+    <div class="card" style="text-align:center;">
+      <h3>Easy Example</h3>
+      <p style="font-size:0.85rem;">Both distributions have low mean. Small gap.</p>
+      <div style="display:flex; gap:3px; justify-content:center; align-items:end; height:50px; margin:8px 0;">
+        <div style="width:10px; height:10px; background:var(--blue); opacity:0.4; border-radius:2px;"></div>
+        <div style="width:10px; height:35px; background:var(--blue); opacity:0.7; border-radius:2px;"></div>
+        <div style="width:10px; height:40px; background:var(--accent); opacity:0.6; border-radius:2px;"></div>
+        <div style="width:10px; height:25px; background:var(--accent); opacity:0.4; border-radius:2px;"></div>
+        <div style="width:10px; height:8px; background:var(--accent); opacity:0.3; border-radius:2px;"></div>
+      </div>
+      <p class="tiny">Low MIA power</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <h3>Hard / Memorized Example</h3>
+      <p style="font-size:0.85rem;">Large gap between IN (low) and OUT (high).</p>
+      <div style="display:flex; gap:3px; justify-content:center; align-items:end; height:50px; margin:8px 0;">
+        <div style="width:10px; height:35px; background:var(--blue); opacity:0.7; border-radius:2px;"></div>
+        <div style="width:10px; height:15px; background:var(--blue); opacity:0.4; border-radius:2px;"></div>
+        <div style="width:10px; height:3px; background:var(--white-10); border-radius:2px;"></div>
+        <div style="width:10px; height:15px; background:var(--accent); opacity:0.4; border-radius:2px;"></div>
+        <div style="width:10px; height:40px; background:var(--accent); opacity:0.7; border-radius:2px;"></div>
+      </div>
+      <p class="tiny">High MIA power</p>
+    </div>
+  </div>
+  <div class="spacer-sm"></div>
+  <p class="small"><span style="color:var(--blue);">■</span> IN distribution &nbsp;&nbsp; <span style="color:var(--accent);">■</span> OUT distribution &nbsp;&nbsp; The ratio captures how "surprising" the observed loss is.</p>
+</div>
+
+<!-- SLIDE 127 — LiRA Results -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>LiRA: Results at Low FPR</h2>
+  <div class="divider"></div>
+  <p>LiRA dramatically outperforms all prior attacks in the <strong>low-FPR regime</strong>:</p>
+  <div class="spacer-sm"></div>
+  <table>
+    <tr><th>Attack</th><th>TPR @ FPR=1%</th><th>TPR @ FPR=0.1%</th><th>TPR @ FPR=0.01%</th></tr>
+    <tr><td>Threshold (Yeom)</td><td>~5%</td><td>~1%</td><td>~0.1%</td></tr>
+    <tr><td>Shokri (shadow)</td><td>~8%</td><td>~2%</td><td>~0.3%</td></tr>
+    <tr><td><strong>LiRA (online)</strong></td><td><strong>~25%</strong></td><td><strong>~12%</strong></td><td><strong>~5%</strong></td></tr>
+  </table>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">At FPR=0.01%, LiRA achieves <strong>10–50× higher TPR</strong> than previous attacks. The gap widens as FPR decreases.</p>
+  </div>
+</div>
+
+<!-- SLIDE 128 — Evaluation Revolution -->
+<div class="slide bg-dark">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>The Evaluation Revolution</h2>
+  <div class="divider"></div>
+  <div class="spacer"></div>
+  <div class="highlight" style="padding:24px 28px; font-size:1.05rem;">
+    <p><strong>Carlini's argument:</strong> "An attack that achieves 60% balanced accuracy but 0% TPR at 0.1% FPR is <em>useless</em> in practice."</p>
+  </div>
+  <div class="spacer"></div>
+  <p>New evaluation standards established by this paper:</p>
+  <div class="spacer-sm"></div>
+  <ul class="num">
+    <li><strong>Always report TPR at low FPR</strong> (0.1%, 0.01%)</li>
+    <li><strong>Plot ROC on log-log scale</strong> to reveal low-FPR behavior</li>
+    <li><strong>Use per-example calibration</strong> — global thresholds are suboptimal</li>
+    <li><strong>Report on vulnerable subgroups</strong>, not just average</li>
+  </ul>
+</div>
+
+<!-- SLIDE 129 — Fixed vs Per-Example -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Fixed vs. Per-Example Thresholds</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div class="card" style="border-color:var(--warn);">
+      <h3>Old: Global Threshold</h3>
+      <p style="font-size:0.9rem;">Single $\tau$ for all examples.</p>
+      <div class="math-block" style="font-size:0.9rem;">$$\mathcal{A}(z) = \mathbf{1}[\ell(f_\theta, z) \leq \tau]$$</div>
+      <p style="font-size:0.85rem;">Treats all data points equally. Misses easy examples and over-alerts on hard ones.</p>
+    </div>
+    <div class="card" style="border-color:var(--success);">
+      <h3>New: Per-Example LR</h3>
+      <p style="font-size:0.9rem;">Calibrated threshold per $z$.</p>
+      <div class="math-block" style="font-size:0.9rem;">$$\mathcal{A}(z) = \mathbf{1}\left[\frac{\phi(\ell; \mu_z^{\text{in}}, \sigma_z^{\text{in}})}{\phi(\ell; \mu_z^{\text{out}}, \sigma_z^{\text{out}})} > \tau\right]$$</div>
+      <p style="font-size:0.85rem;">Accounts for each point's difficulty. Dramatically better at low FPR.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 130 — LiRA Pseudocode -->
+<div class="slide bg-dark">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>LiRA: Pseudocode (Offline)</h2>
+  <div class="divider"></div>
+  <div class="code-block"><span class="cm">// Phase 1: Train shadow models on random subsets</span>
+<span class="kw">for</span> i = 1 to N:
+    S[i] ← <span class="fn">random_subset</span>(D_pool, size=n)
+    f[i] ← <span class="fn">train_model</span>(S[i])
+
+<span class="cm">// Phase 2: For each target point z, compute LiRA score</span>
+<span class="kw">def</span> <span class="fn">lira_score</span>(target_model, z):
+    losses_in  ← [<span class="fn">loss</span>(f[i], z) <span class="kw">for</span> i <span class="kw">where</span> z ∈ S[i]]
+    losses_out ← [<span class="fn">loss</span>(f[i], z) <span class="kw">for</span> i <span class="kw">where</span> z ∉ S[i]]
+    μ_in, σ_in   ← <span class="fn">fit_gaussian</span>(losses_in)
+    μ_out, σ_out ← <span class="fn">fit_gaussian</span>(losses_out)
+    ℓ ← <span class="fn">loss</span>(target_model, z)
+    <span class="kw">return</span> <span class="fn">log_ratio</span>(ℓ, μ_in, σ_in, μ_out, σ_out)</div>
+</div>
+
+<!-- SLIDE 131 — Connection to Theory -->
+<div class="slide bg-deep">
+  <div class="pill">Carlini et al. 2022</div>
+  <h2>Full Circle: Theory to Practice</h2>
+  <div class="divider"></div>
+  <div class="spacer"></div>
+  <div class="diagram-flow" style="justify-content:center;">
+    <div class="diagram-box">Neyman-<br>Pearson<br><span class="tiny">(Sec. 1)</span></div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box">Loss is<br>sufficient<br><span class="tiny">(Sablayrolles)</span></div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box filled">LiRA:<br>Practical<br>optimal<br><span class="tiny">(Carlini)</span></div>
+  </div>
+  <div class="spacer-lg"></div>
+  <p>LiRA is the practical realization of the theoretically optimal attack:</p>
+  <ul class="check" style="font-size:0.95rem;">
+    <li>Uses loss as test statistic (Sablayrolles: near-sufficient)</li>
+    <li>Implements likelihood ratio test (Neyman-Pearson: optimal)</li>
+    <li>Per-example calibration captures heterogeneous difficulty</li>
+    <li>Gaussian fit makes it computationally tractable</li>
+  </ul>
+</div>
+
+
+<!-- Part divider: Unified View: Ye et al. 2022 -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Unified View: Ye et al. 2022</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Population, reference, and the attack hierarchy</p>
+</div>
+<!-- SLIDE 132 — Ye et al. Overview -->
+<div class="slide bg-dark">
+  <div class="pill">Ye et al. 2022</div>
+  <h2>Enhanced MIA via Hypothesis Testing</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Formalized a <strong>unified framework</strong> showing all attacks are special cases of hypothesis testing.</p>
+      <div class="spacer"></div>
+      <ul class="arrow">
+        <li>Population vs reference attacks</li>
+        <li>All prior attacks as special cases</li>
+        <li>Open-source <strong>Privacy Meter</strong> tool</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
+      <p style="font-size:0.95rem; text-align:center;"><em>"Enhanced MIA against ML Models"</em></p>
+      <div class="spacer-sm"></div>
+      <p class="small" style="text-align:center;">ACM CCS 2022 — Ye, Maddi, Murakonda, Bindschaedler, Shokri</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 133 — Population vs Reference -->
+<div class="slide bg-deep">
+  <div class="pill">Ye et al. 2022</div>
+  <h2>Population vs. Reference Attacks</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div class="card">
+      <h3>Population Attack</h3>
+      <p style="font-size:0.9rem;">Compare loss against <strong>population distribution</strong> $p(\ell \mid z \sim \mathcal{D})$:</p>
+      <div class="math-block" style="font-size:0.9rem;">$$\Lambda(z) = \frac{p(\ell(f_\theta, z) \mid z \in D)}{p(\ell \mid z \sim \mathcal{D})}$$</div>
+      <p style="font-size:0.85rem;">Cheap but requires population data.</p>
+    </div>
+    <div class="card">
+      <h3>Reference Attack</h3>
+      <p style="font-size:0.9rem;">Compare against <strong>reference models</strong> (like LiRA):</p>
+      <div class="math-block" style="font-size:0.9rem;">$$\Lambda(z) = \frac{p(\ell \mid z \in D_{\text{ref}})}{p(\ell \mid z \notin D_{\text{ref}})}$$</div>
+      <p style="font-size:0.85rem;">More expensive, more powerful.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 134 — Unified View -->
+<div class="slide bg-dark">
+  <div class="pill">Ye et al. 2022</div>
+  <h2>All Attacks as Likelihood Ratios</h2>
+  <div class="divider"></div>
+  <table>
+    <tr><th>Attack</th><th>Signal $\phi$</th><th>Calibration</th></tr>
+    <tr><td>Threshold (Yeom)</td><td>Loss</td><td>Population mean (global)</td></tr>
+    <tr><td>Shokri (shadow)</td><td>Confidence vector</td><td>Learned (shadow models)</td></tr>
+    <tr><td>Entropy (Song)</td><td>Entropy</td><td>Population threshold</td></tr>
+    <tr><td>LiRA (Carlini)</td><td>Loss</td><td>Per-example Gaussian</td></tr>
+    <tr><td>Population (Ye)</td><td>Loss</td><td>Population distribution</td></tr>
+    <tr><td>Reference (Ye)</td><td>Loss</td><td>Reference models</td></tr>
+  </table>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">Every attack computes: "how surprising is this observation, relative to some baseline?" They differ only in <strong>what signal</strong> and <strong>what baseline</strong>.</p>
+  </div>
+</div>
+
+<!-- SLIDE 135 — Attack Hierarchy -->
+<div class="slide bg-deep">
+  <div class="pill">Ye et al. 2022</div>
+  <h2>Attack Power Hierarchy</h2>
+  <div class="divider"></div>
+  <div class="spacer"></div>
+  <div class="diagram-flow" style="justify-content:center;">
+    <div class="diagram-box filled">LiRA<br>(per-example)</div>
+    <span class="diagram-arrow">≥</span>
+    <div class="diagram-box">Reference<br>(model-based)</div>
+    <span class="diagram-arrow">≥</span>
+    <div class="diagram-box">Population<br>(distribution)</div>
+    <span class="diagram-arrow">≥</span>
+    <div class="diagram-box">Threshold<br>(global)</div>
+  </div>
+  <div class="spacer-lg"></div>
+  <table style="font-size:0.9rem;">
+    <tr><th>Attack</th><th>Shadow Models</th><th>Per-Example?</th><th>Relative Power</th></tr>
+    <tr><td>Threshold</td><td>0</td><td>No</td><td>Lowest</td></tr>
+    <tr><td>Population</td><td>0 (need data)</td><td>Partially</td><td>Medium</td></tr>
+    <tr><td>Reference</td><td>Few (2–8)</td><td>Yes</td><td>High</td></tr>
+    <tr><td>LiRA</td><td>Many (64–256)</td><td>Yes</td><td>Highest</td></tr>
+  </table>
+</div>
+
+<!-- SLIDE 136 — Privacy Meter -->
+<div class="slide bg-dark">
+  <div class="pill">Ye et al. 2022</div>
+  <h2>Privacy Meter: Standardized Evaluation</h2>
+  <div class="divider"></div>
+  <p>Open-source tool for MIA evaluation:</p>
+  <div class="spacer-sm"></div>
+  <div class="diagram-flow" style="justify-content:center;">
+    <div class="diagram-box">Model + Data</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box filled">Privacy Meter</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box">Per-sample risk<br>ROC curves<br>TPR@FPR</div>
+  </div>
+  <div class="spacer"></div>
+  <ul class="check" style="font-size:0.95rem;">
+    <li>Implements population, reference, and LiRA-style attacks</li>
+    <li>Standardized per-sample privacy risk scores</li>
+    <li>Log-scale ROC visualization</li>
+    <li>Enables fair comparison across papers</li>
+  </ul>
+</div>
+
+
+<!-- Part divider: RMIA: Zarifzadeh et al. 2023 -->
+<div class="slide section-slide left">
+  <div class="section-num">05</div>
+  <h1>RMIA: Zarifzadeh et al. 2023</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Reference-free relative comparison</p>
+</div>
+<!-- SLIDE 137 — RMIA Overview -->
+<div class="slide bg-deep">
+  <div class="pill">Zarifzadeh et al. 2023</div>
+  <h2>RMIA: Low-Cost High-Power MIA</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Achieves <strong>LiRA-level performance</strong> with dramatically fewer reference models.</p>
+      <div class="spacer"></div>
+      <ul class="arrow">
+        <li>As few as <strong>1–8 reference models</strong> (vs. 256 for LiRA)</li>
+        <li>Uses population data for additional calibration</li>
+        <li>10–100× computational reduction</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
+      <p style="font-size:0.95rem; text-align:center;"><em>"Low-Cost High-Power Membership Inference Attacks"</em></p>
+      <div class="spacer-sm"></div>
+      <p class="small" style="text-align:center;">ICML 2024 — Zarifzadeh, Liu, Shokri</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 138 — RMIA Core Idea -->
+<div class="slide bg-dark">
+  <div class="pill">Zarifzadeh et al. 2023</div>
+  <h2>RMIA: Core Idea</h2>
+  <div class="divider"></div>
+  <p>Instead of per-example shadow models, use a <strong>small set of reference models + population data</strong>:</p>
+  <div class="math-block">
+    $$\Lambda(z) = \frac{p_\theta(z)}{\frac{1}{R}\sum_{r=1}^R p_{\theta_r}(z)}$$
+  </div>
+  <div class="spacer-sm"></div>
+  <p>Numerator: target model's likelihood of $z$. Denominator: average likelihood across $R$ reference models.</p>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">If the target model assigns much higher likelihood to $z$ than reference models do, $z$ was likely in the target's training data.</p>
+  </div>
+</div>
+
+<!-- SLIDE 139 — RMIA Relative Comparison -->
+<div class="slide bg-deep">
+  <div class="pill">Zarifzadeh et al. 2023</div>
+  <h2>RMIA: Relative Comparison</h2>
+  <div class="divider"></div>
+  <p>Alternative formulation — rank the target's loss on $z$ among reference points:</p>
+  <div class="math-block">
+    $$s(z) = \frac{1}{|Z_{\text{ref}}|}\sum_{z' \in Z_{\text{ref}}} \mathbf{1}\left[\frac{p_\theta(z)}{p_{\theta_r}(z)} > \frac{p_\theta(z')}{p_{\theta_r}(z')}\right]$$
+  </div>
+  <div class="spacer-sm"></div>
+  <p>"How does $z$'s likelihood ratio rank among reference data points?"</p>
+  <div class="spacer"></div>
+  <ul class="arrow">
+    <li>Members have <strong>higher relative ranking</strong> than non-members</li>
+    <li>The ranking is more <strong>robust</strong> than absolute loss values</li>
+    <li>Resilient to distribution shift between reference and target</li>
+  </ul>
+</div>
+
+<!-- SLIDE 140 — RMIA Results -->
+<div class="slide bg-dark">
+  <div class="pill">Zarifzadeh et al. 2023</div>
+  <h2>RMIA: Results</h2>
+  <div class="divider"></div>
+  <table>
+    <tr><th>Method</th><th>Shadow Models</th><th>TPR@0.1% FPR</th><th>AUC</th></tr>
+    <tr><td>Threshold</td><td>0</td><td>~1%</td><td>0.62</td></tr>
+    <tr><td>LiRA (offline)</td><td>256</td><td>~12%</td><td>0.73</td></tr>
+    <tr><td><strong>RMIA</strong></td><td><strong>2–8</strong></td><td><strong>~11%</strong></td><td><strong>0.72</strong></td></tr>
+  </table>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">RMIA matches LiRA with <strong>30–100× fewer shadow models</strong>. This makes strong MIA <strong>practical</strong> for real-world auditing scenarios.</p>
+  </div>
+</div>
+
+<!-- SLIDE 141 — RMIA Summary -->
+<div class="slide bg-deep">
+  <div class="pill">Zarifzadeh et al. 2023</div>
+  <h2>RMIA: Why It Works</h2>
+  <div class="divider"></div>
+  <ul class="arrow">
+    <li><strong>Reference points provide calibration.</strong> Instead of per-example shadow models, use population data to establish what "normal" looks like.</li>
+    <li><strong>Relative ranking is stable.</strong> Comparing ratios is more robust than comparing absolute losses.</li>
+    <li><strong>Population data is cheap.</strong> You don't need to train models on specific subsets — any data from the domain works.</li>
+  </ul>
+  <div class="spacer"></div>
+  <p>RMIA represents the current <strong>best efficiency-accuracy tradeoff</strong> for MIA.</p>
+</div>
+
+
+<!-- Part divider: Beyond Classification -->
+<div class="slide section-slide left">
+  <div class="section-num">06</div>
+  <h1>Beyond Classification</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Diffusion models and the LR paradigm</p>
+</div>
+<!-- SLIDE 142 — Diffusion MIA Overview -->
+<div class="slide bg-dark">
+  <div class="pill">Matsumoto et al. 2023</div>
+  <h2>MIA Against Diffusion Models</h2>
+  <div class="divider"></div>
+  <p>Extending MIA to <strong>diffusion models</strong> — a generative architecture with unique challenges:</p>
+  <div class="spacer-sm"></div>
+  <div class="cols">
+    <div>
+      <h3>Challenge</h3>
+      <p style="font-size:0.9rem;">Diffusion models have $T$ timesteps. No single forward pass — the denoising process is iterative.</p>
+    </div>
+    <div>
+      <h3>Approach</h3>
+      <p style="font-size:0.9rem;">Use reconstruction loss at specific timesteps as the membership signal.</p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="math-block">
+    $$\ell_t = \|\epsilon - \epsilon_\theta(x_t, t)\|^2 \qquad \bar{\ell} = \frac{1}{T}\sum_{t=1}^T \ell_t$$
+  </div>
+</div>
+
+<!-- SLIDE 143 — Diffusion Timestep -->
+<div class="slide bg-deep">
+  <div class="pill">Matsumoto et al. 2023</div>
+  <h2>Timestep Analysis</h2>
+  <div class="divider"></div>
+  <p>Not all timesteps are equally informative for MIA:</p>
+  <div class="spacer-sm"></div>
+  <div class="cols">
+    <div class="card">
+      <h3>Early Timesteps (low noise)</h3>
+      <p style="font-size:0.9rem;">Small perturbation from original image. Model's prediction is close to the original. <strong>Most informative for MIA.</strong></p>
+    </div>
+    <div class="card">
+      <h3>Late Timesteps (high noise)</h3>
+      <p style="font-size:0.9rem;">Image is nearly pure noise. Model can't distinguish members from non-members. <strong>Least informative.</strong></p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">Optimal strategy: weight timesteps by informativeness — focus on early timesteps where the model "remembers" training details.</p>
+  </div>
+</div>
+
+<!-- SLIDE 144 — Diffusion Results -->
+<div class="slide bg-dark">
+  <div class="pill">Matsumoto et al. 2023</div>
+  <h2>Diffusion MIA: Results &amp; Connection</h2>
+  <div class="divider"></div>
+  <div class="spacer-sm"></div>
+  <ul class="check">
+    <li>Diffusion models memorize more than expected, especially at <strong>high capacity</strong></li>
+    <li>Smaller training sets → higher vulnerability (same as classification)</li>
+    <li>The loss-based paradigm transfers from classification to generation</li>
+  </ul>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;"><strong>Connection to LLMs:</strong> Both diffusion models and LLMs are likelihood-based generative models. Both process structured data. The MIA paradigm — compare losses against a calibrated baseline — applies to both.</p>
+  </div>
+</div>
+
+<!-- SLIDE 145 — Likelihood Ratio Paradigm -->
+<div class="slide bg-deep">
+  <h2>The Likelihood Ratio Paradigm</h2>
+  <div class="divider"></div>
+  <p>All modern attacks converge on the same framework:</p>
+  <div class="math-block" style="font-size:1.1rem;">
+    $$\mathcal{A}(z) = \mathbf{1}\left[\frac{p(\text{observed signal} \mid z \in D)}{p(\text{observed signal} \mid z \notin D)} > \tau\right]$$
+  </div>
+  <div class="spacer"></div>
+  <table style="font-size:0.85rem;">
+    <tr><th>Method</th><th>Signal</th><th>Calibration of Denominator</th><th>Models Needed</th></tr>
+    <tr><td>Yeom (2018)</td><td>Loss</td><td>Global population mean</td><td>0</td></tr>
+    <tr><td>Shokri (2017)</td><td>Confidence</td><td>Learned classifier</td><td>$k$ shadows</td></tr>
+    <tr><td>LiRA (2022)</td><td>Loss</td><td>Per-example Gaussian</td><td>64–256</td></tr>
+    <tr><td>RMIA (2023)</td><td>Likelihood</td><td>Relative ranking</td><td>2–8</td></tr>
+  </table>
+</div>
+
+<!-- SLIDE 146 — Cost Comparison -->
+<div class="slide bg-dark">
+  <h2>Computational Cost vs. Power</h2>
+  <div class="divider"></div>
+  <div class="spacer-sm"></div>
+  <table>
+    <tr><th>Method</th><th>Shadow Models</th><th>Per-Example Cost</th><th>Relative Power</th></tr>
+    <tr><td>Threshold</td><td>0</td><td>1 query</td><td>★☆☆☆</td></tr>
+    <tr><td>Shadow (Shokri)</td><td>$k$ (typically 10–100)</td><td>1 query + training</td><td>★★☆☆</td></tr>
+    <tr><td>RMIA</td><td>2–8</td><td>$R$ queries</td><td>★★★☆</td></tr>
+    <tr><td>LiRA (offline)</td><td>64–256</td><td>$N$ loss evals</td><td>★★★★</td></tr>
+    <tr><td>LiRA (online)</td><td>$N \cdot |D|$</td><td>$N$ trainings</td><td>★★★★</td></tr>
+  </table>
+  <div class="spacer"></div>
+  <p><strong>RMIA is the practical sweet spot:</strong> near-LiRA power at 30–100× lower cost.</p>
+</div>
+
+<!-- SLIDE 147 — Pseudocode Walkthrough -->
+<div class="slide bg-deep">
+  <h2>Hands-On: MIA Pipeline Comparison</h2>
+  <div class="divider"></div>
+  <div class="code-block" style="font-size:0.8rem;"><span class="cm">// Threshold Attack (simplest)</span>
+<span class="kw">def</span> <span class="fn">threshold_attack</span>(model, z, τ):
+    <span class="kw">return</span> <span class="fn">loss</span>(model, z) < τ
+
+<span class="cm">// LiRA (most powerful)</span>
+<span class="kw">def</span> <span class="fn">lira_attack</span>(target, z, shadows):
+    ℓ_in  ← [<span class="fn">loss</span>(s, z) <span class="kw">for</span> s in shadows <span class="kw">if</span> z ∈ s.train]
+    ℓ_out ← [<span class="fn">loss</span>(s, z) <span class="kw">for</span> s in shadows <span class="kw">if</span> z ∉ s.train]
+    μ_in, σ_in   ← <span class="fn">gaussian_fit</span>(ℓ_in)
+    μ_out, σ_out ← <span class="fn">gaussian_fit</span>(ℓ_out)
+    <span class="kw">return</span> <span class="fn">log_likelihood_ratio</span>(<span class="fn">loss</span>(target, z), μ_in, σ_in, μ_out, σ_out)
+
+<span class="cm">// RMIA (best cost-accuracy tradeoff)</span>
+<span class="kw">def</span> <span class="fn">rmia_attack</span>(target, z, ref_models, ref_data):
+    ratio_z  ← <span class="fn">mean</span>([<span class="fn">loss</span>(target,z) / <span class="fn">loss</span>(r,z) <span class="kw">for</span> r in ref_models])
+    ratio_zp ← [<span class="fn">mean</span>([<span class="fn">loss</span>(target,z') / <span class="fn">loss</span>(r,z') ...]) <span class="kw">for</span> z' in ref_data]
+    <span class="kw">return</span> <span class="fn">percentile_rank</span>(ratio_z, ratio_zp)</div>
+</div>
+
+<!-- SLIDE 148 — Open Questions Before LLM -->
+<div class="slide bg-dark">
+  <h2>Open Questions Before the LLM Era</h2>
+  <div class="divider"></div>
+  <div class="spacer"></div>
+  <ul class="arrow" style="font-size:1rem;">
+    <li>How does MIA change for <strong>pre-trained</strong> models (seen once among trillions of tokens)?</li>
+    <li>Does <strong>fine-tuning</strong> create new vulnerabilities?</li>
+    <li>How to handle <strong>text data</strong> and autoregressive generation?</li>
+    <li>Can we attack <strong>without any reference models</strong> at all?</li>
+    <li>How to <strong>calibrate</strong> when "text difficulty" varies enormously?</li>
+  </ul>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">All of these questions are addressed by LLM MIA research in Section VI.</p>
+  </div>
+</div>
+
+<!-- SLIDE 149 — Section 5 Summary -->
+<div class="slide bg-deep">
+  <h2>Section Summary: Modern MIA</h2>
+  <div class="divider"></div>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card">
+      <div class="pill" style="font-size:0.75rem;">Label-Only</div>
+      <p style="font-size:0.85rem; margin-top:8px;">Even predicted labels leak membership. API restrictions don't help.</p>
+    </div>
+    <div class="card">
+      <div class="pill" style="font-size:0.75rem;">LiRA</div>
+      <p style="font-size:0.85rem; margin-top:8px;">Per-example likelihood ratio. Optimal at low FPR. Expensive.</p>
+    </div>
+    <div class="card">
+      <div class="pill" style="font-size:0.75rem;">Ye et al.</div>
+      <p style="font-size:0.85rem; margin-top:8px;">Unified framework. All attacks are likelihood ratios with different calibration.</p>
+    </div>
+    <div class="card">
+      <div class="pill" style="font-size:0.75rem;">RMIA</div>
+      <p style="font-size:0.85rem; margin-top:8px;">Near-LiRA power with 2–8 models. Best practical tradeoff.</p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="highlight">
+    <p style="font-size:0.95rem;">The field has converged on the <strong>likelihood ratio paradigm</strong>. The remaining frontier: adapting this to large language models.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!--  SECTION 6 — LLM MEMBERSHIP INFERENCE  (Slides 150-209)        -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+
+
+<!-- Closer -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Lecture 4</div>
+  <p class="big-word-sub">Next: Membership Inference in LLMs</p>
+</div>
+
+</div><!-- end deck -->
+
+<!-- Slide number + progress bar (fixed to viewport) -->
+<div class="slide-num" id="slideNum">1 / 47</div>
+<div class="progress-bar" id="progressBar" style="width:0.5%;"></div>
+
+<!-- Navigation -->
+<script src="../reference/deck.js"></script>
+</body>
+</html>

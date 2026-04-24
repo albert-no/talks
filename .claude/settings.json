@@ -39,7 +39,9 @@
       "Bash(git restore *)",
       "Bash(git checkout *)",
       "Bash(git pull *)",
-      "Bash(python3 scripts/lint-deck.py dllm/dllm.html)"
+      "Bash(python3 scripts/lint-deck.py dllm/dllm.html)",
+      "Bash(python3 -)",
+      "Bash(python3 scripts/lint-deck.py mia/mia1-foundations.html mia/mia2-shadow.html mia/mia3-theory.html mia/mia4-modern.html mia/mia5-llm.html)"
     ]
   }
 }
