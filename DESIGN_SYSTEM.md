@@ -12,6 +12,8 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 **Priority 0 — the strongest rule in this document: the font-size binary.** Every other rule here defers to this one. Important content (audience must read it during the talk) renders at body size. Non-important content (audience can follow without reading it) has exactly two on-slide homes: `<div class="cite">` citation footnotes (§2.19) and `.small` sub-labels inside a diagram when compression fails. `.tiny` is banned everywhere. `.small` on prose — `<p>`, `<li>`, captions, summary remarks, text inside `.highlight` / `.card` / `.cols` / `.grid-*` / `.math-block` / under a `<table>` — is banned. Non-important prose that isn't a citation or diagram sub-label belongs in the per-slide appendix / speaker-notes file, not on the slide. Full rule and rationale in §1.2; compression workflow in §7.12. See also §5.2 for the do/don't checklist.
 
+**Priority 1 — after Priority 0: line breaks and content length.** Minimal slides. Leave content alone if it already fits on one line; two short sentences on one line are fine. Act only when prose visibly wraps: compress first (§7.12); if still multi-line, split at a natural boundary into two adjacent `<p>` tags; glue inseparable phrases with `&nbsp;` reactively. `<br>` is allowed at a deliberate internal clause break, banned as an orphan-shim (§7.10). Full rule in §7.16.
+
 A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.subtitle`, `.cite`, `.small`, `.tiny`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Inline `style="font-size:…"` on prose is equally forbidden — the browser treats it the same. If you find such overrides, or `class="small"` / `class="tiny"` on prose, in an existing deck, remove them, then fix the content they were trying to mask: shorten the prose or split the slide.
 
 Component-internal text at a component's native font-size (pill labels, token chips, code blocks, the `.diagram-box` native 1.15rem) is not an authoring override — these are design tokens. The rule above targets author-applied `.small` / `.tiny` classes and inline `font-size` on prose, and author-added `<span class="small">` / `<span class="tiny">` sub-labels inside components. When in doubt: if a human typed `class="small"` or `class="tiny"` in the deck source, the rule applies.
@@ -666,7 +668,7 @@ Fix, in order of preference:
 2. **Remove any em-dash in the line.** An em-dash is the single most common structural cause of an orphan; replacing `"X — Y"` with `"X: Y"` often fixes the orphan on its own.
 3. **Shorten or restructure.** Trim a redundant qualifier, split the sentence, or reword to a shorter noun phrase.
 4. **Glue the final words with `&nbsp;`.** For a bullet ending in "…in <2 years", write `in &lt;2&nbsp;years` so the last two tokens wrap as a unit. Use sparingly — only for technical phrases that must stay together (`"7B+ systems"`, `"<2 years"`, `"≈80% ASR"`).
-5. **Never `<br>` as a workaround.** A forced break is fragile: it creates an orphan at a different width and prints oddly.
+5. **Don't use `<br>` as an orphan-shim.** A forced break to hide an orphan is fragile — it creates a different orphan at a different width and prints oddly. (Priority 1 does permit `<br>` at a deliberate internal clause boundary inside one sentence — that's a different use; see §7.16.)
 
 ### 7.11 Standalone bundle renders equations as raw `$...$` strings
 
@@ -689,11 +691,7 @@ Fix:
 - **Keep the technical specifics.** Variable names, numbers, dates, author names, and math do not compress — they are the reason the slide exists.
 - **Target ~40–60% word reduction** on prose blocks when rewriting an existing wordy deck. If you have to shrink the font to keep a bullet on one line, you haven't rewritten it yet.
 
-Corollary: after you simplify prose, remove every inline `font-size` override *and* every `class="small"` / `class="tiny"` from prose elements (`<p>`, `<li>`, text inside `.highlight` / `.card` / `.cols` / `.math-block` / under a `<table>`). The canonical binary: important → body size (1.55rem); non-important → `.cite` citation or off-slide appendix. See §1.2 for the full rule.
-
-Multi-sentence signal: if you find yourself with `A. B.` in a single `<p>`, `<li>`, `.card`, or `.highlight`, treat it as a signal the content is too wordy. Compress to one abstract phrase (`"no shadows. Threshold on max confidence."` → `"no shadows; max-confidence threshold"`), not two paragraphs.
-
-Non-important content on the slide is a sign it doesn't belong there. If a caveat, side note, or expanded explanation can be skipped during the talk without losing the thread, it goes in the per-slide appendix / speaker-notes file. What stays on the slide is what the audience reads in real time — and that, by definition, is important enough to render at body size.
+After compression: strip any residual `class="small"` / `class="tiny"` / inline `font-size` overrides from the prose (Priority 0, §1.2). If a single `<p>` still contains `A. B.`, that's a wordiness signal — compress further, don't just split (Priority 1, §7.16).
 
 ### 7.13 Paper-title cards steal half the slide → use `.cite` (§2.19)
 
@@ -708,6 +706,29 @@ Fix: delete the card and replace it with a single `<div class="cite">` footnote 
 Symptom: a `.diagram-box` labeled `ML-as-a-<br>Service` renders as `ML-as-a-` / `Service`; `Neyman-<br>Pearson` renders as `Neyman-` / `Pearson`. The trailing hyphen reads as a broken syllable.
 
 Fix: keep the compound on one line and let the box grow (`Neyman-Pearson`), or rename to a hyphen-free label (`ML-as-a-Service` → `Cloud ML APIs`). Never land `<br>` immediately after `-`, `—`, `–`, `(`, or similar continuation punctuation.
+
+### 7.16 Line breaks and content length — Priority 1
+
+**Goal: minimal slides.** Fewer visual lines, less for the audience to re-read, more room for the speaker to elaborate. Sits just below Priority 0 (font sizes).
+
+**Leave content alone if it already fits.** Two short sentences on one line are fine. Don't split sentences for the sake of splitting — the earlier pattern of "period → new `<p>`" was mechanical and created unnecessary vertical weight. Split only when the browser would wrap anyway, and at a worse place than you can choose.
+
+When prose visibly wraps in preview, act in this order:
+
+1. **Compress first** (§7.12). Drop narrative connectors, cut soft qualifiers, compress to noun phrases, move detail to narration or the per-slide appendix. Most "doesn't fit" problems are "too many words" problems — solve with rewriting, not structural changes.
+2. **If still multi-line after compression**, split at a natural boundary:
+   - a clear sentence end, a colon, or an independent-clause break → split into two adjacent `<p>` tags (identical visual under `margin: 0`, cleaner semantic)
+   - a single sentence with an internal comma-level clause-break → `<br>` at that boundary (rare)
+3. **Glue inseparable phrases with `&nbsp;` reactively** — only when the browser visibly breaks one in preview:
+   - article/adjective + noun (`a&nbsp;dataset`, `large&nbsp;model`)
+   - preposition + short object (`in&nbsp;the&nbsp;model`)
+   - number + unit (`7B&nbsp;parameters`, `≈80%&nbsp;accuracy`)
+   - Hyphenated compounds are covered by §7.14.
+4. **Never break within a phrase.** The browser may do so automatically under `text-wrap: pretty`; if it happens in preview, apply step 3 or rewrite.
+
+**`<br>` policy.** Allowed at a deliberate internal clause boundary (step 2b). Banned as an orphan-shim — for that, see §7.10 (use `&nbsp;` or compression instead).
+
+**Interaction with Priority 0.** Priority 0 forces body size (1.55rem). Some content that fit on one line at `.small` will now wrap. Don't shrink to avoid the wrap — compress, or accept a clean split per step 2.
 
 ---
 
