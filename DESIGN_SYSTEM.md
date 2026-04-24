@@ -1,6 +1,6 @@
 # Talks Design System
 
-Canonical spec for all decks in this repo. Applies to both **custom HTML decks** (e.g. `dllm/dllm.html`, `mia/MIA.html`, `privacy/DP-FL.html`) and the **Marp markdown** template (`template.md`). When the two disagree, `reference/deck.css` is the source of truth — Marp follows it.
+Canonical spec for all decks in this repo. Applies to both **custom HTML decks** (e.g. `dllm/dllm.html`, `mia/mia1-foundations.html`, `privacy/DP-FL.html`) and the **Marp markdown** template (`template.md`). When the two disagree, `reference/deck.css` is the source of truth — Marp follows it.
 
 Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and built; this file tells you *what things look like* and *which class to use*.
 
@@ -10,7 +10,16 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 **Reference target.** Kangwook Lee's BLISS seminar deck (<https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html>) is our readability benchmark. Zoomed-in captures of his rendering live in `reference/kangwook1.png`–`kangwook4.png`; the fonts in those shots are the *minimum acceptable* visual weight for our decks. If your slide renders noticeably smaller than those, something is wrong — most likely a per-deck `<style>` is shadowing the canonical tokens.
 
-**Rule: don't shadow canonical tokens per-deck.** A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Deck-local rules may only size **component classes** (`.card .desc`, `.paper-card .title`, `.sr-box p`, etc.), and those sizes should be expressed as fractions of the canonical body — roughly `1.05rem`–`1.3rem` for in-card copy. When content doesn't fit, reduce content — never shrink type.
+**Rule: no small fonts on prose. Ever.** The only exception is the `.cite` citation footnote (§2.19) at 0.85rem gray. Rule applies to:
+
+- `<p>`, `<li>`, `<ul>` anywhere on a slide (including inside `.highlight`, `.card`, `.cols`, `.grid-*`).
+- Any text that reads as a sentence, phrase, or bullet rather than a visual component label.
+
+A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. **Inline `style="font-size:…"` on a `<p>` / `<li>` / `<ul>` is equally forbidden** — the browser treats it the same. If you find such overrides in an existing deck, delete them, then fix the content they were trying to mask: shorten the prose or split the slide.
+
+Component-internal text (pill labels at 0.72–0.9rem, token chips, `.diagram-box` labels, code blocks) may stay at their native compact size — these are design elements, not prose. When in doubt: if it reads like a sentence, it's prose.
+
+**When content doesn't fit, reduce content. Split into as many slides as needed — there is no slide budget.** Never shrink type to cram a sentence onto one line.
 
 ---
 
@@ -350,6 +359,39 @@ Usage:
 </div>
 ```
 
+### 2.19 `.cite` — citation footnote
+
+Bottom-center attribution for papers cited on a slide. Subtle, gray, capped at 60% slide width so it coexists with `.brand-footer` (bottom-left) and `.slide-num` (bottom-right). Use this instead of stuffing a paper-title card into a 2-column layout: the card used to eat half the slide for attribution that belongs in a footnote.
+
+```css
+.cite {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 60%;
+  font-size: 0.85rem;
+  color: var(--gray-text);
+  text-align: center;
+  line-height: 1.35;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 90;
+}
+.bg-accent .cite { color: rgba(255,255,255,0.75); }
+```
+
+Markup (drop in once per paper-overview slide):
+```html
+<div class="cite">Author(s), "Paper Title", Venue Year</div>
+```
+
+Conventions:
+- Informal is fine. Example: `Carlini et al., "MIA From First Principles", IEEE S&amp;P 2022`.
+- One citation per slide. If a slide references two papers, either split the slide or pick the primary one and mention the other verbally.
+- Keep the author `.pill` at the top as a recurring section label across multiple slides about the same paper. Add `.cite` only on the paper-overview slide; don't duplicate the citation on every follow-up slide about that paper.
+- Don't wrap the title in `<em>` — `em` is styled gray, not italic, and it dulls already-gray footer text into mud. The title is plain text inside the footnote.
+
 ---
 
 ## 3. Slide engine (JS)
@@ -382,9 +424,11 @@ Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Backg
 ### 5.1 Style priorities (from `CLAUDE.md`)
 
 1. **One idea per slide.** If you need two cards of prose, it's two slides.
-2. **Prose emphasis.** `**strong**` = Yonsei Blue accent (important terms, new concepts). `*em*` = muted gray (parenthetical asides). Don't mix.
-3. **Key insight → blockquote** (Marp) or `.highlight` (HTML). Max one per slide.
-4. **Math-heavy slide.** Wrap display math in `.math-block` / `$$…$$`.
+2. **The speaker narrates; the slide is a visual anchor.** Slides carry abstract phrases and key terms, not full explanatory sentences. Drop narrative connectors ("This means…", "In other words…", "It is important to note…"), soft qualifiers ("essentially", "actually", "basically"), and prose that only restates what the speaker will say aloud. Target telegraphic noun phrases over complete sentences. See §7.12.
+3. **Prose emphasis.** `**strong**` = Yonsei Blue accent (important terms, new concepts). `*em*` = muted gray (parenthetical asides). Don't mix.
+4. **Key insight → blockquote** (Marp) or `.highlight` (HTML). Max one per slide.
+5. **Math-heavy slide.** Wrap display math in `.math-block` / `$$…$$`.
+6. **Citations → `.cite` footnote (§2.19).** Don't stuff paper titles into side cards that steal half the slide. One bottom-centered footnote per paper-overview slide.
 
 ### 5.2 Do / Don't
 
@@ -396,8 +440,9 @@ Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Backg
 | Let the engine handle nav — don't add custom click targets. | Bind click handlers directly on slides. |
 | Pair `h2` with `.divider` on every content slide. | Skip the divider; the slide feels unanchored. |
 | Put title-logo and title-slide together. | Use `.title-logo` on non-title slides. |
-| Scale component-internal text in the `1.05rem–1.35rem` range (relative to canonical body at 1.55rem). | Redefine `p` / `li` / `h2` / `h3` / `.small` / `.tiny` / `.math-block` in a per-deck `<style>`. Those are canonical; deck.css owns them. |
-| When a slide feels cramped, cut content or split the slide. | Shrink the type scale to cram in more. The Kangwook reference shots (`reference/kangwook*.png`) show the minimum acceptable size. |
+| Leave canonical sizes alone on prose (`p`, `li`, `ul`, text inside `.highlight` / `.card` / `.cols`). The only small text on a slide is `.cite`. | Add inline `style="font-size:0.9rem"` to a bullet or card body — that's prose and it must stay at canonical size. |
+| Keep component-internal text (`.pill`, `.diagram-box` label, token chips, `.code-block`) at its native compact size. | Redefine `p` / `li` / `h2` / `h3` / `.small` / `.tiny` / `.math-block` in a per-deck `<style>`. Those are canonical; deck.css owns them. |
+| When a slide feels cramped, cut content or split the slide. Use as many slides as you need — there is no budget. | Shrink the type scale to cram in more. The Kangwook reference shots (`reference/kangwook*.png`) show the minimum acceptable size. |
 | Build math-labelled diagrams as HTML (flex/grid + divs) with a thin SVG overlay for arrows only. | Put `$x_i$` inside an SVG `<text>` — KaTeX auto-render skips SVG text and the literal `$x_i$` will show. |
 | Use `$$…$$` (display math) inside a `.math-block` for `\begin{cases}` and other multi-row constructs. | Use `$…$\displaystyle$…$` with `white-space:nowrap` + `overflow-x:auto` to force layout — the cases overflow gets clipped at the right edge. |
 | Prefer static step-labeled diagrams (①②③④ badges) so everything is visible at once. | Ship continuous SMIL / CSS animation for talks — the audience waits through each loop. Keep auto-animation for self-paced web versions only. |
@@ -631,6 +676,29 @@ Symptom: `<deck>.standalone.html` shows literal `$x_i$` text; the authoring sour
 Cause (historical, fixed 2026-04): `scripts/bundle.py` re-emits the KaTeX `onload="renderMathInElement(document.body, {delimiters:[{left:'$$',…}]});"` handler into a small inline script. Its earlier regex `onload=["\']([^"\']+)["\']` treated both quote types as terminators, so the handler was truncated at the first inner `'` and never called.
 
 Fix (in the code): the regex now uses alternation — `onload=(?:"([^"]*)"|'([^']*)')` — and takes whichever group matched. Verify after bundling with `chrome --headless --dump-dom <standalone>.html | grep -c 'class="katex"'` — should be ≥ 1 for any deck with math.
+
+### 7.12 Full-sentence prose on slides → rewrite to abstract phrases
+
+Symptom: bullets and card bodies read like paragraphs from a paper ("The attack achieves high precision, which means that most declarations of membership are correct, suggesting that…"). The slide feels wordy and the speaker ends up re-reading it instead of adding context.
+
+Cause: draft text carried over from a paper or a long-form explanation, never trimmed for a live audience. The audience can read faster than the speaker can talk; full sentences force them to split attention between screen and voice.
+
+Fix:
+- **Drop narrative connectors.** "This means that X" → "X". "In other words, Y" → "Y". "It is important to note that Z" → "Z". "As we will see", "As discussed earlier", "Subsequently" → delete.
+- **Cut soft qualifiers.** "essentially", "actually", "basically", "indeed", "really", "very", "quite", "fairly" add no information at slide pace.
+- **Compress to noun phrases.** "The attack achieves high precision, meaning most positive predictions are correct" → "High precision: most positives correct".
+- **Keep the technical specifics.** Variable names, numbers, dates, author names, and math do not compress — they are the reason the slide exists.
+- **Target ~40–60% word reduction** on prose blocks when rewriting an existing wordy deck. If you have to shrink the font to keep a bullet on one line, you haven't rewritten it yet.
+
+Corollary: after you simplify prose, remove **every** inline `font-size` override on `<p>`, `<li>`, `<ul>`, or text inside a `.highlight` / `.card` / `.cols`. Shorter content fits canonical sizes. If it still doesn't fit, split the slide — use as many slides as the idea needs. The only permitted small text on a slide is `.cite`.
+
+### 7.13 Paper-title cards steal half the slide → use `.cite` (§2.19)
+
+Symptom: every paper-overview slide has a 2-column layout where the right column is a card with the paper's full title in `<em>"…"</em>`, venue, and author list, taking ~50% of the slide for attribution alone.
+
+Cause: the "paper card" was the only way to put attribution on the slide without cluttering the main content. It worked but was wasteful — attribution is metadata, not content.
+
+Fix: delete the card and replace it with a single `<div class="cite">` footnote at the bottom. The main content expands to full width; the citation lives in a subtle gray line that tracks with the brand footer and slide number. See §2.19.
 
 ---
 

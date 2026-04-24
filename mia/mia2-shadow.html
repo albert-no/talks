@@ -39,7 +39,7 @@
   <div class="pill pill-fill" style="margin-bottom:28px;">Lecture 2 of 5</div>
   <h1>Membership Inference:<br>Shadow Models</h1>
   <div class="divider"></div>
-  <p class="subtitle">The Shokri paradigm and its extensions</p>
+  <p class="subtitle">Shokri paradigm and extensions</p>
   <div class="spacer-lg"></div>
   <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
   <p class="small" style="margin-top:6px;">2026</p>
@@ -89,25 +89,15 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Membership Inference Attacks Against ML Models</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <p>The first systematic <strong>black-box MIA</strong> against machine learning models.</p>
-      <div class="spacer"></div>
-      <ul class="arrow">
-        <li>Attacked commercial ML-as-a-service: <strong>Google Prediction API</strong> and <strong>Amazon ML</strong></li>
-        <li>Black-box access: only observe prediction confidence vectors</li>
-        <li>Introduced the <strong>shadow model</strong> methodology</li>
-        <li>Up to <strong>93% attack accuracy</strong> on some datasets</li>
-      </ul>
-    </div>
-    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
-      <p style="font-size:0.95rem; text-align:center;"><em>"Membership Inference Attacks Against Machine Learning Models"</em></p>
-      <div class="spacer-sm"></div>
-      <p class="small" style="text-align:center;">IEEE S&amp;P 2017</p>
-      <div class="spacer"></div>
-      <p style="font-size:0.9rem; text-align:center;">Shokri, Stronati, Song, Shmatikov</p>
-    </div>
-  </div>
+  <p>First systematic <strong>black-box MIA</strong>.</p>
+  <div class="spacer"></div>
+  <ul class="arrow">
+    <li>Targets: <strong>Google Prediction API</strong>, <strong>Amazon ML</strong></li>
+    <li>Black-box: confidence vectors only</li>
+    <li>Introduced <strong>shadow model</strong> methodology</li>
+    <li>Up to <strong>93% attack accuracy</strong></li>
+  </ul>
+  <div class="cite">Shokri, Stronati, Song, Shmatikov, "Membership Inference Attacks Against ML Models", IEEE S&amp;P 2017</div>
 </div>
 
 <!-- SLIDE 38 — Key Insight -->
@@ -116,11 +106,11 @@
   <h2>Key Insight</h2>
   <div class="divider"></div>
   <div class="spacer-lg"></div>
-  <div class="highlight" style="padding:28px 32px; font-size:1.1rem;">
-    <p>Train <strong>shadow models</strong> that mimic the target model's behavior. Since you control the shadow models' training data, you can create a <strong>labeled dataset</strong> of (prediction, member/non-member) pairs to train an attack classifier.</p>
+  <div class="highlight" style="padding:28px 32px;">
+    <p>Train <strong>shadow models</strong> mimicking the target. You control their data, so you get a <strong>labeled dataset</strong> of (prediction, in/out) pairs for an attack classifier.</p>
   </div>
   <div class="spacer-lg"></div>
-  <p>The shadow model approach transforms a difficult unsupervised problem (does the model behave differently on members?) into a standard <strong>supervised classification</strong> problem.</p>
+  <p>Turns an unsupervised problem into <strong>supervised classification</strong>.</p>
 </div>
 
 <!-- SLIDE 39 — Architecture Overview -->
@@ -145,7 +135,7 @@
     <div class="diagram-box" style="border-color:var(--success); color:var(--success);">Attack Model<br><span style="font-size:0.8rem;">$\mathcal{A}_c$</span></div>
   </div>
   <div class="spacer"></div>
-  <p style="text-align:center;">Three stages: <strong>train shadows</strong> → <strong>collect attack data</strong> → <strong>train attack classifier</strong></p>
+  <p style="text-align:center;">Three stages: <strong>train shadows</strong> → <strong>collect attack data</strong> → <strong>train attack classifier</strong>.</p>
 </div>
 
 <!-- SLIDE 40 — Detailed Pipeline -->
@@ -155,12 +145,12 @@
   <div class="divider"></div>
   <div class="card" style="padding:20px 24px;">
     <ul class="num">
-      <li><strong>Shadow training data:</strong> Generate datasets $D_1^s, \ldots, D_k^s$ from a distribution similar to the target's training data</li>
-      <li><strong>Train shadow models:</strong> Train $k$ models $f_{\theta_1}, \ldots, f_{\theta_k}$ on these datasets</li>
-      <li><strong>Collect predictions:</strong> For each shadow model, query it on its training data (label: "in") and on held-out data (label: "out")</li>
-      <li><strong>Build attack dataset:</strong> $\{(\sigma(f_{\theta_j}(x)), \text{in/out})\}$ for all shadow models and queries</li>
-      <li><strong>Train attack model:</strong> Binary classifier $\mathcal{A}_c$ (one per class $c$) on the attack dataset</li>
-      <li><strong>Inference:</strong> Query target model on $x$, feed confidence to $\mathcal{A}_c$ for class $c = f_\theta(x)$</li>
+      <li><strong>Shadow data:</strong> datasets $D_1^s, \ldots, D_k^s$ from a similar distribution</li>
+      <li><strong>Train shadows:</strong> $k$ models $f_{\theta_1}, \ldots, f_{\theta_k}$</li>
+      <li><strong>Collect predictions:</strong> query each shadow on its train data (in) and held-out data (out)</li>
+      <li><strong>Attack dataset:</strong> $\{(\sigma(f_{\theta_j}(x)), \text{in/out})\}$</li>
+      <li><strong>Attack model:</strong> binary classifier $\mathcal{A}_c$ per class $c$</li>
+      <li><strong>Inference:</strong> query target on $x$, feed confidence to $\mathcal{A}_c$ for $c = f_\theta(x)$</li>
     </ul>
   </div>
 </div>
@@ -170,23 +160,23 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Step 1: Shadow Model Training</h2>
   <div class="divider"></div>
-  <p>Train $k$ shadow models that <strong>approximate the target's behavior</strong>:</p>
+  <p>$k$ shadow models <strong>approximating target behavior</strong>:</p>
   <div class="spacer-sm"></div>
   <div class="cols">
     <div>
       <h3>Requirements</h3>
       <ul class="arrow">
-        <li>Data from a <strong>similar distribution</strong> as the target's training data</li>
-        <li>Same or similar <strong>model architecture</strong></li>
-        <li>Same <strong>training procedure</strong> (epochs, optimizer, etc.)</li>
+        <li><strong>Similar data distribution</strong></li>
+        <li>Same or similar <strong>architecture</strong></li>
+        <li>Same <strong>training procedure</strong> (epochs, optimizer)</li>
       </ul>
     </div>
     <div>
       <h3>Why It Works</h3>
       <ul class="arrow">
-        <li>Shadow models exhibit similar <strong>overfitting patterns</strong></li>
-        <li>The gap between member and non-member confidence is a <strong>generalizable signal</strong></li>
-        <li>Attack model learns "what membership looks like" across models</li>
+        <li>Similar <strong>overfitting patterns</strong></li>
+        <li>Member vs. non-member confidence gap: <strong>generalizable signal</strong></li>
+        <li>Attack learns membership signature across models</li>
       </ul>
     </div>
   </div>
@@ -197,25 +187,25 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Generating Shadow Training Data</h2>
   <div class="divider"></div>
-  <p>Three strategies when the target's exact training distribution is unknown:</p>
+  <p>Three strategies when target's distribution is unknown:</p>
   <div class="spacer-sm"></div>
   <div class="grid-3">
     <div class="card">
       <h3>Model-Based</h3>
-      <p style="font-size:0.85rem;">Query the target model to <strong>synthesize</strong> data that it classifies confidently. Use hill-climbing on the input space.</p>
+      <p><strong>Synthesize</strong> via hill-climbing on target.</p>
     </div>
     <div class="card">
       <h3>Statistics-Based</h3>
-      <p style="font-size:0.85rem;">Use marginal statistics (feature distributions) from public data to <strong>sample synthetic records</strong>.</p>
+      <p><strong>Sample</strong> from public marginals.</p>
     </div>
     <div class="card">
       <h3>Noisy Real Data</h3>
-      <p style="font-size:0.85rem;">Use data from a <strong>related domain</strong> or add noise to publicly available data from the same distribution.</p>
+      <p><strong>Related-domain</strong> or noisy public.</p>
     </div>
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">Later work (Salem et al. 2019) will show that even <strong>unrelated data</strong> can work — the signal is more robust than initially thought.</p>
+    <p>Later (Salem 2019): even <strong>unrelated data</strong> works.</p>
   </div>
 </div>
 
@@ -229,19 +219,19 @@
   <div class="cols">
     <div class="card">
       <h3 style="color:var(--success);">Member Queries</h3>
-      <p style="font-size:0.9rem;">Query on training data $x \in D_j^s$</p>
-      <p style="font-size:0.9rem;">Record: $(\sigma(f_{\theta_j}(x)), \text{label}=\texttt{IN})$</p>
+      <p>Query on $x \in D_j^s$</p>
+      <p>Record $(\sigma(f_{\theta_j}(x)), \texttt{IN})$</p>
     </div>
     <div class="card">
       <h3 style="color:var(--warn);">Non-Member Queries</h3>
-      <p style="font-size:0.9rem;">Query on held-out data $x \notin D_j^s$</p>
-      <p style="font-size:0.9rem;">Record: $(\sigma(f_{\theta_j}(x)), \text{label}=\texttt{OUT})$</p>
+      <p>Query on $x \notin D_j^s$</p>
+      <p>Record $(\sigma(f_{\theta_j}(x)), \texttt{OUT})$</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p>The resulting attack dataset contains <strong>labeled examples</strong> of how shadow models behave on members vs. non-members.</p>
+  <p>Attack dataset: <strong>labeled examples</strong> of shadow behavior on members vs. non-members.</p>
   <div class="spacer-sm"></div>
-  <p class="small">Key assumption: the target model exhibits the same behavioral difference between members and non-members as the shadow models do.</p>
+  <p class="small">Assumption: target exhibits the same member/non-member gap as the shadows.</p>
 </div>
 
 <!-- SLIDE 44 — Per-Class Attack Models -->
@@ -249,16 +239,16 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Step 3: Per-Class Attack Models</h2>
   <div class="divider"></div>
-  <p>Train a <strong>separate binary classifier</strong> for each class $c$:</p>
+  <p>One <strong>binary classifier per class</strong> $c$:</p>
   <div class="math-block">
     $$\mathcal{A}_c : \mathbb{R}^{|\mathcal{C}|} \to \{0, 1\}$$
   </div>
   <div class="spacer-sm"></div>
-  <p><strong>Input:</strong> confidence vector $\sigma(f_\theta(x))$ for points predicted as class $c$</p>
+  <p><strong>Input:</strong> confidence $\sigma(f_\theta(x))$ for class-$c$ predictions</p>
   <p><strong>Output:</strong> member (1) or non-member (0)</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Why per-class?</strong> Different classes have different confidence distributions. A model may be very confident on class "cat" but uncertain on class "bird" — the attack model needs class-specific calibration.</p>
+    <p><strong>Why per-class?</strong> Confidence distributions differ by class. Needs class-specific calibration.</p>
   </div>
 </div>
 
@@ -267,18 +257,18 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Attack Inference</h2>
   <div class="divider"></div>
-  <p>Given a target point $(x, y)$ and the target model $f_\theta$:</p>
+  <p>Given target point $(x, y)$ and model $f_\theta$:</p>
   <div class="spacer-sm"></div>
   <div class="card" style="padding:20px 24px;">
     <ul class="num">
-      <li>Query target: $\mathbf{p} = \sigma(f_\theta(x))$</li>
-      <li>Identify predicted class: $c = \arg\max_i \mathbf{p}_i$</li>
-      <li>Apply attack model: $\hat{m} = \mathcal{A}_c(\mathbf{p})$</li>
-      <li>If $\hat{m} = 1$: declare $x$ as a <strong>member</strong></li>
+      <li>Query: $\mathbf{p} = \sigma(f_\theta(x))$</li>
+      <li>Predicted class: $c = \arg\max_i \mathbf{p}_i$</li>
+      <li>Attack: $\hat{m} = \mathcal{A}_c(\mathbf{p})$</li>
+      <li>If $\hat{m} = 1$: declare <strong>member</strong></li>
     </ul>
   </div>
   <div class="spacer"></div>
-  <p>The attack classifier has learned to recognize the subtle differences in confidence patterns between members and non-members for each class.</p>
+  <p>Classifier learns per-class confidence-pattern differences between members and non-members.</p>
 </div>
 
 <!-- SLIDE 46 — Results: Google -->
@@ -296,7 +286,7 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">Commercial black-box services are vulnerable. The attack achieves <strong>high precision</strong> — most declarations of membership are correct.</p>
+    <p>Commercial black-box services vulnerable. <strong>High precision</strong>: most positives correct.</p>
   </div>
 </div>
 
@@ -305,17 +295,17 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Results: Amazon ML</h2>
   <div class="divider"></div>
-  <p>Similar results on Amazon's ML service, confirming the attack generalizes:</p>
+  <p>Similar results on Amazon ML: attack generalizes.</p>
   <div class="spacer"></div>
   <ul class="check">
-    <li>Effective across <strong>different ML platforms</strong> with different internal architectures</li>
-    <li>Works even when the attacker doesn't know the target's model type</li>
-    <li>Higher vulnerability with <strong>more output classes</strong></li>
-    <li>Higher vulnerability with <strong>more overfitting</strong> (lower accuracy models)</li>
+    <li>Effective across <strong>different ML platforms</strong></li>
+    <li>Works without knowing target's model type</li>
+    <li><strong>More classes</strong>: higher vulnerability</li>
+    <li><strong>More overfitting</strong>: higher vulnerability</li>
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">Key finding: the attack is <strong>platform-agnostic</strong>. The behavioral signature of membership (high confidence on training data) is a universal property of overfitted models.</p>
+    <p><strong>Platform-agnostic.</strong> Overfit confidence is a universal signature.</p>
   </div>
 </div>
 
@@ -324,7 +314,7 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Why More Classes = More Vulnerable</h2>
   <div class="divider"></div>
-  <p>The output is a point on the <strong>probability simplex</strong> $\Delta^{C-1}$:</p>
+  <p>Output lives on the <strong>probability simplex</strong> $\Delta^{C-1}$:</p>
   <div class="math-block">
     $$\sigma(f_\theta(x)) \in \Delta^{C-1} = \left\{\mathbf{p} \in \mathbb{R}^C : p_i \geq 0, \sum_i p_i = 1\right\}$$
   </div>
@@ -332,15 +322,15 @@
   <div class="cols">
     <div>
       <h3>Few classes (C=2)</h3>
-      <p style="font-size:0.9rem;">Output is a single scalar (probability of class 1). Limited signal for the attacker.</p>
+      <p>Scalar output. Limited signal.</p>
     </div>
     <div>
       <h3>Many classes (C=100)</h3>
-      <p style="font-size:0.9rem;">Output is a 99-dimensional vector. The distribution of probability mass across classes reveals <strong>much more about how the model treats $x$</strong>.</p>
+      <p>99-dim vector. <strong>Much richer</strong> membership signature.</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p>More dimensions → richer behavioral fingerprint → easier to distinguish members from non-members.</p>
+  <p>More dimensions → richer fingerprint → easier discrimination.</p>
 </div>
 
 <!-- SLIDE 49 — Limitations -->
@@ -350,15 +340,15 @@
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <ul class="arrow">
-    <li><strong>Data distribution assumption:</strong> Need access to data from a similar distribution as the target's training data</li>
-    <li><strong>Architecture knowledge:</strong> Best results when shadow model architecture matches the target</li>
-    <li><strong>Computational cost:</strong> Training $k$ shadow models is expensive ($k \times$ the cost of one model)</li>
-    <li><strong>Per-class classifiers:</strong> Need separate attack models for each class — doesn't scale easily</li>
-    <li><strong>No theoretical justification:</strong> Works empirically but lacks formal optimality guarantees</li>
+    <li><strong>Data distribution:</strong> needs similar-distribution data</li>
+    <li><strong>Architecture knowledge:</strong> best when shadow matches target</li>
+    <li><strong>Cost:</strong> $k$ models, $k\times$ training</li>
+    <li><strong>Per-class classifiers:</strong> poor scaling</li>
+    <li><strong>No theory:</strong> empirical only, no optimality guarantees</li>
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Open question:</strong> Can we do as well with fewer assumptions? (Spoiler: Yes — Salem et al., Sablayrolles et al.)</p>
+    <p><strong>Open question:</strong> can we drop the assumptions? (Yes: Salem, Sablayrolles.)</p>
   </div>
 </div>
 
@@ -391,35 +381,33 @@
 <div class="slide bg-dark">
   <h2>The Simplest Attack: Threshold on Confidence</h2>
   <div class="divider"></div>
-  <p>Before the full shadow model pipeline, consider the simplest possible attack:</p>
+  <p>Simplest attack, pre-shadow:</p>
   <div class="math-block">
     $$\mathcal{A}(f_\theta, x) = \mathbf{1}\left[\max_c f_\theta(x)_c > \tau\right]$$
   </div>
   <div class="spacer-sm"></div>
-  <p>If the model is <strong>very confident</strong> on $x$, it was probably a training member.</p>
+  <p><strong>High confidence</strong> on $x$ → probably a member.</p>
   <div class="spacer"></div>
   <div class="cols">
     <div>
       <h3 style="color:var(--success);">Advantages</h3>
-      <ul style="font-size:0.9rem;">
-        <li>No shadow models needed</li>
-        <li>No training data needed</li>
-        <li>Single threshold to tune</li>
-        <li>Computationally free</li>
+      <ul>
+        <li>No shadows</li>
+        <li>No training</li>
+        <li>Single threshold</li>
       </ul>
     </div>
     <div>
       <h3 style="color:var(--warn);">Limitations</h3>
-      <ul style="font-size:0.9rem;">
-        <li>Global threshold ignores class differences</li>
-        <li>Doesn't use the full confidence vector</li>
-        <li>Sensitive to threshold choice</li>
-        <li>Weaker for well-calibrated models</li>
+      <ul>
+        <li>Ignores class structure</li>
+        <li>Uses only max, not full vector</li>
+        <li>Weak on calibrated models</li>
       </ul>
     </div>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Surprisingly, this simple baseline is often competitive with the full shadow model approach (Salem et al. 2019).</p>
+  <p class="small">Often competitive with full shadow pipeline (Salem et al. 2019).</p>
 </div>
 
 
@@ -435,16 +423,16 @@
   <div class="pill">Hayes et al. 2017</div>
   <h2>LOGAN: MIA Against Generative Models</h2>
   <div class="divider"></div>
-  <p>Shokri attacked <strong>classification</strong> models. Hayes et al. extended MIA to <strong>generative adversarial networks (GANs)</strong>.</p>
+  <p>Shokri: <strong>classifiers</strong>. Hayes et al.: MIA on <strong>GANs</strong>.</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Challenge:</strong> GANs don't output prediction vectors. There's no natural "confidence score" to threshold on. How do we define membership for a generative model?</p>
+    <p><strong>Challenge:</strong> no confidence vector. How to define membership for a generative model?</p>
   </div>
   <div class="spacer"></div>
   <ul class="arrow">
-    <li>A GAN memorizes training images if it generates outputs very similar to specific training examples</li>
-    <li>The <strong>discriminator</strong> score can serve as a membership signal</li>
-    <li>Alternatively, <strong>reconstruction error</strong> can indicate membership</li>
+    <li>Memorization: GAN generates outputs near specific training examples</li>
+    <li><strong>Discriminator</strong> score as membership signal</li>
+    <li><strong>Reconstruction error</strong> as membership signal</li>
   </ul>
 </div>
 
@@ -457,15 +445,15 @@
   <div class="cols">
     <div>
       <h3>Discriminator-Based</h3>
-      <p style="font-size:0.9rem;">Use the GAN's discriminator $D(x)$ as a membership signal:</p>
-      <div class="math-block" style="font-size:0.95rem;">$$\mathcal{A}(x) = \mathbf{1}[D(x) > \tau]$$</div>
-      <p style="font-size:0.85rem;">The discriminator was trained to distinguish real (training) data from fake — it implicitly encodes membership.</p>
+      <p>Discriminator $D(x)$ as signal.</p>
+      <div class="math-block">$$\mathcal{A}(x) = \mathbf{1}[D(x) > \tau]$$</div>
+      <p>Real-vs-fake score encodes membership.</p>
     </div>
     <div>
       <h3>Reconstruction-Based</h3>
-      <p style="font-size:0.9rem;">Find the closest generated image to $x$:</p>
-      <div class="math-block" style="font-size:0.95rem;">$$\mathcal{A}(x) = \mathbf{1}[\min_z \|x - G(z)\| < \tau]$$</div>
-      <p style="font-size:0.85rem;">If the GAN can closely reconstruct $x$, it likely memorized it.</p>
+      <p>Closest generated image to $x$.</p>
+      <div class="math-block">$$\mathcal{A}(x) = \mathbf{1}[\min_z \|x - G(z)\| < \tau]$$</div>
+      <p>Close reconstruction: likely memorized.</p>
     </div>
   </div>
 </div>
@@ -475,19 +463,19 @@
   <div class="pill">Hayes et al. 2017</div>
   <h2>Shadow GAN Approach</h2>
   <div class="divider"></div>
-  <p>For more sophisticated attacks, train <strong>shadow GANs</strong>:</p>
+  <p>Stronger attacks: train <strong>shadow GANs</strong>.</p>
   <div class="spacer-sm"></div>
   <div class="card" style="padding:20px 24px;">
     <ul class="num">
-      <li>Train $k$ shadow GANs on known datasets</li>
-      <li>Extract discriminator features for members and non-members of each shadow</li>
-      <li>Train a binary attack classifier on these features</li>
-      <li>Apply to the target GAN's discriminator output</li>
+      <li>Train $k$ shadow GANs on known data</li>
+      <li>Extract discriminator features (members / non-members)</li>
+      <li>Train binary attack classifier</li>
+      <li>Apply to target GAN's discriminator</li>
     </ul>
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">Key insight: <strong>mode collapse</strong> increases vulnerability. When a GAN fails to cover the full data distribution, it memorizes specific examples more strongly.</p>
+    <p><strong>Mode collapse</strong> increases vulnerability: poor coverage, stronger memorization.</p>
   </div>
 </div>
 
@@ -505,13 +493,13 @@
   </table>
   <div class="spacer"></div>
   <ul class="arrow">
-    <li>Lower than classification MIA (GANs leak less than classifiers)</li>
-    <li>But still <strong>significantly above random</strong> (50%)</li>
+    <li>Lower than classifier MIA (GANs leak less)</li>
+    <li>Still <strong>well above 50%</strong></li>
     <li>Smaller training sets → higher vulnerability</li>
     <li>More mode collapse → higher vulnerability</li>
   </ul>
   <div class="spacer-sm"></div>
-  <p class="small">Significance: MIA is not limited to classification — generative models also leak membership information.</p>
+  <p class="small">MIA is not limited to classification: generative models also leak.</p>
 </div>
 
 
@@ -520,23 +508,23 @@
   <div class="section-num">03</div>
   <h1>Seq2Seq: Machine Translation</h1>
   <div class="divider"></div>
-  <p class="subtitle">Toward sequence-model MIA (Hisamoto et al. 2020)</p>
+  <p class="subtitle">Sequence-model MIA (Hisamoto et al. 2020)</p>
 </div>
 <!-- SLIDE 56 — Hisamoto Overview -->
 <div class="slide bg-deep">
   <div class="pill">Hisamoto et al. 2019</div>
   <h2>MIA on Sequence-to-Sequence Models</h2>
   <div class="divider"></div>
-  <p>Hisamoto et al. extended MIA to <strong>machine translation</strong> models — the bridge from vision to NLP.</p>
+  <p>Hisamoto et al.: MIA on <strong>machine translation</strong>. Bridge from vision to NLP.</p>
   <div class="spacer"></div>
   <div class="cols">
     <div>
       <h3>Challenge</h3>
-      <p style="font-size:0.9rem;">Seq2seq models don't output a fixed-size confidence vector. Instead, they generate variable-length sequences with per-token probabilities.</p>
+      <p>No fixed-size confidence vector. Variable-length output.</p>
     </div>
     <div>
       <h3>Solution</h3>
-      <p style="font-size:0.9rem;">Use <strong>perplexity</strong> — the model's average surprise at the source-target pair — as the membership signal.</p>
+      <p><strong>Perplexity</strong> on source-target pair as signal.</p>
     </div>
   </div>
   <div class="spacer"></div>
@@ -553,18 +541,18 @@
   <div class="spacer-sm"></div>
   <div class="cols">
     <div>
-      <h3 style="color:var(--success);">Members (training pairs)</h3>
-      <ul style="font-size:0.9rem;">
-        <li>Model has seen this (source, target) pair</li>
-        <li>Assigns <strong>high probability</strong> to the correct translation</li>
+      <h3 style="color:var(--success);">Members</h3>
+      <ul>
+        <li>Seen pair</li>
+        <li><strong>High</strong> probability</li>
         <li>Low perplexity</li>
       </ul>
     </div>
     <div>
       <h3 style="color:var(--warn);">Non-members</h3>
-      <ul style="font-size:0.9rem;">
-        <li>Model has not seen this pair</li>
-        <li>Assigns <strong>lower probability</strong> to the translation</li>
+      <ul>
+        <li>Unseen pair</li>
+        <li><strong>Lower</strong> probability</li>
         <li>Higher perplexity</li>
       </ul>
     </div>
@@ -573,7 +561,7 @@
   <p>Attack: $\mathcal{A}(x, y) = \mathbf{1}[\text{PPL}(x, y) < \tau]$</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">This is precisely the <strong>same intuition</strong> as the loss-based threshold attack for classifiers — just expressed in the language of sequence models.</p>
+    <p><strong>Same intuition</strong> as loss-threshold, in sequence-model form.</p>
   </div>
 </div>
 
@@ -584,17 +572,17 @@
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <ul class="check">
-    <li>Tested on WMT translation models (English → German, etc.)</li>
-    <li>Perplexity-based attack achieves significant AUC above 0.5</li>
-    <li>Smaller training sets → larger gap between member and non-member perplexity</li>
-    <li>Fine-tuned models more vulnerable than models trained from scratch</li>
+    <li>WMT translation models (English → German, etc.)</li>
+    <li>Perplexity attack: AUC well above 0.5</li>
+    <li>Smaller training sets → larger PPL gap</li>
+    <li>Fine-tuned models more vulnerable than from-scratch</li>
   </ul>
   <div class="spacer"></div>
   <div class="highlight" style="padding:20px 24px;">
-    <p style="font-size:1.05rem;"><strong>Significance:</strong> First demonstration that MIA extends naturally to sequence models — directly paving the way to <strong>LLM membership inference</strong>.</p>
+    <p><strong>First MIA on sequence models.</strong> Paves the way to <strong>LLM MIA</strong>.</p>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">The perplexity-based approach will become the baseline for all LLM MIA work in Section VI.</p>
+  <p class="small">Perplexity becomes the baseline for all LLM MIA work in Section VI.</p>
 </div>
 
 <!-- SLIDE 59 — Seq2Seq to LLMs -->
@@ -612,7 +600,7 @@
     <tr><td>Global threshold works</td><td>Need calibration (text difficulty varies)</td></tr>
   </table>
   <div class="spacer"></div>
-  <p>The jump from seq2seq to LLMs introduces <strong>two new challenges</strong>: unknown training data distribution and the need for calibration against text difficulty.</p>
+  <p>Seq2seq → LLMs introduces <strong>two new challenges</strong>: unknown training distribution, calibration against text difficulty.</p>
 </div>
 
 <!-- SLIDE 60 — Section 2 Summary -->
@@ -622,24 +610,24 @@
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
       <h3>Shadow Models Work</h3>
-      <p style="font-size:0.9rem;">But they are expensive and require strong assumptions about data distribution and model architecture.</p>
+      <p>Expensive. Strong data and architecture assumptions.</p>
     </div>
     <div class="card">
-      <h3>Confidence Vectors Leak</h3>
-      <p style="font-size:0.9rem;">The prediction confidence is a rich signal for membership — more classes means more leakage.</p>
+      <h3>Confidence Leaks</h3>
+      <p>Rich signal. More classes: more leakage.</p>
     </div>
     <div class="card">
       <h3>Generative Models Too</h3>
-      <p style="font-size:0.9rem;">GANs, seq2seq, and other generative architectures are also vulnerable to membership inference.</p>
+      <p>GANs and seq2seq also vulnerable.</p>
     </div>
     <div class="card">
       <h3>NLP Is Next</h3>
-      <p style="font-size:0.9rem;">Perplexity-based attacks on seq2seq models directly foreshadow LLM MIA.</p>
+      <p>Seq2seq perplexity foreshadows LLM MIA.</p>
     </div>
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Open questions (circa 2017–2019):</strong> Can we attack without shadow models? What is the theoretically optimal attack? How does overfitting quantitatively relate to privacy?</p>
+    <p><strong>Open questions:</strong> attack without shadows? Optimal attack? Quantify overfitting vs. privacy?</p>
   </div>
 </div>
 

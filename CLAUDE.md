@@ -3,7 +3,7 @@
 This directory holds slide decks. Two authoring formats are used:
 
 - **Marp Markdown** (`*.md` with Marp frontmatter, e.g. `template.md`) — native PDF export via `marp <file>.md --pdf`. No extra print setup needed.
-- **Custom HTML decks** (`*.html` using the `.deck` / `.slide` engine, e.g. `dllm/dllm.html`, `mia/MIA.html`, `privacy/DP-FL.html`) — single-page apps that show one `.active` slide at a time and scale to viewport via JS.
+- **Custom HTML decks** (`*.html` using the `.deck` / `.slide` engine, e.g. `dllm/dllm.html`, `mia/mia1-foundations.html`, `privacy/DP-FL.html`) — single-page apps that show one `.active` slide at a time and scale to viewport via JS.
 
 ## Visual identity (all decks)
 
@@ -42,17 +42,22 @@ bundle is a build artifact — gitignored, produced on demand for distribution.
 ## Style priorities
 
 1. One idea per slide.
-2. Prose emphasis: `**strong**` = Yonsei Blue accent, `*em*` = muted gray.
-3. Key insight → `<div class="highlight">` (HTML) or `blockquote` (Marp).
-4. Math-heavy slide → `<div class="math-block">…$$…$$…</div>` (HTML) or `$$...$$` (Marp).
+2. **The speaker narrates; the slide is a visual anchor.** Slides carry abstract phrases and key terms, not full explanatory sentences. Drop narrative connectors ("This means…", "In other words…", "It is important to note…") and soft qualifiers ("essentially", "actually", "basically"). Target telegraphic noun phrases over complete sentences. See `DESIGN_SYSTEM.md §7.12` for the full rule.
+3. Prose emphasis: `**strong**` = Yonsei Blue accent, `*em*` = muted gray.
+4. Key insight → `<div class="highlight">` (HTML) or `blockquote` (Marp).
+5. Math-heavy slide → `<div class="math-block">…$$…$$…</div>` (HTML) or `$$...$$` (Marp).
+6. Paper attribution → `<div class="cite">` footnote at the bottom. See `DESIGN_SYSTEM.md §2.19`.
 
 ## Font sizes — don't fight the canonical scale
 
-`reference/deck.css` owns the type scale: `h1` 3.6rem · `h2` 2.7rem · `h3` 1.85rem · `p`, `li` 1.55rem · `.small` 1.15rem · `.tiny` 0.95rem · `.math-block` 1.7rem. These are tuned for readability from the back of a lecture hall and must not be shadowed by a per-deck `<style>` block.
+`reference/deck.css` owns the type scale: `h1` 3.6rem · `h2` 2.7rem · `h3` 1.85rem · `p`, `li` 1.55rem · `.small` 1.15rem · `.tiny` 0.95rem · `.math-block` 1.7rem. These are tuned for readability from the back of a lecture hall.
 
-- **Don't** redefine `p`, `li`, `h1`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size` in a deck's inline `<style>`. If you find such overrides in an existing deck, delete them — they're the usual cause of "the fonts look small."
-- **Do** size component-internal text (card body, `.paper-card .desc`, `.sr-box p`, SVG label text, etc.) in roughly the `1.05rem–1.35rem` range. Express sizes as fractions of the canonical body, not absolute pixels.
-- When a slide feels cramped, cut content or split the slide — never shrink the type.
+**Rule of thumb: no small fonts on prose. Ever.** The only exception is the `.cite` footnote (§2.19 of `DESIGN_SYSTEM.md`) at 0.85rem gray, which sits at the bottom of a slide as metadata.
+
+- **Never** put inline `style="font-size:0.9rem"` (or any smaller value) on a `<p>`, `<li>`, `<ul>`, or text inside a `.highlight` / `.card` / `.cols` / `.grid-*`. These are prose; they render at the canonical body size (`1.55rem` for `<p>` / `<li>`) or as `.small` (1.15rem) when you explicitly want the muted-caption weight.
+- **Never** redefine `p`, `li`, `h1`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size` in a deck's inline `<style>` block.
+- **Component-internal text** (pill labels, token chips, diagram-box labels, code blocks) may stay at their native compact size — these are design elements, not prose.
+- **When a slide feels cramped, cut content or split the slide. Use as many slides as you need.** The canonical scale is non-negotiable; there is no slide budget. One idea per slide and if two ideas are fighting, split them.
 
 **Readability reference.** Kangwook Lee's BLISS seminar deck (<https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html>) is the minimum-acceptable visual weight. Zoomed-in captures: `reference/kangwook1.png`–`kangwook4.png`. If your deck renders noticeably smaller than those, check for canonical-token overrides first. See `DESIGN_SYSTEM.md §1.2` and §5.2 for the full rule.
 
@@ -67,7 +72,9 @@ These are the pitfalls that have eaten the most time. Do not re-learn them.
 - **Don't hack around overflow with `white-space:nowrap; overflow-x:auto`** on a math-block. The equation gets clipped at the right edge. Fix the content: shorten cases labels to math (`m \in \text{top-}k`, `\text{else}`), use `\dfrac` → `\tfrac` when you want less vertical weight, or split the slide.
 - **Prefer static step-labeled diagrams over continuous animation.** For talks, auto-cycling animations (SMIL `animateMotion`, CSS keyframes) keep the audience waiting for the next frame. Show every step at once with ①②③④ badges on the relevant elements; the speaker controls the pacing. Keep animation for self-paced web versions only.
 - **Descriptions shouldn't duplicate diagram equations.** If the diagram labels show `$g_i = \nabla\ell(\theta; D_i)$`, the description on the other side of the slide should just say "local gradient" in plain English. One artifact owns the math; the other owns the narrative.
-- **Cut content, don't shrink type.** "Page X has text overflow" is a signal to trim the slide, not to reduce `font-size`. Drop bullets, split into two slides, or remove the section entirely. The canonical scale exists so speakers at the back of a lecture hall can read everything — preserve it.
+- **Cut content, don't shrink type.** "Page X has text overflow" is a signal to trim the slide, not to reduce `font-size`. Drop bullets, split into two slides, or remove the section entirely. **There is no slide budget — split as many times as you need.** The canonical scale exists so speakers at the back of a lecture hall can read everything — preserve it. The only permitted small text on a slide is the `.cite` footnote.
+- **Write for verbal narration, not self-service reading.** The speaker explains context and transitions; the slide carries the key terms and the math. Rewrite full sentences to telegraphic noun phrases ("The attack achieves high precision, meaning most positive predictions are correct" → "High precision: most positives correct"). Drop narrative connectors ("This means…", "In other words…", "As we will see…") and soft qualifiers ("essentially", "actually", "basically"). Target ~40–60% word reduction when cleaning up a wordy deck. After rewriting, remove any inline `font-size:0.85rem` overrides that existed only to cope with overflow — shorter content fits canonical sizes. See `DESIGN_SYSTEM.md §7.12`.
+- **Paper attribution goes in a bottom footnote, not a side card.** When a slide is about a specific paper, put the citation in a `<div class="cite">Author(s), "Title", Venue Year</div>` at the bottom. Don't waste half the slide on a 2-column layout where the right column is a card holding the paper title in `<em>"…"</em>`. One citation per slide; informal is fine. Keep the author `.pill` at the top for section context, but put `.cite` only on the paper-overview slide (not every follow-up slide about the same paper). See `DESIGN_SYSTEM.md §2.19` and §7.13.
 - **KaTeX delimiter escape in `onload` — use `\\(` not `\(`.** The `renderMathInElement(document.body,{delimiters:[…]})` call lives inside an HTML `onload="…"` attribute, so strings pass through two layers of parsing (HTML → JS). The LaTeX delimiters must be written `'\\('`, `'\\)'`, `'\\['`, `'\\]'`. A single backslash (`'\('`) gets silently eaten by the JS string parser as an unrecognized escape, leaving KaTeX with bare `(`, `)`, `[`, `]` as delimiters — every parenthesized or bracketed phrase in the deck then renders as italic math with no word spacing (`(learned or heuristic)` → italic `learnedorheuristic`, `[M]` in a token chip → slanted math `M` at a different height than neighboring word tokens). The canonical handler is in `reference/deck-skeleton.html`; match it exactly. Audit: `grep -c "'\\\\(" *.html` should return 0 across all decks.
 - **Never use italic for prose.** Yonsei has no italic face (all four TTFs are `font-style: normal`), and Noto Sans Italic isn't loaded either. Browsers fake italic by oblique-skewing normal glyphs, which collapses kerning. `em` is globally pinned to `font-style: normal; color: var(--gray-text)` — don't use `<i>`, don't set `font-style: italic`. In LaTeX math, wrap English phrases in `\text{…}`; bare `all positions` in math mode renders each letter as an italic math variable with zero inter-letter spacing.
 - **Avoid em-dashes in slide prose.** Don't use `—` (em-dash), `–` (en-dash), or `--` (double-hyphen) as a general connector in titles, subtitles, bullets, cards, or captions. The dash reads as a pause in print but at slide sizes it either (a) forces an awkward line break between the dash and the second clause or (b) leaves whichever side is shorter dangling as an orphan. Rewrite instead: a colon (`:`), a comma, a period, or parentheses almost always reads better. The only exceptions are tight technical glyphs where the dash is part of the name (`7–8B scale`, `fill-in-the-middle`) or an arrow (`→`, `↔`). When converting existing text, read the sentence aloud — if the dash is doing the work of a colon ("X: it does Y"), use a colon; if it's parenthetical ("X (the reason being Y)"), use parens; if it's a full stop in disguise, split into two sentences.

@@ -39,7 +39,7 @@
   <div class="pill pill-fill" style="margin-bottom:28px;">Lecture 3 of 5</div>
   <h1>Membership Inference:<br>Theoretical Foundations</h1>
   <div class="divider"></div>
-  <p class="subtitle">Generalization gap, Bayes optimality, and the likelihood ratio</p>
+  <p class="subtitle">Generalization gap, Bayes optimality, likelihood ratio</p>
   <div class="spacer-lg"></div>
   <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
   <p class="small" style="margin-top:6px;">2026</p>
@@ -98,29 +98,21 @@
   <div class="section-num">01</div>
   <h1>Yeom et al. 2018</h1>
   <div class="divider"></div>
-  <p class="subtitle">Generalization gap and the overfitting bound</p>
+  <p class="subtitle">Generalization gap and overfitting bound</p>
 </div>
 <!-- SLIDE 62 — Yeom Overview -->
 <div class="slide bg-dark">
   <div class="pill">Yeom et al. 2018</div>
   <h2>Privacy Risk in ML: Connection to Overfitting</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <p>First rigorous theoretical analysis connecting <strong>overfitting</strong> to privacy vulnerability.</p>
-      <div class="spacer"></div>
-      <ul class="arrow">
-        <li>Formal bound: MIA advantage $\leq$ generalization gap</li>
-        <li>Simple threshold attack with theoretical guarantees</li>
-        <li>Connects membership and attribute inference</li>
-      </ul>
-    </div>
-    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
-      <p style="font-size:0.95rem; text-align:center;"><em>"Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting"</em></p>
-      <div class="spacer-sm"></div>
-      <p class="small" style="text-align:center;">CSF 2018 — Yeom, Giacomelli, Fredrikson, Jha</p>
-    </div>
-  </div>
+  <p>First rigorous theory: <strong>overfitting</strong> drives privacy vulnerability.</p>
+  <div class="spacer"></div>
+  <ul class="arrow">
+    <li>Bound: MIA advantage $\leq$ generalization gap</li>
+    <li>Threshold attack with guarantees</li>
+    <li>Connects membership and attribute inference</li>
+  </ul>
+  <div class="cite">Yeom, Giacomelli, Fredrikson, Jha, "Privacy Risk in ML: Analyzing the Connection to Overfitting", CSF 2018</div>
 </div>
 
 <!-- SLIDE 63 — Generalization Gap -->
@@ -128,17 +120,17 @@
   <div class="pill">Yeom et al. 2018</div>
   <h2>The Generalization Gap</h2>
   <div class="divider"></div>
-  <p>Define the <strong>population risk</strong> and <strong>empirical risk</strong>:</p>
+  <p><strong>Population risk</strong> and <strong>empirical risk</strong>:</p>
   <div class="math-block">
     $$R_{\text{pop}}(f_\theta) = \mathbb{E}_{z \sim \mathcal{D}}[\ell(f_\theta, z)] \qquad R_{\text{train}}(f_\theta) = \frac{1}{n}\sum_{i=1}^n \ell(f_\theta, z_i)$$
   </div>
-  <p>The <strong>generalization gap</strong> is:</p>
+  <p><strong>Generalization gap</strong>:</p>
   <div class="math-block">
     $$\Delta = R_{\text{pop}}(f_\theta) - R_{\text{train}}(f_\theta)$$
   </div>
   <div class="spacer-sm"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">$\Delta > 0$ means the model fits training data better than unseen data — it has <strong>overfit</strong>. This gap is exactly the signal that MIA exploits.</p>
+    <p>$\Delta > 0$: model <strong>overfits</strong>. This gap is the MIA signal.</p>
   </div>
 </div>
 
@@ -147,18 +139,18 @@
   <div class="pill">Yeom et al. 2018</div>
   <h2>The Threshold Attack</h2>
   <div class="divider"></div>
-  <p>The simplest MIA with theoretical backing:</p>
+  <p>Simplest principled MIA:</p>
   <div class="math-block">
     $$\mathcal{A}(z) = \mathbf{1}\left[\ell(f_\theta, z) \leq \tau\right]$$
   </div>
-  <p>where $\tau = R_{\text{pop}}(f_\theta)$ (the expected population loss).</p>
+  <p>with $\tau = R_{\text{pop}}(f_\theta)$.</p>
   <div class="spacer"></div>
   <ul class="arrow">
-    <li><strong>Members</strong> have average loss $R_{\text{train}} = R_{\text{pop}} - \Delta < \tau$ → classified as members</li>
-    <li><strong>Non-members</strong> have average loss $R_{\text{pop}} = \tau$ → classified as non-members (on average)</li>
+    <li><strong>Members</strong>: $R_{\text{train}} = R_{\text{pop}} - \Delta < \tau$ → member</li>
+    <li><strong>Non-members</strong>: loss $R_{\text{pop}} = \tau$ → non-member (on average)</li>
   </ul>
   <div class="spacer"></div>
-  <p>No shadow models, no neural network attack classifier — just a <strong>single threshold</strong> on the loss.</p>
+  <p>No shadow models, no attack classifier: <strong>single loss threshold</strong>.</p>
 </div>
 
 <!-- SLIDE 65 — Theorem -->
@@ -170,14 +162,14 @@
   <div class="card" style="padding:24px 28px; border-color:var(--accent2);">
     <h3>Theorem (Yeom et al. 2018)</h3>
     <div class="spacer-sm"></div>
-    <p>For the threshold attack with $\tau = R_{\text{pop}}(f_\theta)$:</p>
+    <p>Threshold attack with $\tau = R_{\text{pop}}(f_\theta)$:</p>
     <div class="math-block" style="background:var(--black-15);">
       $$\text{Adv}_{\text{MI}}(\mathcal{A}) \leq \Delta = R_{\text{pop}}(f_\theta) - R_{\text{train}}(f_\theta)$$
     </div>
-    <p style="font-size:0.9rem; margin-top:8px;">The membership inference advantage is <strong>upper-bounded by the generalization gap</strong>.</p>
+    <p style="margin-top:8px;">MIA advantage <strong>upper-bounded by generalization gap</strong>.</p>
   </div>
   <div class="spacer"></div>
-  <p><strong>Corollary:</strong> A perfectly generalizing model ($\Delta = 0$) leaks <strong>zero</strong> membership information to the threshold attack.</p>
+  <p><strong>Corollary:</strong> $\Delta = 0$ → <strong>zero</strong> leakage to threshold attack.</p>
 </div>
 
 <!-- SLIDE 66 — Proof Sketch -->
@@ -187,17 +179,15 @@
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <div class="card" style="padding:20px 24px;">
-    <p style="font-size:0.95rem;">The advantage is $|\text{TPR} - \text{FPR}|$:</p>
-    <div class="spacer-sm"></div>
-    <ul class="num" style="font-size:0.95rem;">
-      <li><strong>TPR</strong> = $\Pr[\ell(f_\theta, z) \leq \tau \mid z \in D_{\text{train}}]$ — probability that a member has loss below threshold</li>
-      <li><strong>FPR</strong> = $\Pr[\ell(f_\theta, z) \leq \tau \mid z \sim \mathcal{D}]$ — probability that a random point has loss below threshold</li>
-      <li>By Markov's inequality, $\text{TPR} \geq 1 - R_{\text{train}}/\tau$ and $\text{FPR} \leq R_{\text{pop}}/\tau$</li>
-      <li>The gap: $\text{TPR} - \text{FPR} \leq (R_{\text{pop}} - R_{\text{train}})/\tau = \Delta/\tau$</li>
+    <p>Advantage $= |\text{TPR} - \text{FPR}|$:</p>
+    <ul class="num">
+      <li>Markov: $\text{TPR} \geq 1 - R_{\text{train}}/\tau$</li>
+      <li>Markov: $\text{FPR} \leq R_{\text{pop}}/\tau$</li>
+      <li>Subtract: $\text{TPR} - \text{FPR} \leq \Delta/\tau$</li>
     </ul>
   </div>
   <div class="spacer"></div>
-  <p style="font-size:0.95rem;">The key step: training data has systematically <strong>lower loss</strong> than unseen data, and the gap is exactly $\Delta$.</p>
+  <p>Training data has <strong>lower loss</strong>; gap is $\Delta$.</p>
 </div>
 
 <!-- SLIDE 67 — Overfitting Intuition -->
@@ -205,15 +195,12 @@
   <div class="pill">Yeom et al. 2018</div>
   <h2>Overfitting Intuition: Loss Distributions</h2>
   <div class="divider"></div>
-  <p>Visualize the loss distributions for members and non-members:</p>
+  <p>Loss distributions: members vs. non-members.</p>
   <div class="spacer"></div>
   <div class="cols">
     <div class="card" style="text-align:center; padding:20px;">
-      <h3>Well-Generalized Model</h3>
-      <div class="spacer-sm"></div>
-      <p style="font-size:0.9rem;">Loss distributions <strong>overlap heavily</strong></p>
-      <p style="font-size:0.9rem;">$\Delta \approx 0$ → MIA fails</p>
-      <div class="spacer-sm"></div>
+      <h3>Well-Generalized</h3>
+      <p>Distributions <strong>overlap</strong>: $\Delta \approx 0$, MIA fails.</p>
       <div style="display:flex; gap:4px; justify-content:center; align-items:end; height:60px;">
         <div style="width:12px; height:10px; background:var(--blue); opacity:0.3; border-radius:2px;"></div>
         <div style="width:12px; height:25px; background:var(--blue); opacity:0.5; border-radius:2px;"></div>
@@ -226,11 +213,8 @@
       <p class="tiny" style="margin-top:4px;">← low loss &nbsp;&nbsp;&nbsp; high loss →</p>
     </div>
     <div class="card" style="text-align:center; padding:20px;">
-      <h3>Overfitted Model</h3>
-      <div class="spacer-sm"></div>
-      <p style="font-size:0.9rem;">Loss distributions are <strong>clearly separated</strong></p>
-      <p style="font-size:0.9rem;">$\Delta \gg 0$ → MIA succeeds</p>
-      <div class="spacer-sm"></div>
+      <h3>Overfitted</h3>
+      <p>Distributions <strong>separated</strong>: $\Delta \gg 0$, MIA succeeds.</p>
       <div style="display:flex; gap:4px; justify-content:center; align-items:end; height:60px;">
         <div style="width:12px; height:15px; background:var(--blue); opacity:0.3; border-radius:2px;"></div>
         <div style="width:12px; height:50px; background:var(--blue); opacity:0.7; border-radius:2px;"></div>
@@ -252,7 +236,7 @@
   <div class="pill">Yeom et al. 2018</div>
   <h2>Loss Distribution &amp; Decision Threshold</h2>
   <div class="divider"></div>
-  <p>The threshold $\tau$ partitions the loss axis into two regions:</p>
+  <p>Threshold $\tau$ partitions the loss axis:</p>
   <div class="spacer-sm"></div>
   <div class="math-block">
     $$\underbrace{\ell < \tau}_{\text{Predict: Member}} \qquad | \qquad \underbrace{\ell \geq \tau}_{\text{Predict: Non-member}}$$
@@ -260,18 +244,16 @@
   <div class="spacer"></div>
   <div class="cols">
     <div>
-      <h3>True Positive (TPR)</h3>
-      <p style="font-size:0.9rem;">Members with $\ell < \tau$</p>
-      <p style="font-size:0.9rem;">Area under member distribution left of $\tau$</p>
+      <h3>True Positive</h3>
+      <p>Members with $\ell < \tau$: area left of $\tau$ under the member curve.</p>
     </div>
     <div>
-      <h3>False Positive (FPR)</h3>
-      <p style="font-size:0.9rem;">Non-members with $\ell < \tau$</p>
-      <p style="font-size:0.9rem;">Area under non-member distribution left of $\tau$</p>
+      <h3>False Positive</h3>
+      <p>Non-members with $\ell < \tau$: area left of $\tau$ under the non-member curve.</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p>Choosing $\tau$ trades off TPR and FPR. A lower $\tau$ reduces FPR but also reduces TPR.</p>
+  <p>$\tau$ trades TPR vs. FPR. Lower $\tau$: both fall.</p>
 </div>
 
 <!-- SLIDE 69 — Attribute Inference -->
@@ -279,16 +261,16 @@
   <div class="pill">Yeom et al. 2018</div>
   <h2>Connection to Attribute Inference</h2>
   <div class="divider"></div>
-  <p>Yeom et al. also connect membership inference to <strong>attribute inference</strong>:</p>
+  <p>Yeom also links MIA to <strong>attribute inference</strong>:</p>
   <div class="math-block">
     $$\text{Attribute Inference:} \quad \mathcal{A}(f_\theta, x_{\setminus s}) \to s$$
   </div>
-  <p>Given all features <em>except</em> the sensitive attribute $s$, infer $s$ from the model's behavior.</p>
+  <p>Infer sensitive attribute $s$ from all other features.</p>
   <div class="spacer"></div>
   <ul class="arrow">
-    <li>If a model overfits on sensitive attributes, its predictions are more accurate for training members</li>
-    <li>Attribute inference advantage is also bounded by the generalization gap</li>
-    <li>MIA is a <strong>prerequisite</strong>: you need to know someone is a member before attribute inference is meaningful</li>
+    <li>Overfitting on sensitive attributes: higher accuracy on members</li>
+    <li>Advantage also bounded by generalization gap</li>
+    <li>MIA is a <strong>prerequisite</strong>: know membership first</li>
   </ul>
 </div>
 
@@ -300,20 +282,20 @@
   <div class="spacer-sm"></div>
   <div class="grid-2">
     <div class="card">
-      <h3 style="color:var(--success);">Regularization Helps Privacy</h3>
-      <p style="font-size:0.9rem;">Anything that reduces the generalization gap (L2, dropout, early stopping, data augmentation) also reduces MIA vulnerability.</p>
+      <h3 style="color:var(--success);">Regularization Helps</h3>
+      <p>L2, dropout, early stopping shrink $\Delta$.</p>
     </div>
     <div class="card">
-      <h3 style="color:var(--accent2);">No Overfitting → No MIA</h3>
-      <p style="font-size:0.9rem;">If $\Delta = 0$, the threshold attack has zero advantage. Perfect generalization implies the model treats members and non-members identically.</p>
+      <h3 style="color:var(--accent2);">No Overfitting, No MIA</h3>
+      <p>$\Delta = 0$: threshold attack has zero advantage.</p>
     </div>
     <div class="card">
       <h3 style="color:var(--warn);">Privacy-Utility Tension</h3>
-      <p style="font-size:0.9rem;">Some overfitting may be <em>necessary</em> for good performance. Reducing $\Delta$ to zero may require sacrificing accuracy.</p>
+      <p>Some overfitting may be needed for accuracy.</p>
     </div>
     <div class="card">
       <h3>Simple Baseline</h3>
-      <p style="font-size:0.9rem;">The loss threshold is a principled, zero-cost baseline that should always be compared against.</p>
+      <p>Loss threshold: principled, zero-cost.</p>
     </div>
   </div>
 </div>
@@ -325,14 +307,14 @@
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <ul class="arrow">
-    <li><strong>Well-generalized models can still leak.</strong> The generalization gap is an <em>average</em> measure — individual samples can be highly vulnerable even when $\Delta$ is small.</li>
-    <li><strong>Per-sample risk varies enormously.</strong> Outliers, rare examples, and mislabeled data are much more vulnerable than typical examples.</li>
-    <li><strong>The bound is loose.</strong> The actual MIA advantage can be much smaller than $\Delta$ — the theorem gives a worst case.</li>
-    <li><strong>Only covers the threshold attack.</strong> More sophisticated attacks (likelihood ratios) can succeed even when the threshold attack fails.</li>
+    <li><strong>Well-generalized models still leak:</strong> $\Delta$ is average; individual samples can be vulnerable.</li>
+    <li><strong>Per-sample risk varies:</strong> outliers and rare examples far more vulnerable.</li>
+    <li><strong>Loose bound:</strong> actual advantage can be much smaller than $\Delta$.</li>
+    <li><strong>Threshold only:</strong> likelihood-ratio attacks succeed where thresholding fails.</li>
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Key question:</strong> What is the <em>optimal</em> attack, and how powerful can it be?</p>
+    <p><strong>Key question:</strong> what is the <em>optimal</em> attack, and how powerful?</p>
   </div>
 </div>
 
@@ -349,14 +331,14 @@
   <h2>Toward the Optimal Attack</h2>
   <div class="divider"></div>
   <div class="spacer"></div>
-  <p>Yeom showed that the <strong>threshold attack</strong> is principled but limited. The natural next question:</p>
+  <p>Yeom's threshold attack: principled but limited. Next question:</p>
   <div class="spacer"></div>
-  <div class="highlight" style="font-size:1.1rem; padding:24px 28px; text-align:center;">
-    <p>What is the <strong>Bayes optimal</strong> membership inference attack?</p>
-    <p style="font-size:0.95rem; margin-top:8px;">And does white-box access (full model parameters) help?</p>
+  <div class="highlight" style="padding:24px 28px; text-align:center;">
+    <p>What is the <strong>Bayes optimal</strong> MIA?</p>
+    <p style="margin-top:8px;">Does white-box access (full parameters) help?</p>
   </div>
   <div class="spacer-lg"></div>
-  <p>Sablayrolles et al. (2019) answered both questions — with a surprising result about the sufficiency of the loss.</p>
+  <p>Sablayrolles et al. (2019): surprising result on loss sufficiency.</p>
 </div>
 
 <!-- SLIDE 73 — Sablayrolles Overview -->
@@ -364,22 +346,14 @@
   <div class="pill">Sablayrolles et al. 2019</div>
   <h2>White-Box vs. Black-Box: Bayes Optimal Strategies</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <p>Derived the <strong>theoretically optimal MIA</strong> and proved a surprising equivalence between black-box and white-box attacks.</p>
-      <div class="spacer"></div>
-      <ul class="arrow">
-        <li>Optimal attack = likelihood ratio test (as expected from Neyman-Pearson)</li>
-        <li>White-box features (gradients, activations) add <strong>negligible information</strong> beyond the loss</li>
-        <li>The loss is a near-sufficient statistic for membership</li>
-      </ul>
-    </div>
-    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
-      <p style="font-size:0.95rem; text-align:center;"><em>"White-box vs Black-box: Bayes Optimal Strategies for Membership Inference"</em></p>
-      <div class="spacer-sm"></div>
-      <p class="small" style="text-align:center;">ICML 2019</p>
-    </div>
-  </div>
+  <p>Derived the <strong>optimal MIA</strong>: surprising BB = WB equivalence.</p>
+  <div class="spacer"></div>
+  <ul class="arrow">
+    <li>Optimal attack = likelihood ratio (Neyman-Pearson)</li>
+    <li>White-box features (gradients, activations): <strong>negligible</strong> beyond loss</li>
+    <li>Loss: near-sufficient statistic for membership</li>
+  </ul>
+  <div class="cite">Sablayrolles et al., "White-box vs Black-box: Bayes Optimal Strategies for Membership Inference", ICML 2019</div>
 </div>
 
 <!-- SLIDE 74 — Bayes Optimal -->
@@ -387,15 +361,15 @@
   <div class="pill">Sablayrolles et al. 2019</div>
   <h2>The Bayes Optimal MIA</h2>
   <div class="divider"></div>
-  <p>Given an observable signal $\phi(z)$ (e.g., loss, gradients), the optimal attack is the <strong>likelihood ratio test</strong>:</p>
+  <p>Signal $\phi(z)$ (loss, gradients). Optimal attack: <strong>likelihood ratio test</strong>:</p>
   <div class="math-block">
     $$\Lambda(z) = \frac{p(\phi(z) \mid z \in D)}{p(\phi(z) \mid z \notin D)} \quad \gtrless \quad \tau$$
   </div>
   <div class="spacer-sm"></div>
-  <p>This follows directly from the <strong>Neyman-Pearson lemma</strong> (Slide 26) — the likelihood ratio maximizes power at any given significance level.</p>
+  <p>Direct from <strong>Neyman-Pearson</strong> (Slide 26): LR maximizes power at fixed significance.</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">The question is: what signal $\phi(z)$ should we use? The loss $\ell(f_\theta, z)$? The gradients $\nabla_\theta \ell$? The full internal state?</p>
+    <p>Which signal $\phi(z)$? Loss $\ell$? Gradients $\nabla_\theta \ell$? Full internal state?</p>
   </div>
 </div>
 
@@ -404,24 +378,24 @@
   <div class="pill">Sablayrolles et al. 2019</div>
   <h2>Deriving the Optimal Test Statistic</h2>
   <div class="divider"></div>
-  <p>For loss-based attack, the signal is $\phi(z) = \ell(f_\theta, z)$:</p>
+  <p>Loss-based attack: $\phi(z) = \ell(f_\theta, z)$:</p>
   <div class="math-block">
     $$\Lambda(z) = \frac{p(\ell(f_\theta, z) \mid z \in D)}{p(\ell(f_\theta, z) \mid z \notin D)}$$
   </div>
   <div class="spacer-sm"></div>
-  <p>We need to estimate two distributions:</p>
+  <p>Estimate two distributions:</p>
   <div class="cols">
     <div class="card">
       <h3>$p(\ell \mid \text{member})$</h3>
-      <p style="font-size:0.9rem;">Distribution of loss on training points — typically low loss, concentrated</p>
+      <p>Low loss, concentrated.</p>
     </div>
     <div class="card">
       <h3>$p(\ell \mid \text{non-member})$</h3>
-      <p style="font-size:0.9rem;">Distribution of loss on unseen points — typically higher loss, more spread</p>
+      <p>Higher loss, more spread.</p>
     </div>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">The ratio tells us: how "surprised" should we be to see this loss value, given each hypothesis?</p>
+  <p class="small">Ratio: how "surprising" is this loss under each hypothesis?</p>
 </div>
 
 <!-- SLIDE 76 — White-Box Features -->
@@ -429,7 +403,7 @@
   <div class="pill">Sablayrolles et al. 2019</div>
   <h2>White-Box Features</h2>
   <div class="divider"></div>
-  <p>In a white-box setting, the adversary has access to much richer signals:</p>
+  <p>White-box: adversary sees much richer signals.</p>
   <div class="spacer-sm"></div>
   <table>
     <tr><th>Feature</th><th>Notation</th><th>Dimension</th></tr>
@@ -439,7 +413,7 @@
     <tr><td>Loss gradient w.r.t. input</td><td>$\nabla_x \ell$</td><td>$d_{\text{input}}$</td></tr>
   </table>
   <div class="spacer"></div>
-  <p>The white-box signal is the concatenation:</p>
+  <p>White-box signal (concatenation):</p>
   <div class="math-block">
     $$\phi_{\text{WB}}(z) = \left[\ell, \; \|\nabla_{W_1} \ell\|, \ldots, \|\nabla_{W_L} \ell\|, \; h_1, \ldots, h_L\right]$$
   </div>
@@ -454,14 +428,14 @@
   <div class="card" style="padding:24px 28px; border-color:var(--accent2);">
     <h3>Theorem (Sablayrolles et al. 2019)</h3>
     <div class="spacer-sm"></div>
-    <p>In the asymptotic regime (large models, standard training), the likelihood ratio based on the <strong>loss alone</strong> converges to the likelihood ratio based on <strong>all white-box features</strong>:</p>
+    <p>Asymptotic regime (large models, standard training): LR on <strong>loss alone</strong> converges to LR on <strong>all white-box features</strong>:</p>
     <div class="math-block" style="background:var(--black-15);">
       $$\Lambda_{\text{BB}}(z) \;\xrightarrow{\text{large models}}\; \Lambda_{\text{WB}}(z)$$
     </div>
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Implication:</strong> The loss is a <strong>near-sufficient statistic</strong> for membership. Gradients and activations add diminishing information.</p>
+    <p><strong>Implication:</strong> loss is <strong>near-sufficient</strong>. Gradients, activations: diminishing returns.</p>
   </div>
 </div>
 
@@ -472,16 +446,16 @@
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <ul class="arrow">
-    <li>The loss $\ell(f_\theta, z)$ <strong>compresses</strong> all information about how the model treats $z$</li>
-    <li>Gradients $\nabla_\theta \ell$ are <strong>functionally determined</strong> by the loss landscape at $z$ — they don't add independent information about membership</li>
-    <li>Activations $h_l(x)$ feed into the loss through the forward pass — the loss is their <strong>aggregate summary</strong></li>
+    <li>Loss $\ell(f_\theta, z)$ <strong>compresses</strong> how the model treats $z$</li>
+    <li>Gradients $\nabla_\theta \ell$: <strong>functionally determined</strong> by loss landscape at $z$. No independent info on membership.</li>
+    <li>Activations $h_l(x)$ feed into the loss. Loss is their <strong>aggregate summary</strong>.</li>
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>Intuition:</strong> The loss answers the question "how well does the model fit this point?" That's exactly the question membership inference asks. Everything else is redundant.</p>
+    <p><strong>Intuition:</strong> loss answers "how well does the model fit $z$?" That is the MIA question.</p>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Caveat: this is an asymptotic result. For small models or specific architectures, white-box features can provide a modest improvement.</p>
+  <p class="small">Caveat: asymptotic. Small models, specific architectures: white-box gives modest gain.</p>
 </div>
 
 <!-- SLIDE 79 — Practical Implication -->
@@ -492,16 +466,16 @@
   <div class="spacer"></div>
   <div class="grid-2">
     <div class="card" style="border-color:var(--warn);">
-      <h3>For Model Deployers</h3>
-      <p style="font-size:0.9rem;">Restricting API access to labels or confidence scores doesn't meaningfully reduce privacy risk. <strong>Even label-only access leaks membership.</strong></p>
+      <h3>For Deployers</h3>
+      <p>Restricting API: negligible gain. <strong>Label-only still leaks.</strong></p>
     </div>
     <div class="card" style="border-color:var(--success);">
       <h3>For Attackers</h3>
-      <p style="font-size:0.9rem;">Don't bother with white-box attacks when the loss is available. <strong>Focus effort on better calibration of the loss distribution.</strong></p>
+      <p>Skip white-box. <strong>Calibrate the loss instead.</strong></p>
     </div>
   </div>
   <div class="spacer-lg"></div>
-  <p>This result shifts the focus of MIA research from <em>what signal to use</em> to <em>how to calibrate the signal</em> — the central challenge of modern MIA.</p>
+  <p>Shifts MIA research focus: <em>which signal</em> → <em>how to calibrate</em>. Core challenge of modern MIA.</p>
 </div>
 
 <!-- SLIDE 80 — Experimental Validation -->
@@ -519,7 +493,7 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">The AUC gap between black-box and white-box is consistently <strong>&lt; 2%</strong>. White-box access provides negligible advantage in practice.</p>
+    <p>BB vs WB AUC gap: consistently <strong>&lt; 2%</strong>. White-box: negligible in practice.</p>
   </div>
 </div>
 
@@ -539,12 +513,11 @@
     <div class="diagram-box">BB ≈ WB<br><span class="tiny">(This result)</span></div>
   </div>
   <div class="spacer-lg"></div>
-  <p>The theoretical picture is now clear:</p>
-  <ul class="check" style="font-size:0.95rem;">
-    <li>MIA is a hypothesis test (from the Foundations lecture)</li>
-    <li>The optimal test is the likelihood ratio (Neyman-Pearson)</li>
-    <li>The loss is a sufficient statistic (Sablayrolles)</li>
-    <li>The practical challenge is estimating the likelihood ratio from data</li>
+  <ul class="check">
+    <li>MIA is a hypothesis test</li>
+    <li>Optimal test: likelihood ratio</li>
+    <li>Loss is a sufficient statistic</li>
+    <li>Challenge: estimating the LR</li>
   </ul>
 </div>
 
@@ -561,18 +534,10 @@
   <div class="pill">Salem et al. 2019</div>
   <h2>ML-Leaks: Relaxing All Assumptions</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <p>Salem et al. systematically tested: <strong>how much does the attacker really need to know?</strong></p>
-      <div class="spacer"></div>
-      <p>They progressively removed Shokri's assumptions and found the attack remains effective.</p>
-    </div>
-    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
-      <p style="font-size:0.95rem; text-align:center;"><em>"ML-Leaks: Model and Data Independent MIA and Defenses"</em></p>
-      <div class="spacer-sm"></div>
-      <p class="small" style="text-align:center;">NDSS 2019 — Salem, Zhang, Humbert, Berrang, Fritz, Backes</p>
-    </div>
-  </div>
+  <p>Tested systematically: <strong>how much does the attacker need to know?</strong></p>
+  <div class="spacer"></div>
+  <p>Progressively removed Shokri's assumptions. Attack still effective.</p>
+  <div class="cite">Salem, Zhang, Humbert, Berrang, Fritz, Backes, "ML-Leaks: Model and Data Independent MIA and Defenses", NDSS 2019</div>
 </div>
 
 <!-- SLIDE 83 — Three Relaxations -->
@@ -583,9 +548,9 @@
   <div class="spacer"></div>
   <div class="card" style="padding:20px 24px;">
     <ul class="num">
-      <li><strong>Relaxation 1:</strong> Shadow models can use a <strong>different architecture</strong> than the target</li>
-      <li><strong>Relaxation 2:</strong> Shadow training data can come from a <strong>different distribution</strong> (even unrelated)</li>
-      <li><strong>Relaxation 3:</strong> <strong>No shadow models at all</strong> — just threshold on the max confidence</li>
+      <li><strong>Relaxation 1:</strong> shadows with <strong>different architecture</strong></li>
+      <li><strong>Relaxation 2:</strong> shadow data from <strong>different distribution</strong> (even unrelated)</li>
+      <li><strong>Relaxation 3:</strong> <strong>no shadows</strong>. Threshold on max confidence.</li>
     </ul>
   </div>
   <div class="spacer"></div>
@@ -605,21 +570,21 @@
   <div class="pill">Salem et al. 2019</div>
   <h2>Relaxation 1: Different Architecture</h2>
   <div class="divider"></div>
-  <p>Use any model architecture for shadows, regardless of the target's architecture:</p>
+  <p>Any shadow architecture, regardless of target:</p>
   <div class="spacer-sm"></div>
   <div class="cols">
     <div>
       <h3>Example</h3>
-      <p style="font-size:0.9rem;">Target: ResNet-50</p>
-      <p style="font-size:0.9rem;">Shadow: Simple 3-layer MLP</p>
+      <p>Target: ResNet-50</p>
+      <p>Shadow: 3-layer MLP</p>
     </div>
     <div>
       <h3>Why It Works</h3>
-      <p style="font-size:0.9rem;">The confidence distribution gap between members and non-members is an <strong>architecture-agnostic</strong> property of overfitting — not specific to any model type.</p>
+      <p>Confidence gap is <strong>architecture-agnostic</strong>.</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p><strong>Result:</strong> ~1–2% accuracy drop compared to matched architecture shadows.</p>
+  <p><strong>Result:</strong> ~1-2% drop vs matched architecture.</p>
 </div>
 
 <!-- SLIDE 85 — Relaxation 2 -->
@@ -627,21 +592,21 @@
   <div class="pill">Salem et al. 2019</div>
   <h2>Relaxation 2: Different Data Distribution</h2>
   <div class="divider"></div>
-  <p>Train shadow models on completely <strong>unrelated data</strong>:</p>
+  <p>Train shadows on <strong>unrelated data</strong>:</p>
   <div class="spacer-sm"></div>
   <div class="cols">
     <div>
       <h3>Example</h3>
-      <p style="font-size:0.9rem;">Target trained on: CIFAR-10</p>
-      <p style="font-size:0.9rem;">Shadows trained on: MNIST</p>
+      <p>Target: CIFAR-10</p>
+      <p>Shadows: MNIST</p>
     </div>
     <div>
       <h3>Why It Works</h3>
-      <p style="font-size:0.9rem;">The attack model learns <strong>"what membership looks like in general"</strong> — the pattern of confidence on trained vs. untrained data is universal across datasets.</p>
+      <p>Trained vs untrained confidence pattern is <strong>universal</strong>.</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p><strong>Result:</strong> ~2–4% accuracy drop compared to same-distribution shadows. Still significantly above random.</p>
+  <p><strong>Result:</strong> ~2-4% drop vs same-distribution shadows.</p>
 </div>
 
 <!-- SLIDE 86 — Relaxation 3 -->
@@ -649,24 +614,24 @@
   <div class="pill">Salem et al. 2019</div>
   <h2>Relaxation 3: No Shadow Models</h2>
   <div class="divider"></div>
-  <p>The most extreme simplification — <strong>no shadow models at all</strong>:</p>
+  <p>Extreme case: <strong>no shadow models</strong>.</p>
   <div class="math-block">
     $$\mathcal{A}(f_\theta, x) = \mathbf{1}\left[\max_c f_\theta(x)_c > \tau\right]$$
   </div>
   <div class="spacer-sm"></div>
-  <p>Three ways to set the threshold $\tau$:</p>
+  <p>Three ways to set $\tau$:</p>
   <div class="grid-3">
     <div class="card">
       <h3>Fixed</h3>
-      <p style="font-size:0.85rem;">$\tau = 0.5$ or some constant. Simple but crude.</p>
+      <p>Constant $\tau$.</p>
     </div>
     <div class="card">
       <h3>Percentile</h3>
-      <p style="font-size:0.85rem;">Set $\tau$ at a percentile of confidence scores on reference data.</p>
+      <p>$\tau$ at a percentile of reference confidences.</p>
     </div>
     <div class="card">
       <h3>Entropy</h3>
-      <p style="font-size:0.85rem;">Threshold on entropy $H(f_\theta(x))$ instead of max confidence.</p>
+      <p>Threshold on entropy $H(f_\theta(x))$.</p>
     </div>
   </div>
 </div>
@@ -686,7 +651,7 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;">Only <strong>~5% accuracy drop</strong> from full Shokri to zero-knowledge threshold attack. The adversary needs far less than previously assumed.</p>
+    <p>Only <strong>~5% drop</strong> from full Shokri to zero-knowledge threshold.</p>
   </div>
 </div>
 
@@ -696,12 +661,12 @@
   <h2>ML-Leaks: Takeaway</h2>
   <div class="divider"></div>
   <div class="spacer-lg"></div>
-  <div class="highlight" style="padding:28px 32px; font-size:1.1rem; text-align:center;">
-    <p><strong>The adversary needs far less than previously assumed.</strong></p>
-    <p style="font-size:0.95rem; margin-top:8px;">Shadow models are helpful but not necessary. The membership signal is a fundamental property of overfitting, not an artifact of specific attack procedures.</p>
+  <div class="highlight" style="padding:28px 32px; text-align:center;">
+    <p><strong>Adversary needs far less than assumed.</strong></p>
+    <p style="margin-top:8px;">Shadows help, but aren't necessary. Membership signal is a property of overfitting.</p>
   </div>
   <div class="spacer-lg"></div>
-  <p>This has important implications for defenses: you cannot assume the attacker will be limited. Even minimal information (just the predicted label) can enable membership inference.</p>
+  <p>Defense implication: do not assume a limited attacker. Even a predicted label enables MIA.</p>
 </div>
 
 
@@ -717,22 +682,14 @@
   <div class="pill">Nasr et al. 2019</div>
   <h2>Comprehensive Privacy Analysis of Deep Learning</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <p>Nasr et al. developed the most thorough <strong>white-box MIA</strong> and extended the analysis to <strong>federated learning</strong>.</p>
-      <div class="spacer"></div>
-      <ul class="arrow">
-        <li>White-box attack using per-layer gradients</li>
-        <li>Passive and active attacks in FL</li>
-        <li>Showed vulnerabilities even in well-generalized models</li>
-      </ul>
-    </div>
-    <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
-      <p style="font-size:0.95rem; text-align:center;"><em>"Comprehensive Privacy Analysis of Deep Learning"</em></p>
-      <div class="spacer-sm"></div>
-      <p class="small" style="text-align:center;">IEEE S&amp;P 2019 — Nasr, Shokri, Houmansadr</p>
-    </div>
-  </div>
+  <p>Most thorough <strong>white-box MIA</strong>. Extended to <strong>federated learning</strong>.</p>
+  <div class="spacer"></div>
+  <ul class="arrow">
+    <li>White-box attack via per-layer gradients</li>
+    <li>Passive and active FL attacks</li>
+    <li>Vulnerabilities even in well-generalized models</li>
+  </ul>
+  <div class="cite">Nasr, Shokri, Houmansadr, "Comprehensive Privacy Analysis of Deep Learning", IEEE S&amp;P 2019</div>
 </div>
 
 <!-- SLIDE 90 — White-Box Attack -->
@@ -740,7 +697,8 @@
   <div class="pill">Nasr et al. 2019</div>
   <h2>White-Box Attack Architecture</h2>
   <div class="divider"></div>
-  <p>The attack model processes <strong>per-layer gradient tensors</strong> as input:</p>
+  <p>Attack model input: <strong>per-layer gradient tensors</strong>.</p>
+
   <div class="spacer-sm"></div>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box">Input $z$</div>
@@ -754,10 +712,9 @@
     <div class="diagram-box filled">Member?</div>
   </div>
   <div class="spacer"></div>
-  <p>Features extracted per layer:</p>
-  <ul class="arrow" style="font-size:0.95rem;">
-    <li>Gradient tensor $g_l = \nabla_{W_l} \ell(f_\theta(x), y)$ — reshaped and processed by 1D-CNN</li>
-    <li>Scalar loss $\ell(f_\theta(x), y)$</li>
+  <ul class="arrow">
+    <li>Gradient $g_l = \nabla_{W_l} \ell$: per-layer 1D-CNN</li>
+    <li>Scalar loss $\ell$</li>
     <li>Prediction vector $\sigma(f_\theta(x))$</li>
   </ul>
 </div>
@@ -771,15 +728,13 @@
   <div class="cols">
     <div>
       <h3>Intuition</h3>
-      <p style="font-size:0.9rem;">For <strong>members</strong>, the model is near a local minimum of the loss for $z$. Gradients are <strong>small</strong> and structured.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:0.9rem;">For <strong>non-members</strong>, the loss surface is less explored. Gradients are <strong>larger</strong> and more random.</p>
+      <p><strong>Members</strong>: small, structured gradients.</p>
+      <p><strong>Non-members</strong>: larger, noisier gradients.</p>
     </div>
     <div>
       <h3>In Practice</h3>
-      <p style="font-size:0.9rem;">Despite the theoretical result (BB ≈ WB), gradients provide a <strong>modest advantage</strong> for small models and specific architectures.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:0.9rem;">The advantage diminishes as model size increases (confirming Sablayrolles).</p>
+      <p>Gradients give a <strong>modest gain</strong> for small models.</p>
+      <p>Gain diminishes with model size.</p>
     </div>
   </div>
 </div>
@@ -789,7 +744,7 @@
   <div class="pill">Nasr et al. 2019</div>
   <h2>Federated Learning Vulnerability</h2>
   <div class="divider"></div>
-  <p>In <strong>federated learning</strong>, clients share gradient updates — directly exposing white-box information:</p>
+  <p><strong>Federated learning</strong>: clients share gradient updates, exposing white-box info.</p>
   <div class="spacer-sm"></div>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box">Client A<br><span class="small">local data</span></div>
@@ -804,7 +759,7 @@
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p style="font-size:0.95rem;"><strong>The server (or any participant) can perform MIA on the shared gradient updates.</strong> FL doesn't inherently protect membership privacy — it actually makes white-box information available to more parties.</p>
+    <p><strong>Any participant can MIA the shared gradients.</strong> FL exposes white-box info to more parties.</p>
   </div>
 </div>
 
@@ -815,20 +770,18 @@
   <div class="divider"></div>
   <div class="cols">
     <div class="card">
-      <h3>Passive Attack</h3>
-      <p style="font-size:0.9rem;">The attacker <strong>observes</strong> gradient updates without modifying the training process.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:0.9rem;">Uses the gradient-based attack model from Slide 90.</p>
+      <h3>Passive</h3>
+      <p><strong>Observe</strong> gradient updates; no manipulation.</p>
+      <p>Uses the gradient attack model.</p>
     </div>
     <div class="card" style="border-color:var(--warn);">
-      <h3>Active Attack</h3>
-      <p style="font-size:0.9rem;">The attacker <strong>manipulates</strong> the global model or aggregation to amplify the membership signal in victims' gradients.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:0.9rem;">Increases MIA accuracy by <strong>15–20%</strong>.</p>
+      <h3>Active</h3>
+      <p><strong>Manipulate</strong> the global model to amplify the membership signal.</p>
+      <p>Accuracy gain: <strong>+15-20%</strong>.</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p>Active attacks modify the model to make it "sensitive" to specific data points — amplifying the difference in gradient behavior between members and non-members.</p>
+  <p>Active: modify model to be "sensitive" to specific points. Amplifies member vs non-member gradient gap.</p>
 </div>
 
 
@@ -843,27 +796,27 @@
 <div class="slide bg-dark">
   <h2>Section Summary: Four Theoretical Results</h2>
   <div class="divider"></div>
-  <div class="spacer-sm"></div>
+  <div class="spacer"></div>
   <div class="grid-2">
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">Yeom et al.</div>
-      <h3 style="margin-top:8px;">Overfitting ↔ Privacy Risk</h3>
-      <p style="font-size:0.85rem;">MIA advantage $\leq$ generalization gap. Regularization helps.</p>
+      <div class="pill">Yeom et al.</div>
+      <h3 style="margin-top:8px;">Overfitting $\leftrightarrow$ Privacy Risk</h3>
+      <p>MIA advantage $\leq$ generalization gap.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">Sablayrolles et al.</div>
-      <h3 style="margin-top:8px;">BB ≈ WB Optimally</h3>
-      <p style="font-size:0.85rem;">Loss is near-sufficient statistic. Gradients add negligible info.</p>
+      <div class="pill">Sablayrolles et al.</div>
+      <h3 style="margin-top:8px;">BB $\approx$ WB Optimally</h3>
+      <p>Loss is a near-sufficient statistic.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">Salem et al.</div>
+      <div class="pill">Salem et al.</div>
       <h3 style="margin-top:8px;">Minimal Assumptions Suffice</h3>
-      <p style="font-size:0.85rem;">No architecture, data, or shadow model knowledge needed.</p>
+      <p>Even label-only access leaks membership.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">Nasr et al.</div>
+      <div class="pill">Nasr et al.</div>
       <h3 style="margin-top:8px;">FL Amplifies Risk</h3>
-      <p style="font-size:0.85rem;">Shared gradients enable MIA. Active adversaries amplify signal.</p>
+      <p>Shared gradients enable strong MIA.</p>
     </div>
   </div>
 </div>
@@ -897,7 +850,7 @@
     <div class="diagram-box filled" style="min-width:80px; font-size:0.8rem;">Next:<br>Defenses<br><span class="tiny">Section IV</span></div>
   </div>
   <div class="spacer"></div>
-  <p class="small" style="text-align:center;">The field matured from empirical attacks (2017) to strong theoretical foundations (2019) in just two years.</p>
+  <p class="small" style="text-align:center;">Empirical attacks (2017) to strong theory (2019): two years.</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════ -->
