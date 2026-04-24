@@ -42,7 +42,7 @@
   <p class="subtitle">From genomic data to machine learning privacy</p>
   <div class="spacer-lg"></div>
   <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
-  <p class="small" style="margin-top:6px;">2026</p>
+  <p style="margin-top:6px;">2026</p>
 </div>
 
 <!-- SLIDE 2: Contents -->
@@ -113,9 +113,9 @@
   <div class="spacer-lg"></div>
   <p><strong>Membership inference</strong>: the fundamental privacy attack against ML systems.</p>
   <div class="spacer"></div>
-  <p class="small">Predates deep learning.</p>
-  <p class="small">Spans genomics, statistics, ML.</p>
-  <p class="small">Foundation for data extraction, model inversion.</p>
+  <p>Predates deep learning.</p>
+  <p>Spans genomics, statistics, ML.</p>
+  <p>Foundation for data extraction, model inversion.</p>
 </div>
 
 <!-- SLIDE 3 — Why Should You Care? -->
@@ -161,7 +161,7 @@
     </div>
     <div>
       <div class="card" style="height:100%; display:flex; flex-direction:column; justify-content:center;">
-        <p class="small" style="text-align:center; color:var(--gray-text);">Stakes escalated:</p>
+        <p style="text-align:center; color:var(--gray-text);">Stakes escalated:</p>
         <div class="spacer-sm"></div>
         <div class="diagram-flow" style="justify-content:center;">
           <div class="diagram-box">Genomic<br>Databases</div>
@@ -301,7 +301,7 @@
         <tr><td>500,000</td><td>~0.1% mixture contribution</td></tr>
       </table>
       <div class="spacer"></div>
-      <p class="small">More SNPs: smaller detectable contributions, stronger attack.</p>
+      <p>More SNPs: smaller detectable contributions, stronger attack.</p>
     </div>
   </div>
 </div>
@@ -323,7 +323,7 @@
     <li>Motivated differential privacy for genomic data</li>
   </ul>
   <div class="spacer"></div>
-  <p class="small">First major policy change driven by an MI-style attack.</p>
+  <p>First major policy change driven by an MI-style attack.</p>
 </div>
 
 
@@ -354,7 +354,7 @@
     </div>
   </div>
   <div class="spacer"></div>
-  <p class="small">Unifying insight across all MI work.</p>
+  <p>Unifying insight across all MI work.</p>
 </div>
 
 <!-- SLIDE 14 — Analogy to ML -->
@@ -577,21 +577,21 @@
     <div>
       <h3>Random guess</h3>
       <p>$\text{Adv} = 0$</p>
-      <p class="small">No info gained</p>
+      <p>No info gained</p>
     </div>
     <div>
       <h3>Perfect attack</h3>
       <p>$\text{Adv} = 1$</p>
-      <p class="small">Full leakage</p>
+      <p>Full leakage</p>
     </div>
     <div>
       <h3>Typical attack</h3>
       <p>$\text{Adv} \in (0, 1)$</p>
-      <p class="small">Partial leakage</p>
+      <p>Partial leakage</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p class="small">Equals <strong>total variation distance</strong> between $M(D_1)$ and $M(D_0)$ as seen by $\mathcal{A}$.</p>
+  <p>Equals <strong>total variation distance</strong> between $M(D_1)$ and $M(D_0)$ as seen by $\mathcal{A}$.</p>
 </div>
 
 <!-- SLIDE 24 — Hypothesis Testing Connection -->
@@ -691,7 +691,7 @@
   <div class="highlight">
     <p><strong>Low FPR matters most.</strong> Legal/audit: TPR at FPR $\leq 0.1\%$.</p>
   </div>
-  <p class="small" style="margin-top:8px;">Central evaluation criterion in Carlini et al. 2022.</p>
+  <div class="cite">Carlini et al., "Membership Inference Attacks From First Principles", S&amp;P 2022</div>
 </div>
 
 
@@ -721,8 +721,8 @@
     <tr><td>8.0</td><td>$10^{-5}$</td><td>$\leq 2980$ (vacuous)</td></tr>
   </table>
   <div class="spacer-sm"></div>
-  <p class="small">Small $\varepsilon$: strong MI protection.</p>
-  <p class="small">Large $\varepsilon$: vacuous bound.</p>
+  <p>Small $\varepsilon$: strong MI protection.</p>
+  <p>Large $\varepsilon$: vacuous bound.</p>
 </div>
 
 <!-- SLIDE 29 — MI yields DP lower bounds -->
@@ -743,7 +743,7 @@
     <li>Bound exceeds target $\varepsilon$: pipeline not private enough</li>
   </ul>
   <div class="spacer-sm"></div>
-  <p class="small">Revisited in Section IV (privacy auditing).</p>
+  <p>Revisited in Section IV (privacy auditing).</p>
 </div>
 
 <!-- SLIDE 30 — Summary: MI as fundamental -->
@@ -877,7 +877,7 @@
     <tr><td>Log-scale ROC</td><td>Low-FPR regime behavior</td><td>Visualization standard</td></tr>
   </table>
   <div class="spacer-sm"></div>
-  <p class="small">Always plot ROC on <strong>log-log scale</strong>: reveals the practical regime.</p>
+  <p>Always plot ROC on <strong>log-log scale</strong>: reveals the practical regime.</p>
 </div>
 
 <!-- SLIDE 35 — Notation -->

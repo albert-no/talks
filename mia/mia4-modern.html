@@ -42,7 +42,7 @@
   <p class="subtitle">LiRA, RMIA, and the attack hierarchy</p>
   <div class="spacer-lg"></div>
   <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
-  <p class="small" style="margin-top:6px;">2026</p>
+  <p style="margin-top:6px;">2026</p>
 </div>
 
 <!-- SLIDE 2: Contents -->
@@ -168,7 +168,7 @@
     <tr><td>Distillation</td><td>Mid</td><td>Mid</td><td>No</td><td>Partial</td></tr>
     <tr><td><strong>DP-SGD</strong></td><td><strong>High</strong></td><td><strong>High</strong></td><td><strong>Yes</strong></td><td><strong>Yes</strong></td></tr>
   </table>
-  <p class="small">*non-adaptive only.</p>
+  <p>*non-adaptive only.</p>
 </div>
 
 <!-- SLIDE 108 — Arms Race -->
@@ -375,7 +375,7 @@
     <li>Per-example calibration captures <strong>point difficulty</strong></li>
   </ul>
   <div class="spacer-sm"></div>
-  <p class="small">Analogy: exam questions vary in difficulty, use per-question grading.</p>
+  <p>Analogy: exam questions vary in difficulty, use per-question grading.</p>
 </div>
 
 <!-- SLIDE 124 — Online vs Offline -->
@@ -444,7 +444,7 @@
         <div style="width:10px; height:25px; background:var(--accent); opacity:0.4; border-radius:2px;"></div>
         <div style="width:10px; height:8px; background:var(--accent); opacity:0.3; border-radius:2px;"></div>
       </div>
-      <p class="tiny">Low MIA power</p>
+      <p>Low MIA power</p>
     </div>
     <div class="card" style="text-align:center;">
       <h3>Hard / Memorized Example</h3>
@@ -456,11 +456,11 @@
         <div style="width:10px; height:15px; background:var(--accent); opacity:0.4; border-radius:2px;"></div>
         <div style="width:10px; height:40px; background:var(--accent); opacity:0.7; border-radius:2px;"></div>
       </div>
-      <p class="tiny">High MIA power</p>
+      <p>High MIA power</p>
     </div>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small"><span style="color:var(--blue);">■</span> IN &nbsp;&nbsp; <span style="color:var(--accent);">■</span> OUT &nbsp;&nbsp; Ratio = how "surprising" the loss is.</p>
+  <p><span style="color:var(--blue);">■</span> IN &nbsp;&nbsp; <span style="color:var(--accent);">■</span> OUT &nbsp;&nbsp; Ratio = how "surprising" the loss is.</p>
 </div>
 
 <!-- SLIDE 127 — LiRA Results -->
@@ -513,13 +513,13 @@
       <h3>Old: Global Threshold</h3>
       <p>One $\tau$ for all.</p>
       <div class="math-block">$$\mathcal{A}(z) = \mathbf{1}[\ell(f_\theta, z) \leq \tau]$$</div>
-      <p class="small">Misses easy points, over-alerts on hard ones.</p>
+      <p>Misses easy points, over-alerts on hard ones.</p>
     </div>
     <div class="card" style="border-color:var(--success);">
       <h3>New: Per-Example LR</h3>
       <p>Calibrated threshold per $z$.</p>
       <div class="math-block">$$\mathcal{A}(z) = \mathbf{1}\!\left[\frac{\phi(\ell; \mu_z^{\text{in}}, \sigma_z^{\text{in}})}{\phi(\ell; \mu_z^{\text{out}}, \sigma_z^{\text{out}})} > \tau\right]$$</div>
-      <p class="small">Accounts for point difficulty: much better at low FPR.</p>
+      <p>Accounts for point difficulty: much better at low FPR.</p>
     </div>
   </div>
 </div>
@@ -551,11 +551,11 @@
   <div class="divider"></div>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box">Neyman-Pearson<br><span class="tiny">(Sec. 1)</span></div>
+    <div class="diagram-box">Neyman-Pearson</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box">Loss is<br>sufficient<br><span class="tiny">(Sablayrolles)</span></div>
+    <div class="diagram-box">Loss is<br>sufficient</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box filled">LiRA:<br>Practical<br>optimal<br><span class="tiny">(Carlini)</span></div>
+    <div class="diagram-box filled">LiRA:<br>Practical<br>optimal</div>
   </div>
   <div class="spacer-lg"></div>
   <p>LiRA, practical realization of optimal attack:</p>
@@ -882,7 +882,7 @@
 <div class="slide bg-deep">
   <h2>Hands-On: MIA Pipeline Comparison</h2>
   <div class="divider"></div>
-  <div class="code-block" style="font-size:0.8rem;"><span class="cm">// Threshold Attack (simplest)</span>
+  <div class="code-block"><span class="cm">// Threshold Attack (simplest)</span>
 <span class="kw">def</span> <span class="fn">threshold_attack</span>(model, z, τ):
     <span class="kw">return</span> <span class="fn">loss</span>(model, z) < τ
 
@@ -925,20 +925,20 @@
   <div class="divider"></div>
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">Label-Only</div>
+      <div class="pill">Label-Only</div>
       <p style="margin-top:8px;">Labels leak membership.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">LiRA</div>
+      <div class="pill">LiRA</div>
       <p style="margin-top:8px;">Per-example LR.</p>
       <p>Optimal, expensive.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">Ye et al.</div>
+      <div class="pill">Ye et al.</div>
       <p style="margin-top:8px;">Unified framework: all attacks are LRs.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.75rem;">RMIA</div>
+      <div class="pill">RMIA</div>
       <p style="margin-top:8px;">Near-LiRA with 2 to 8 models.</p>
     </div>
   </div>

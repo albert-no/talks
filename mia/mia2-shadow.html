@@ -42,7 +42,7 @@
   <p class="subtitle">Shokri paradigm and extensions</p>
   <div class="spacer-lg"></div>
   <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
-  <p class="small" style="margin-top:6px;">2026</p>
+  <p style="margin-top:6px;">2026</p>
 </div>
 
 <!-- SLIDE 2: Contents -->
@@ -121,7 +121,7 @@
   <div class="divider"></div>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box" style="border-color:var(--warn);">Target Model<br><span class="small">$f_\theta$ (black-box)</span></div>
+    <div class="diagram-box" style="border-color:var(--warn);">Target $f_\theta$<br>(black-box)</div>
     <span class="diagram-arrow">→</span>
     <div class="diagram-box">Query with $x$</div>
     <span class="diagram-arrow">→</span>
@@ -129,11 +129,11 @@
   </div>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box filled">Shadow Models<br><span style="font-size:0.8rem;">$f_{\theta_1}, \ldots, f_{\theta_k}$</span></div>
+    <div class="diagram-box filled">Shadow Models<br>$f_{\theta_1}, \ldots, f_{\theta_k}$</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box">Labeled Data<br><span class="small">(conf, in/out)</span></div>
+    <div class="diagram-box">Labeled Data</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="border-color:var(--success); color:var(--success);">Attack Model<br><span style="font-size:0.8rem;">$\mathcal{A}_c$</span></div>
+    <div class="diagram-box" style="border-color:var(--success); color:var(--success);">Attack Model $\mathcal{A}_c$</div>
   </div>
   <div class="spacer"></div>
   <p style="text-align:center;">Three stages: <strong>train shadows</strong> → <strong>collect attack data</strong> → <strong>train attack classifier</strong>.</p>
@@ -232,7 +232,7 @@
   <div class="spacer"></div>
   <p>Attack dataset: <strong>labeled examples</strong> of shadow behavior on members vs. non-members.</p>
   <div class="spacer-sm"></div>
-  <p class="small">Assumption: target exhibits the same member/non-member gap as the shadows.</p>
+  <p>Assumption: target exhibits the same member/non-member gap as the shadows.</p>
 </div>
 
 <!-- SLIDE 44 — Per-Class Attack Models -->
@@ -410,7 +410,7 @@
     </div>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Often competitive with full shadow pipeline (Salem et al. 2019).</p>
+  <p>Often competitive with full shadow pipeline (Salem et al. 2019).</p>
 </div>
 
 
@@ -504,7 +504,7 @@
     <li>More mode collapse → higher vulnerability</li>
   </ul>
   <div class="spacer-sm"></div>
-  <p class="small">MIA is not limited to classification: generative models also leak.</p>
+  <p>MIA is not limited to classification: generative models also leak.</p>
 </div>
 
 
@@ -589,7 +589,7 @@
     <p><strong>First MIA on sequence models.</strong> Paves the way to <strong>LLM MIA</strong>.</p>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Perplexity becomes the baseline for all LLM MIA work in Section VI.</p>
+  <p>Perplexity becomes the baseline for all LLM MIA work in Section VI.</p>
 </div>
 
 <!-- SLIDE 59 — Seq2Seq to LLMs -->

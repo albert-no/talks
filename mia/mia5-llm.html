@@ -42,7 +42,7 @@
   <p class="subtitle">From perplexity to InfoRMIA, and the road ahead</p>
   <div class="spacer-lg"></div>
   <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
-  <p class="small" style="margin-top:6px;">2026</p>
+  <p style="margin-top:6px;">2026</p>
 </div>
 
 <!-- SLIDE 2: Contents -->
@@ -387,7 +387,7 @@
   <div class="math-block">
     $$\text{Score}(x) = \frac{p_\theta(x)}{p_\theta(\text{self-prompt}(x))}$$
   </div>
-  <p class="small">Self-prompt: personalized reference, no external model.</p>
+  <p>Self-prompt: personalized reference, no external model.</p>
 </div>
 
 <!-- SLIDE 162 — SPV-MIA Results -->
@@ -449,7 +449,7 @@
     </div>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Context sources: document start, topic prompts, random contexts as baseline.</p>
+  <p>Context sources: document start, topic prompts, random contexts as baseline.</p>
 </div>
 
 <!-- SLIDE 165 — Context-Aware Results -->
@@ -495,7 +495,7 @@
     <div class="card" style="display:flex; flex-direction:column; justify-content:center;">
       <p style="text-align:center;">"Stronger Membership Inference and Memorization Assessment for LLMs"</p>
       <div class="spacer-sm"></div>
-      <p class="small" style="text-align:center;">Tao &amp; Shokri, 2025</p>
+      <p style="text-align:center;">Tao &amp; Shokri, 2025</p>
     </div>
   </div>
 </div>
@@ -592,7 +592,7 @@
     <span class="token token-gen">Alto</span>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small"><span class="token token-fixed" style="font-size:0.75rem;">low info</span> Common words, predictable &nbsp;&nbsp; <span class="token token-gen" style="font-size:0.75rem;">high info</span> Named entities, numbers, require memorization</p>
+  <p><span class="token token-fixed">low info</span> Common words, predictable &nbsp;&nbsp; <span class="token token-gen">high info</span> Named entities, numbers, require memorization</p>
 </div>
 
 <!-- SLIDE 171 — InfoRMIA Info Theory -->
@@ -635,7 +635,7 @@
     <p>InfoRMIA: <strong>SOTA</strong> on pre-training, the hardest LLM MIA setting.</p>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Token-level analysis enables <strong>targeted unlearning</strong>: which tokens to forget.</p>
+  <p>Token-level analysis enables <strong>targeted unlearning</strong>: which tokens to forget.</p>
 </div>
 
 
@@ -677,7 +677,7 @@
     <tr><td>InfoRMIA</td><td>Token weighting</td><td>2 passes</td><td>Pre-train (SOTA)</td></tr>
   </table>
   <div class="spacer-sm"></div>
-  <p class="small">Each: <strong>cost</strong> vs. <strong>calibration quality</strong>.</p>
+  <p>Each: <strong>cost</strong> vs. <strong>calibration quality</strong>.</p>
 </div>
 
 <!-- SLIDE 175 — Fine-tuning vs Pre-training -->
@@ -794,7 +794,7 @@
 <div class="slide bg-deep">
   <h2>Practical LLM MIA: Pseudocode</h2>
   <div class="divider"></div>
-  <div class="code-block" style="font-size:0.8rem;"><span class="cm">// Perplexity Baseline</span>
+  <div class="code-block"><span class="cm">// Perplexity Baseline</span>
 <span class="kw">def</span> <span class="fn">ppl_attack</span>(model, text, τ):
     ppl ← <span class="fn">exp</span>(-<span class="fn">mean</span>([<span class="fn">log_prob</span>(model, t, text[:i]) <span class="kw">for</span> i,t in text]))
     <span class="kw">return</span> ppl < τ
@@ -930,21 +930,21 @@
   <div class="divider"></div>
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
-      <div class="pill" style="font-size:0.7rem;">Neighbourhood</div>
+      <div class="pill">Neighbourhood</div>
       <p style="margin-top:6px;">vs. paraphrases.</p>
       <p>Cancels difficulty.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.7rem;">SPV-MIA</div>
+      <div class="pill">SPV-MIA</div>
       <p style="margin-top:6px;">Self-prompt.</p>
       <p>Best for fine-tuning.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.7rem;">Context-Aware</div>
+      <div class="pill">Context-Aware</div>
       <p style="margin-top:6px;">Variance across contexts.</p>
     </div>
     <div class="card">
-      <div class="pill" style="font-size:0.7rem;">InfoRMIA</div>
+      <div class="pill">InfoRMIA</div>
       <p style="margin-top:6px;">Token-level.</p>
       <p>SOTA pre-training.</p>
     </div>
@@ -974,26 +974,26 @@
   <div class="divider"></div>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center; gap:6px;">
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2008<br>Homer<br><span class="tiny">Genomic</span></div>
+    <div class="diagram-box" style="min-width:78px;">2008<br>Homer</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2017<br>Shokri<br><span class="tiny">Shadow</span></div>
+    <div class="diagram-box" style="min-width:78px;">2017<br>Shokri</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2018<br>Yeom<br><span class="tiny">Theory</span></div>
+    <div class="diagram-box" style="min-width:78px;">2018<br>Yeom</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2019<br>Salem<br><span class="tiny">Relax</span></div>
+    <div class="diagram-box" style="min-width:78px;">2019<br>Salem</div>
   </div>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center; gap:6px;">
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2020<br>Label-Only<br><span class="tiny">Choo</span></div>
+    <div class="diagram-box" style="min-width:78px;">2020<br>Label-Only</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2022<br>LiRA<br><span class="tiny">Carlini</span></div>
+    <div class="diagram-box" style="min-width:78px;">2022<br>LiRA</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px; font-size:0.9rem;">2023<br>RMIA<br><span class="tiny">Efficient</span></div>
+    <div class="diagram-box" style="min-width:78px;">2023<br>RMIA</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box filled" style="min-width:78px; font-size:0.9rem;">2025<br>InfoRMIA<br><span class="tiny">Token</span></div>
+    <div class="diagram-box filled" style="min-width:78px;">2025<br>InfoRMIA</div>
   </div>
   <div class="spacer"></div>
-  <p class="small" style="text-align:center;">17 years: genomic attack to token-level LLM inference.</p>
+  <p style="text-align:center;">17 years: genomic attack to token-level LLM inference.</p>
 </div>
 
 <!-- SLIDE 188b — Four Eras -->
