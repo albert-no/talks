@@ -113,7 +113,9 @@
   <div class="spacer-lg"></div>
   <p><strong>Membership inference</strong>: the fundamental privacy attack against ML systems.</p>
   <div class="spacer"></div>
-  <p class="small">Predates deep learning. Spans genomics, statistics, ML. Foundation for data extraction, model inversion.</p>
+  <p class="small">Predates deep learning.</p>
+  <p class="small">Spans genomics, statistics, ML.</p>
+  <p class="small">Foundation for data extraction, model inversion.</p>
 </div>
 
 <!-- SLIDE 3 — Why Should You Care? -->
@@ -124,7 +126,8 @@
     <div class="card">
       <h3>Legal &amp; Regulatory</h3>
       <div class="spacer-sm"></div>
-      <p>GDPR: right to know. MIA is the empirical test.</p>
+      <p>GDPR: right to know.</p>
+      <p>MIA is the empirical test.</p>
     </div>
     <div class="card">
       <h3>Privacy Auditing</h3>
@@ -163,7 +166,7 @@
         <div class="diagram-flow" style="justify-content:center;">
           <div class="diagram-box">Genomic<br>Databases</div>
           <span class="diagram-arrow">→</span>
-          <div class="diagram-box">ML-as-a-<br>Service</div>
+          <div class="diagram-box">Cloud ML<br>APIs</div>
           <span class="diagram-arrow">→</span>
           <div class="diagram-box filled">Foundation<br>Models</div>
         </div>
@@ -261,14 +264,17 @@
   <div class="pill">Homer et al. 2008</div>
   <h2>Aggregation: Weak Signals, Strong Test</h2>
   <div class="divider"></div>
-  <p>Each SNP: <strong>tiny</strong> signal. Aggregate across ~500,000 SNPs via one-sample <strong>$t$-test</strong>:</p>
+  <p>Each SNP: <strong>tiny</strong> signal.</p>
+  <p>Aggregate across ~500,000 SNPs via one-sample <strong>$t$-test</strong>:</p>
   <div class="math-block">
     $$T(Y_i) = \frac{\overline{D}(Y_i) - 0}{s_D / \sqrt{n_{\text{SNP}}}}$$
   </div>
-  <p>Under $H_0$ (non-member): $\overline{D} \approx 0$. Under $H_1$ (member): $\overline{D} < 0$.</p>
+  <p>Under $H_0$ (non-member): $\overline{D} \approx 0$.</p>
+  <p>Under $H_1$ (member): $\overline{D} < 0$.</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Key principle:</strong> aggregate many weak per-SNP signals $\to$ $p < 10^{-6}$. Same principle powers MIA in ML.</p>
+    <p><strong>Key principle:</strong> aggregate many weak per-SNP signals $\to$ $p < 10^{-6}$.</p>
+    <p>Same principle powers MIA in ML.</p>
   </div>
 </div>
 
@@ -374,7 +380,8 @@
   <h2>From Aggregate Statistics to Learned Models</h2>
   <div class="divider"></div>
   <div class="spacer"></div>
-  <p>Homer et al. attacked <strong>simple summary statistics</strong> (allele frequencies). ML models are far more complex, but the core vulnerability remains:</p>
+  <p>Homer et al. attacked <strong>simple summary statistics</strong> (allele frequencies).</p>
+  <p>ML models are far more complex, but the core vulnerability remains:</p>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box">Training Data $D$</div>
@@ -431,7 +438,8 @@
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>Defeating reconstruction $\neq$ privacy. Need a <strong>stronger</strong> notion.</p>
+    <p>Defeating reconstruction $\neq$ privacy.</p>
+    <p>Need a <strong>stronger</strong> notion.</p>
   </div>
 </div>
 
@@ -448,11 +456,13 @@
   <div class="cols">
     <div>
       <h3>Plaintext Recovery</h3>
-      <p>Recover the message. Too weak: partial leaks pass.</p>
+      <p>Recover the message.</p>
+      <p>Too weak: partial leaks pass.</p>
     </div>
     <div>
       <h3>Indistinguishability</h3>
-      <p>Cannot tell which message. Correct notion.</p>
+      <p>Cannot tell which message.</p>
+      <p>Correct notion.</p>
     </div>
   </div>
   <div class="spacer"></div>
@@ -549,7 +559,8 @@
   </div>
   <div class="spacer-sm"></div>
   <div class="highlight">
-    <p>DP: outputs <strong>statistically close</strong> across databases. MIA tests closeness empirically.</p>
+    <p>DP: outputs <strong>statistically close</strong> across databases.</p>
+    <p>MIA tests closeness empirically.</p>
   </div>
 </div>
 
@@ -700,7 +711,8 @@
     $$\text{Adv}_{\text{MI}}(\mathcal{A}) \leq e^\varepsilon - 1 + \delta$$
   </div>
   <div class="spacer-sm"></div>
-  <p><strong>Proof sketch:</strong> DP gives $\Pr[\mathcal{A}(M(D_1))=1] \leq e^\varepsilon \Pr[\mathcal{A}(M(D_0))=1] + \delta$. Rearrange.</p>
+  <p><strong>Proof sketch:</strong> DP gives $\Pr[\mathcal{A}(M(D_1))=1] \leq e^\varepsilon \Pr[\mathcal{A}(M(D_0))=1] + \delta$.</p>
+  <p>Rearrange.</p>
   <div class="spacer"></div>
   <table>
     <tr><th>$\varepsilon$</th><th>$\delta$</th><th>Max MI Advantage</th></tr>
@@ -709,7 +721,8 @@
     <tr><td>8.0</td><td>$10^{-5}$</td><td>$\leq 2980$ (vacuous)</td></tr>
   </table>
   <div class="spacer-sm"></div>
-  <p class="small">Small $\varepsilon$: strong MI protection. Large $\varepsilon$: vacuous bound.</p>
+  <p class="small">Small $\varepsilon$: strong MI protection.</p>
+  <p class="small">Large $\varepsilon$: vacuous bound.</p>
 </div>
 
 <!-- SLIDE 29 — MI yields DP lower bounds -->
@@ -791,7 +804,8 @@
     </div>
   </div>
   <div class="spacer"></div>
-  <p>MIA: weakest (easiest) attack. Fail MIA, fail all others.</p>
+  <p>MIA: weakest (easiest) attack.</p>
+  <p>Fail MIA, fail all others.</p>
 </div>
 
 <!-- SLIDE 32 — Threat Model Spectrum -->
@@ -809,7 +823,8 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>Sablayrolles et al. 2019: <strong>black-box $\approx$ white-box</strong> asymptotically. Loss is a near-sufficient statistic.</p>
+    <p>Sablayrolles et al. 2019: <strong>black-box $\approx$ white-box</strong> asymptotically.</p>
+    <p>Loss is a near-sufficient statistic.</p>
   </div>
 </div>
 

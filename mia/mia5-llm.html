@@ -131,11 +131,13 @@
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
       <h3>Massive Pre-training</h3>
-      <p>Trillions of web tokens. Data <strong>unknown</strong>.</p>
+      <p>Trillions of web tokens.</p>
+      <p>Data <strong>unknown</strong>.</p>
     </div>
     <div class="card">
       <h3>Autoregressive</h3>
-      <p>$p(x) = \prod_t p(x_t \mid x_{&lt;t})$. Variable length.</p>
+      <p>$p(x) = \prod_t p(x_t \mid x_{&lt;t})$.</p>
+      <p>Variable length.</p>
     </div>
     <div class="card">
       <h3>Layered Memorization</h3>
@@ -143,7 +145,8 @@
     </div>
     <div class="card">
       <h3>Scale</h3>
-      <p>Billions of parameters. Shadow models <strong>infeasible</strong>.</p>
+      <p>Billions of parameters.</p>
+      <p>Shadow models <strong>infeasible</strong>.</p>
     </div>
   </div>
 </div>
@@ -158,7 +161,8 @@
       <h3>Pre-training</h3>
       <p>"In Pile / C4 / web crawl?"</p>
       <div class="spacer-sm"></div>
-      <p style="color:var(--warn);">Hardest. Weak signal.</p>
+      <p style="color:var(--warn);">Hardest.</p>
+      <p style="color:var(--warn);">Weak signal.</p>
     </div>
     <div class="card">
       <h3>Fine-tuning</h3>
@@ -170,7 +174,8 @@
       <h3>Context</h3>
       <p>"In prompt context?"</p>
       <div class="spacer-sm"></div>
-      <p style="color:var(--success);">Easiest. Strong signal.</p>
+      <p style="color:var(--success);">Easiest.</p>
+      <p style="color:var(--success);">Strong signal.</p>
     </div>
   </div>
   <div class="spacer"></div>
@@ -186,10 +191,12 @@
     $$\text{PPL}(x) = \exp\left(-\frac{1}{T}\sum_{t=1}^T \log p_\theta(x_t \mid x_{&lt;t})\right)$$
   </div>
   <div class="spacer-sm"></div>
-  <p>Attack: $\mathcal{A}(x) = \mathbf{1}[\text{PPL}(x) < \tau]$. Low PPL implies member.</p>
+  <p>Attack: $\mathcal{A}(x) = \mathbf{1}[\text{PPL}(x) < \tau]$.</p>
+  <p>Low PPL implies member.</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Problem:</strong> common text is always low-PPL. Perplexity conflates <strong>memorization</strong> with <strong>fluency</strong>.</p>
+    <p><strong>Problem:</strong> common text is always low-PPL.</p>
+    <p>Perplexity conflates <strong>memorization</strong> with <strong>fluency</strong>.</p>
   </div>
 </div>
 
@@ -215,7 +222,8 @@
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Core challenge:</strong> separate intrinsic difficulty from memorization. The <strong>calibration problem</strong>.</p>
+    <p><strong>Core challenge:</strong> separate intrinsic difficulty from memorization.</p>
+    <p>The <strong>calibration problem</strong>.</p>
   </div>
 </div>
 
@@ -343,7 +351,8 @@
   <div class="pill">Fu et al. 2023</div>
   <h2>SPV-MIA: Self-Prompt Calibration</h2>
   <div class="divider"></div>
-  <p><strong>Target LLM</strong> generates its own calibration data. No external models.</p>
+  <p><strong>Target LLM</strong> generates its own calibration data.</p>
+  <p>No external models.</p>
   <div class="spacer"></div>
   <div class="highlight" style="padding:20px 24px;">
     <p><strong>Key insight:</strong> if fine-tuned on $x$, prompting "generate like $x$" produces output close to $x$.</p>
@@ -360,15 +369,18 @@
   <div class="grid-3">
     <div class="card">
       <h3>Prefix Completion</h3>
-      <p>First tokens of $x$ as prompt. Compare continuation.</p>
+      <p>First tokens of $x$ as prompt.</p>
+      <p>Compare continuation.</p>
     </div>
     <div class="card">
       <h3>Paraphrase</h3>
-      <p>Paraphrase $x$. Members stay close to original.</p>
+      <p>Paraphrase $x$.</p>
+      <p>Members stay close to original.</p>
     </div>
     <div class="card">
       <h3>Topic-Conditioned</h3>
-      <p>Prompt with topic. Members: same style.</p>
+      <p>Prompt with topic.</p>
+      <p>Members: same style.</p>
     </div>
   </div>
   <div class="spacer"></div>
@@ -452,7 +464,8 @@
   </ul>
   <div class="spacer"></div>
   <div class="highlight" style="padding:20px 24px;">
-    <p><strong>Key implication:</strong> memorization is <strong>text-in-context</strong>, not text alone. Major consequences for deletion and unlearning.</p>
+    <p><strong>Key implication:</strong> memorization is <strong>text-in-context</strong>, not text alone.</p>
+    <p>Major consequences for deletion and unlearning.</p>
   </div>
 </div>
 
@@ -536,7 +549,8 @@
   <div class="grid-3">
     <div class="card">
       <h3>High Ref Surprise</h3>
-      <p>Reference surprised, target not. Memorization signal.</p>
+      <p>Reference surprised, target not.</p>
+      <p>Memorization signal.</p>
     </div>
     <div class="card">
       <h3>Named Entities</h3>
@@ -599,7 +613,8 @@
   </ul>
   <div class="spacer-sm"></div>
   <div class="highlight">
-    <p>InfoRMIA: token-level analogue of likelihood ratio. Locates <strong>where</strong> the signal lives.</p>
+    <p>InfoRMIA: token-level analogue of likelihood ratio.</p>
+    <p>Locates <strong>where</strong> the signal lives.</p>
   </div>
 </div>
 
@@ -684,7 +699,8 @@
     </div>
   </div>
   <div class="spacer"></div>
-  <p>Pre-training detection: <strong>open challenge</strong>. Best ~70 to 75% AUC.</p>
+  <p>Pre-training detection: <strong>open challenge</strong>.</p>
+  <p>Best ~70 to 75% AUC.</p>
 </div>
 
 <!-- SLIDE 176 — Benchmarks -->
@@ -770,7 +786,8 @@
     </div>
   </div>
   <div class="spacer"></div>
-  <p>Inferable is a <strong>superset</strong> of extractable. Not vice versa.</p>
+  <p>Inferable is a <strong>superset</strong> of extractable.</p>
+  <p>Not vice versa.</p>
 </div>
 
 <!-- SLIDE 180 — LLM MIA Pseudocode -->
@@ -820,7 +837,8 @@
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>DP for <strong>pre-training</strong> at LLM scale: open challenge. Tradeoff too severe at trillion-token scale.</p>
+    <p>DP for <strong>pre-training</strong> at LLM scale: open challenge.</p>
+    <p>Tradeoff too severe at trillion-token scale.</p>
   </div>
 </div>
 
@@ -874,7 +892,8 @@
   <div class="cols">
     <div class="card">
       <h3>GDPR Right to Erasure</h3>
-      <p>Article 17: request deletion. How to "delete" from a trained model?</p>
+      <p>Article 17: request deletion.</p>
+      <p>How to "delete" from a trained model?</p>
       <div class="spacer-sm"></div>
       <p>MIA as <strong>test</strong>: still detectable, not deleted.</p>
     </div>
@@ -900,7 +919,8 @@
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>MIA bridges <strong>legal</strong> and <strong>technical verification</strong>. The closest practical test for "did you use my data?"</p>
+    <p>MIA bridges <strong>legal</strong> and <strong>technical verification</strong>.</p>
+    <p>The closest practical test for "did you use my data?"</p>
   </div>
 </div>
 
@@ -911,11 +931,13 @@
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
       <div class="pill" style="font-size:0.7rem;">Neighbourhood</div>
-      <p style="margin-top:6px;">vs. paraphrases. Cancels difficulty.</p>
+      <p style="margin-top:6px;">vs. paraphrases.</p>
+      <p>Cancels difficulty.</p>
     </div>
     <div class="card">
       <div class="pill" style="font-size:0.7rem;">SPV-MIA</div>
-      <p style="margin-top:6px;">Self-prompt. Best for fine-tuning.</p>
+      <p style="margin-top:6px;">Self-prompt.</p>
+      <p>Best for fine-tuning.</p>
     </div>
     <div class="card">
       <div class="pill" style="font-size:0.7rem;">Context-Aware</div>
@@ -923,12 +945,14 @@
     </div>
     <div class="card">
       <div class="pill" style="font-size:0.7rem;">InfoRMIA</div>
-      <p style="margin-top:6px;">Token-level. SOTA pre-training.</p>
+      <p style="margin-top:6px;">Token-level.</p>
+      <p>SOTA pre-training.</p>
     </div>
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>Core challenge: <strong>calibration</strong>. Each method offers a different strategy.</p>
+    <p>Core challenge: <strong>calibration</strong>.</p>
+    <p>Each method offers a different strategy.</p>
   </div>
 </div>
 
@@ -1021,7 +1045,8 @@
     </div>
     <div class="card">
       <h3>3. Per-Example Calibration</h3>
-      <p>Global thresholds suboptimal. Calibrate per point.</p>
+      <p>Global thresholds suboptimal.</p>
+      <p>Calibrate per point.</p>
     </div>
     <div class="card">
       <h3>4. Finer Granularity</h3>
@@ -1089,11 +1114,13 @@
     </div>
     <div class="card">
       <h3>LLM Agents</h3>
-      <p>Memory + tools. Membership in what?</p>
+      <p>Memory + tools.</p>
+      <p>Membership in what?</p>
     </div>
   </div>
   <div class="spacer"></div>
-  <p>Training vs. operational data blurs. New threat models needed.</p>
+  <p>Training vs. operational data blurs.</p>
+  <p>New threat models needed.</p>
 </div>
 
 <!-- SLIDE 195 — Connections -->

@@ -107,7 +107,8 @@
   <div class="divider"></div>
   <div class="spacer-lg"></div>
   <div class="highlight" style="padding:28px 32px;">
-    <p>Train <strong>shadow models</strong> mimicking the target. You control their data, so you get a <strong>labeled dataset</strong> of (prediction, in/out) pairs for an attack classifier.</p>
+    <p>Train <strong>shadow models</strong> mimicking the target.</p>
+    <p>You control their data, so you get a <strong>labeled dataset</strong> of (prediction, in/out) pairs for an attack classifier.</p>
   </div>
   <div class="spacer-lg"></div>
   <p>Turns an unsupervised problem into <strong>supervised classification</strong>.</p>
@@ -248,7 +249,8 @@
   <p><strong>Output:</strong> member (1) or non-member (0)</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Why per-class?</strong> Confidence distributions differ by class. Needs class-specific calibration.</p>
+    <p><strong>Why per-class?</strong> Confidence distributions differ by class.</p>
+    <p>Needs class-specific calibration.</p>
   </div>
 </div>
 
@@ -322,7 +324,8 @@
   <div class="cols">
     <div>
       <h3>Few classes (C=2)</h3>
-      <p>Scalar output. Limited signal.</p>
+      <p>Scalar output.</p>
+      <p>Limited signal.</p>
     </div>
     <div>
       <h3>Many classes (C=100)</h3>
@@ -423,10 +426,12 @@
   <div class="pill">Hayes et al. 2017</div>
   <h2>LOGAN: MIA Against Generative Models</h2>
   <div class="divider"></div>
-  <p>Shokri: <strong>classifiers</strong>. Hayes et al.: MIA on <strong>GANs</strong>.</p>
+  <p>Shokri: <strong>classifiers</strong>.</p>
+  <p>Hayes et al.: MIA on <strong>GANs</strong>.</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Challenge:</strong> no confidence vector. How to define membership for a generative model?</p>
+    <p><strong>Challenge:</strong> no confidence vector.</p>
+    <p>How to define membership for a generative model?</p>
   </div>
   <div class="spacer"></div>
   <ul class="arrow">
@@ -515,12 +520,14 @@
   <div class="pill">Hisamoto et al. 2019</div>
   <h2>MIA on Sequence-to-Sequence Models</h2>
   <div class="divider"></div>
-  <p>Hisamoto et al.: MIA on <strong>machine translation</strong>. Bridge from vision to NLP.</p>
+  <p>Hisamoto et al.: MIA on <strong>machine translation</strong>.</p>
+  <p>Bridge from vision to NLP.</p>
   <div class="spacer"></div>
   <div class="cols">
     <div>
       <h3>Challenge</h3>
-      <p>No fixed-size confidence vector. Variable-length output.</p>
+      <p>No fixed-size confidence vector.</p>
+      <p>Variable-length output.</p>
     </div>
     <div>
       <h3>Solution</h3>
@@ -610,11 +617,13 @@
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
       <h3>Shadow Models Work</h3>
-      <p>Expensive. Strong data and architecture assumptions.</p>
+      <p>Expensive.</p>
+      <p>Strong data and architecture assumptions.</p>
     </div>
     <div class="card">
       <h3>Confidence Leaks</h3>
-      <p>Rich signal. More classes: more leakage.</p>
+      <p>Rich signal.</p>
+      <p>More classes: more leakage.</p>
     </div>
     <div class="card">
       <h3>Generative Models Too</h3>

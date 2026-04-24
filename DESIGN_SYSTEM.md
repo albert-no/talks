@@ -10,14 +10,11 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 **Reference target.** Kangwook Lee's BLISS seminar deck (<https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html>) is our readability benchmark. Zoomed-in captures of his rendering live in `reference/kangwook1.png`–`kangwook4.png`; the fonts in those shots are the *minimum acceptable* visual weight for our decks. If your slide renders noticeably smaller than those, something is wrong — most likely a per-deck `<style>` is shadowing the canonical tokens.
 
-**Rule: no small fonts on prose. Ever.** The only exception is the `.cite` citation footnote (§2.19) at 0.85rem gray. Rule applies to:
+**Priority 0 — the strongest rule in this document: the font-size binary.** Every other rule here defers to this one. Important content (audience must read it during the talk) renders at body size. Non-important content (audience can follow without reading it) has exactly two on-slide homes: `<div class="cite">` citation footnotes (§2.19) and `.small` sub-labels inside a diagram when compression fails. `.tiny` is banned everywhere. `.small` on prose — `<p>`, `<li>`, captions, summary remarks, text inside `.highlight` / `.card` / `.cols` / `.grid-*` / `.math-block` / under a `<table>` — is banned. Non-important prose that isn't a citation or diagram sub-label belongs in the per-slide appendix / speaker-notes file, not on the slide. Full rule and rationale in §1.2; compression workflow in §7.12. See also §5.2 for the do/don't checklist.
 
-- `<p>`, `<li>`, `<ul>` anywhere on a slide (including inside `.highlight`, `.card`, `.cols`, `.grid-*`).
-- Any text that reads as a sentence, phrase, or bullet rather than a visual component label.
+A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.subtitle`, `.cite`, `.small`, `.tiny`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Inline `style="font-size:…"` on prose is equally forbidden — the browser treats it the same. If you find such overrides, or `class="small"` / `class="tiny"` on prose, in an existing deck, remove them, then fix the content they were trying to mask: shorten the prose or split the slide.
 
-A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. **Inline `style="font-size:…"` on a `<p>` / `<li>` / `<ul>` is equally forbidden** — the browser treats it the same. If you find such overrides in an existing deck, delete them, then fix the content they were trying to mask: shorten the prose or split the slide.
-
-Component-internal text (pill labels at 0.72–0.9rem, token chips, `.diagram-box` labels, code blocks) may stay at their native compact size — these are design elements, not prose. When in doubt: if it reads like a sentence, it's prose.
+Component-internal text at a component's native font-size (pill labels, token chips, code blocks, the `.diagram-box` native 1.15rem) is not an authoring override — these are design tokens. The rule above targets author-applied `.small` / `.tiny` classes and inline `font-size` on prose, and author-added `<span class="small">` / `<span class="tiny">` sub-labels inside components. When in doubt: if a human typed `class="small"` or `class="tiny"` in the deck source, the rule applies.
 
 **When content doesn't fit, reduce content. Split into as many slides as needed — there is no slide budget.** Never shrink type to cram a sentence onto one line.
 
@@ -56,8 +53,11 @@ Font family: Yonsei official typeface (`'Yonsei', 'Noto Sans', Arial, sans-serif
 | `h3` | 1.85rem | 700 | -0.02em | 1.22 |
 | body `p`, `li` | 1.55rem | 300–400 | -0.01em | 1.5 |
 | `.subtitle` | 1.75rem (1.9rem on title) | 300 | — | — |
+| `.cite` | 0.85rem | — | — | — |
 | `.small` | 1.15rem | — | — | — |
 | `.tiny` | 0.95rem | — | — | — |
+
+**Authoring rule on `.small` / `.tiny` (binary: important vs non-important).** Anything the audience should read during the talk is *important* and must render at body size — readable from the back row. The only non-important on-slide slots are (1) `<div class="cite">` citations and (2) `.small` sub-labels inside a diagram when compression fails. `.tiny` is banned everywhere. `.small` on prose — paragraphs, list items, captions, summary remarks, text inside `.highlight` / `.card` / `.cols` / `.math-block` / under a `<table>` — is banned. Non-important prose that isn't a citation or diagram sub-label belongs in the per-slide appendix / speaker-notes file, not on the slide. See §7.12 for the compression workflow and §2.19 for `.cite`.
 
 Accent rules: `strong` → blue + weight 600. `em` → `--gray-text`, **not italic**. These are semantic — never hardcode colors inline when the right accent will do.
 
@@ -128,8 +128,7 @@ First slide. Adds `border-top: 5px solid var(--yonsei-blue)`, larger h1 (3rem, b
   <h1>Talk title</h1>
   <div class="divider"></div>
   <p class="subtitle">One-line subtitle</p>
-  <p>Speaker · Affiliation</p>
-  <p class="small">Date</p>
+  <p>Speaker · Affiliation · Date</p>
 </div>
 ```
 
@@ -440,8 +439,8 @@ Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Backg
 | Let the engine handle nav — don't add custom click targets. | Bind click handlers directly on slides. |
 | Pair `h2` with `.divider` on every content slide. | Skip the divider; the slide feels unanchored. |
 | Put title-logo and title-slide together. | Use `.title-logo` on non-title slides. |
-| Leave canonical sizes alone on prose (`p`, `li`, `ul`, text inside `.highlight` / `.card` / `.cols`). The only small text on a slide is `.cite`. | Add inline `style="font-size:0.9rem"` to a bullet or card body — that's prose and it must stay at canonical size. |
-| Keep component-internal text (`.pill`, `.diagram-box` label, token chips, `.code-block`) at its native compact size. | Redefine `p` / `li` / `h2` / `h3` / `.small` / `.tiny` / `.math-block` in a per-deck `<style>`. Those are canonical; deck.css owns them. |
+| Leave canonical sizes alone on prose (`p`, `li`, text inside `.highlight` / `.card` / `.cols` / `.math-block` / under a `<table>`). On-slide sub-body text is allowed in two slots only: `<div class="cite">` and `.small` inside a diagram when compression fails (§1.2 Priority 0). | Add `class="small"` / `class="tiny"` to prose, add inline `style="font-size:…"` to a bullet or card body, or use `.small` as a "de-emphasis" signal. That's the pattern Priority 0 exists to kill. |
+| Keep component-internal text (`.pill`, `.diagram-box` native label, token chips, `.code-block`) at its native compact size. | Add author-level `<span class="small">` / `<span class="tiny">` sub-labels inside a diagram by default. Compress the label or let the speaker narrate it; only keep `.small` if compression genuinely breaks the layout. Never redefine `p` / `li` / `h2` / `h3` / `.small` / `.tiny` / `.math-block` in a per-deck `<style>`. |
 | When a slide feels cramped, cut content or split the slide. Use as many slides as you need — there is no budget. | Shrink the type scale to cram in more. The Kangwook reference shots (`reference/kangwook*.png`) show the minimum acceptable size. |
 | Build math-labelled diagrams as HTML (flex/grid + divs) with a thin SVG overlay for arrows only. | Put `$x_i$` inside an SVG `<text>` — KaTeX auto-render skips SVG text and the literal `$x_i$` will show. |
 | Use `$$…$$` (display math) inside a `.math-block` for `\begin{cases}` and other multi-row constructs. | Use `$…$\displaystyle$…$` with `white-space:nowrap` + `overflow-x:auto` to force layout — the cases overflow gets clipped at the right edge. |
@@ -462,7 +461,7 @@ Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Backg
 ```
 <h2> + <div class="divider"></div>
 <div class="grid-3">
-  <div class="card" style="text-align:center;">①  <h3>…</h3>  <p class="small">…</p></div>
+  <div class="card" style="text-align:center;">①  <h3>…</h3>  <p>…</p></div>
   … ×3 …
 </div>
 ```
@@ -690,7 +689,11 @@ Fix:
 - **Keep the technical specifics.** Variable names, numbers, dates, author names, and math do not compress — they are the reason the slide exists.
 - **Target ~40–60% word reduction** on prose blocks when rewriting an existing wordy deck. If you have to shrink the font to keep a bullet on one line, you haven't rewritten it yet.
 
-Corollary: after you simplify prose, remove **every** inline `font-size` override on `<p>`, `<li>`, `<ul>`, or text inside a `.highlight` / `.card` / `.cols`. Shorter content fits canonical sizes. If it still doesn't fit, split the slide — use as many slides as the idea needs. The only permitted small text on a slide is `.cite`.
+Corollary: after you simplify prose, remove every inline `font-size` override *and* every `class="small"` / `class="tiny"` from prose elements (`<p>`, `<li>`, text inside `.highlight` / `.card` / `.cols` / `.math-block` / under a `<table>`). The canonical binary: important → body size (1.55rem); non-important → `.cite` citation or off-slide appendix. See §1.2 for the full rule.
+
+Multi-sentence signal: if you find yourself with `A. B.` in a single `<p>`, `<li>`, `.card`, or `.highlight`, treat it as a signal the content is too wordy. Compress to one abstract phrase (`"no shadows. Threshold on max confidence."` → `"no shadows; max-confidence threshold"`), not two paragraphs.
+
+Non-important content on the slide is a sign it doesn't belong there. If a caveat, side note, or expanded explanation can be skipped during the talk without losing the thread, it goes in the per-slide appendix / speaker-notes file. What stays on the slide is what the audience reads in real time — and that, by definition, is important enough to render at body size.
 
 ### 7.13 Paper-title cards steal half the slide → use `.cite` (§2.19)
 
@@ -699,6 +702,12 @@ Symptom: every paper-overview slide has a 2-column layout where the right column
 Cause: the "paper card" was the only way to put attribution on the slide without cluttering the main content. It worked but was wasteful — attribution is metadata, not content.
 
 Fix: delete the card and replace it with a single `<div class="cite">` footnote at the bottom. The main content expands to full width; the citation lives in a subtle gray line that tracks with the brand footer and slide number. See §2.19.
+
+### 7.14 `<br>` landing after a hyphen orphans the hyphen
+
+Symptom: a `.diagram-box` labeled `ML-as-a-<br>Service` renders as `ML-as-a-` / `Service`; `Neyman-<br>Pearson` renders as `Neyman-` / `Pearson`. The trailing hyphen reads as a broken syllable.
+
+Fix: keep the compound on one line and let the box grow (`Neyman-Pearson`), or rename to a hyphen-free label (`ML-as-a-Service` → `Cloud ML APIs`). Never land `<br>` immediately after `-`, `—`, `–`, `(`, or similar continuation punctuation.
 
 ---
 

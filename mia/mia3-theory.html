@@ -130,7 +130,8 @@
   </div>
   <div class="spacer-sm"></div>
   <div class="highlight">
-    <p>$\Delta > 0$: model <strong>overfits</strong>. This gap is the MIA signal.</p>
+    <p>$\Delta > 0$: model <strong>overfits</strong>.</p>
+    <p>This gap is the MIA signal.</p>
   </div>
 </div>
 
@@ -253,7 +254,8 @@
     </div>
   </div>
   <div class="spacer"></div>
-  <p>$\tau$ trades TPR vs. FPR. Lower $\tau$: both fall.</p>
+  <p>$\tau$ trades TPR vs. FPR.</p>
+  <p>Lower $\tau$: both fall.</p>
 </div>
 
 <!-- SLIDE 69 — Attribute Inference -->
@@ -331,7 +333,8 @@
   <h2>Toward the Optimal Attack</h2>
   <div class="divider"></div>
   <div class="spacer"></div>
-  <p>Yeom's threshold attack: principled but limited. Next question:</p>
+  <p>Yeom's threshold attack: principled but limited.</p>
+  <p>Next question:</p>
   <div class="spacer"></div>
   <div class="highlight" style="padding:24px 28px; text-align:center;">
     <p>What is the <strong>Bayes optimal</strong> MIA?</p>
@@ -361,7 +364,8 @@
   <div class="pill">Sablayrolles et al. 2019</div>
   <h2>The Bayes Optimal MIA</h2>
   <div class="divider"></div>
-  <p>Signal $\phi(z)$ (loss, gradients). Optimal attack: <strong>likelihood ratio test</strong>:</p>
+  <p>Signal $\phi(z)$ (loss, gradients).</p>
+  <p>Optimal attack: <strong>likelihood ratio test</strong>:</p>
   <div class="math-block">
     $$\Lambda(z) = \frac{p(\phi(z) \mid z \in D)}{p(\phi(z) \mid z \notin D)} \quad \gtrless \quad \tau$$
   </div>
@@ -435,7 +439,8 @@
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Implication:</strong> loss is <strong>near-sufficient</strong>. Gradients, activations: diminishing returns.</p>
+    <p><strong>Implication:</strong> loss is <strong>near-sufficient</strong>.</p>
+    <p>Gradients, activations: diminishing returns.</p>
   </div>
 </div>
 
@@ -447,15 +452,16 @@
   <div class="spacer-sm"></div>
   <ul class="arrow">
     <li>Loss $\ell(f_\theta, z)$ <strong>compresses</strong> how the model treats $z$</li>
-    <li>Gradients $\nabla_\theta \ell$: <strong>functionally determined</strong> by loss landscape at $z$. No independent info on membership.</li>
-    <li>Activations $h_l(x)$ feed into the loss. Loss is their <strong>aggregate summary</strong>.</li>
+    <li>Gradients $\nabla_\theta \ell$: <strong>determined</strong> by loss landscape; no independent membership info</li>
+    <li>Activations $h_l(x)$: <strong>summarized</strong> by the loss</li>
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
     <p><strong>Intuition:</strong> loss answers "how well does the model fit $z$?" That is the MIA question.</p>
   </div>
   <div class="spacer-sm"></div>
-  <p class="small">Caveat: asymptotic. Small models, specific architectures: white-box gives modest gain.</p>
+  <p class="small">Caveat: asymptotic.</p>
+  <p class="small">Small models, specific architectures: white-box gives modest gain.</p>
 </div>
 
 <!-- SLIDE 79 — Practical Implication -->
@@ -475,7 +481,8 @@
     </div>
   </div>
   <div class="spacer-lg"></div>
-  <p>Shifts MIA research focus: <em>which signal</em> → <em>how to calibrate</em>. Core challenge of modern MIA.</p>
+  <p>Shifts MIA research focus: <em>which signal</em> → <em>how to calibrate</em>.</p>
+  <p>Core challenge of modern MIA.</p>
 </div>
 
 <!-- SLIDE 80 — Experimental Validation -->
@@ -493,7 +500,8 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>BB vs WB AUC gap: consistently <strong>&lt; 2%</strong>. White-box: negligible in practice.</p>
+    <p>BB vs WB AUC gap: consistently <strong>&lt; 2%</strong>.</p>
+    <p>White-box: negligible in practice.</p>
   </div>
 </div>
 
@@ -506,7 +514,7 @@
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box">Hypothesis<br>Testing<br><span class="tiny">(Foundations)</span></div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box">Neyman-<br>Pearson<br><span class="tiny">(Foundations)</span></div>
+    <div class="diagram-box">Neyman-Pearson<br><span class="tiny">(Foundations)</span></div>
     <span class="diagram-arrow">→</span>
     <div class="diagram-box filled">Likelihood<br>Ratio<br><span class="tiny">(Optimal)</span></div>
     <span class="diagram-arrow">→</span>
@@ -536,7 +544,8 @@
   <div class="divider"></div>
   <p>Tested systematically: <strong>how much does the attacker need to know?</strong></p>
   <div class="spacer"></div>
-  <p>Progressively removed Shokri's assumptions. Attack still effective.</p>
+  <p>Progressively removed Shokri's assumptions.</p>
+  <p>Attack still effective.</p>
   <div class="cite">Salem, Zhang, Humbert, Berrang, Fritz, Backes, "ML-Leaks: Model and Data Independent MIA and Defenses", NDSS 2019</div>
 </div>
 
@@ -550,7 +559,7 @@
     <ul class="num">
       <li><strong>Relaxation 1:</strong> shadows with <strong>different architecture</strong></li>
       <li><strong>Relaxation 2:</strong> shadow data from <strong>different distribution</strong> (even unrelated)</li>
-      <li><strong>Relaxation 3:</strong> <strong>no shadows</strong>. Threshold on max confidence.</li>
+      <li><strong>Relaxation 3:</strong> <strong>no shadows</strong>; threshold on max confidence</li>
     </ul>
   </div>
   <div class="spacer"></div>
@@ -663,10 +672,12 @@
   <div class="spacer-lg"></div>
   <div class="highlight" style="padding:28px 32px; text-align:center;">
     <p><strong>Adversary needs far less than assumed.</strong></p>
-    <p style="margin-top:8px;">Shadows help, but aren't necessary. Membership signal is a property of overfitting.</p>
+    <p style="margin-top:8px;">Shadows help, but aren't necessary.</p>
+    <p>Membership signal is a property of overfitting.</p>
   </div>
   <div class="spacer-lg"></div>
-  <p>Defense implication: do not assume a limited attacker. Even a predicted label enables MIA.</p>
+  <p>Defense implication: do not assume a limited attacker.</p>
+  <p>Even a predicted label enables MIA.</p>
 </div>
 
 
@@ -682,7 +693,8 @@
   <div class="pill">Nasr et al. 2019</div>
   <h2>Comprehensive Privacy Analysis of Deep Learning</h2>
   <div class="divider"></div>
-  <p>Most thorough <strong>white-box MIA</strong>. Extended to <strong>federated learning</strong>.</p>
+  <p>Most thorough <strong>white-box MIA</strong>.</p>
+  <p>Extended to <strong>federated learning</strong>.</p>
   <div class="spacer"></div>
   <ul class="arrow">
     <li>White-box attack via per-layer gradients</li>
@@ -781,7 +793,8 @@
     </div>
   </div>
   <div class="spacer"></div>
-  <p>Active: modify model to be "sensitive" to specific points. Amplifies member vs non-member gradient gap.</p>
+  <p>Active: modify model to be "sensitive" to specific points.</p>
+  <p>Amplifies member vs non-member gradient gap.</p>
 </div>
 
 

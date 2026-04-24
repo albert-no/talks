@@ -144,11 +144,13 @@
   <div class="cols">
     <div>
       <h3 style="color:var(--success);">Strengths</h3>
-      <p>Bounds MI advantage via $(\varepsilon, \delta)$. Composable.</p>
+      <p>Bounds MI advantage via $(\varepsilon, \delta)$.</p>
+      <p>Composable.</p>
     </div>
     <div>
       <h3 style="color:var(--warn);">Cost</h3>
-      <p>Accuracy drop at small $\varepsilon$. Compute overhead.</p>
+      <p>Accuracy drop at small $\varepsilon$.</p>
+      <p>Compute overhead.</p>
     </div>
   </div>
 </div>
@@ -184,7 +186,8 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Lesson:</strong> Post-hoc perturbation, an arms race. Only <strong>training-time defenses</strong> change information content.</p>
+    <p><strong>Lesson:</strong> Post-hoc perturbation, an arms race.</p>
+    <p>Only <strong>training-time defenses</strong> change information content.</p>
   </div>
 </div>
 
@@ -222,7 +225,8 @@
   <p>API returns only the <strong>predicted label</strong>, no scores?</p>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Challenge:</strong> binary signal seems too weak. Turns out sufficient.</p>
+    <p><strong>Challenge:</strong> binary signal seems too weak.</p>
+    <p>Turns out sufficient.</p>
   </div>
 </div>
 
@@ -234,7 +238,8 @@
   <div class="grid-2">
     <div class="card">
       <h3>Data Augmentation</h3>
-      <p>Query augmented $x$. Count correct labels:</p>
+      <p>Query augmented $x$.</p>
+      <p>Count correct labels:</p>
       <div class="math-block">$$s(x) = \frac{1}{K}\sum_{k=1}^K \mathbf{1}[f_\theta(T_k(x)) = y]$$</div>
       <p>Members: more robust.</p>
     </div>
@@ -263,7 +268,8 @@
     <p><strong>Even predicted labels leak membership.</strong></p>
   </div>
   <div class="spacer"></div>
-  <p>Confirms Sablayrolles: API restriction gives little privacy. Membership signal is intrinsic.</p>
+  <p>Confirms Sablayrolles: API restriction gives little privacy.</p>
+  <p>Membership signal is intrinsic.</p>
 </div>
 
 
@@ -357,7 +363,8 @@
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <div class="highlight" style="padding:24px 28px;">
-    <p><strong>Key innovation:</strong> distributions are computed <strong>per example</strong> $z$. Each point has its own $(\mu_{\text{in}}, \sigma_{\text{in}}, \mu_{\text{out}}, \sigma_{\text{out}})$.</p>
+    <p><strong>Key innovation:</strong> distributions are computed <strong>per example</strong> $z$.</p>
+    <p>Each point has its own $(\mu_{\text{in}}, \sigma_{\text{in}}, \mu_{\text{out}}, \sigma_{\text{out}})$.</p>
   </div>
   <div class="spacer"></div>
   <p>Why it matters:</p>
@@ -412,7 +419,8 @@
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Price of optimality:</strong> most accurate, most expensive. RMIA will cut cost.</p>
+    <p><strong>Price of optimality:</strong> most accurate, most expensive.</p>
+    <p>RMIA will cut cost.</p>
   </div>
 </div>
 
@@ -427,7 +435,8 @@
   <div class="cols">
     <div class="card" style="text-align:center;">
       <h3>Easy Example</h3>
-      <p>Both have low mean. Small gap.</p>
+      <p>Both have low mean.</p>
+      <p>Small gap.</p>
       <div style="display:flex; gap:3px; justify-content:center; align-items:end; height:50px; margin:8px 0;">
         <div style="width:10px; height:10px; background:var(--blue); opacity:0.4; border-radius:2px;"></div>
         <div style="width:10px; height:35px; background:var(--blue); opacity:0.7; border-radius:2px;"></div>
@@ -469,7 +478,8 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>At FPR = 0.01%: LiRA wins <strong>10 to 50× higher TPR</strong>. Gap widens as FPR drops.</p>
+    <p>At FPR = 0.01%: LiRA wins <strong>10 to 50× higher TPR</strong>.</p>
+    <p>Gap widens as FPR drops.</p>
   </div>
 </div>
 
@@ -541,7 +551,7 @@
   <div class="divider"></div>
   <div class="spacer"></div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box">Neyman-<br>Pearson<br><span class="tiny">(Sec. 1)</span></div>
+    <div class="diagram-box">Neyman-Pearson<br><span class="tiny">(Sec. 1)</span></div>
     <span class="diagram-arrow">→</span>
     <div class="diagram-box">Loss is<br>sufficient<br><span class="tiny">(Sablayrolles)</span></div>
     <span class="diagram-arrow">→</span>
@@ -702,7 +712,8 @@
     $$\Lambda(z) = \frac{p_\theta(z)}{\frac{1}{R}\sum_{r=1}^R p_{\theta_r}(z)}$$
   </div>
   <div class="spacer-sm"></div>
-  <p>Numerator: target likelihood of $z$. Denominator: avg over $R$ references.</p>
+  <p>Numerator: target likelihood of $z$.</p>
+  <p>Denominator: avg over $R$ references.</p>
   <div class="spacer"></div>
   <div class="highlight">
     <p>Target $\gg$ references on $z$: likely trained on $z$.</p>
@@ -741,7 +752,8 @@
   </table>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>RMIA = LiRA at <strong>30 to 100× fewer shadows</strong>. Strong MIA now <strong>practical</strong>.</p>
+    <p>RMIA = LiRA at <strong>30 to 100× fewer shadows</strong>.</p>
+    <p>Strong MIA now <strong>practical</strong>.</p>
   </div>
 </div>
 
@@ -826,7 +838,8 @@
   </ul>
   <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>LLM connection:</strong> same paradigm. Loss vs calibrated baseline.</p>
+    <p><strong>LLM connection:</strong> same paradigm.</p>
+    <p>Loss vs calibrated baseline.</p>
   </div>
 </div>
 
@@ -917,7 +930,8 @@
     </div>
     <div class="card">
       <div class="pill" style="font-size:0.75rem;">LiRA</div>
-      <p style="margin-top:8px;">Per-example LR. Optimal, expensive.</p>
+      <p style="margin-top:8px;">Per-example LR.</p>
+      <p>Optimal, expensive.</p>
     </div>
     <div class="card">
       <div class="pill" style="font-size:0.75rem;">Ye et al.</div>
@@ -930,7 +944,8 @@
   </div>
   <div class="spacer"></div>
   <div class="highlight">
-    <p>Field converged on the <strong>likelihood ratio paradigm</strong>. Frontier: LLMs.</p>
+    <p>Field converged on the <strong>likelihood ratio paradigm</strong>.</p>
+    <p>Frontier: LLMs.</p>
   </div>
 </div>
 
