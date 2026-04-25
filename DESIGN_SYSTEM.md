@@ -16,6 +16,8 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 **Priority 2 — after Priorities 0 and 1, which always come first: overflow.** Content must stay inside the 1280×720 slide bounds and clear of the auto-injected `.brand-footer` ("YONSEI UNIVERSITY") at bottom-left. When content overflows: compress to noun phrases (§7.12), then split into a new slide, then move secondary detail to a companion `<deck>-note.html` file (§7.18). Never shrink type to fit (Priority 0). Never wedge content with line-break tricks (Priority 1). Discipline is upstream — write short, abstract slides from the first draft so overflow doesn't happen. Full rule in §7.17.
 
+**Priority 3 — after Priorities 0, 1, and 2: empty space.** Empty space at the bottom of a slide is fine; empty space *in the middle* is not. Don't pad with `<div class="spacer*">`. Don't wrap 2–3-line content in `.cols + .card` — `.cols { flex: 1; align-items: stretch }` makes the cards stretch to full slide height and become tall hollow boxes; use `.grid-2` with bare `<h3>` + `<p>` for short dichotomies. If a slide is too sparse to hold itself, merge or expand — never pad. Full rule in §7.19.
+
 A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.subtitle`, `.cite`, `.small`, `.tiny`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Inline `style="font-size:…"` on prose is equally forbidden — the browser treats it the same. If you find such overrides, or `class="small"` / `class="tiny"` on prose, in an existing deck, remove them, then fix the content they were trying to mask: shorten the prose or split the slide.
 
 Component-internal text at a component's native font-size (pill labels, token chips, code blocks, the `.diagram-box` native 1.15rem) is not an authoring override — these are design tokens. The rule above targets author-applied `.small` / `.tiny` classes and inline `font-size` on prose, and author-added `<span class="small">` / `<span class="tiny">` sub-labels inside components. When in doubt: if a human typed `class="small"` or `class="tiny"` in the deck source, the rule applies.
@@ -73,12 +75,12 @@ Accent rules: `strong` → blue + weight 600. `em` → `--gray-text`, **not ital
 
 Slide padding: `56px 72px 48px` (top / sides / bottom). Title slide uses `72px 88px`. Don't change these — they anchor the print-to-PDF layout.
 
-| Spacer | Height |
-|---|---|
-| `.spacer-sm` | 12px |
-| `.spacer` | 20px |
-| `.spacer-lg` | 32px |
-| `.flex-grow` | flex: 1 (fills remaining vertical space) |
+| Spacer | Height | Note |
+|---|---|---|
+| `.spacer-sm` | 12px | Rarely useful — see §7.19 (Priority 3). Default to natural margins. |
+| `.spacer` | 20px | Rarely useful — see §7.19. |
+| `.spacer-lg` | 32px | Rarely useful — see §7.19. |
+| `.flex-grow` | flex: 1 | Fills remaining vertical space (e.g. push a closing line to the bottom). Different from spacers — this is intentional layout, not padding. |
 
 Component internal padding lives on the component — see §2.
 
@@ -766,6 +768,29 @@ When prose visibly wraps in preview, act in this order:
 **When to write to the note file vs. the slide.** If the audience needs to read it during the talk, it goes on the slide (Priority 0: at body size). If the audience can follow without reading it but it's still useful to record, it goes in the note file. Borderline content should default to the note file — a minimal slide always reads better than a cramped one.
 
 **What it isn't.** Not a paper draft, not a talk transcript, not a tutorial. It's the speaker's reading companion and the reader's after-the-fact reference. Keep it tight.
+
+### 7.19 Empty space — Priority 3
+
+**Symptom.** A slide has a few blocks of content at the top and one line at the bottom, with a hollow gap in the middle. Or two cards in a `.cols` block stretch to twice the height of their content, leaving each card half-empty. Or a slide carries 3 bullets and nothing else.
+
+**Cause.** Three authoring patterns:
+1. **Manual spacers.** `<div class="spacer">`, `<div class="spacer-sm">`, `<div class="spacer-lg">` insert fixed 12 / 20 / 32 px gaps that stack on top of natural element margins. On a slide whose content already spaces itself, the extra gap shows up as a void in the middle.
+2. **`.cols + .card` for sparse content.** `.slide` is `display: flex; flex-direction: column`; `.cols { flex: 1; align-items: stretch }`. So a `.cols` element grabs all remaining vertical space on the slide, and its child cards stretch to match. With 2–3 lines of content per card, the card becomes a tall hollow box — content at the top, empty space below.
+3. **Slide too sparse.** A slide with 3 bullets and nothing else has no business being its own slide.
+
+**Fix, in order:**
+
+1. **Strip `<div class="spacer*">` divs** between content blocks. Trust natural element margins. Keep a spacer only at a genuine collision point — almost never needed on a content slide.
+2. **For 2–3-line dichotomies, drop the `.cols + .card` wrapping.** Use `.grid-2` (no flex stretch) with bare `<h3>` + `<p>`. The columns sit at natural height, and the rest of the slide is naturally blank below.
+3. **For short slides, merge into the adjacent slide or drop.** There is no slide budget *upward* (split when crowded — Priority 2) and none *downward* (combine when sparse).
+
+**Banned shortcuts.**
+
+- **Don't pad with spacers.** That's what causes the middle-gap in the first place.
+- **Don't pad with extra prose** to fill a sparse slide. That writes you back into the trap Priority 0/1 already closed (compress; speaker narrates).
+- **Don't shrink the column width** to fake a "tall card" look. A short card in a narrow column reads worse than a short slide with an honest empty bottom.
+
+**Why a separate priority.** Priorities 0/1/2 cover *crowded* slides; Priority 3 covers *under-filled* slides. Both pathologies stem from treating layout containers as visual scaffolding instead of letting content drive geometry. Empty bottoms are honest; empty middles are layout debt.
 
 ---
 

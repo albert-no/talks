@@ -47,6 +47,8 @@ bundle is a build artifact — gitignored, produced on demand for distribution.
 
 **Priority 2 (after Priorities 0 and 1, which always come first): the Overflow rule in §"Overflow — Priority 2" below.** Content must stay inside the slide bounds and clear of the bottom-left brand footer ("YONSEI UNIVERSITY"). When something overflows, compress and split — never shrink (Priority 0 forbids that) and never wedge with line-break tricks (Priority 1 forbids that). Detail that doesn't fit on the slide goes in a companion `-note.html` file (see §"Companion note files" below).
 
+**Priority 3 (after 0, 1, and 2 — they always come first): the Empty-space rule in §"Empty space — Priority 3" below.** Empty space at the bottom of a slide is fine; empty space *in the middle* is not. Don't pad with `<div class="spacer*">`. Don't wrap 2–3-line content in `.cols` + `.card` (`.cols` stretches; cards become tall hollow boxes). If a slide is too sparse to hold itself up, merge or expand — never pad.
+
 1. One idea per slide.
 2. **The speaker narrates; the slide is a visual anchor.** Slides carry abstract phrases and key terms, not full explanatory sentences. Drop narrative connectors ("This means…", "In other words…", "It is important to note…") and soft qualifiers ("essentially", "actually", "basically"). Target telegraphic noun phrases over complete sentences. See `DESIGN_SYSTEM.md §7.12` for the full rule.
 3. Prose emphasis: `**strong**` = Yonsei Blue accent, `*em*` = muted gray.
@@ -120,6 +122,18 @@ When overflow shows up anyway, act in this order:
 - **Don't push content past the footer.** Footer collision is overflow even if the text is technically still inside the slide rectangle.
 
 **Interaction with Priorities 0 and 1.** Priority 0 forces body size; Priority 1 forbids using line-break tricks to wedge in extra content. Priority 2 closes the loop: if after honoring 0 and 1 the slide still doesn't fit, the answer is *less content* — split, or move detail to the note file. Never cram.
+
+## Empty space — Priority 3
+
+**After Priorities 0, 1, and 2 — which always come first — this is the next rule.** *Empty space at the bottom of a slide is fine. Empty space in the middle is not.* The "few blocks at the top, one line at the bottom, hollow gap between" pattern is the symptom this rule kills.
+
+Two authoring patterns cause it. Both are forbidden:
+
+- **Don't use `<div class="spacer">` / `-sm` / `-lg` between content blocks.** Natural element margins already space things correctly; spacers stack on top, and on a slide whose content already spaces itself, the extra gap shows up as a void in the middle. Remove them. The legitimate use is the rare case where two adjacent blocks genuinely collide — almost never on a content slide.
+- **Don't wrap 2–3-line content in `.cols` + `.card`.** `deck.css` defines `.cols { flex: 1; align-items: stretch }`, so `.cols` grabs all remaining vertical space on the slide and stretches each card to match — short cards become tall hollow boxes with content at the top and empty bottom. Use `.cols + .card` only when each column carries substantive content (≈5+ lines, or math/diagrams that fill the space). For short side-by-side dichotomies, use `.grid-2` (no flex stretching) with bare `<h3>` + `<p>`, no card wrapper.
+- **If a slide has so little content that the natural empty bottom dominates** (e.g., 3 bullets and nothing else), it isn't a slide — merge it into the adjacent slide or drop it. Don't pad.
+
+**Interaction with Priorities 0/1/2.** Priority 0 forces body size; Priority 1 forbids line-break tricks; Priority 2 forbids cramming when crowded. Priority 3 closes the other side of the loop: when the slide is *under-full*, the answer is also content-driven — combine, expand, or accept the empty bottom. Never inject filler.
 
 ## Companion note files
 
