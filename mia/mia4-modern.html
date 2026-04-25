@@ -877,9 +877,9 @@
   <p><strong>RMIA, practical sweet spot:</strong> near-LiRA power at 30 to 100× lower cost.</p>
 </div>
 
-<!-- SLIDE 147 — Pseudocode Walkthrough -->
+<!-- SLIDE 147 — Pipeline Comparison: Threshold and LiRA -->
 <div class="slide bg-deep">
-  <h2>Hands-On: MIA Pipeline Comparison</h2>
+  <h2>Hands-On: Threshold and LiRA</h2>
   <div class="divider"></div>
   <div class="code-block"><span class="cm">// Threshold Attack (simplest)</span>
 <span class="kw">def</span> <span class="fn">threshold_attack</span>(model, z, τ):
@@ -891,13 +891,25 @@
     ℓ_out ← [<span class="fn">loss</span>(s, z) <span class="kw">for</span> s in shadows <span class="kw">if</span> z ∉ s.train]
     μ_in, σ_in   ← <span class="fn">gaussian_fit</span>(ℓ_in)
     μ_out, σ_out ← <span class="fn">gaussian_fit</span>(ℓ_out)
-    <span class="kw">return</span> <span class="fn">log_likelihood_ratio</span>(<span class="fn">loss</span>(target, z), μ_in, σ_in, μ_out, σ_out)
+    <span class="kw">return</span> <span class="fn">log_likelihood_ratio</span>(<span class="fn">loss</span>(target, z), μ_in, σ_in, μ_out, σ_out)</div>
+  <div class="spacer-sm"></div>
+  <p>Simple vs. optimal: one threshold vs. per-example calibration with shadow models.</p>
+</div>
 
-<span class="cm">// RMIA (best cost-accuracy tradeoff)</span>
+<!-- SLIDE 147b — Pipeline Comparison: RMIA -->
+<div class="slide bg-deep">
+  <h2>Hands-On: RMIA</h2>
+  <div class="divider"></div>
+  <div class="code-block"><span class="cm">// RMIA (best cost-accuracy tradeoff)</span>
 <span class="kw">def</span> <span class="fn">rmia_attack</span>(target, z, ref_models, ref_data):
     ratio_z  ← <span class="fn">mean</span>([<span class="fn">loss</span>(target,z) / <span class="fn">loss</span>(r,z) <span class="kw">for</span> r in ref_models])
     ratio_zp ← [<span class="fn">mean</span>([<span class="fn">loss</span>(target,z') / <span class="fn">loss</span>(r,z') ...]) <span class="kw">for</span> z' in ref_data]
     <span class="kw">return</span> <span class="fn">percentile_rank</span>(ratio_z, ratio_zp)</div>
+  <div class="spacer-sm"></div>
+  <div class="highlight">
+    <p>Near-LiRA power at <strong>30 to 100× lower cost</strong> (2 to 8 reference models).</p>
+  </div>
+  <div class="cite">Full side-by-side pseudocode in <code>mia4-modern-note.html</code>.</div>
 </div>
 
 <!-- SLIDE 148 — Open Questions Before LLM -->

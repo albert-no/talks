@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MIA 1 — Foundations · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 24px 96px;
+    color: var(--charcoal);
+    background: var(--white);
+    font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  table { border-collapse: collapse; margin: 12px 0; width: 100%; }
+  th, td { border: 1px solid var(--slate); padding: 6px 10px; text-align: left; font-size: 0.95rem; }
+  th { background: var(--light); }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>MIA 1 · Foundations — Notes</h1>
+<p class="meta">Companion to <code>mia1-foundations.html</code>. Detail that doesn't fit on the slides.</p>
+
+<section>
+  <h2>Slide 34 + 34b — TPR at Low FPR</h2>
+
+  <h3>Why average accuracy is misleading</h3>
+  <p>Two attacks with the same balanced accuracy can have wildly different real-world impact. An attack achieving <strong>60% balanced accuracy</strong> by being slightly better than chance everywhere is useless when an auditor needs <em>high-confidence positives</em> — i.e. the regime where <strong>FPR is well below 1%</strong>. Carlini et al. (2022) reframed evaluation around this regime: TPR at low FPR is the only metric that aligns with the threat model.</p>
+
+  <h3>Why log-log ROC matters</h3>
+  <p>On a linear ROC plot, the low-FPR regime is compressed into a sliver near the y-axis — most of the visual area is wasted on the high-FPR end that nobody cares about for privacy. A log-log axis stretches the low-FPR regime, making it possible to compare attacks at FPR = $10^{-3}$ vs. $10^{-4}$ vs. $10^{-5}$ at a glance.</p>
+
+  <h3>Pitfalls when reading metric tables</h3>
+  <ul>
+    <li><strong>AUC ≠ low-FPR power.</strong> Two attacks can share an AUC of 0.6 while one has 5% TPR @ 0.1% FPR and the other has 0%.</li>
+    <li><strong>Per-example variance.</strong> Population-level numbers hide the vulnerable subpopulation. Always report a histogram or per-example calibration check.</li>
+    <li><strong>TPR @ 0.01% FPR vs. 0.1% FPR.</strong> Stronger privacy claims require the lower bound; the gap between the two columns is itself diagnostic.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Other extended notes</h2>
+  <p class="meta">Add one section per slide where the slide intentionally compressed detail. Keep entries tight: prose explanations, secondary citations, derivations the audience can consult after the talk.</p>
+</section>
+
+</body>
+</html>

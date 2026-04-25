@@ -45,6 +45,8 @@ bundle is a build artifact — gitignored, produced on demand for distribution.
 
 **Priority 1 (after Priority 0): the Line-breaks rule in §"Line breaks — Priority 1" below.** Goal is minimal slides. Leave content alone if it already fits on one line — two short sentences on one line are fine. Act only when prose visibly wraps: compress first; if still multi-line, split at a natural boundary (two adjacent `<p>` tags); glue inseparable phrases with `&nbsp;` reactively.
 
+**Priority 2 (after Priorities 0 and 1, which always come first): the Overflow rule in §"Overflow — Priority 2" below.** Content must stay inside the slide bounds and clear of the bottom-left brand footer ("YONSEI UNIVERSITY"). When something overflows, compress and split — never shrink (Priority 0 forbids that) and never wedge with line-break tricks (Priority 1 forbids that). Detail that doesn't fit on the slide goes in a companion `-note.html` file (see §"Companion note files" below).
+
 1. One idea per slide.
 2. **The speaker narrates; the slide is a visual anchor.** Slides carry abstract phrases and key terms, not full explanatory sentences. Drop narrative connectors ("This means…", "In other words…", "It is important to note…") and soft qualifiers ("essentially", "actually", "basically"). Target telegraphic noun phrases over complete sentences. See `DESIGN_SYSTEM.md §7.12` for the full rule.
 3. Prose emphasis: `**strong**` = Yonsei Blue accent, `*em*` = muted gray.
@@ -94,6 +96,39 @@ When prose visibly wraps in preview, act in this order:
 **`<br>` policy.** Allowed at a deliberate internal clause boundary (step 2b). Banned as an orphan-shim — for that, see Authoring gotchas (use `&nbsp;` or compression).
 
 **Interaction with Priority 0.** Priority 0 forces body size (1.55rem). Some content that fit on one line at `.small` will now wrap. Don't shrink to avoid the wrap — compress, or accept a clean split per step 2.
+
+## Overflow — Priority 2
+
+**After Priority 0 (font-sizes) and Priority 1 (line-breaks) — both of which always come first — this is the next rule.** Overflow is any content that escapes the slide's intended drawing area:
+
+- **Off-slide.** Text or elements positioned past the 1280×720 slide bounds; partially or fully invisible at presentation scale.
+- **Footer collision.** Content that overlaps the auto-injected `.brand-footer` (the "YONSEI UNIVERSITY" lockup `deck.js` injects on every content slide; reserve ~40 px of clear space at the bottom-left corner — see Authoring gotchas).
+
+**The fix is upstream, not downstream.** Visually auditing every slide in a browser at presentation scale is impractical, so the discipline starts at draft time: write short, abstract phrases from the first pass — telegraphic noun phrases, not full sentences (Style priority #2). If you're tempted to write a wordy slide, you've already failed Priority 2; rewrite before you preview.
+
+When overflow shows up anyway, act in this order:
+
+1. **Compress** (per Priority 1, step 1). Drop connectors, qualifiers, full sentences; collapse to noun phrases. Most overflow is wordiness, not a layout problem.
+2. **Split the slide.** If the content is still too tall or too wide after compression, divide one idea-heavy slide into two slides at a natural boundary. There is no slide budget — use as many slides as you need.
+3. **Move secondary detail to the per-slide note file** (see §"Companion note files" below). Useful but non-essential content lives there, not on the slide.
+4. **Reposition decorative elements** that anchor to `bottom-left` so they respect the footer's reserved space (anchor to `right` and/or `top` instead).
+
+**Banned shortcuts.**
+
+- **Don't shrink to fit.** Priority 0 forbids `.small` / `.tiny` / inline `font-size` on prose. Overflow is never a reason to override Priority 0.
+- **Don't compress vertical rhythm.** No squeezing `margin` / `padding` / `line-height` on prose to recover space — that's a layout hack that breaks the canonical look.
+- **Don't push content past the footer.** Footer collision is overflow even if the text is technically still inside the slide rectangle.
+
+**Interaction with Priorities 0 and 1.** Priority 0 forces body size; Priority 1 forbids using line-break tricks to wedge in extra content. Priority 2 closes the loop: if after honoring 0 and 1 the slide still doesn't fit, the answer is *less content* — split, or move detail to the note file. Never cram.
+
+## Companion note files
+
+**The slide is the visual anchor; the note file is the long form.** When you have detail worth recording but too long for a slide — full-sentence explanations, derivations, secondary examples, "FYI" context, extra citations — write it into a companion note file rather than the slide.
+
+- **Naming.** `<deck>/<deck>.html` is the slides; `<deck>/<deck>-note.html` is the notes. Example: `mia/mia1-foundations.html` ↔ `mia/mia1-foundations-note.html`. The note file lives next to its deck.
+- **Structure.** One section per slide, in slide order, each headed with the slide's `data-screen-label` or `<h2>` title. Plain prose is fine — full sentences, longer explanations, examples. HTML (not Markdown) so KaTeX math via `$…$` / `$$…$$` works the same as in the deck. The note file does not use the `.deck` / `.slide` engine; a simple `<article>` or `<section>` per slide is enough.
+- **When to use it.** When Priority 1 or Priority 2 says "move detail to narration / per-slide appendix", that detail goes in the note file. The note file is where rule #2 ("speaker narrates; the slide is a visual anchor") gets its safety net — nothing is lost when the slide stays minimal.
+- **What it isn't.** Not a paper draft, not a transcript, not a tutorial. It's the speaker's reading companion and the reader's after-the-fact reference. Keep it tight.
 
 ## Authoring gotchas (learned the hard way)
 

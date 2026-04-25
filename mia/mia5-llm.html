@@ -790,22 +790,29 @@
   <p>Not vice versa.</p>
 </div>
 
-<!-- SLIDE 180 — LLM MIA Pseudocode -->
+<!-- SLIDE 180 — LLM MIA Pseudocode: Perplexity + Neighbourhood -->
 <div class="slide bg-deep">
-  <h2>Practical LLM MIA: Pseudocode</h2>
+  <h2>Practical LLM MIA: Perplexity and Neighbourhood</h2>
   <div class="divider"></div>
   <div class="code-block"><span class="cm">// Perplexity Baseline</span>
 <span class="kw">def</span> <span class="fn">ppl_attack</span>(model, text, τ):
     ppl ← <span class="fn">exp</span>(-<span class="fn">mean</span>([<span class="fn">log_prob</span>(model, t, text[:i]) <span class="kw">for</span> i,t in text]))
     <span class="kw">return</span> ppl < τ
 
-<span class="cm">// Neighbourhood Attack</span>
+<span class="cm">// Neighbourhood Attack (no shadow models)</span>
 <span class="kw">def</span> <span class="fn">neighbourhood_attack</span>(model, ref_model, text, K):
     neighbours ← [<span class="fn">mask_and_fill</span>(ref_model, text) <span class="kw">for</span> _ in <span class="fn">range</span>(K)]
     score ← <span class="fn">log_prob</span>(model, text) - <span class="fn">mean</span>([<span class="fn">log_prob</span>(model, n) <span class="kw">for</span> n in neighbours])
-    <span class="kw">return</span> score
+    <span class="kw">return</span> score</div>
+  <div class="spacer-sm"></div>
+  <p>Baseline vs. shadow-free calibration: a single threshold, then a local neighbourhood.</p>
+</div>
 
-<span class="cm">// Token-Level InfoRMIA</span>
+<!-- SLIDE 180b — LLM MIA Pseudocode: Token-Level InfoRMIA -->
+<div class="slide bg-deep">
+  <h2>Practical LLM MIA: Token-Level InfoRMIA</h2>
+  <div class="divider"></div>
+  <div class="code-block"><span class="cm">// Token-Level InfoRMIA</span>
 <span class="kw">def</span> <span class="fn">infomia_attack</span>(target, ref, text):
     scores ← []
     <span class="kw">for</span> t, token in <span class="fn">enumerate</span>(text):
@@ -813,6 +820,11 @@
         w ← <span class="fn">informativeness</span>(ref, token, text[:t])
         scores.<span class="fn">append</span>(w * diff)
     <span class="kw">return</span> <span class="fn">sum</span>(scores)</div>
+  <div class="spacer-sm"></div>
+  <div class="highlight">
+    <p>Per-token <strong>weighted</strong> log-ratio: down-weight tokens the reference already explains.</p>
+  </div>
+  <div class="cite">Full side-by-side pseudocode in <code>mia5-llm-note.html</code>.</div>
 </div>
 
 

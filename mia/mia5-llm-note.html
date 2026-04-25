@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MIA 5 — LLM Membership Inference · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 24px 96px;
+    color: var(--charcoal);
+    background: var(--white);
+    font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  pre { background: var(--light); padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; line-height: 1.55; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>MIA 5 · LLM Membership Inference — Notes</h1>
+<p class="meta">Companion to <code>mia5-llm.html</code>. Detail that doesn't fit on the slides.</p>
+
+<section>
+  <h2>Slides 180 + 180b — Practical LLM MIA (full pseudocode)</h2>
+
+  <p>The deck splits these three attacks across two slides for readability. The full side-by-side pseudocode is reproduced here.</p>
+
+  <h3>Perplexity baseline</h3>
+  <pre>def ppl_attack(model, text, τ):
+    ppl = exp(-mean([log_prob(model, t, text[:i]) for i, t in text]))
+    return ppl &lt; τ</pre>
+  <p>One scalar threshold on average per-token log-likelihood. No reference model, no shadow models. Cheap and easy to ship; saturates fast — high false-positive rate at low confidence because perplexity reflects text difficulty as much as memorization.</p>
+
+  <h3>Neighbourhood attack</h3>
+  <pre>def neighbourhood_attack(model, ref_model, text, K):
+    neighbours = [mask_and_fill(ref_model, text) for _ in range(K)]
+    score = log_prob(model, text) - mean([log_prob(model, n) for n in neighbours])
+    return score</pre>
+  <p>Calibrate against locally-perturbed neighbours of the candidate text. Each neighbour is a small edit produced by a separate reference model (mask-and-fill). The attack score is the gap between target log-prob on the original text vs. on the neighbourhood — large positive gap implies memorization of the exact form. <strong>No shadow training required</strong>, which is what makes it usable on frozen pretrained LLMs.</p>
+
+  <h3>Token-level InfoRMIA</h3>
+  <pre>def infomia_attack(target, ref, text):
+    scores = []
+    for t, token in enumerate(text):
+        diff = log_prob(target, token, text[:t]) - log_prob(ref, token, text[:t])
+        w = informativeness(ref, token, text[:t])
+        scores.append(w * diff)
+    return sum(scores)</pre>
+  <p>Per-token weighted log-likelihood ratio between target and reference. The weight $w$ down-weights tokens the reference already explains (high reference probability, low informativeness) and up-weights tokens where the reference is uncertain — those are the tokens that carry the membership signal. Aggregating across the sequence with weights, rather than averaging perplexity, recovers most of the per-example calibration that LiRA achieves in the classification setting.</p>
+
+  <h3>Reading the comparison</h3>
+  <ul>
+    <li><strong>Perplexity</strong> conflates "memorized" with "easy to predict from the prefix" — it cannot distinguish memorization from intrinsic predictability.</li>
+    <li><strong>Neighbourhood</strong> isolates "memorization of <em>this exact wording</em>" by comparing to neighbours that share semantic content but differ in surface form.</li>
+    <li><strong>InfoRMIA</strong> reweights by token informativeness, surfacing memorization signal that perplexity averages away.</li>
+  </ul>
+</section>
+
+</body>
+</html>

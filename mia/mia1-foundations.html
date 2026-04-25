@@ -854,16 +854,25 @@
   </div>
 </div>
 
-<!-- SLIDE 34 — TPR at Low FPR -->
+<!-- SLIDE 34 — TPR at Low FPR (motivation) -->
 <div class="slide bg-deep">
   <h2>The Right Metric: TPR at Low FPR</h2>
   <div class="divider"></div>
   <div class="spacer-sm"></div>
   <div class="highlight" style="padding:20px 24px;">
-    <p><strong>Carlini et al. 2022:</strong> "An attack with 60% balanced accuracy but 0% TPR at 0.1% FPR is useless in practice."</p>
+    <p><strong>Carlini et al. 2022:</strong> "60% balanced accuracy with 0% TPR at 0.1% FPR is useless in practice."</p>
   </div>
   <div class="spacer"></div>
-  <p>Practical evaluation standard:</p>
+  <p>Average accuracy hides the <strong>vulnerable tail</strong>.</p>
+  <p>Privacy threats live at <strong>low FPR</strong>: high-confidence positives.</p>
+  <div class="spacer"></div>
+  <p>Always plot ROC on a <strong>log-log scale</strong>: reveals the practical regime.</p>
+</div>
+
+<!-- SLIDE 34b — TPR at Low FPR (metrics comparison) -->
+<div class="slide bg-deep">
+  <h2>Evaluation Metrics for MIA</h2>
+  <div class="divider"></div>
   <div class="spacer-sm"></div>
   <table>
     <tr><th>Metric</th><th>What It Measures</th><th>When to Use</th></tr>
@@ -873,8 +882,7 @@
     <tr><td>TPR @ FPR=0.01%</td><td>Power at very high confidence</td><td>Strongest privacy claims</td></tr>
     <tr><td>Log-scale ROC</td><td>Low-FPR regime behavior</td><td>Visualization standard</td></tr>
   </table>
-  <div class="spacer-sm"></div>
-  <p>Always plot ROC on <strong>log-log scale</strong>: reveals the practical regime.</p>
+  <div class="cite">See <code>mia1-foundations-note.html</code> for log-log ROC examples and metric pitfalls.</div>
 </div>
 
 <!-- SLIDE 35 — Notation -->

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MIA 4 — Modern Likelihood-Ratio Attacks · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 24px 96px;
+    color: var(--charcoal);
+    background: var(--white);
+    font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  pre { background: var(--light); padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; line-height: 1.55; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>MIA 4 · Modern Likelihood-Ratio Attacks — Notes</h1>
+<p class="meta">Companion to <code>mia4-modern.html</code>. Detail that doesn't fit on the slides.</p>
+
+<section>
+  <h2>Slides 147 + 147b — MIA Pipeline Comparison (full pseudocode)</h2>
+
+  <p>The slide deck splits this comparison across two slides for readability. The full side-by-side pseudocode is reproduced here for after-talk reference.</p>
+
+  <h3>Threshold attack — simplest baseline</h3>
+  <pre>def threshold_attack(model, z, τ):
+    return loss(model, z) &lt; τ</pre>
+  <p>One scalar threshold, no shadow models, no calibration. A point with low loss is declared a member. Strong on average accuracy; very weak at low FPR because it cannot account for per-example difficulty.</p>
+
+  <h3>LiRA — most powerful (Carlini et al. 2022)</h3>
+  <pre>def lira_attack(target, z, shadows):
+    ℓ_in  = [loss(s, z) for s in shadows if z ∈ s.train]
+    ℓ_out = [loss(s, z) for s in shadows if z ∉ s.train]
+    μ_in,  σ_in  = gaussian_fit(ℓ_in)
+    μ_out, σ_out = gaussian_fit(ℓ_out)
+    return log_likelihood_ratio(loss(target, z), μ_in, σ_in, μ_out, σ_out)</pre>
+  <p>For each target point $z$, fit a Gaussian over <em>"if-in"</em> shadow losses and another over <em>"if-out"</em> shadow losses, then compute the per-example log-likelihood ratio. Implements the Neyman–Pearson optimal test approximately (under Gaussian loss). Cost: $\mathcal{O}(N)$ shadow models per attack budget; typical $N \approx 256$.</p>
+
+  <h3>RMIA — best cost/accuracy tradeoff (Zarifzadeh et al. 2024)</h3>
+  <pre>def rmia_attack(target, z, ref_models, ref_data):
+    ratio_z  = mean([loss(target, z) / loss(r, z) for r in ref_models])
+    ratio_zp = [mean([loss(target, z') / loss(r, z') ...]) for z' in ref_data]
+    return percentile_rank(ratio_z, ratio_zp)</pre>
+  <p>Replace the per-example "in vs. out" Gaussian fit with a population-relative ratio. For each candidate $z$, compare the target/reference loss ratio at $z$ to the same ratio at a population sample. The percentile rank is the score. Achieves near-LiRA TPR@low-FPR with only $2$–$8$ reference models — a $30$–$100\times$ cost reduction.</p>
+
+  <h3>Reading the comparison</h3>
+  <ul>
+    <li><strong>Threshold</strong> answers: "is the loss small in absolute terms?" — ignores point difficulty.</li>
+    <li><strong>LiRA</strong> answers: "is the loss small <em>relative to what we'd expect</em> if $z$ were not in the training set?" — calibrates per-example, expensive.</li>
+    <li><strong>RMIA</strong> answers: "is the target/reference loss ratio at $z$ unusually large compared to the rest of the population?" — calibrates against the population instead of the per-example shadow distribution, cheap.</li>
+  </ul>
+</section>
+
+</body>
+</html>

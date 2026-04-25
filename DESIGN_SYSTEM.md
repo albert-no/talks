@@ -14,6 +14,8 @@ Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and 
 
 **Priority 1 — after Priority 0: line breaks and content length.** Minimal slides. Leave content alone if it already fits on one line; two short sentences on one line are fine. Act only when prose visibly wraps: compress first (§7.12); if still multi-line, split at a natural boundary into two adjacent `<p>` tags; glue inseparable phrases with `&nbsp;` reactively. `<br>` is allowed at a deliberate internal clause break, banned as an orphan-shim (§7.10). Full rule in §7.16.
 
+**Priority 2 — after Priorities 0 and 1, which always come first: overflow.** Content must stay inside the 1280×720 slide bounds and clear of the auto-injected `.brand-footer` ("YONSEI UNIVERSITY") at bottom-left. When content overflows: compress to noun phrases (§7.12), then split into a new slide, then move secondary detail to a companion `<deck>-note.html` file (§7.18). Never shrink type to fit (Priority 0). Never wedge content with line-break tricks (Priority 1). Discipline is upstream — write short, abstract slides from the first draft so overflow doesn't happen. Full rule in §7.17.
+
 A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.subtitle`, `.cite`, `.small`, `.tiny`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Inline `style="font-size:…"` on prose is equally forbidden — the browser treats it the same. If you find such overrides, or `class="small"` / `class="tiny"` on prose, in an existing deck, remove them, then fix the content they were trying to mask: shorten the prose or split the slide.
 
 Component-internal text at a component's native font-size (pill labels, token chips, code blocks, the `.diagram-box` native 1.15rem) is not an authoring override — these are design tokens. The rule above targets author-applied `.small` / `.tiny` classes and inline `font-size` on prose, and author-added `<span class="small">` / `<span class="tiny">` sub-labels inside components. When in doubt: if a human typed `class="small"` or `class="tiny"` in the deck source, the rule applies.
@@ -729,6 +731,41 @@ When prose visibly wraps in preview, act in this order:
 **`<br>` policy.** Allowed at a deliberate internal clause boundary (step 2b). Banned as an orphan-shim — for that, see §7.10 (use `&nbsp;` or compression instead).
 
 **Interaction with Priority 0.** Priority 0 forces body size (1.55rem). Some content that fit on one line at `.small` will now wrap. Don't shrink to avoid the wrap — compress, or accept a clean split per step 2.
+
+### 7.17 Overflow — Priority 2
+
+**Symptom.** Text or elements escape the slide's intended drawing area: positioned past the 1280×720 slide bounds (partially or fully invisible at presentation scale), or overlapping the auto-injected `.brand-footer` ("YONSEI UNIVERSITY") at bottom-left.
+
+**Cause.** Almost always wordiness — content drafted as full sentences instead of telegraphic noun phrases (§7.12). Less often, decorative elements anchored to `bottom-left` collide with the footer's reserved space (§7.2).
+
+**Fix, in order:**
+
+1. **Compress** (per §7.12 / Priority 1 step 1). Drop narrative connectors and soft qualifiers; collapse to noun phrases. Most overflow disappears at this step.
+2. **Split the slide.** One idea-heavy slide becomes two. There is no slide budget.
+3. **Move secondary detail to the companion note file** (§7.18). Useful but non-essential content lives there, not on the slide.
+4. **Reposition decorative elements** away from `bottom-left` (anchor to `right` / `top`); leave ~40 px clear in the bottom-left for the brand footer.
+
+**Banned shortcuts.**
+
+- **Don't shrink to fit.** Priority 0 forbids `.small` / `.tiny` / inline `font-size` on prose. Overflow is never a reason to override Priority 0.
+- **Don't compress vertical rhythm** (`margin`, `padding`, `line-height`) on prose to recover space — that's a layout hack that breaks the canonical look.
+- **Don't push content past the footer.** Footer collision is overflow even if the text is technically still inside the slide rectangle.
+
+**Discipline is upstream.** Visually auditing every slide in a browser at presentation scale is impractical, so the only reliable defense is writing short, abstract slides from the first draft. If you're reaching for layout tricks to make text fit, you've drifted from §5.1 rule #2 (speaker narrates; slide is a visual anchor) and §7.12 (compress to noun phrases). Cut content; don't compress design.
+
+**Interaction with Priorities 0 and 1.** Priority 0 forces body size; Priority 1 forbids using line-break tricks to wedge in extra content. Priority 2 closes the loop: if after honoring 0 and 1 the slide still doesn't fit, the answer is *less content* — split, or move detail to the note file. Never cram.
+
+### 7.18 Companion note files for slide-adjacent detail
+
+**The slide is the visual anchor; the note file is the long form.** When you have detail worth recording but too long for a slide — full-sentence explanations, derivations, secondary examples, "FYI" context, extra citations — write it into a sibling note file rather than the slide. Priority 1 (§7.16) and Priority 2 (§7.17) both lean on this file as the home for "move detail to narration / per-slide appendix".
+
+**Naming.** `<deck>/<deck>.html` is the slides; `<deck>/<deck>-note.html` is the notes. Example: `mia/mia1-foundations.html` ↔ `mia/mia1-foundations-note.html`. The note file lives next to its deck.
+
+**Structure.** One section per slide, in slide order, each headed with the slide's `data-screen-label` or `<h2>` title. Plain prose is fine — full sentences, longer explanations, examples. HTML (not Markdown) so KaTeX math via `$…$` / `$$…$$` works the same as in the deck. The note file does not use `.deck` / `.slide`; a simple `<article>` or `<section>` per slide is enough — the engine, scaling, and brand footer don't apply.
+
+**When to write to the note file vs. the slide.** If the audience needs to read it during the talk, it goes on the slide (Priority 0: at body size). If the audience can follow without reading it but it's still useful to record, it goes in the note file. Borderline content should default to the note file — a minimal slide always reads better than a cramped one.
+
+**What it isn't.** Not a paper draft, not a talk transcript, not a tutorial. It's the speaker's reading companion and the reader's after-the-fact reference. Keep it tight.
 
 ---
 
