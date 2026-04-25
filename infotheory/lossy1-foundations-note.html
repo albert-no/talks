@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossy 1 — Foundations · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 24px 96px;
+    color: var(--charcoal);
+    background: var(--white);
+    font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.65;
+  }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  table { border-collapse: collapse; margin: 12px 0; width: 100%; }
+  th, td { border: 1px solid var(--slate); padding: 6px 10px; text-align: left; font-size: 0.95rem; }
+  th { background: var(--light); }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossy Compression 1 · Foundations &mdash; Notes</h1>
+<p class="meta">Companion to <code>lossy1-foundations.html</code>. The slides carry only the visual anchors; the long-form derivations and worked numerics live here.</p>
+
+<section>
+  <h2>Slide &mdash; Lossless is not enough</h2>
+  <p>For a discrete random variable on a finite alphabet, Shannon's source coding theorem says we can encode i.i.d. samples at rate arbitrarily close to $H(X)$ bits per symbol. For continuous random variables, the analogous quantity is the <em>differential entropy</em> $h(X)$, but $h$ is not the number of bits we need to store $X$ &mdash; in fact $H(X)=\infty$ for any continuous $X$, because describing a real number to infinite precision takes infinitely many bits.</p>
+  <p>This is not a defect of the source &mdash; it is the price of asking for perfect reconstruction of a real-valued object. The lossy formulation accepts a controlled error in exchange for a finite rate, and the question becomes: how small must this error be for a given rate, in the asymptotic regime of long blocks?</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Distortion functions</h2>
+  <p>The squared error and Hamming distortions are by far the most common, but the choice of distortion function is itself a modeling choice. For example, in image compression a perceptual metric (e.g. SSIM) gives wildly different optimal codes than MSE, because the human visual system is more sensitive to certain spatial frequencies than others.</p>
+  <p>For this lecture we mostly work with the three single-letter distortions on the slide. <em>Single-letter</em> means $d^{(n)}(x^n,\hat x^n)=\frac{1}{n}\sum_{i=1}^n d(x_i,\hat x_i)$ &mdash; the per-block distortion is the average of per-coordinate distortions. Most theorems below assume this structure.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Block code</h2>
+  <p>Note that $R$ is measured in bits per source symbol, not bits per block. A block code of size $2^{nR}$ stores an index using $nR$ bits to describe a block of $n$ source samples. If $R$ is in nats instead, the message set has size $e^{nR}$.</p>
+  <p>The encoder $f$ and decoder $g$ are arbitrary deterministic maps. They may be jointly designed; the only thing fixed is the rate $R$ and the requirement that the index alphabet has size at most $2^{nR}$. We will see later that randomness in the codebook design (random coding) is a powerful proof technique even when the final code is deterministic.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Achievable region</h2>
+  <p>The $\varepsilon$ in the definition matters. We allow the actual rate to exceed $R$ by any positive $\varepsilon$ and the actual distortion to exceed $D$ by any positive $\varepsilon$, provided $n$ can be chosen large enough. In the limit $\varepsilon\downarrow 0$, $n\to\infty$, this becomes "the" rate&ndash;distortion function. Without these slack parameters, the operational $R(D)$ would not be a clean function of $D$.</p>
+  <p>The achievable region is closed and "upper-monotone": if $(R,D)$ is achievable, so is $(R',D')$ for any $R'\ge R$ and $D'\ge D$. The function $R(D)$ is non-increasing, convex, and continuous on $D\in (D_{\min}, D_{\max})$. The convexity comes from a time-sharing argument: a code that mixes a $(R_1,D_1)$ code with a $(R_2,D_2)$ code achieves $(\lambda R_1+(1-\lambda)R_2, \lambda D_1+(1-\lambda)D_2)$ for any $\lambda\in[0,1]$.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Distortion balls cover the typical set</h2>
+  <p>Lossless coding asks: how many distinct strings carry typical-set probability mass? The answer is roughly $2^{nH(X)}$, leading to rate $H(X)$.</p>
+  <p>Lossy coding asks instead: how many distortion-$D$ balls cover the typical set? Each ball "absorbs" all typical strings within distortion $D$ of its center, and a single index is enough to point to the ball. The smallest log-count of such balls is exactly $R(D)$. This is more than an analogy &mdash; the achievability proof literally counts random codewords against typical-set volumes.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Heights toy and $R=0$</h2>
+  <p>If we send no bits, the decoder must output a fixed deterministic value $c$. Under squared error, $\mathbb{E}[(X-c)^2]$ is minimized over $c$ by the mean (this is one of the few useful facts in statistics that survives all generalizations). The minimum value is the variance.</p>
+  <p>So already at $R=0$ we have a non-trivial code: output $c=\mu$. Any source with finite variance has $R(\sigma^2)=0$ &mdash; we don't need to send anything if we are allowed distortion at least the variance.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; $R=1$ Gaussian computation</h2>
+  <p>For a Gaussian, the optimal 1-bit threshold is at the median, which is $\mu$. Conditional on $X&gt;\mu$, $X$ has a half-Gaussian distribution. Its mean is</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}[X\mid X&gt;\mu]=\mu + \sigma\sqrt{\frac{2}{\pi}}.
+    \]
+  </div>
+  <p>By symmetry, the lower-cell mean is $\mu-\sigma\sqrt{2/\pi}$. The remaining variance within each cell is $\sigma^2(1-2/\pi)$, and by symmetry the total expected squared error is the same:</p>
+  <div class="deriv">
+    \[
+    D(1)=\sigma^2\!\left(1-\frac{2}{\pi}\right)\approx 0.363\sigma^2.
+    \]
+  </div>
+  <p>Compare to $D(0)=\sigma^2$. One bit cuts distortion by a factor of $\approx 2.75$. This is far from the rate&ndash;distortion limit $D(1)=\sigma^2 \cdot 4^{-1}=0.25\sigma^2$ achievable in the limit of long blocks &mdash; scalar quantization leaves a lot on the table.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Lloyd&ndash;Max</h2>
+  <p>The Lloyd&ndash;Max algorithm is the special case of $k$-means in 1D, applied to the source distribution rather than to a sample. The two updates are necessary conditions for local optimality; they are not jointly sufficient for global optimality, and Lloyd&ndash;Max can converge to local optima that depend on the initial thresholds. In practice this matters less for unimodal sources (Gaussian, Laplace) than for multimodal ones.</p>
+  <p>Each step monotonically decreases the squared-error objective:</p>
+  <ol>
+    <li>Centroid update is the global minimizer of $\sum_i \int_{C_i}(x-c_i)^2 p(x)\,dx$ over $\{c_i\}$ at fixed cells.</li>
+    <li>Boundary update is the global minimizer of the same objective over $\{\tau_i\}$ at fixed reps, because the optimal Voronoi tessellation under squared error places thresholds at midpoints of adjacent representatives.</li>
+  </ol>
+  <p>So the algorithm is a coordinate descent on a non-negative bounded objective, hence convergent.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Vector vs. scalar quantization</h2>
+  <p>The slide claim that VQ beats scalar quantization even for i.i.d. components has two distinct sources:</p>
+  <ol>
+    <li><strong>Cell shape gain</strong> ("space-filling gain"): the disk minimizes second moment among all 2D shapes of fixed area; scalar quantizers force rectangular cells. This effect is small in 2D (about 8%) but grows with dimension.</li>
+    <li><strong>Shape gain from non-uniform sources</strong>: a vector quantizer can put more codepoints where the source is denser. Scalar quantizers do this too, per coordinate, but they cannot adapt to <em>joint</em> structure (e.g. the typical shell of a high-dim Gaussian).</li>
+  </ol>
+  <p>In high dimension, both effects together let VQ approach the rate&ndash;distortion bound; scalar quantization is bounded away.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; The mutual information formula</h2>
+  <p>Shannon's theorem is in two parts:</p>
+  <ul>
+    <li><strong>Achievability:</strong> for any test channel $P_{\widehat X\mid X}$ achieving distortion $\le D$ and information $I$, every rate $R&gt;I$ is achievable. We sketch this via random coding on the next slides.</li>
+    <li><strong>Converse:</strong> no code achieves rate below $R^{(I)}(D)$. This is the inequality $nR\ge I(X^n;\widehat X^n)\ge n\inf I(X;\widehat X)$, where the last step is by the i.i.d. structure and a single-letterization step that needs the convexity of mutual information in the conditional.</li>
+  </ul>
+  <p>For continuous sources we replace $H$ with $h$ (differential entropy) and the formulas continue to hold.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Random coding rare-event bound</h2>
+  <p>Joint typicality with respect to $P_{X,\widehat X}$ asks for the empirical joint distribution to be close (in some norm) to the target joint distribution. By the asymptotic equipartition property,</p>
+  <div class="deriv">
+    \[
+    \Pr_{P_X^{\otimes n}\,\otimes\, P_{\widehat X}^{\otimes n}}\bigl[(X^n,\widehat X^n)\in T_\varepsilon^{(n)}\bigr]\;\approx\;2^{-nI(X;\widehat X)}.
+    \]
+  </div>
+  <p>The "approx" hides $\varepsilon$ slack and lower-order terms. The bound is exponentially tight for large $n$.</p>
+  <p>The reason is geometric: the joint typical set has volume $\approx 2^{n H(X,\widehat X)}$, while the product of the marginals has volume $\approx 2^{n H(X)}\cdot 2^{n H(\widehat X)}=2^{n(H(X)+H(\widehat X))}$. Their ratio is $2^{-nI(X;\widehat X)}$.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Search creates dependence</h2>
+  <p>The key conceptual point: the encoder is allowed to <em>look at $X^n$</em> when picking $m$. If we had to commit to an index without seeing the source, we could not do better than chance, and the average distortion would be $\mathbb{E}[d(X,\widehat X)]$ where $X$ and $\widehat X$ are independent &mdash; usually no better than the $R=0$ bound.</p>
+  <p>By searching, we condition on the rare event that some particular codeword is jointly typical with $X^n$. Conditioning on a rare event with the right structure pushes the conditional joint towards the desired $P_{X,\widehat X}$. This is the same phenomenon as posterior concentration in Bayesian statistics: a rare event with the right shape effectively reweights the prior into the posterior.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Binary toy details</h2>
+  <p>The bit strings on the slide are illustrative and were chosen so that one of the four "quick draws" lies relatively far from $X^n$ (Hamming distance 14) and the eventual successful candidate (#14 of 64) lies exactly on the radius-6 ball. In a real run with a fresh random seed the exact distances will differ, but the qualitative behavior is robust:</p>
+  <ul>
+    <li>Most random Bernoulli$(1/2)$ codewords lie at Hamming distance close to $n/2$ from any fixed source $X^n$.</li>
+    <li>The fraction within distance $nD$ of $X^n$ is $|B(X^n,nD)|/2^n\approx 2^{-n(1-H_b(D))}$, which is the inverse of $2^{nR(D)}$.</li>
+    <li>So a codebook of size $2^{nR}$ contains a successful match with probability $1-(1-2^{-nR(D)})^{2^{nR}}\approx 1-\exp(-2^{n(R-R(D))})$, which is small if $R&lt;R(D)$ and close to 1 if $R&gt;R(D)$.</li>
+  </ul>
+  <p>For $n=24, D=1/4$: the threshold rate is $R(D)\approx 0.189$ bits/symbol, so we need $2^{0.189\cdot 24}\approx 23$ codewords to have a $\sim 63\%$ chance of finding a match (at the threshold), and $\sim 64$ codewords to be almost sure. The slide's table at 64 codewords is the "almost sure" regime.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Volume counting threshold</h2>
+  <p>The Hamming-ball volume formula is asymptotic:</p>
+  <div class="deriv">
+    \[
+    |B(0,nD)|=\sum_{k=0}^{nD}\binom{n}{k}\;\le\;2^{nH_b(D)},\qquad D\le 1/2,
+    \]
+  </div>
+  <p>and the bound is exponentially tight: $|B(0,nD)|\sim 2^{nH_b(D)}/\sqrt{n}$ up to polynomial factors. Plugging into the cover bound gives the threshold rate $R(D)=1-H_b(D)$.</p>
+  <p>For non-uniform Bernoulli sources (Bernoulli$(p)$ with $p\ne 1/2$), the analogous threshold is $R(D)=H_b(p)-H_b(D)$ for $D\le p$, which reflects the smaller entropy of a biased source.</p>
+</section>
+
+<section>
+  <h2>Looking ahead</h2>
+  <p>Lecture 2 makes the rate&ndash;distortion function explicit for two important continuous sources:</p>
+  <ul>
+    <li>Gaussian under squared error: $R(D)=\frac{1}{2}\log(\sigma^2/D)$, with the backward Gaussian test channel and the Shannon lower bound (Gaussian is the worst case at fixed variance).</li>
+    <li>Laplacian under absolute error: $R(D)=-\log(\lambda D)$, with the surprising consequence that the optimal reproduction has a Dirac atom at zero &mdash; pruning falls out of the rate&ndash;distortion theorem.</li>
+  </ul>
+  <p>Both will be derived from the mutual-information formula, using the maximum-entropy property of Gaussians and a clever auxiliary-density trick for Laplace.</p>
+</section>
+
+</body>
+</html>

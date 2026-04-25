@@ -1,0 +1,164 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mutual information estimation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Motivation and Problem Setting}
+\label{sec:mi-est-motivation}
+
+Mutual information (MI) is a fundamental measure of statistical dependence.
+In representation learning it is often used as an objective:
+maximizing $I(T;Y)$ encourages a representation $T$ to preserve information useful for predicting $Y$;
+maximizing $I(T_1;T_2)$ under different ``views'' $T_1,T_2$ underlies contrastive learning;
+and minimizing certain MI terms appears in the information bottleneck.
+
+From Section~\ref{sec:entropy-mi},
+\begin{equation}
+    I(X;Y) = \KL{p_{X,Y}}{p_X p_Y} = \E{\log\frac{p(X,Y)}{p(X)p(Y)}}.
+\end{equation}
+The challenge is that $p(x,y)$ and the marginals are typically unknown.
+Instead, we usually have only i.i.d. samples
+\((x_i,y_i)\sim p_{X,Y}\).
+Sampling from the product of marginals $p_Xp_Y$ is also easy: one can shuffle pairs (take $x_i$ with $y_j$ for $j\neq i$).
+
+\paragraph{Density-ratio viewpoint.}
+Define the density ratio
+\begin{equation}
+    r(x,y)\coloneqq \frac{p(x,y)}{p(x)p(y)}.
+\end{equation}
+Then $I(X;Y)=\Esub{p(x,y)}{\log r(X,Y)}$.
+Most neural MI estimators learn either $\log r$ directly (a \emph{critic} function), or a classifier whose logit is related to $\log r$.
+
+\subsection{Variational Lower Bounds on Mutual Information}
+\label{sec:mi-est-bounds}
+
+All bounds below are derived from variational characterizations of KL divergence.
+We write expectations explicitly with respect to the joint $p_{X,Y}$ and the product of marginals $p_Xp_Y$.
+
+\subsubsection*{1) Barber--Agakov (BA) bound}
+
+Start from
+\(I(X;Y)=H(X)-H(X\mid Y)\).
+For any conditional distribution $q(x\mid y)$,
+\begin{equation}
+\label{eq:ba-bound}
+\begin{aligned}
+I(X;Y)
+&= H(X) + \Esub{p(x,y)}{\log p(x\mid y)}\\
+&= H(X) + \Esub{p(x,y)}{\log q(x\mid y)} + \Esub{p(y)}{\KL{p(x\mid y)}{q(x\mid y)}}\\
+&\ge H(X) + \Esub{p(x,y)}{\log q(x\mid y)}.
+\end{aligned}
+\end{equation}
+Thus
+\begin{equation}
+    I(X;Y) \ge I_{\mathrm{BA}}(q) \coloneqq H(X) + \Esub{p(x,y)}{\log q(x\mid y)}.
+\end{equation}
+
+\paragraph{Practical use.}
+$H(X)$ is independent of $q$ and is usually unknown, so BA is most commonly used to \emph{optimize} representations (maximize the bound) rather than to obtain a calibrated numerical estimate of MI.
+Maximizing $\E{\log q(x\mid y)}$ corresponds to training a conditional model $q_\theta(x\mid y)$ by maximum likelihood.
+
+\subsubsection*{2) Donsker--Varadhan (DV) bound (MINE)}
+
+The Donsker--Varadhan representation of KL divergence states that for distributions $P,Q$,
+\begin{equation}
+    \KL{P}{Q} = \sup_{T}\; \Esub{P}{T} - \log \Esub{Q}{e^{T}},
+\end{equation}
+where the supremum is over measurable functions $T$ for which the expectations exist.
+Applying it with $P=p_{X,Y}$ and $Q=p_Xp_Y$ gives
+\begin{equation}
+\label{eq:dv-bound}
+    I(X;Y) \ge I_{\mathrm{DV}}(T)
+    \coloneqq \Esub{p(x,y)}{T(x,y)} - \log \Esub{p(x)p(y)}{e^{T(x,y)}}.
+\end{equation}
+The optimal $T^*$ is $T^*(x,y)=\log r(x,y)+c$ (any constant $c$).
+
+\paragraph{Remarks.}
+The DV bound is tight in principle, but in practice it can suffer from high variance because of the $\log\E{e^{T}}$ term.
+The estimator known as \emph{MINE} (Mutual Information Neural Estimation) is based on optimizing \eqref{eq:dv-bound} with a neural critic $T_\theta$.
+
+\subsubsection*{3) Nguyen--Wainwright--Jordan (NWJ) bound}
+
+A more numerically stable alternative replaces the log-partition term using the inequality
+\(\log u \le u-1\) for $u>0$.
+Applying this to \eqref{eq:dv-bound} yields
+\begin{equation}
+\label{eq:nwj-bound}
+    I(X;Y)
+    \ge I_{\mathrm{NWJ}}(T)
+    \coloneqq \Esub{p(x,y)}{T(x,y)} - \Esub{p(x)p(y)}{e^{T(x,y)-1}}.
+\end{equation}
+This bound is also tight for the same optimal critic $T^*(x,y)=\log r(x,y)+1$.
+
+\paragraph{Implementation note.}
+Both DV and NWJ require estimating expectations under $p_{X,Y}$ and $p_Xp_Y$.
+Given a minibatch $\{(x_i,y_i)\}_{i=1}^N$ from the joint, one typically approximates the product-of-marginals expectation by pairing $x_i$ with $y_j$ for $j\neq i$.
+
+\subsection{InfoNCE and Contrastive Learning}
+\label{sec:infonce}
+
+InfoNCE is a popular MI lower bound that looks like a multi-class classification objective.
+It is the basis of many contrastive methods (SimCLR, MoCo, CLIP, \dots).
+
+\subsubsection*{InfoNCE bound}
+
+Let $f(x,y)$ be a critic score.
+Given one positive pair $(x,y)\sim p_{X,Y}$ and $K-1$ negatives $\{y^-_k\}_{k=1}^{K-1}\sim p_Y$ i.i.d., define
+\begin{equation}
+\label{eq:infonce-loss}
+    \mathcal{L}_{\mathrm{InfoNCE}}(f)
+    \coloneqq -\E{\log \frac{e^{f(x,y)}}{e^{f(x,y)}+\sum_{k=1}^{K-1} e^{f(x,y^-_k)}}}.
+\end{equation}
+Then
+\begin{equation}
+\label{eq:infonce-bound}
+    I(X;Y) \ge \log K - \mathcal{L}_{\mathrm{InfoNCE}}(f).
+\end{equation}
+
+\paragraph{Two key consequences.}
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{Upper limit:} the bound cannot exceed $\log K$.
+    Therefore, estimating large MI requires many negatives.
+
+    \item \textbf{Classification viewpoint:}
+    InfoNCE trains a classifier to identify the matching $y$ among $K$ candidates.
+    The optimal critic is (up to an additive $y$-dependent constant) the log conditional density:
+    \(f^*(x,y)=\log p(y\mid x)+c(x)\), or equivalently the log density ratio $\log r(x,y)$.
+\end{itemize}
+
+\subsubsection*{CLIP-style symmetric InfoNCE}
+
+CLIP learns two encoders $g_\mu(x)\in\fR^d$ and $h_\phi(y)\in\fR^d$ and uses a separable critic
+\begin{equation}
+    f_{\mu,\phi}(x,y)=\frac{1}{\tau}\, g_\mu(x)^\top h_\phi(y),
+\end{equation}
+typically with normalized embeddings and a temperature $\tau>0$.
+With a minibatch $\{(x_i,y_i)\}_{i=1}^N$, the (one-direction) InfoNCE objective is
+\begin{equation}
+\label{eq:clip-loss}
+    \mathcal{L}_{x\to y}
+    = -\frac{1}{N}\sum_{i=1}^N \log \frac{\exp(f(x_i,y_i))}{\sum_{j=1}^N \exp(f(x_i,y_j))}.
+\end{equation}
+A symmetric loss averages $\mathcal{L}_{x\to y}$ and $\mathcal{L}_{y\to x}$ (swap roles of $x$ and $y$).
+This is exactly a pair of cross-entropy losses over the $N\times N$ similarity matrix.
+
+\subsection{What These Bounds Do and Do Not Give You}
+\label{sec:mi-est-practice}
+
+\paragraph{Optimization vs. estimation.}
+Many ``MI estimators'' are primarily useful as \emph{training objectives}:
+maximizing a lower bound encourages dependence.
+However, the numerical value of the bound can be a poor approximation of the true MI in high dimensions.
+InfoNCE in particular saturates at $\log K$.
+
+\paragraph{Bias/variance tradeoff.}
+DV is tight but can be unstable (variance from $\exp(T)$).
+NWJ is more stable but can be looser for a fixed critic class.
+InfoNCE is very stable and scalable, but biased downward due to the finite number of negatives.
+
+\paragraph{Takeaway.}
+Choose the bound based on the goal:
+\begin{itemize}[leftmargin=2em]
+    \item If you want a \emph{scalable contrastive objective}, use InfoNCE.
+    \item If you want a \emph{tighter variational MI lower bound} and can afford careful optimization, consider DV/NWJ-style objectives.
+    \item If you already have a good conditional model $q(x\mid y)$, BA can be convenient.
+\end{itemize}

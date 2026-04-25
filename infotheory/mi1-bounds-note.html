@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MI Estimation 1 — Variational Bounds · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  p, li { font-size: 1rem; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+<h1>MI Estimation 1 · Variational Bounds &mdash; Notes</h1>
+
+<section>
+  <h2>Why density-ratio estimation is the unifying view</h2>
+  <p>Each variational MI bound boils down to learning the log-density ratio $\log r(x,y)=\log\frac{p(x,y)}{p(x)p(y)}$ via a different surrogate loss. The density ratio is also the optimal classifier between samples from $P=p_{X,Y}$ (positives) and $Q=p_X p_Y$ (negatives) up to a logit scale. So MI estimation, classification, and contrastive learning are formally equivalent up to choice of variational objective.</p>
+  <p>This is also the reason CLIP "works" as an MI maximizer: the contrastive logit between an image and its caption is exactly a learned $\log r$.</p>
+</section>
+
+<section>
+  <h2>The MINE estimator's bias</h2>
+  <p>Naive empirical estimate of DV uses the same minibatch for both expectations. The empirical $\widehat{\log\mathbb{E}_Q[e^T]}=\log\frac{1}{N}\sum e^{T(x_i,y_j)}$ is biased downward (Jensen on the empirical mean), giving an upward bias on the MI estimate. Belghazi et&nbsp;al. introduce a moving-average correction in the denominator to reduce this bias.</p>
+  <p>For learning representations (gradient-based optimization of $T_\theta$), the bias matters less than the gradient direction. For reporting MI numbers, it matters a lot.</p>
+</section>
+
+<section>
+  <h2>The McAllester&ndash;Stratos lower bound on MI estimator variance</h2>
+  <p>McAllester &amp; Stratos (2020) showed that any sample-efficient MI estimator with $N$ samples has variance at least $\Omega(e^I/N)$. The argument is by reduction to two-sample testing: distinguishing $P$ from $Q$ when $D_{\mathrm{KL}}(P\Vert Q)=I$ requires a test whose variance scales with $e^I$ (Le Cam-style lower bound).</p>
+  <p>This is unconditional &mdash; it doesn't depend on the estimator class. Nothing in the variational-bounds literature beats this bound for high-MI estimation.</p>
+</section>
+
+<section>
+  <h2>Toy bivariate Gaussian, in detail</h2>
+  <p>For $\binom{X}{Y}\sim\mathcal{N}(0,\Sigma)$ with $\Sigma=\begin{pmatrix}1&\rho\\\rho&1\end{pmatrix}$, the joint density is $\propto \exp\bigl(-\frac{1}{2(1-\rho^2)}(x^2-2\rho xy+y^2)\bigr)$. Marginals are $\mathcal{N}(0,1)$ each. The log-density ratio is</p>
+  <div class="deriv">
+    \[
+    \log r(x,y)=-\tfrac12\log(1-\rho^2)+\tfrac{\rho}{1-\rho^2}xy-\tfrac{\rho^2}{2(1-\rho^2)}(x^2+y^2).
+    \]
+  </div>
+  <p>The first term is the constant offset; the rest depend on $(x,y)$. Plug into $I(X;Y)=\mathbb{E}_{p(x,y)}[\log r]$, evaluate the Gaussian moments: $\mathbb{E}[XY]=\rho$, $\mathbb{E}[X^2]=\mathbb{E}[Y^2]=1$. Combine to get $I=-\tfrac12\log(1-\rho^2)$.</p>
+  <p>For $\rho=0.5$: $I\approx 0.144$ nats. For $\rho=0.9$: $I\approx 0.83$ nats. For $\rho=0.99$: $I\approx 1.96$ nats. The variance penalty $e^I$ goes from $1.15$ to $2.3$ to $7.1$ &mdash; manageable. At $\rho=0.999$, $I\approx 3.1$ nats and $e^I\approx 22$, getting into hard territory.</p>
+</section>
+
+<section>
+  <h2>Connection to $f$-divergences and the $f$-GAN family</h2>
+  <p>Both DV and NWJ are special cases of $f$-divergence variational bounds. Nguyen, Wainwright &amp; Jordan (2010) gave a general dual representation:</p>
+  <div class="deriv">
+    \[
+    D_f(P\Vert Q)=\sup_T\bigl\{\mathbb{E}_P[T]-\mathbb{E}_Q[f^*(T)]\bigr\},
+    \]
+  </div>
+  <p>where $f^*$ is the convex conjugate of $f$. For $f(u)=u\log u$ (KL), $f^*(t)=e^{t-1}$, recovering NWJ. The DV form is actually a tightening: subtract $1$ and apply the inequality $f^*(t)\le f^*(\sup t)+\ldots$ to get the $\log\mathbb{E}_Q[e^T]$ form. Both bounds are valid; DV is tighter.</p>
+  <p>This connects to the $f$-GAN family of generative models: each choice of $f$ gives a different divergence and different generator-critic dynamics.</p>
+</section>
+
+<section>
+  <h2>Why CLIP / InfoNCE is a different story</h2>
+  <p>InfoNCE (next lecture) is also a variational lower bound on MI, but with a different ceiling: bounded by $\log K$ where $K$ is the number of contrastive negatives per minibatch. For $K=256$, $\log K\approx 5.5$ nats &mdash; well above the regime where DV/NWJ work, but still finite.</p>
+  <p>The trade-off: InfoNCE is much more stable than DV, can train with stochastic gradients on huge batches, and produces useful representations even when its numerical MI estimate is biased low. For optimization, InfoNCE wins; for tight estimation, NWJ.</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion 1 — Variational Bound and the VAE</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.tk-blue { color: var(--yonsei-blue); }
+.tk-red  { color: var(--warn); }
+.tk-green{ color: var(--success); }
+.proof {
+  background: linear-gradient(135deg, rgba(0,56,118,0.04) 0%, rgba(0,56,118,0.01) 100%);
+  border-left: 4px solid var(--yonsei-blue);
+  padding: 14px 22px 8px;
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
+}
+.proof-tag {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--yonsei-blue);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- ═══ TITLE ═══ -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Diffusion · Lecture 1 of 3</div>
+  <h1>The Variational Bound<br>and the VAE</h1>
+  <div class="divider"></div>
+  <p class="subtitle">From maximum likelihood to ELBO &mdash; via Jensen and KL</p>
+  <p style="font-weight:500;font-size:1.8rem;margin-top:32px;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- CONTENTS -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Generative modeling and intractable likelihoods</div>
+      <div class="toc-sub">Latent variable models, MLE, the integral problem</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">The variational bound (ELBO)</div>
+      <div class="toc-sub">Two derivations: Jensen and KL identity</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Reconstruction + KL decomposition</div>
+      <div class="toc-sub">What ELBO is asking the model to do</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">VAE: parameterization and reparameterization</div>
+      <div class="toc-sub">Gaussian encoder, the trick that makes gradients flow</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 01 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Generative Modeling</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Latent variable models, MLE, and the integral that won't go away</p>
+</div>
+
+<!-- Generative model -->
+<div class="slide">
+  <h2>The generative goal</h2>
+  <div class="divider"></div>
+  <p>Given data $x_1,\ldots,x_N\sim p_{\text{data}}$, learn a parametric model $p_\theta(x)$ that:</p>
+  <ul>
+    <li>assigns high likelihood to data, and</li>
+    <li>can be sampled from to generate new $x$.</li>
+  </ul>
+  <p><strong>Latent-variable model.</strong> Introduce a latent $Z$ with simple prior $p(z)$ (e.g. $\mathcal{N}(0,I)$) and a flexible decoder $p_\theta(x\mid z)$:</p>
+  <div class="math-block">$$p_\theta(x,z)=p(z)\,p_\theta(x\mid z),\qquad p_\theta(x)=\int p_\theta(x,z)\,dz.$$</div>
+</div>
+
+<!-- MLE -->
+<div class="slide">
+  <h2>Maximum likelihood</h2>
+  <div class="divider"></div>
+  <p>Train by minimizing average negative log-likelihood:</p>
+  <div class="math-block">$$\theta^\star\;\in\;\arg\min_\theta\;\frac{1}{N}\sum_{i=1}^N -\log p_\theta(x_i).$$</div>
+  <p>To compute $\log p_\theta(x_i)$, we need $p_\theta(x_i)=\int p_\theta(x_i,z)\,dz$. For a flexible decoder, this integral is <strong>intractable</strong>.</p>
+  <div class="highlight">
+    <p>Variational inference replaces the intractable integral with a tractable <strong>lower bound</strong>.</p>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 02 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>The Variational Bound (ELBO)</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Two derivations of the same inequality</p>
+</div>
+
+<!-- Variational posterior -->
+<div class="slide">
+  <h2>Introduce a variational posterior</h2>
+  <div class="divider"></div>
+  <p>Pick a parametric family of conditionals $q_\phi(z\mid x)$ &mdash; the <strong>encoder</strong>. Together with the decoder $p_\theta(x\mid z)$, this gives</p>
+  <div class="math-block">$$p_\theta(x)\;=\;\int p_\theta(x,z)\,dz\;=\;\int q_\phi(z\mid x)\,\dfrac{p_\theta(x,z)}{q_\phi(z\mid x)}\,dz\;=\;\mathbb{E}_{z\sim q_\phi(\cdot\mid x)}\!\left[\dfrac{p_\theta(x,z)}{q_\phi(z\mid x)}\right].$$</div>
+  <p>So $\log p_\theta(x)=\log\mathbb{E}_{z\sim q_\phi}[p_\theta(x,z)/q_\phi(z\mid x)]$. Now apply Jensen.</p>
+</div>
+
+<!-- ELBO via Jensen -->
+<div class="slide">
+  <h2>Derivation 1 &mdash; Jensen's inequality</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Derivation via concavity of $\log$</div>
+    <p>$\log$ is concave, so $\log\mathbb{E}[X]\ge\mathbb{E}[\log X]$. Apply to the previous identity:</p>
+    <div class="math-block">$$\log p_\theta(x)\;=\;\log\,\mathbb{E}_{q_\phi}\!\left[\dfrac{p_\theta(x,z)}{q_\phi(z\mid x)}\right]\;\ge\;\mathbb{E}_{q_\phi}\!\left[\log\dfrac{p_\theta(x,z)}{q_\phi(z\mid x)}\right]\;=\;\mathcal{L}_{\mathrm{ELBO}}(\theta,\phi;x).$$</div>
+    <p>The right-hand side is the <strong>evidence lower bound</strong> (ELBO). Equality iff the ratio $p_\theta(x,z)/q_\phi(z\mid x)$ is constant in $z$ &mdash; equivalently, $q_\phi(z\mid x)=p_\theta(z\mid x)$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- ELBO via KL -->
+<div class="slide">
+  <h2>Derivation 2 &mdash; the KL identity</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Derivation via $D_{\mathrm{KL}}\ge 0$</div>
+    <p>Bayes: $p_\theta(z\mid x)=p_\theta(x,z)/p_\theta(x)$. Take logs and rearrange:</p>
+    <div class="math-block">$$\log p_\theta(x)\;=\;\mathbb{E}_{q_\phi}\!\left[\log\dfrac{p_\theta(x,z)}{q_\phi(z\mid x)}\right]\;+\;\underbrace{\mathbb{E}_{q_\phi}\!\left[\log\dfrac{q_\phi(z\mid x)}{p_\theta(z\mid x)}\right]}_{D_{\mathrm{KL}}(q_\phi\Vert p_\theta(\cdot\mid x))}.$$</div>
+    <p>Since $D_{\mathrm{KL}}\ge 0$, the first term is a lower bound:</p>
+    <div class="math-block">$$\log p_\theta(x)\;=\;\mathcal{L}_{\mathrm{ELBO}}(\theta,\phi;x)\;+\;D_{\mathrm{KL}}\bigl(q_\phi(\cdot\mid x)\,\Vert\,p_\theta(\cdot\mid x)\bigr).\;\blacksquare$$</div>
+  </div>
+</div>
+
+<!-- The two derivations agree -->
+<div class="slide">
+  <h2>Why the two derivations are the same statement</h2>
+  <div class="divider"></div>
+  <p>Both give <strong>the same inequality</strong>:</p>
+  <div class="math-block">$$\log p_\theta(x)\;=\;\mathcal{L}_{\mathrm{ELBO}}+D_{\mathrm{KL}}(q_\phi\Vert p_\theta(\cdot\mid x))\;\ge\;\mathcal{L}_{\mathrm{ELBO}}.$$</div>
+  <p>Different roads, same destination:</p>
+  <ul>
+    <li><strong>Jensen view:</strong> the bound comes from concavity. The gap is opaque.</li>
+    <li><strong>KL view:</strong> the gap is named &mdash; it is exactly $D_{\mathrm{KL}}\bigl(q_\phi\Vert p_\theta(\cdot\mid x)\bigr)$. Closing the gap means matching the variational posterior to the true one.</li>
+  </ul>
+</div>
+
+
+<!-- ════════════ PART 03 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Reconstruction $+$ KL Decomposition</h1>
+  <div class="divider"></div>
+  <p class="subtitle">What does the bound ask the model to do?</p>
+</div>
+
+<!-- ELBO decomposition -->
+<div class="slide">
+  <h2>Standard ELBO decomposition</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Algebra</div>
+    <p>Expand $p_\theta(x,z)=p(z)p_\theta(x\mid z)$ inside the ELBO:</p>
+    <div class="math-block">$$\mathcal{L}_{\mathrm{ELBO}}=\mathbb{E}_{q_\phi}\!\left[\log\dfrac{p(z)p_\theta(x\mid z)}{q_\phi(z\mid x)}\right]=\underbrace{\mathbb{E}_{q_\phi}[\log p_\theta(x\mid z)]}_{\text{reconstruction}}-\underbrace{D_{\mathrm{KL}}\bigl(q_\phi(\cdot\mid x)\,\Vert\,p(\cdot)\bigr)}_{\text{regularizer}}.$$</div>
+    <p>Two opposing pressures: reconstruct $x$ from latent samples, but keep the encoder close to the prior. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Interpretation -->
+<div class="slide">
+  <h2>Interpretation: rate and distortion</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Reconstruction term</h3>
+      <p>$\mathbb{E}_{q_\phi}[\log p_\theta(x\mid z)]$: assign high likelihood to $x$ when $z\sim q_\phi(z\mid x)$.</p>
+      <p>Acts as a <strong>negative distortion</strong>: bigger when the decoder reproduces $x$ well from the encoded latent.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">KL regularizer</h3>
+      <p>$D_{\mathrm{KL}}(q_\phi(z\mid x)\,\Vert\,p(z))$: keep the encoder close to the prior.</p>
+      <p>Acts as a <strong>rate</strong>: information leaked from $x$ into $z$. Pure rate&ndash;distortion structure.</p>
+    </div>
+  </div>
+  <p>The ELBO is a (variational) rate&ndash;distortion functional &mdash; this is the information-theoretic angle that justifies its use.</p>
+</div>
+
+
+<!-- ════════════ PART 04 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>VAE: Parameterization and Reparameterization</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Gaussian encoder, the trick that makes gradients flow</p>
+</div>
+
+<!-- VAE parameterization -->
+<div class="slide">
+  <h2>The VAE: Gaussian encoder, neural decoder</h2>
+  <div class="divider"></div>
+  <p><strong>Encoder.</strong> A neural network outputs $\mu_\phi(x)$, $\sigma_\phi(x)$:</p>
+  <div class="math-block">$$q_\phi(z\mid x)=\mathcal{N}\bigl(\mu_\phi(x),\,\operatorname{diag}(\sigma_\phi(x)^2)\bigr).$$</div>
+  <p><strong>Prior.</strong> $p(z)=\mathcal{N}(0,I)$.</p>
+  <p><strong>Decoder.</strong> Another network parameterizes $p_\theta(x\mid z)$ (Gaussian for continuous data, Bernoulli for binary, etc.).</p>
+  <p>For Gaussian $q_\phi$ vs.&nbsp;$\mathcal{N}(0,I)$ prior, the KL has a closed form:</p>
+  <div class="math-block">$$D_{\mathrm{KL}}\bigl(q_\phi\,\Vert\,p\bigr)=\tfrac12\sum_{j}\bigl(\mu_{\phi,j}^2+\sigma_{\phi,j}^2-1-\log\sigma_{\phi,j}^2\bigr).$$</div>
+</div>
+
+<!-- The gradient problem -->
+<div class="slide">
+  <h2>The gradient problem</h2>
+  <div class="divider"></div>
+  <p>Training maximizes the ELBO. Reconstruction term:</p>
+  <div class="math-block">$$\mathbb{E}_{z\sim q_\phi(z\mid x)}[\log p_\theta(x\mid z)].$$</div>
+  <p><strong>Issue.</strong> The expectation is over a distribution that <em>depends on $\phi$</em>. Naively, $\nabla_\phi\mathbb{E}_{q_\phi}[f(z)]\ne\mathbb{E}_{q_\phi}[\nabla_\phi f(z)]$ &mdash; we cannot just differentiate inside the expectation.</p>
+  <p>Workaround: <strong>reparameterization</strong>. Express the random sample as a deterministic function of a <em>parameter-independent</em> noise variable.</p>
+</div>
+
+<!-- Reparameterization trick -->
+<div class="slide">
+  <h2>The reparameterization trick</h2>
+  <div class="divider"></div>
+  <p>For $z\sim\mathcal{N}(\mu_\phi(x),\sigma_\phi(x)^2)$, write</p>
+  <div class="math-block">$$z\;=\;\mu_\phi(x)\;+\;\sigma_\phi(x)\odot\varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,I).$$</div>
+  <p>Now $\varepsilon$ is parameter-free. The expectation becomes</p>
+  <div class="math-block">$$\mathbb{E}_{z\sim q_\phi(z\mid x)}[f(z)]\;=\;\mathbb{E}_{\varepsilon\sim\mathcal{N}(0,I)}\bigl[f\bigl(\mu_\phi(x)+\sigma_\phi(x)\odot\varepsilon\bigr)\bigr].$$</div>
+  <p>The expectation no longer depends on $\phi$ &mdash; gradients pass through.</p>
+</div>
+
+<!-- Reparameterization proof -->
+<div class="slide">
+  <h2>Why reparameterization works for gradients</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Lemma</div>
+    <p>Let $g_\phi:\mathcal{E}\to\mathcal{Z}$ be a differentiable map with $z=g_\phi(\varepsilon)$ pushing $p_\varepsilon$ to $q_\phi$. Then for any $f$,</p>
+    <div class="math-block">$$\nabla_\phi\,\mathbb{E}_{z\sim q_\phi}[f(z)]\;=\;\nabla_\phi\,\mathbb{E}_{\varepsilon\sim p_\varepsilon}[f(g_\phi(\varepsilon))]\;=\;\mathbb{E}_{\varepsilon\sim p_\varepsilon}[\nabla_\phi f(g_\phi(\varepsilon))].$$</div>
+    <p>The first equality is change of variables; the second exchanges $\nabla_\phi$ and $\mathbb{E}_\varepsilon$ legitimately because $p_\varepsilon$ does not depend on $\phi$. $\;\blacksquare$</p>
+  </div>
+  <p>Monte Carlo estimate: a single sample $\varepsilon\sim\mathcal{N}(0,I)$ gives an unbiased gradient.</p>
+</div>
+
+<!-- VAE training -->
+<div class="slide">
+  <h2>Putting it together: VAE training</h2>
+  <div class="divider"></div>
+  <p>Per data point $x$:</p>
+  <ol>
+    <li>Encoder produces $\mu_\phi(x),\sigma_\phi(x)$ from $x$.</li>
+    <li>Sample $\varepsilon\sim\mathcal{N}(0,I)$ and form $z=\mu_\phi(x)+\sigma_\phi(x)\odot\varepsilon$.</li>
+    <li>Decoder produces $p_\theta(x\mid z)$.</li>
+    <li>Compute the loss: $\;-\log p_\theta(x\mid z)+D_{\mathrm{KL}}\bigl(q_\phi(\cdot\mid x)\,\Vert\,p\bigr)$.</li>
+    <li>Backprop through both networks.</li>
+  </ol>
+  <p>Sampling at inference: $z\sim p(z)$, output $x=\mu_\theta(z)$ or sample $x\sim p_\theta(x\mid z)$.</p>
+</div>
+
+<!-- Posterior collapse -->
+<div class="slide">
+  <h2>Failure mode: posterior collapse</h2>
+  <div class="divider"></div>
+  <p>If the decoder is powerful, the model can drive $q_\phi(z\mid x)\to p(z)$ &mdash; the latent carries no information. The KL term is exactly zero, and the model becomes an unconditional density model.</p>
+  <div class="math-block">$$D_{\mathrm{KL}}(q_\phi\Vert p)=0\;\Longleftrightarrow\;q_\phi(z\mid x)=p(z)\;\Longrightarrow\;z\perp x.$$</div>
+  <p>Symptom of an over-flexible decoder. Mitigations: KL annealing, free bits, weaker decoders.</p>
+  <div class="highlight">
+    <p>Looking ahead: <strong>diffusion models</strong> avoid this by using a fixed forward process &mdash; the encoder is not trained, and the latent is forced to carry information about $x$.</p>
+  </div>
+</div>
+
+
+<!-- Recap -->
+<div class="slide">
+  <h2>Recap of Lecture 1</h2>
+  <div class="divider"></div>
+  <ul>
+    <li><strong>Latent-variable model:</strong> $p_\theta(x)=\int p(z)p_\theta(x\mid z)dz$. The integral is intractable.</li>
+    <li><strong>Variational bound (ELBO):</strong> introduce $q_\phi(z\mid x)$, derive $\log p_\theta(x)\ge\mathcal{L}_{\mathrm{ELBO}}$.</li>
+    <li><strong>Two derivations:</strong> Jensen on the importance-sampling identity, or KL non-negativity.</li>
+    <li><strong>Decomposition:</strong> $\mathcal{L}_{\mathrm{ELBO}}=\mathbb{E}_q[\log p_\theta(x\mid z)]-D_{\mathrm{KL}}(q\,\Vert\,p)$ &mdash; reconstruction minus rate.</li>
+    <li><strong>VAE:</strong> Gaussian encoder, neural decoder, reparameterization trick to get pathwise gradients.</li>
+    <li><strong>Posterior collapse:</strong> a powerful decoder can ignore the latent. Diffusion sidesteps this with a fixed forward process.</li>
+  </ul>
+</div>
+
+<!-- Closer -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Lecture 1</div>
+  <p class="big-word-sub">Up next &mdash; diffusion as a hierarchical VAE.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div>
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>

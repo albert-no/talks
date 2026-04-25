@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI Estimation 2 — InfoNCE and CLIP</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.tk-blue { color: var(--yonsei-blue); }
+.tk-red  { color: var(--warn); }
+.tk-green{ color: var(--success); }
+.proof {
+  background: linear-gradient(135deg, rgba(0,56,118,0.04) 0%, rgba(0,56,118,0.01) 100%);
+  border-left: 4px solid var(--yonsei-blue);
+  padding: 14px 22px 8px;
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
+}
+.proof-tag {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--yonsei-blue);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+/* Small CLIP-style similarity matrix — pure CSS grid. */
+.simmat {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  width: 240px;
+  margin: 0 auto;
+}
+.simmat .cell {
+  aspect-ratio: 1;
+  background: var(--slate);
+  border-radius: 3px;
+}
+.simmat .cell.diag {
+  background: var(--yonsei-blue);
+}
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- ═══ TITLE ═══ -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">MI Estimation · Lecture 2 of 2</div>
+  <h1>InfoNCE and CLIP:<br>Contrastive Learning</h1>
+  <div class="divider"></div>
+  <p class="subtitle">A scalable MI lower bound, applied to image&ndash;text alignment</p>
+  <p style="font-weight:500;font-size:1.8rem;margin-top:32px;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- CONTENTS -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">InfoNCE: bound and proof</div>
+      <div class="toc-sub">Multi-class classification as MI estimation</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">CLIP architecture</div>
+      <div class="toc-sub">Two encoders, separable critic, symmetric loss</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Zero-shot classification</div>
+      <div class="toc-sub">Reusing the contrastive head as a classifier</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Practice</div>
+      <div class="toc-sub">Bias / variance, scale, what matters in practice</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 01 — InfoNCE ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>InfoNCE</h1>
+  <div class="divider"></div>
+  <p class="subtitle">A noise-contrastive lower bound on mutual information</p>
+</div>
+
+<!-- InfoNCE setup -->
+<div class="slide">
+  <h2>InfoNCE: setup</h2>
+  <div class="divider"></div>
+  <p>One <strong>positive</strong> pair $(x,y)\sim p_{X,Y}$ and $K-1$ <strong>negatives</strong> $\{y_k^-\}_{k=1}^{K-1}\stackrel{\text{i.i.d.}}{\sim}p_Y$, independent of $x$.</p>
+  <p>Critic $f(x,y)$ assigns a score to a pair. Define</p>
+  <div class="math-block">$$\mathcal{L}_{\mathrm{InfoNCE}}(f)\;=\;-\mathbb{E}\!\left[\log\dfrac{e^{f(x,y)}}{e^{f(x,y)}+\sum_{k=1}^{K-1}e^{f(x,y_k^-)}}\right].$$</div>
+  <p>This is a <strong>$K$-class softmax cross-entropy</strong>: classify the true $y$ among $K$ candidates.</p>
+</div>
+
+<!-- InfoNCE statement -->
+<div class="slide">
+  <h2>The InfoNCE bound</h2>
+  <div class="divider"></div>
+  <p>For any critic $f$:</p>
+  <div class="math-block">$$I(X;Y)\;\ge\;\log K-\mathcal{L}_{\mathrm{InfoNCE}}(f).$$</div>
+  <p>Right-hand side is <strong>at most</strong> $\log K$ (since $\mathcal{L}_{\mathrm{InfoNCE}}\ge 0$), so InfoNCE saturates: the bound cannot exceed $\log K$ regardless of the true MI.</p>
+  <div class="highlight">
+    <p>Estimating MI larger than $\log K$ requires more negatives. CLIP's batch size of 32k gives $\log K\approx 10.4$ nats &mdash; far above what DV/NWJ can stably estimate.</p>
+  </div>
+</div>
+
+<!-- InfoNCE proof -->
+<div class="slide">
+  <h2>InfoNCE proof</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <p>Use the optimal critic $f^\star(x,y)=\log r(x,y)+c(x)$ for any $x$-dependent constant $c$. Plug in:</p>
+    <div class="math-block">$$\mathcal{L}_{\mathrm{InfoNCE}}(f^\star)=-\mathbb{E}\log\dfrac{r(x,y)}{r(x,y)+\sum_k r(x,y_k^-)}.$$</div>
+    <p>Use $\mathbb{E}_{p(y_k^-)}r(x,y_k^-)=\int p(y_k^-)\frac{p(x,y_k^-)}{p(x)p(y_k^-)}dy_k^-=1$. By Jensen's inequality on the convex $-\log$:</p>
+    <div class="math-block">$$\mathcal{L}_{\mathrm{InfoNCE}}(f^\star)\ge \log\!\dfrac{\mathbb{E}_p[r(x,y)+\sum_k r(x,y_k^-)]}{\mathbb{E}\,r(x,y)}=\log(1+(K-1))=\log K-I(X;Y)+o(1).$$</div>
+    <p>Rearrange: $I(X;Y)\ge\log K-\mathcal{L}_{\mathrm{InfoNCE}}(f^\star)$, and the same bound holds for any $f$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Optimal critic -->
+<div class="slide">
+  <h2>The optimal InfoNCE critic</h2>
+  <div class="divider"></div>
+  <p>The infimum of $\mathcal{L}_{\mathrm{InfoNCE}}$ is attained at any $f^\star$ with</p>
+  <div class="math-block">$$f^\star(x,y)\;=\;\log r(x,y)+c(x)\;=\;\log\dfrac{p(y\mid x)}{p(y)}+c(x).$$</div>
+  <p>Equivalent statements:</p>
+  <ul>
+    <li>$f^\star$ is the log-density-ratio &mdash; same as DV's optimal critic.</li>
+    <li>$f^\star(x,\cdot)$ is the log-conditional density up to an $x$-dependent constant.</li>
+    <li>The softmax $\mathrm{softmax}(f^\star)$ approximates the conditional $p(y\mid x)$.</li>
+  </ul>
+</div>
+
+<!-- Saturation -->
+<div class="slide">
+  <h2>The $\log K$ ceiling</h2>
+  <div class="divider"></div>
+  <p>The minimum of $\mathcal{L}_{\mathrm{InfoNCE}}$ is the entropy of the uniform distribution over $K$ classes minus the conditional entropy &mdash; bounded above by $\log K$.</p>
+  <div class="math-block">$$0\;\le\;\log K-\mathcal{L}_{\mathrm{InfoNCE}}\;\le\;\log K.$$</div>
+  <p>Even with $f=f^\star$ and infinite samples, the bound saturates at $\log K$ when $I(X;Y)\gg\log K$. To estimate $I=10$ nats: need $K\ge e^{10}\approx 22000$ negatives.</p>
+  <div class="highlight">
+    <p>InfoNCE is a <strong>biased</strong> estimator at high MI &mdash; bounded below by $\max(0,I-\log K)$, but optimization-friendly.</p>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 02 — CLIP ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>CLIP: Contrastive Image&ndash;Language Pretraining</h1>
+  <div class="divider"></div>
+  <p class="subtitle">InfoNCE deployed at web scale</p>
+</div>
+
+<!-- CLIP figure -->
+<div class="slide">
+  <h2>The CLIP recipe</h2>
+  <div class="divider"></div>
+  <img src="figs/clip-overview.png" alt="CLIP architecture overview"
+       style="width:100%;max-height:520px;object-fit:contain;display:block;margin:0 auto;">
+  <div class="cite">Radford et&nbsp;al., "Learning Transferable Visual Models From Natural Language Supervision", ICML 2021</div>
+</div>
+
+<!-- Separable critic -->
+<div class="slide">
+  <h2>The separable critic</h2>
+  <div class="divider"></div>
+  <p>CLIP factors the critic into two encoders &mdash; image $g_\mu(x)\in\mathbb{R}^d$ and text $h_\phi(y)\in\mathbb{R}^d$ &mdash; and uses a normalized inner product:</p>
+  <div class="math-block">$$f_{\mu,\phi}(x,y)\;=\;\dfrac{1}{\tau}\,g_\mu(x)^\top h_\phi(y),\qquad \|g_\mu(x)\|=\|h_\phi(y)\|=1.$$</div>
+  <p>Two payoffs:</p>
+  <ul>
+    <li><strong>Computational:</strong> $N\times N$ similarity matrix is a single matrix multiplication, not $N^2$ joint forward passes.</li>
+    <li><strong>Reusability:</strong> trained encoders are reusable independently &mdash; e.g.&nbsp;the image encoder for vision tasks, the text encoder for retrieval.</li>
+  </ul>
+  <p>Temperature $\tau$ is a learned scalar (CLIP initializes $\log(1/\tau)\approx 0$, learns up to $\sim 100$).</p>
+</div>
+
+<!-- CLIP loss -->
+<div class="slide">
+  <h2>The symmetric CLIP loss</h2>
+  <div class="divider"></div>
+  <p>Minibatch of $N$ image&ndash;text pairs $\{(x_i,y_i)\}_{i=1}^{N}$. Compute the $N\times N$ similarity matrix $S_{ij}=f(x_i,y_j)$.</p>
+  <div class="math-block">$$\mathcal{L}_{x\to y}=-\frac{1}{N}\sum_{i=1}^{N}\log\dfrac{\exp(S_{ii})}{\sum_{j=1}^{N}\exp(S_{ij})},\qquad \mathcal{L}_{y\to x}=-\frac{1}{N}\sum_{j=1}^{N}\log\dfrac{\exp(S_{jj})}{\sum_{i=1}^{N}\exp(S_{ij})}.$$</div>
+  <p>Symmetric total loss:</p>
+  <div class="math-block">$$\mathcal{L}_{\mathrm{CLIP}}\;=\;\tfrac{1}{2}(\mathcal{L}_{x\to y}+\mathcal{L}_{y\to x}).$$</div>
+</div>
+
+<!-- Similarity matrix viz -->
+<div class="slide">
+  <h2>The $N\times N$ similarity matrix</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Row $i$: image $x_i$ vs.&nbsp;every caption $y_1,\ldots,y_N$.</p>
+      <p>Column $j$: caption $y_j$ vs.&nbsp;every image $x_1,\ldots,x_N$.</p>
+      <p>Diagonal entries are the <strong>true pairs</strong> &mdash; should be highest in their row and column.</p>
+      <p>Off-diagonals are <strong>contrastive negatives</strong>: random shufflings within the batch.</p>
+      <p>Total: $N$ row-wise classifications $+$ $N$ column-wise classifications. CLIP optimizes both simultaneously.</p>
+    </div>
+    <div>
+      <div class="simmat">
+        <div class="cell diag"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell diag"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell"></div><div class="cell diag"></div><div class="cell"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell diag"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell diag"></div>
+      </div>
+      <p style="text-align:center;margin-top:14px;">image&nbsp;index $i$ &nbsp;&times;&nbsp; text&nbsp;index $j$</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 03 — Zero-shot ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Zero-Shot Classification</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Reusing the contrastive head with no task-specific training</p>
+</div>
+
+<!-- Zero-shot recipe -->
+<div class="slide">
+  <h2>How CLIP becomes a classifier</h2>
+  <div class="divider"></div>
+  <p>For a $K$-way classification task with labels $\{c_1,\ldots,c_K\}$:</p>
+  <ol>
+    <li>Build prompts: $y_k=$ "A photo of a <em>{$c_k$}</em>." for each label $c_k$.</li>
+    <li>Embed each prompt: $h_k=h_\phi(y_k)$.</li>
+    <li>Embed the test image: $g=g_\mu(x)$.</li>
+    <li>Predict $\hat c=\arg\max_k g^\top h_k$.</li>
+  </ol>
+  <p>No retraining, no task-specific labels at training time. The classifier is built from text alone.</p>
+</div>
+
+<!-- Why this works -->
+<div class="slide">
+  <h2>Why does zero-shot work?</h2>
+  <div class="divider"></div>
+  <p>InfoNCE training makes $g^\top h$ approximate $\log r(x,y)+c(x)$, the log-density-ratio between joint and product. For a label class:</p>
+  <div class="math-block">$$g_\mu(x)^\top h_\phi(y_k)\;\approx\;\log\dfrac{p(y_k\mid x)}{p(y_k)}+\text{const}.$$</div>
+  <p>So $\arg\max_k g_\mu(x)^\top h_\phi(y_k)$ approximates the MAP class up to the marginal $p(y_k)$ &mdash; nearly the optimal Bayes classifier when label priors are roughly uniform across the prompts.</p>
+</div>
+
+<!-- Prompt engineering -->
+<div class="slide">
+  <h2>Prompt engineering improves accuracy</h2>
+  <div class="divider"></div>
+  <p>The text encoder was trained on natural captions, not single labels. Single-word prompts ("dog") give weaker classification than full sentences ("A photo of a dog").</p>
+  <p>CLIP paper reports zero-shot ImageNet accuracy:</p>
+  <ul>
+    <li>Single-word prompts: $\approx 60$&nbsp;%.</li>
+    <li>"A photo of a {label}.": $\approx 68$&nbsp;%.</li>
+    <li>Ensemble of 80 prompt templates: $\approx 76$&nbsp;%.</li>
+  </ul>
+  <p>For comparison, ResNet-50 supervised on ImageNet itself: $\approx 76$&nbsp;% top-1. CLIP matches it without seeing a single ImageNet label.</p>
+  <div class="cite">Radford et&nbsp;al., "Learning Transferable Visual Models From Natural Language Supervision", ICML 2021</div>
+</div>
+
+
+<!-- ════════════ PART 04 — Practice ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Practice</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Bias / variance, scale, and what to use when</p>
+</div>
+
+<!-- Bias variance -->
+<div class="slide">
+  <h2>Bias / variance summary</h2>
+  <div class="divider"></div>
+  <table style="font-size:1.3rem;">
+    <thead>
+      <tr><th>Bound</th><th>Bias at high MI</th><th>Variance</th><th>Best for</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>BA</td><td>tight if $q$ is good</td><td>low (MLE)</td><td>conditional model fitting</td></tr>
+      <tr><td>DV</td><td>tight in principle</td><td>$\sim e^I/N$ &mdash; explodes</td><td>low MI, careful estimation</td></tr>
+      <tr><td>NWJ</td><td>looser than DV</td><td>polynomial in $I$</td><td>moderate MI</td></tr>
+      <tr><td><strong>InfoNCE</strong></td><td>biased low; ceiling $\log K$</td><td>very stable</td><td>scalable contrastive training</td></tr>
+    </tbody>
+  </table>
+  <p>InfoNCE wins on <em>training</em>; DV/NWJ win on <em>tight numerical estimation</em>; BA is for likelihoods.</p>
+</div>
+
+<!-- Negatives matter -->
+<div class="slide">
+  <h2>Why batch size matters</h2>
+  <div class="divider"></div>
+  <p>The InfoNCE bound is $\log K-\mathcal{L}_{\mathrm{InfoNCE}}$. To estimate true MI of $I$ nats, we need at least $K\ge e^{I}$ negatives.</p>
+  <p>Practical choices:</p>
+  <ul>
+    <li><strong>SimCLR (vision):</strong> $K\sim 4{,}096$ &mdash; needs accelerator memory.</li>
+    <li><strong>MoCo:</strong> queue of past negatives ($K\sim 65{,}000$) decoupled from batch size.</li>
+    <li><strong>CLIP:</strong> $K=32{,}768$ at full scale.</li>
+  </ul>
+  <p>Why not $K\to\infty$? Compute cost is $\mathcal{O}(K)$ per minibatch, and the bound's tightness gain saturates once $\log K\gg I$.</p>
+</div>
+
+<!-- Choosing -->
+<div class="slide">
+  <h2>Choosing your bound</h2>
+  <div class="divider"></div>
+  <ul>
+    <li>You want a <strong>scalable contrastive objective</strong> for representation learning &rarr; InfoNCE. Always.</li>
+    <li>You want to estimate MI <strong>numerically</strong> at low/moderate values &rarr; NWJ with a careful neural critic.</li>
+    <li>You have a <strong>good conditional model</strong> $q(y\mid x)$ &rarr; BA &mdash; just maximize likelihood.</li>
+    <li>You suspect MI is <strong>very high</strong> ($I\gg 5$ nats) &rarr; no estimator is reliable. Report $\log K$ saturation as a lower bound and stop.</li>
+  </ul>
+</div>
+
+
+<!-- Recap -->
+<div class="slide">
+  <h2>Recap of Lecture 2</h2>
+  <div class="divider"></div>
+  <ul>
+    <li><strong>InfoNCE:</strong> $K$-way softmax classifier with one positive and $K-1$ negatives. Lower bound $I\ge\log K-\mathcal{L}$.</li>
+    <li><strong>Optimal critic:</strong> $f^\star=\log r+c$, same as DV.</li>
+    <li><strong>$\log K$ saturation:</strong> InfoNCE cannot exceed $\log K$. Bias-low at high MI, variance very stable.</li>
+    <li><strong>CLIP:</strong> separable critic via two encoders, symmetric InfoNCE on the $N\times N$ similarity matrix.</li>
+    <li><strong>Zero-shot classification:</strong> reuse text encoder to define a classifier &mdash; matches supervised ResNet-50 on ImageNet.</li>
+    <li><strong>Practice:</strong> InfoNCE for training, NWJ for tight numerical estimation, BA for likelihoods.</li>
+  </ul>
+</div>
+
+<!-- Closer -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Module 3</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div>
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>

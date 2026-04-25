@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossy 4 — TURBOQUANT · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossy 4 · TURBOQUANT &mdash; Notes</h1>
+<p class="meta">Companion to <code>lossy4-turboquant.html</code>. Worked details for the proofs.</p>
+
+<section>
+  <h2>Where the slice argument comes from in Lemma 1</h2>
+  <p>The unit sphere $S^{d-1}\subset\mathbb{R}^d$ has surface area $A_d=\frac{2\pi^{d/2}}{\Gamma(d/2)}$. To compute the marginal density of $Y_1$ when $Y\sim\mathrm{Unif}(S^{d-1})$, condition on $Y_1=t$: the remaining coordinates $(Y_2,\ldots,Y_d)$ lie on a $(d-2)$-sphere of radius $\sqrt{1-t^2}$, with surface area $A_{d-1}\cdot(1-t^2)^{(d-2)/2}$.</p>
+  <p>The probability measure is uniform with respect to surface area, but the marginal density is the integral of that surface area along the $t$-direction. The Jacobian of the slice contributes one extra power of $\sqrt{1-t^2}$, giving $f_d(t)\propto(1-t^2)^{(d-3)/2}$.</p>
+  <p>Normalize with the Beta integral: $\int_{-1}^{1}(1-t^2)^{(d-3)/2}dt=B(\tfrac12,\tfrac{d-1}{2})$. Combine to get the closed form on the slide.</p>
+</section>
+
+<section>
+  <h2>Why the Gaussian limit is exactly $\mathcal{N}(0,1)$ for $\sqrt d Y_j$</h2>
+  <p>The Gaussian limit follows from $(1-t^2)^{(d-3)/2}\to e^{-dt^2/2}$ for $t=u/\sqrt d$, but the normalization must work out to 1. Stirling on $\Gamma(d/2)/\Gamma((d-1)/2)\sim\sqrt{d/2}$ gives the leading constant $\sqrt{d/(2\pi)}$, exactly the standard Gaussian density. So $\sqrt d\,Y_j$ converges to $\mathcal{N}(0,1)$ in total variation, not just in distribution.</p>
+  <p>Equivalently: a $d$-dimensional Gaussian $\mathbf{g}\sim\mathcal{N}(0,I)$ projected onto the unit sphere $\mathbf{g}/\|\mathbf{g}\|$ has the same distribution as $\mathrm{Unif}(S^{d-1})$. For large $d$, $\|\mathbf{g}\|\approx\sqrt d$, so $\mathbf{g}/\sqrt d$ is itself approximately uniform on $S^{d-1}$ at the level of marginals.</p>
+</section>
+
+<section>
+  <h2>Panter&ndash;Dite formula in detail</h2>
+  <p>For Lloyd&ndash;Max scalar quantization at $K$ levels of a smooth density $f$ on $\mathbb{R}$, the asymptotic optimal cost is</p>
+  <div class="deriv">
+    \[
+    C(f,K)\;\approx\;\frac{1}{12 K^2}\Bigl(\int f(t)^{1/3}\,dt\Bigr)^3,
+    \]
+  </div>
+  <p>derived by setting up the optimal point density (Bennett's high-resolution formula): the centroid density $\lambda^\star(t)\propto f(t)^{1/3}$. Substituting back into the quadratic cost gives the cubed integral of $f^{1/3}$.</p>
+  <p>For $K=2^b$: $C(f,b)\le\frac{1}{12}\bigl(\int f^{1/3}\bigr)^3 4^{-b}$. The inequality is tight asymptotically.</p>
+</section>
+
+<section>
+  <h2>Computing $\int f_d^{1/3}$ for the sphere density</h2>
+  <p>For $f_d(t)\propto(1-t^2)^{(d-3)/2}$, the cube root is $f_d^{1/3}(t)\propto(1-t^2)^{(d-3)/6}$. The integral over $[-1,1]$ is another Beta:</p>
+  <div class="deriv">
+    \[
+    \int_{-1}^{1}(1-t^2)^{(d-3)/6}\,dt\;=\;B\!\bigl(\tfrac12,\tfrac{d+3}{6}\bigr).
+    \]
+  </div>
+  <p>After accounting for the normalizing constant in $f_d$ and Stirling-style approximation of the Beta, the cubed integral evaluates to $\frac{6\sqrt 3\,\pi}{d}$. Multiplying by $\frac{1}{12}d$ (the scalar-cost-times-$d$ coefficient) gives $\frac{\sqrt 3\,\pi}{2}$, the constant on the slide.</p>
+  <p>The "$\sqrt 3\pi/2\approx 2.72$" matches the abstract's "small constant ($\approx 2.7$)" of the TurboQuant paper.</p>
+</section>
+
+<section>
+  <h2>The key Gaussian identity in the QJL proof</h2>
+  <p>For $s\sim\mathcal{N}(0,I_d)$ and unit $u$, $\mathbb{E}[s\operatorname{sign}(s^\top u)]=\sqrt{2/\pi}\,u$. Sketch:</p>
+  <ol>
+    <li>Decompose $s=s_\parallel u+s_\perp$ where $s_\parallel=s^\top u\sim\mathcal{N}(0,1)$ and $s_\perp\perp u$.</li>
+    <li>$\mathbb{E}[s_\perp \operatorname{sign}(s_\parallel)]=0$ by symmetry.</li>
+    <li>$\mathbb{E}[s_\parallel \operatorname{sign}(s_\parallel)]=\mathbb{E}|s_\parallel|=\sqrt{2/\pi}$.</li>
+    <li>So $\mathbb{E}[s\operatorname{sign}(s^\top u)]=\sqrt{2/\pi}\,u$.</li>
+  </ol>
+  <p>This is the same identity that gave us $\alpha=2/\pi$ in the bias derivation: $d$ copies of "$\sqrt{2/\pi}$" multiplied through gives the shrinkage factor.</p>
+</section>
+
+<section>
+  <h2>Why two-stage is asymptotically necessary</h2>
+  <p>A naive single-stage strategy: just use QJL with $b$ bits per coordinate. The variance is $\frac{\pi}{2d}\|y\|^2$, independent of $b$. This is fine at $b=1$ but does not improve as $b$ grows.</p>
+  <p>The two-stage method exploits that QJL variance scales with the residual norm $\|r\|^2$. Spending $b-1$ bits on MSE shrinks $\|r\|^2$ by a factor of $4^{-(b-1)}$, giving total variance $\propto 4^{-(b-1)}/d$. So extra bits buy real accuracy.</p>
+  <p>The split "$b-1$ bits MSE, $1$ bit QJL" is not the only option; one could split differently. The $1$-bit QJL is canonical because of QJL's $1$-bit-per-coordinate native form.</p>
+</section>
+
+<section>
+  <h2>Empirical context (paper, not on slides)</h2>
+  <p>The TurboQuant paper reports KV-cache quantization for Llama-style models at long contexts. At $b=3.5$ bits/channel, perplexity matches FP16 within noise on long-document benchmarks. At $b=2.5$ bits/channel, modest degradation. These numbers are sensitive to model and benchmark; the theoretical guarantees ensure the method's distortion exponents are optimal but don't directly predict downstream task quality.</p>
+  <p>The course doesn't dwell on the experimental table; the theorem proofs are the more durable contribution. If a future paper reports better numbers, the proofs still hold; the constants might tighten.</p>
+</section>
+
+<section>
+  <h2>Connection back to Lectures 1&ndash;3</h2>
+  <ul>
+    <li><strong>Lecture 1:</strong> Lloyd&ndash;Max scalar quantization is the workhorse inside TURBOQUANT after rotation.</li>
+    <li><strong>Lecture 2:</strong> the Gaussian distortion&ndash;rate function $D=\sigma^2 4^{-b}$ predicts the achievable exponent.</li>
+    <li><strong>Lecture 3:</strong> QUIP\# uses the same "rotate to fit a fixed grid" idea for weight matrices, with a lattice in place of a scalar codebook.</li>
+  </ul>
+  <p>TURBOQUANT is the simplest distillation: a single rotation, scalar quantization, and a sketch &mdash; matching the rate&ndash;distortion exponent without any fancy lattice or codebook learning.</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,840 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TURBOQUANT and online vector quantization
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Fallback for standalone compilation if mathtools is not loaded.
+\providecommand{\coloneqq}{\mathrel{\mathop:}=}
+
+\subsection{TURBOQUANT: Online Vector Quantization via Random Rotations}
+\label{subsec:turboquant}
+
+In the previous parts of the course, we studied the operational and information-theoretic rate--distortion functions, the Gaussian rate--distortion function, and the idea that a random rotation can make an arbitrary high-dimensional vector look ``Gaussian'' in its coordinates.
+TURBOQUANT is a useful modern example where these ideas directly lead to a practical quantization algorithm.
+The main message is:
+\begin{center}
+\emph{Randomly rotate a vector, quantize each coordinate with a scalar quantizer matched to the rotated-coordinate distribution, and rotate back.}
+\end{center}
+For mean-squared error, this already gives a nearly rate--distortion optimal vector quantizer.
+For inner products, one more ingredient is needed: an unbiased one-bit quantizer for the residual.
+
+\paragraph{Why this topic is different from ordinary scalar quantization.}
+Scalar quantization takes a coordinate $x_j$ and rounds it to one of a small number of levels.
+This is simple, but it is usually not optimal for high-dimensional vectors because coordinates can be highly nonuniform: a few coordinates can be very large, while most are small.
+For example, in LLM KV caches or embedding vectors, coordinate outliers can dominate low-bit scalar quantization.
+A random rotation spreads the energy across coordinates, so that after rotation every coordinate has a predictable distribution and typical magnitude about $1/\sqrt d$.
+This turns a worst-case vector quantization problem into a nearly scalar problem with a known source law.
+
+\paragraph{Relation to Gaussian rate--distortion.}
+Recall that if $X\sim \mathcal N(0,\sigma^2)$ and squared-error distortion is used, then the Gaussian distortion--rate function in bits is
+\begin{equation}
+    D(R)=\sigma^2 2^{-2R}.
+\end{equation}
+If a $d$-dimensional vector has unit energy, each rotated coordinate has variance roughly $1/d$.
+Quantizing each coordinate at $b$ bits suggests a total MSE scaling of
+\begin{equation}
+    d\cdot \frac1d 2^{-2b}=4^{-b}.
+\end{equation}
+TURBOQUANT achieves this same exponential dependence on bit-width $b$, up to a small constant factor, without assuming that the input vectors are drawn from a Gaussian distribution.
+
+\subsubsection*{Problem formulation}
+
+Let $x\in \mathbb R^d$ be a vector to be compressed.
+A vector quantizer consists of two maps
+\begin{equation}
+    Q: \mathbb R^d\to \{0,1\}^{B},
+    \qquad
+    Q^{-1}:\{0,1\}^{B}\to \mathbb R^d,
+\end{equation}
+where $B$ is the total number of bits.
+We write $B=bd$, where $b$ is the \emph{bit-width}, i.e., bits per coordinate.
+The reconstructed vector is
+\begin{equation}
+    \widetilde x = Q^{-1}(Q(x)).
+\end{equation}
+
+Most of the theory is stated for unit vectors $x\in S^{d-1}$, where
+\begin{equation}
+    S^{d-1}=\{x\in \mathbb R^d:\|x\|_2=1\}.
+\end{equation}
+This is not a serious restriction.
+For a general nonzero vector $x$, write
+\begin{equation}
+    x=\|x\|_2 u,
+    \qquad u\in S^{d-1}.
+\end{equation}
+We quantize $u$ and store the scalar norm $\|x\|_2$ as side information.
+For large $d$, the cost of one scalar norm per vector is negligible on a per-coordinate basis.
+The same remark applies later to the residual norm stored by the inner-product version.
+
+\paragraph{MSE distortion.}
+For reconstruction error, define
+\begin{equation}
+    D_{\mathrm{mse}}(Q;x)
+    \coloneqq
+    \mathbb E_Q\left[\|x-Q^{-1}(Q(x))\|_2^2\right],
+\end{equation}
+where the expectation is over the randomness of the quantizer, such as the random rotation.
+For unit vectors, the natural target is a distortion on the order of $4^{-b}$.
+
+\paragraph{Inner-product distortion.}
+In many applications, the vector is not used by itself.
+It is used through inner products.
+For example, attention uses inner products between queries and keys, and nearest-neighbor search ranks database vectors by inner product or cosine similarity with a query.
+For a query vector $y\in\mathbb R^d$, define
+\begin{equation}
+    D_{\mathrm{prod}}(Q;x,y)
+    \coloneqq
+    \mathbb E_Q\left[
+        \left|\langle y,x\rangle-
+        \langle y,Q^{-1}(Q(x))\rangle\right|^2
+    \right].
+\end{equation}
+For inner products, low MSE is not the only desirable property.
+We often also want the estimator to be unbiased:
+\begin{equation}
+    \mathbb E_Q\left[\langle y,Q^{-1}(Q(x))\rangle\right]
+    =\langle y,x\rangle.
+\end{equation}
+The MSE-optimized version of TURBOQUANT is generally biased for inner products.
+The inner-product version fixes this by quantizing the residual with a one-bit unbiased estimator.
+
+\subsubsection*{The random rotation idea}
+
+Let $\Pi\in\mathbb R^{d\times d}$ be a uniformly random orthogonal matrix, also called a Haar random rotation.
+For a fixed unit vector $x\in S^{d-1}$, define
+\begin{equation}
+    Y=\Pi x.
+\end{equation}
+Because $\Pi$ is uniformly random, $Y$ is uniformly distributed on the unit sphere $S^{d-1}$, no matter what $x$ was.
+Thus, the algorithm does not need to know the distribution of the input data.
+The random rotation itself creates a known coordinate distribution.
+
+\begin{lemma}[One coordinate of a random point on the sphere]
+\label{lem:tq-sphere-coordinate}
+Let $Y\sim\mathrm{Unif}(S^{d-1})$.
+Then each coordinate $Y_j$ has density
+\begin{equation}
+    f_d(t)
+    =
+    \frac{\Gamma(d/2)}{\sqrt\pi\,\Gamma((d-1)/2)}
+    (1-t^2)^{(d-3)/2},
+    \qquad -1\le t\le 1.
+\end{equation}
+Equivalently, $Y_j^2$ follows a Beta distribution with parameters $1/2$ and $(d-1)/2$.
+For large $d$,
+\begin{equation}
+    \sqrt d\,Y_j \Rightarrow \mathcal N(0,1).
+\end{equation}
+\end{lemma}
+
+\paragraph{Proof idea.}
+Fix the first coordinate $Y_1=t$.
+The remaining coordinates lie on a $(d-2)$-dimensional sphere of radius $\sqrt{1-t^2}$.
+The surface area of that slice is proportional to $(1-t^2)^{(d-3)/2}$.
+Normalizing over $t\in[-1,1]$ gives the density above.
+The Gaussian approximation follows by writing
+\begin{equation}
+    (1-t^2)^{(d-3)/2}
+    \approx \exp\left(-\frac{d t^2}{2}\right)
+\end{equation}
+when $t$ is of order $1/\sqrt d$.
+
+\paragraph{Near independence.}
+The coordinates of $Y$ are not exactly independent because
+\begin{equation}
+    \sum_{j=1}^{d}Y_j^2=1.
+\end{equation}
+However, any fixed number of coordinates becomes asymptotically independent after scaling by $\sqrt d$.
+More precisely, for fixed $k\ll d$,
+\begin{equation}
+    \sqrt d\,(Y_1,\dots,Y_k)
+    \Rightarrow
+    \mathcal N(0,I_k).
+\end{equation}
+This is the key heuristic that justifies scalar quantization after rotation: each coordinate behaves almost like an independent sample from $\mathcal N(0,1/d)$.
+
+\paragraph{A small numerical picture.}
+For a unit vector in dimension $d=1000$, a typical rotated coordinate has standard deviation $1/\sqrt{1000}\approx 0.0316$.
+A one-bit Gaussian Lloyd--Max quantizer uses two levels
+\begin{equation}
+    \pm \sqrt{\frac{2}{\pi d}}
+    \approx \pm 0.0252.
+\end{equation}
+Thus the quantizer is not trying to represent arbitrary real numbers.
+After rotation, it only needs to represent many small coordinates whose distribution is tightly concentrated near zero.
+
+\begin{center}
+\begin{tabular}{c|c|c|c}
+Original vector & Random rotation & Scalar quantize & Rotate back \\
+\hline
+$x$ & $y=\Pi x$ & $\widetilde y_j\in\{c_1,\dots,c_{2^b}\}$ & $\widetilde x=\Pi^\top \widetilde y$
+\end{tabular}
+\end{center}
+
+\subsubsection*{MSE-optimized TURBOQUANT}
+
+The MSE version of TURBOQUANT uses a scalar quantizer matched to the density $f_d$ in Lemma~\ref{lem:tq-sphere-coordinate}.
+Let $K=2^b$ be the number of scalar reconstruction levels.
+Choose ordered centroids
+\begin{equation}
+    -1\le c_1\le c_2\le \cdots\le c_K\le 1.
+\end{equation}
+With squared-error distortion, the decision boundary between $c_i$ and $c_{i+1}$ is the midpoint
+\begin{equation}
+    \tau_i=\frac{c_i+c_{i+1}}2.
+\end{equation}
+Set $\tau_0=-1$ and $\tau_K=1$.
+The optimal scalar cost is the continuous one-dimensional $K$-means cost
+\begin{equation}
+\label{eq:tq-scalar-cost}
+    C(f_d,b)
+    \coloneqq
+    \min_{c_1\le\cdots\le c_K}
+    \sum_{i=1}^{K}
+    \int_{\tau_{i-1}}^{\tau_i} (t-c_i)^2 f_d(t)\,dt.
+\end{equation}
+This is a Lloyd--Max problem.
+The codebook can be computed once for each $d$ and $b$, stored, and reused for all vectors.
+No dataset-specific codebook training is required.
+
+\paragraph{Algorithm: \textsc{TURBOQUANT}$_{\mathrm{mse}}$.}
+For a unit vector $x\in S^{d-1}$:
+\begin{enumerate}[leftmargin=2em]
+    \item Draw or fix a public random orthogonal matrix $\Pi$.
+    \item Rotate the vector:
+    \[
+        y=\Pi x.
+    \]
+    \item For each coordinate $j$, find the closest centroid:
+    \[
+        \mathrm{idx}_j=\arg\min_{i\in\{1,\dots,2^b\}} |y_j-c_i|.
+    \]
+    Store the $d$ indices, each using $b$ bits.
+    \item To dequantize, set
+    \[
+        \widetilde y_j=c_{\mathrm{idx}_j}
+    \]
+    and rotate back:
+    \[
+        \widetilde x=\Pi^\top \widetilde y.
+    \]
+\end{enumerate}
+
+\paragraph{Low-bit examples.}
+In moderate or high dimension, $f_d$ is very close to $\mathcal N(0,1/d)$.
+For this Gaussian approximation:
+\begin{center}
+\begin{tabular}{c|c|c}
+Bit-width $b$ & Approximate scalar centroids & Total MSE \\
+\hline
+$1$ & $\left\{-\sqrt{2/(\pi d)},\sqrt{2/(\pi d)}\right\}$ & $1-2/\pi\approx 0.363$ \\
+$2$ & $\{\pm 0.453/\sqrt d,\ \pm 1.51/\sqrt d\}$ & $\approx 0.117$ \\
+$3$ & Lloyd--Max levels for $\mathcal N(0,1/d)$ & $\approx 0.03$ \\
+$4$ & Lloyd--Max levels for $\mathcal N(0,1/d)$ & $\approx 0.009$
+\end{tabular}
+\end{center}
+The one-bit value $1-2/\pi$ is worth remembering.
+It is exactly the MSE of the two-level quantizer $\widehat Y=\sqrt{2/(\pi d)}\operatorname{sign}(Y)$ when $Y\sim\mathcal N(0,1/d)$.
+Indeed,
+\begin{align}
+    \mathbb E[(Y-a\operatorname{sign}Y)^2]
+    &=\mathbb E[Y^2]-2a\mathbb E|Y|+a^2,\\
+    a^\star&=\mathbb E|Y|=\sqrt{\frac{2}{\pi d}},\\
+    d\cdot \mathbb E[(Y-a^\star\operatorname{sign}Y)^2]
+    &=1-\frac{2}{\pi}.
+\end{align}
+
+\begin{theorem}[MSE guarantee for \textsc{TURBOQUANT}$_{\mathrm{mse}}$]
+\label{thm:tq-mse}
+For every unit vector $x\in S^{d-1}$, the MSE-optimized TURBOQUANT reconstruction satisfies
+\begin{equation}
+    D_{\mathrm{mse}}(Q_{\mathrm{mse}};x)
+    =\mathbb E\|x-\widetilde x\|_2^2
+    \le
+    \frac{\sqrt 3\,\pi}{2}\,4^{-b}.
+\end{equation}
+For small bit-widths, a sharper numerical evaluation gives approximately
+\begin{equation}
+    D_{\mathrm{mse}}\approx
+    0.36,
+    \quad 0.117,
+    \quad 0.03,
+    \quad 0.009
+\end{equation}
+for $b=1,2,3,4$, respectively.
+\end{theorem}
+
+\paragraph{Proof.}
+Let $Y=\Pi x$ and let $\widetilde Y$ be the coordinatewise scalar reconstruction.
+Since $\Pi$ is orthogonal,
+\begin{equation}
+    \|x-\widetilde x\|_2^2
+    =\|\Pi x-\widetilde Y\|_2^2
+    =\|Y-\widetilde Y\|_2^2.
+\end{equation}
+Therefore,
+\begin{align}
+    D_{\mathrm{mse}}
+    &=\mathbb E\sum_{j=1}^{d}(Y_j-\widetilde Y_j)^2\\
+    &=\sum_{j=1}^{d}\mathbb E(Y_j-c_{\mathrm{idx}_j})^2\\
+    &=d\,C(f_d,b),
+\end{align}
+where the last equality uses the fact that all coordinates have the same marginal density $f_d$ and the same scalar Lloyd--Max rule is applied to each coordinate.
+For larger $b$, the Panter--Dite high-resolution scalar quantization formula gives
+\begin{equation}
+    C(f_d,b)
+    \le
+    \frac1{12}
+    \left(\int f_d(t)^{1/3}\,dt\right)^3 4^{-b}
+    =
+    \frac{\sqrt 3\,\pi}{2d}\,4^{-b}.
+\end{equation}
+Multiplying by $d$ gives the theorem.
+\hfill$\square$
+
+\paragraph{Interpretation.}
+The proof is short because the random rotation did the hard work.
+It changed an arbitrary unit vector into a random point on the sphere.
+The scalar quantizer sees a known coordinate distribution, and the total distortion is just $d$ times the scalar distortion.
+The result is a vector quantizer whose distortion scales like $4^{-b}$, matching the Gaussian rate--distortion exponent.
+
+\subsubsection*{Information-theoretic lower bound}
+
+We now explain why the $4^{-b}$ scaling cannot be improved in general.
+This is the rate--distortion part of the story.
+
+\begin{lemma}[Shannon lower bound for MSE]
+\label{lem:tq-slb}
+Let $X\in\mathbb R^d$ have differential entropy $h(X)$ measured in bits.
+For any reconstruction $\widehat X$ satisfying
+\begin{equation}
+    I(X;\widehat X)\le B
+\end{equation}
+and
+\begin{equation}
+    \mathbb E\|X-\widehat X\|_2^2\le D,
+\end{equation}
+we have
+\begin{equation}
+    D\ge
+    \frac{d}{2\pi e}
+    2^{\frac{2}{d}(h(X)-B)}.
+\end{equation}
+\end{lemma}
+
+\paragraph{Proof.}
+Let $Z=X-\widehat X$.
+Then
+\begin{align}
+    B
+    &\ge I(X;\widehat X)\\
+    &=h(X)-h(X\mid \widehat X)\\
+    &=h(X)-h(Z\mid \widehat X)\\
+    &\ge h(X)-h(Z).
+\end{align}
+Among all $d$-dimensional random vectors with second moment $\mathbb E\|Z\|_2^2\le D$, the Gaussian with covariance $(D/d)I_d$ maximizes entropy.
+Thus
+\begin{equation}
+    h(Z)
+    \le \frac d2\log_2\left(2\pi e\frac{D}{d}\right).
+\end{equation}
+Rearranging gives the stated lower bound.
+\hfill$\square$
+
+\paragraph{Lower bound on the sphere.}
+A version of the Shannon lower bound for the uniform distribution on $S^{d-1}$ gives
+\begin{equation}
+\label{eq:tq-sphere-lower}
+    D(B)\ge 2^{-2B/d}.
+\end{equation}
+The quick way to remember this is to use the surface area
+\begin{equation}
+    A_d=\frac{2\pi^{d/2}}{\Gamma(d/2)}
+\end{equation}
+and the surface entropy $h(X)=\log_2 A_d$ for $X\sim\mathrm{Unif}(S^{d-1})$.
+Stirling's approximation gives
+\begin{equation}
+    A_d^{2/d}\approx \frac{2\pi e}{d},
+\end{equation}
+so Lemma~\ref{lem:tq-slb} reduces to \eqref{eq:tq-sphere-lower}.
+If $B=bd$, then
+\begin{equation}
+    D(B)\ge 2^{-2b}=4^{-b}.
+\end{equation}
+
+\paragraph{From average-case to worst-case.}
+The lower bound above is for a random vector uniformly distributed on the sphere.
+To turn it into a worst-case lower bound for randomized algorithms, one uses Yao's minimax principle:
+\begin{center}
+\emph{If every deterministic quantizer has large average distortion for a certain input distribution, then every randomized quantizer has large distortion for at least one input.}
+\end{center}
+Therefore, for every randomized $b$-bit-per-coordinate quantizer, there exists a hard unit vector $x$ such that
+\begin{equation}
+    \mathbb E\|x-Q^{-1}(Q(x))\|_2^2\ge 4^{-b}.
+\end{equation}
+Combining this lower bound with Theorem~\ref{thm:tq-mse}, TURBOQUANT is within a constant factor of the best possible worst-case distortion:
+\begin{equation}
+    4^{-b}
+    \le
+    D_{\mathrm{mse}}^{\star}(b)
+    \le
+    D_{\mathrm{mse}}(Q_{\mathrm{mse}})
+    \le
+    \frac{\sqrt 3\,\pi}{2}4^{-b}.
+\end{equation}
+The constant $\frac{\sqrt 3\pi}{2}\approx 2.72$ is not the main point.
+The important point is that the exponent $4^{-b}$ is optimal.
+
+\subsubsection*{Why MSE quantization is biased for inner products}
+
+MSE measures Euclidean reconstruction error.
+It does not automatically imply that inner products are estimated without bias.
+The issue is easiest to see at one bit.
+Under the Gaussian approximation, the one-bit MSE quantizer in the rotated domain is
+\begin{equation}
+    \widetilde Y_j=a\operatorname{sign}(Y_j),
+    \qquad
+    a=\sqrt{\frac{2}{\pi d}}.
+\end{equation}
+The reconstructed vector is
+\begin{equation}
+    \widetilde x=\Pi^\top \widetilde Y.
+\end{equation}
+By rotational symmetry,
+\begin{equation}
+    \mathbb E[\widetilde x\mid x]=\alpha x
+\end{equation}
+for some scalar $\alpha$.
+To find $\alpha$, take the inner product with $x$:
+\begin{align}
+    \alpha
+    &=\mathbb E\langle x,\widetilde x\rangle\\
+    &=\mathbb E\langle \Pi x,\widetilde Y\rangle\\
+    &=\mathbb E\sum_{j=1}^{d} a|Y_j|\\
+    &=d\,a\,\mathbb E|Y_1|.
+\end{align}
+Using $Y_1\approx\mathcal N(0,1/d)$,
+\begin{equation}
+    a=\mathbb E|Y_1|=\sqrt{\frac{2}{\pi d}},
+\end{equation}
+so
+\begin{equation}
+    \alpha\approx d\cdot \frac{2}{\pi d}=\frac{2}{\pi}.
+\end{equation}
+Hence
+\begin{equation}
+    \mathbb E\langle y,\widetilde x\rangle
+    \approx
+    \frac{2}{\pi}\langle y,x\rangle.
+\end{equation}
+This is a multiplicative shrinkage bias.
+The MSE reconstruction is close to $x$, but its average projection in the direction of $x$ is too small.
+For ranking, attention, and nearest-neighbor search, this bias can be problematic.
+
+\paragraph{Geometric reason for the bias.}
+The one-bit MSE reconstruction has approximately constant magnitude in every rotated coordinate.
+Its squared norm is about
+\begin{equation}
+    \|\widetilde Y\|_2^2=d\cdot \frac{2}{\pi d}=\frac{2}{\pi}.
+\end{equation}
+Thus the reconstruction has norm about $\sqrt{2/\pi}<1$.
+It is a good MSE representative of a sign cell, but it is not an unbiased representation of the original vector for linear measurements.
+
+\subsubsection*{QJL: a one-bit unbiased inner-product quantizer}
+
+The inner-product version of TURBOQUANT uses a one-bit Quantized Johnson--Lindenstrauss transform, abbreviated QJL.
+The role of QJL is to represent a residual vector $r$ with one bit per coordinate while preserving inner products in expectation.
+
+Let $S\in\mathbb R^{d\times d}$ have i.i.d. entries $S_{ij}\sim\mathcal N(0,1)$.
+For a unit vector $u\in S^{d-1}$, define
+\begin{equation}
+    Q_{\mathrm{qjl}}(u)=\operatorname{sign}(Su)\in\{-1,+1\}^{d}.
+\end{equation}
+For a sign vector $z\in\{-1,+1\}^d$, define
+\begin{equation}
+    Q_{\mathrm{qjl}}^{-1}(z)
+    =\frac{\sqrt{\pi/2}}{d}S^\top z.
+\end{equation}
+
+\begin{lemma}[QJL unbiasedness and variance]
+\label{lem:tq-qjl}
+For $u\in S^{d-1}$ and $y\in\mathbb R^d$,
+\begin{equation}
+    \mathbb E_S\left[\left\langle y,Q_{\mathrm{qjl}}^{-1}(Q_{\mathrm{qjl}}(u))\right\rangle\right]
+    =\langle y,u\rangle.
+\end{equation}
+Moreover,
+\begin{equation}
+    \operatorname{Var}_S\left(
+    \left\langle y,Q_{\mathrm{qjl}}^{-1}(Q_{\mathrm{qjl}}(u))\right\rangle
+    \right)
+    \le \frac{\pi}{2d}\|y\|_2^2.
+\end{equation}
+\end{lemma}
+
+\paragraph{Proof.}
+Let $s_i^\top$ be the $i$-th row of $S$.
+Then
+\begin{equation}
+    \left\langle y,Q_{\mathrm{qjl}}^{-1}(Q_{\mathrm{qjl}}(u))\right\rangle
+    =\frac1d\sum_{i=1}^{d}\sqrt{\frac\pi2}
+    (s_i^\top y)\operatorname{sign}(s_i^\top u).
+\end{equation}
+For a standard Gaussian vector $s$ and a unit vector $u$,
+\begin{equation}
+    \mathbb E[s\operatorname{sign}(s^\top u)]
+    =\sqrt{\frac2\pi}u.
+\end{equation}
+Therefore each summand has expectation
+\begin{equation}
+    \sqrt{\frac\pi2}\left\langle y,\sqrt{\frac2\pi}u\right\rangle
+    =\langle y,u\rangle,
+\end{equation}
+and averaging $d$ independent copies keeps the same expectation.
+For the variance, define
+\begin{equation}
+    Z_i=\sqrt{\frac\pi2}(s_i^\top y)\operatorname{sign}(s_i^\top u).
+\end{equation}
+Then
+\begin{equation}
+    \operatorname{Var}(Z_i)
+    \le \mathbb E Z_i^2
+    =\frac\pi2\mathbb E(s_i^\top y)^2
+    =\frac\pi2\|y\|_2^2.
+\end{equation}
+The average of $d$ independent terms has variance at most $\pi\|y\|_2^2/(2d)$.
+\hfill$\square$
+
+\paragraph{Non-unit residuals.}
+If $r\ne 0$ has norm $\gamma=\|r\|_2$, write $u=r/\gamma$.
+Then
+\begin{equation}
+    \operatorname{sign}(Sr)=\operatorname{sign}(Su),
+\end{equation}
+and the scaled QJL reconstruction
+\begin{equation}
+    \widetilde r_{\mathrm{qjl}}
+    =\gamma\frac{\sqrt{\pi/2}}{d}S^\top\operatorname{sign}(Sr)
+\end{equation}
+satisfies
+\begin{equation}
+    \mathbb E\langle y,\widetilde r_{\mathrm{qjl}}\rangle
+    =\langle y,r\rangle,
+\end{equation}
+with variance at most
+\begin{equation}
+    \frac{\pi}{2d}\gamma^2\|y\|_2^2.
+\end{equation}
+
+\subsubsection*{Inner-product TURBOQUANT}
+
+The inner-product version combines two ideas:
+\begin{enumerate}[leftmargin=2em]
+    \item use MSE-optimized TURBOQUANT with $b-1$ bits per coordinate to get a good coarse approximation;
+    \item use one additional bit per coordinate to apply QJL to the residual.
+\end{enumerate}
+The MSE stage makes the residual small.
+The QJL stage makes the inner-product estimate unbiased.
+
+\paragraph{Algorithm: \textsc{TURBOQUANT}$_{\mathrm{prod}}$.}
+For a unit vector $x\in S^{d-1}$ and target bit-width $b\ge 1$:
+\begin{enumerate}[leftmargin=2em]
+    \item Run \textsc{TURBOQUANT}$_{\mathrm{mse}}$ at bit-width $b-1$:
+    \[
+        \mathrm{idx}=Q_{\mathrm{mse}}(x),
+        \qquad
+        \widetilde x_{\mathrm{mse}}=Q_{\mathrm{mse}}^{-1}(\mathrm{idx}).
+    \]
+    \item Form the residual
+    \[
+        r=x-\widetilde x_{\mathrm{mse}},
+        \qquad
+        \gamma=\|r\|_2.
+    \]
+    \item Store one QJL bit per coordinate:
+    \[
+        q=\operatorname{sign}(Sr)\in\{-1,+1\}^{d}.
+    \]
+    \item The compressed representation is
+    \[
+        (\mathrm{idx},q,\gamma).
+    \]
+    The index vector uses $(b-1)d$ bits, the QJL sign vector uses $d$ bits, so the main bit budget is $bd$ bits.
+    \item Dequantize by
+    \[
+        \widetilde x_{\mathrm{qjl}}
+        =\gamma\frac{\sqrt{\pi/2}}{d}S^\top q,
+    \]
+    and output
+    \[
+        \widetilde x=\widetilde x_{\mathrm{mse}}+\widetilde x_{\mathrm{qjl}}.
+    \]
+\end{enumerate}
+
+\begin{theorem}[Inner-product guarantee for \textsc{TURBOQUANT}$_{\mathrm{prod}}$]
+\label{thm:tq-prod}
+For every unit vector $x\in S^{d-1}$ and every query vector $y\in\mathbb R^d$,
+\begin{equation}
+    \mathbb E\langle y,\widetilde x\rangle
+    =\langle y,x\rangle.
+\end{equation}
+Moreover,
+\begin{equation}
+    D_{\mathrm{prod}}(Q_{\mathrm{prod}};x,y)
+    \le
+    \frac{\sqrt 3\,\pi^2\|y\|_2^2}{d}\,4^{-b}.
+\end{equation}
+For small bit-widths, the sharper values are approximately
+\begin{equation}
+    D_{\mathrm{prod}}
+    \approx
+    \frac{1.57}{d},
+    \quad
+    \frac{0.56}{d},
+    \quad
+    \frac{0.18}{d},
+    \quad
+    \frac{0.047}{d}
+\end{equation}
+for $b=1,2,3,4$, respectively, when $\|y\|_2=1$.
+\end{theorem}
+
+\paragraph{Proof.}
+Condition on the MSE reconstruction $\widetilde x_{\mathrm{mse}}$.
+Then the residual $r=x-\widetilde x_{\mathrm{mse}}$ is fixed for the QJL step.
+By QJL unbiasedness,
+\begin{align}
+    \mathbb E[\langle y,\widetilde x\rangle\mid \widetilde x_{\mathrm{mse}}]
+    &=\mathbb E[\langle y,\widetilde x_{\mathrm{mse}}+\widetilde x_{\mathrm{qjl}}\rangle\mid \widetilde x_{\mathrm{mse}}]\\
+    &=\langle y,\widetilde x_{\mathrm{mse}}\rangle+\langle y,r\rangle\\
+    &=\langle y,x\rangle.
+\end{align}
+Taking expectation over $\widetilde x_{\mathrm{mse}}$ proves unbiasedness.
+
+For the distortion, again condition on $\widetilde x_{\mathrm{mse}}$:
+\begin{align}
+    \mathbb E\left[|\langle y,x\rangle-\langle y,\widetilde x\rangle|^2
+    \mid \widetilde x_{\mathrm{mse}}\right]
+    &=\mathbb E\left[|\langle y,r\rangle-\langle y,\widetilde x_{\mathrm{qjl}}\rangle|^2
+    \mid \widetilde x_{\mathrm{mse}}\right]\\
+    &=\operatorname{Var}(\langle y,\widetilde x_{\mathrm{qjl}}\rangle\mid \widetilde x_{\mathrm{mse}})\\
+    &\le \frac{\pi}{2d}\|r\|_2^2\|y\|_2^2.
+\end{align}
+Now average over the MSE stage:
+\begin{align}
+    D_{\mathrm{prod}}
+    &\le \frac{\pi}{2d}\|y\|_2^2\mathbb E\|x-\widetilde x_{\mathrm{mse}}\|_2^2.
+\end{align}
+The MSE stage uses $b-1$ bits per coordinate, so by Theorem~\ref{thm:tq-mse},
+\begin{equation}
+    \mathbb E\|x-\widetilde x_{\mathrm{mse}}\|_2^2
+    \le
+    \frac{\sqrt3\,\pi}{2}\,4^{-(b-1)}.
+\end{equation}
+Therefore
+\begin{align}
+    D_{\mathrm{prod}}
+    &\le
+    \frac{\pi}{2d}\|y\|_2^2
+    \cdot
+    \frac{\sqrt3\,\pi}{2}4^{-(b-1)}\\
+    &=
+    \frac{\sqrt3\,\pi^2\|y\|_2^2}{d}4^{-b}.
+\end{align}
+\hfill$\square$
+
+\subsubsection*{Inner-product lower bound}
+
+The MSE lower bound also implies an inner-product lower bound.
+Let the reconstruction error be
+\begin{equation}
+    e=x-Q^{-1}(Q(x)).
+\end{equation}
+Then
+\begin{equation}
+    \|e\|_2^2
+    =\sum_{j=1}^{d}\langle e_j,e\rangle^2,
+\end{equation}
+where $e_j$ is the $j$-th standard basis vector.
+If every coordinate error had expected square less than $4^{-b}/d$, then the total MSE would be less than $4^{-b}$, contradicting the MSE lower bound.
+Thus there exists some coordinate direction $e_j$ such that
+\begin{equation}
+    \mathbb E\left[
+    |\langle e_j,x\rangle-\langle e_j,Q^{-1}(Q(x))\rangle|^2
+    \right]
+    \ge \frac1d4^{-b}.
+\end{equation}
+Equivalently, there exists a query direction $y$ with $\|y\|_2=1$ for which every quantizer suffers inner-product distortion at least
+\begin{equation}
+    D_{\mathrm{prod}}\ge \frac1d4^{-b}.
+\end{equation}
+For general $y$, scaling gives
+\begin{equation}
+    D_{\mathrm{prod}}\ge \frac{\|y\|_2^2}{d}4^{-b}
+\end{equation}
+for some hard direction with that norm.
+Thus the inner-product version of TURBOQUANT also has the optimal bit-width exponent.
+
+\subsubsection*{Why the two-stage design is natural}
+
+The inner-product algorithm may look slightly unusual at first because it spends $b-1$ bits on MSE and one bit on a residual sketch.
+The design is natural from the following decomposition:
+\begin{equation}
+    x=\widetilde x_{\mathrm{mse}}+r.
+\end{equation}
+Then
+\begin{equation}
+    \langle y,x\rangle
+    =\langle y,\widetilde x_{\mathrm{mse}}\rangle+\langle y,r\rangle.
+\end{equation}
+The first term is computed from the MSE quantized vector.
+The second term is estimated by QJL.
+If the MSE stage is good, $\|r\|_2$ is small.
+QJL has variance proportional to $\|r\|_2^2\|y\|_2^2/d$, so the residual sketch becomes accurate precisely because the first stage minimized residual norm.
+
+\paragraph{Bias--variance tradeoff.}
+The MSE stage alone has low variance but can be biased for inner products.
+QJL alone is unbiased but has variance about $\pi\|y\|_2^2/(2d)$ for a unit vector.
+The two-stage method keeps the unbiasedness of QJL while reducing its variance by applying it only to the residual.
+
+\begin{center}
+\begin{tabular}{c|c|c}
+Method & Inner-product bias & Inner-product variance \\
+\hline
+MSE scalar quantizer after rotation & can be biased & small when $b$ is large \\
+QJL only & zero & about $\pi\|y\|_2^2/(2d)$ \\
+MSE $+$ QJL residual & zero & proportional to MSE residual
+\end{tabular}
+\end{center}
+
+\subsubsection*{Online and data-oblivious nature}
+
+A key practical feature of TURBOQUANT is that it is \emph{data-oblivious}.
+The quantizer does not need to run $k$-means on a dataset of vectors.
+It only needs:
+\begin{enumerate}[leftmargin=2em]
+    \item a public rotation $\Pi$;
+    \item a precomputed scalar codebook for the sphere-coordinate density;
+    \item for the inner-product version, a public Gaussian projection matrix $S$.
+\end{enumerate}
+Thus each vector can be quantized immediately as it arrives.
+This is important for streaming settings such as KV cache quantization, where keys and values are generated online during inference.
+
+\paragraph{Comparison with product quantization.}
+Product quantization usually learns codebooks from a representative dataset.
+This can work well for static vector databases, but it introduces preprocessing, indexing latency, and dependence on the training distribution.
+TURBOQUANT instead uses a universal random rotation and scalar codebook.
+Its strength is not that it learns the best possible empirical codebook for one dataset, but that it gives a fast, vectorizable, online quantizer with near-optimal worst-case distortion scaling.
+
+\paragraph{Rotation cost.}
+The mathematical description uses a Haar random orthogonal matrix, which can be generated by QR decomposition of a Gaussian matrix.
+A dense rotation costs $O(d^2)$ operations per vector.
+In practice, one can use structured rotations, block rotations, or hardware-friendly transforms to reduce cost.
+The lecture-level theory should be read as explaining the geometry: the rotation spreads energy and makes coordinates look like a known scalar source.
+Implementation choices decide how to approximate this geometry efficiently.
+
+\subsubsection*{Application: KV cache quantization}
+
+In a decoder-only transformer, the model stores key and value vectors for previous tokens.
+For long contexts, this KV cache can dominate memory usage and memory bandwidth.
+The attention score for a new query $q$ involves inner products
+\begin{equation}
+    \langle q,k_t\rangle
+\end{equation}
+with past keys $k_t$.
+If the stored keys are quantized, the attention logits are perturbed.
+Thus inner-product preservation is directly relevant.
+
+TURBOQUANT is well matched to this setting for three reasons:
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Online compression:} each new key/value vector can be compressed as soon as it is produced.
+    \item \textbf{No calibration:} the codebook does not need to be trained on a calibration set.
+    \item \textbf{Inner-product control:} the product version gives an unbiased inner-product estimator with variance scaling like $1/d$ times the residual energy.
+\end{enumerate}
+
+Empirically, the paper reports strong long-context performance at low bit-widths, including near quality-neutral results around $3.5$ bits per channel and modest degradation around $2.5$ bits per channel on long-context benchmarks.
+The theoretical results do not by themselves prove downstream language-model quality, but they explain why geometric quantities used by attention can survive aggressive quantization.
+
+\subsubsection*{Application: nearest-neighbor search}
+
+In nearest-neighbor search, one stores a database of vectors $x_1,\dots,x_N$ and receives a query $y$.
+The goal is to find vectors with large $\langle y,x_i\rangle$ or small Euclidean distance.
+A compressed database is useful only if it preserves these scores well.
+
+For unit-norm database vectors, the inner-product guarantee says
+\begin{equation}
+    \mathbb E\left[
+        \left|\langle y,x_i\rangle-
+        \langle y,\widetilde x_i\rangle\right|^2
+    \right]
+    \lesssim
+    \frac{\|y\|_2^2}{d}4^{-b}.
+\end{equation}
+The $1/d$ factor is important.
+In high dimension, random-projection inner-product errors average out across many independent rows of $S$.
+Thus the same geometry that makes random rotations useful for MSE also helps inner-product estimation.
+
+\subsubsection*{A compact summary of the proof architecture}
+
+The complete TURBOQUANT analysis can be summarized as follows.
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Random rotation creates a known source.}
+    For any fixed $x\in S^{d-1}$, $\Pi x$ is uniform on the sphere, and each coordinate has the Beta-type density $f_d$.
+
+    \item \textbf{High dimension makes the source nearly scalar Gaussian.}
+    Each coordinate is approximately $\mathcal N(0,1/d)$, and small collections of coordinates are nearly independent.
+
+    \item \textbf{Optimal scalar quantization gives vector MSE.}
+    Quantizing each rotated coordinate with a Lloyd--Max quantizer gives total distortion $dC(f_d,b)$.
+
+    \item \textbf{High-resolution scalar quantization gives the $4^{-b}$ exponent.}
+    The Panter--Dite formula yields
+    \[
+        dC(f_d,b)\le \frac{\sqrt 3\pi}{2}4^{-b}.
+    \]
+
+    \item \textbf{Shannon's lower bound proves the exponent is unavoidable.}
+    Any $bd$-bit vector quantizer has a hard input with MSE at least $4^{-b}$.
+
+    \item \textbf{MSE alone is not enough for unbiased inner products.}
+    At one bit, MSE quantization shrinks inner products by about $2/\pi$.
+
+    \item \textbf{QJL corrects the bias on the residual.}
+    MSE quantization first makes the residual small; QJL then estimates residual inner products without bias.
+\end{enumerate}
+
+\subsubsection*{Important caveats}
+
+\paragraph{Expected distortion.}
+The theorems are stated in expectation over the quantizer randomness.
+In practice, a public random seed fixes the rotation and projection matrices.
+For high dimension and many vectors, concentration usually makes a single draw behave close to the expectation, but the cleanest statement is an expected-distortion statement.
+
+\paragraph{Side information.}
+The algorithms store a vector norm, and the inner-product version stores a residual norm.
+These are scalar side-information values.
+The theoretical bit-width $b$ counts the dominant coordinatewise bits; the scalar overhead is negligible when $d$ is large but should be accounted for in an implementation.
+
+\paragraph{Worst-case versus data-dependent optimality.}
+TURBOQUANT is designed for worst-case vectors with a randomized, data-oblivious quantizer.
+A data-dependent offline method may do better on a particular fixed dataset.
+The point of the theorem is different: without making assumptions on the input distribution, TURBOQUANT matches the information-theoretic bit-width exponent up to constants.
+
+\paragraph{From geometry to task quality.}
+Preserving MSE and inner products is a strong geometric guarantee.
+Downstream performance in language models or retrieval systems also depends on nonlinear model behavior, distribution shift, and implementation details.
+The geometric theory explains why the method should be competitive, but empirical validation is still necessary for each application.
+
+\subsubsection*{Takeaway}
+
+TURBOQUANT is a clean example of how classical rate--distortion ideas become an algorithmic design principle.
+The Gaussian rate--distortion function predicts the $4^{-b}$ scaling.
+A random rotation turns a worst-case vector into a spherical random vector whose coordinates look Gaussian.
+Scalar Lloyd--Max quantization after rotation achieves the right MSE scaling.
+Finally, because MSE-optimized quantization is biased for inner products, a one-bit unbiased QJL sketch of the residual gives an inner-product-preserving version.
+
+In one sentence:
+\begin{center}
+\emph{Rotate to Gaussianize, scalar-quantize to minimize MSE, and sketch the residual to preserve inner products.}
+\end{center}

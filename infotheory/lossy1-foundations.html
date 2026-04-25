@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lossy Compression 1 — Foundations</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+/* Deck-local: a fixed-pitch bit string the eye can scan in the random-coding example. */
+.bitstr {
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+.tk-blue   { color: var(--yonsei-blue); }
+.tk-red    { color: var(--warn); }
+.tk-green  { color: var(--success); }
+
+/* "Proof box" — body-size text inside, just visually marks a derivation. */
+.proof {
+  background: linear-gradient(135deg, rgba(0,56,118,0.04) 0%, rgba(0,56,118,0.01) 100%);
+  border-left: 4px solid var(--yonsei-blue);
+  padding: 14px 22px 8px;
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
+}
+.proof-tag {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--yonsei-blue);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- ═══ TITLE ═══ -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lossy Compression · Lecture 1 of 4</div>
+  <h1>Rate&ndash;Distortion:<br>Foundations</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Setup, scalar quantization, and Shannon's theorem (with proofs)</p>
+  <p style="font-weight:500;font-size:1.8rem;margin-top:32px;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- ═══ CONTENTS ═══ -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">The rate&ndash;distortion problem</div>
+        <div class="toc-sub">Real sources, distortion functions, block codes</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Scalar quantization &amp; Lloyd&ndash;Max</div>
+        <div class="toc-sub">$R\in\{0,1,2\}$, monotone convergence</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Vector quantization beats scalar</div>
+        <div class="toc-sub">Cell shape, second moments, typical shells</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Shannon's theorem &mdash; achievability and converse</div>
+        <div class="toc-sub">Random coding, joint typicality, single-letterization</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Binary toy: $n=24,\ D=1/4$</div>
+        <div class="toc-sub">Codebooks, ball volumes, threshold rate</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 01 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>The Rate&ndash;Distortion Problem</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Real-valued sources cannot be stored exactly &mdash; we trade bits for fidelity</p>
+</div>
+
+<!-- Lossless not enough -->
+<div class="slide">
+  <h2>Lossless is not enough</h2>
+  <div class="divider"></div>
+  <p>Discrete source $X\sim P_X$ with finite entropy: lossless coding achieves rate $H(X)$ bits/symbol.</p>
+  <p>Real-valued source $X\in\mathbb{R}$: perfect reconstruction with finitely many bits is impossible. $H(X)=\infty$.</p>
+  <div class="highlight">
+    <p><strong>Lossy compression:</strong> trade rate (bits/symbol) for fidelity, measured by a <strong>distortion function</strong> $d(x,\hat x)\ge 0$.</p>
+  </div>
+  <p>Central question: <em>how many bits per sample to describe a random object up to distortion $D$?</em></p>
+</div>
+
+<!-- Three distortion functions -->
+<div class="slide">
+  <h2>Three distortion functions worth remembering</h2>
+  <div class="divider"></div>
+  <div class="grid-3">
+    <div>
+      <h3>Squared error</h3>
+      <div class="math-block">$$d(x,\hat x)=(x-\hat x)^2$$</div>
+      <p>Default for continuous sources. Gives the Gaussian theory.</p>
+    </div>
+    <div>
+      <h3>Hamming</h3>
+      <div class="math-block">$$d_H(x,\hat x)=\mathbb{1}\{x\ne\hat x\}$$</div>
+      <p>Default for discrete sources. Counts mismatches.</p>
+    </div>
+    <div>
+      <h3>Absolute error</h3>
+      <div class="math-block">$$d_1(x,\hat x)=|x-\hat x|$$</div>
+      <p>Natural for sparse representations and pruning.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Block code -->
+<div class="slide">
+  <h2>Block code: encoder and decoder</h2>
+  <div class="divider"></div>
+  <p>An $(n,R)$ <strong>lossy code</strong>:</p>
+  <div class="math-block">$$f:\mathcal{X}^n\to\{1,\dots,2^{nR}\},\qquad g:\{1,\dots,2^{nR}\}\to\widehat{\mathcal{X}}^n.$$</div>
+  <p>Reconstruction $\widehat{X}^n=g(f(X^n))$. Rate $R$ = bits per source symbol.</p>
+  <p>Per-letter average distortion:</p>
+  <div class="math-block">$$d^{(n)}(x^n,\hat x^n)\;\coloneqq\;\frac{1}{n}\sum_{i=1}^n d(x_i,\hat x_i),\qquad \mathbb{E}\bigl[d^{(n)}(X^n,\widehat X^n)\bigr].$$</div>
+</div>
+
+<!-- Achievable region (FIXED convex curve) -->
+<div class="slide">
+  <h2>Achievable rate&ndash;distortion pairs</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p><strong>Achievable</strong> $(R,D)$: for every $\varepsilon&gt;0$ and all $n$ large, there is an $(n,R+\varepsilon)$ code with $\mathbb{E}\,d^{(n)}\le D+\varepsilon$.</p>
+      <div class="math-block">$$R(D)\coloneqq \inf\{R:(R,D)\text{ achievable}\}.$$</div>
+      <p><strong>Properties.</strong> $R(D)$ is non-increasing, convex, and continuous on $(D_{\min},D_{\max})$.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 280" width="100%" style="background:var(--light);border-radius:8px;">
+        <line x1="50" y1="240" x2="290" y2="240" stroke="#888" stroke-width="1.5"/>
+        <line x1="50" y1="240" x2="50" y2="30" stroke="#888" stroke-width="1.5"/>
+        <text x="290" y="262" font-size="14" fill="#1a1a1a">D</text>
+        <text x="36" y="34" font-size="14" fill="#1a1a1a">R</text>
+        <!-- Convex decreasing R(D): cubic Bezier — drops fast at small D, levels near R=0. -->
+        <path d="M 60 40 C 100 110 160 220 280 240" stroke="#003876" stroke-width="3" fill="none"/>
+        <!-- Achievable region above curve -->
+        <path d="M 60 40 C 100 110 160 220 280 240 L 280 30 L 60 30 Z" fill="#003876" fill-opacity="0.10"/>
+        <text x="170" y="80" font-size="14" fill="#003876" font-weight="700">achievable</text>
+        <text x="80" y="200" font-size="13" fill="#888">not achievable</text>
+        <text x="220" y="200" font-size="14" fill="#003876" font-weight="700">R(D)</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- Distortion balls intuition -->
+<div class="slide">
+  <h2>Lossy = covering the typical set with distortion balls</h2>
+  <div class="divider"></div>
+  <p><strong>Lossless coding</strong> distinguishes essentially every typical sequence.</p>
+  <p><strong>Lossy coding</strong> distinguishes only <em>distortion balls</em>: two source sequences share the same description if a single reconstruction is close to both.</p>
+  <div class="highlight">
+    <p><strong>Geometric picture:</strong> $R(D)$ is the smallest log-count of distortion-$D$ balls needed to cover the typical set of the source.</p>
+  </div>
+  <p>This intuition becomes exact via Shannon's mutual-information formula.</p>
+</div>
+
+
+<!-- ════════════ PART 02 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Scalar Quantization</h1>
+  <div class="divider"></div>
+  <p class="subtitle">A concrete warm-up: heights, $R\in\{0,1,2\}$, Lloyd&ndash;Max</p>
+</div>
+
+<!-- Heights toy with FIXED Gaussian SVG -->
+<div class="slide">
+  <h2>Toy source: heights of a population</h2>
+  <div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Model:</p>
+      <div class="math-block">$$X\sim\mathcal{N}(\mu,\sigma^2),\quad \mu=170,\ \sigma^2=10.$$</div>
+      <p>Distortion: <span class="tk-blue">squared error</span> $d(x,\hat x)=(x-\hat x)^2$.</p>
+      <p>Goal: store each $X$ using $R$ bits.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 240" width="100%" style="background:var(--light);border-radius:8px;">
+        <line x1="20" y1="200" x2="300" y2="200" stroke="#888" stroke-width="1.5"/>
+        <!-- Bell-shaped curve: cubic Beziers approximating a Gaussian. -->
+        <path d="M 30 198
+                 C 70 198 100 195 130 140
+                 C 145 60 175 60 190 140
+                 C 220 195 250 198 290 198"
+              stroke="#003876" stroke-width="2.5" fill="#003876" fill-opacity="0.12"/>
+        <line x1="160" y1="62" x2="160" y2="200" stroke="#003876" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="148" y="222" font-size="14" fill="#003876">μ = 170</text>
+        <text x="100" y="222" font-size="12" fill="#888">160</text>
+        <text x="210" y="222" font-size="12" fill="#888">180</text>
+        <text x="20" y="40" font-size="13" fill="#003876">N(170, 10)</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- R = 0 setup -->
+<div class="slide">
+  <h2>$R=0$: store nothing &mdash; what is optimal?</h2>
+  <div class="divider"></div>
+  <p>If we send no bits, the decoder outputs a constant $\widehat X = c$.</p>
+  <p><strong>Question:</strong> which constant minimizes $\mathbb{E}[(X-c)^2]$?</p>
+  <p>Claim: $c^\star = \mathbb{E}[X] = \mu$, with optimal value $D(0)=\operatorname{Var}(X)=\sigma^2$.</p>
+</div>
+
+<!-- R = 0 PROOF (compressed to 1 math-block) -->
+<div class="slide">
+  <h2>$R=0$: proof that $c^\star=\mu$</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <p>Add and subtract $\mu$, then expand the square:</p>
+    <div class="math-block">$$\mathbb{E}[(X-c)^2]=\mathbb{E}\bigl[(X-\mu)+(\mu-c)\bigr]^2=\sigma^2+\underbrace{2(\mu-c)\,\mathbb{E}[X-\mu]}_{=\,0}+(\mu-c)^2.$$</div>
+    <p>The cross-term vanishes since $\mathbb{E}[X-\mu]=0$. So $\mathbb{E}[(X-c)^2]=\sigma^2+(\mu-c)^2\ge\sigma^2$, with equality iff <span class="tk-blue">$c=\mu$</span>. Hence $c^\star=\mu$ and $D(0)=\sigma^2$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- R = 1 setup -->
+<div class="slide">
+  <h2>$R=1$: one threshold, two cells</h2>
+  <div class="divider"></div>
+  <p>Encoder partitions $\mathbb{R}$ at the median (the mean for a Gaussian):</p>
+  <div class="math-block">$$f(x)=\mathbb{1}\{x&gt;\mu\},\qquad \hat x_0=\mathbb{E}[X\mid X\le\mu],\quad \hat x_1=\mathbb{E}[X\mid X&gt;\mu].$$</div>
+  <p>(These reps are optimal under squared error &mdash; same proof as $R=0$, restricted to each cell.)</p>
+  <p>Goal: compute $D(1)=\mathbb{E}[(X-\widehat X)^2]$.</p>
+</div>
+
+<!-- R = 1 step 1 (compressed) -->
+<div class="slide">
+  <h2>$R=1$ &mdash; Lemma: half-Gaussian conditional mean</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Lemma 1</div>
+    <p>Standardize $X=\mu+\sigma Z$ with $Z\sim\mathcal{N}(0,1)$. Then $X&gt;\mu\Leftrightarrow Z&gt;0$, so $\mathbb{E}[X\mid X&gt;\mu]=\mu+\sigma\,\mathbb{E}[Z\mid Z&gt;0]$, and</p>
+    <div class="math-block">$$\mathbb{E}[Z\mid Z&gt;0]\;=\;\frac{\int_0^\infty z\,\phi(z)\,dz}{1/2}\;=\;\frac{\frac{1}{\sqrt{2\pi}}\bigl[-e^{-z^2/2}\bigr]_0^\infty}{1/2}\;=\;\frac{1/\sqrt{2\pi}}{1/2}\;=\;\sqrt{\tfrac{2}{\pi}}.$$</div>
+    <p>Therefore $\mathbb{E}[X\mid X&gt;\mu]=\mu+\sigma\sqrt{2/\pi}$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- R = 1 step 2 (compressed) -->
+<div class="slide">
+  <h2>$R=1$ &mdash; conclude $D(1)=\sigma^2(1-2/\pi)$</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <p>By symmetry of the Gaussian, the two cells contribute equally. Within the upper cell, $\hat x_1=\mathbb{E}[X\mid X&gt;\mu]$ is the optimal rep, so its squared error equals the conditional variance:</p>
+    <div class="math-block">$$D(1)=\sigma^2\,\operatorname{Var}(Z\mid Z&gt;0)=\sigma^2\bigl(\mathbb{E}[Z^2\mid Z&gt;0]-(\mathbb{E}[Z\mid Z&gt;0])^2\bigr)=\sigma^2\bigl(1-\tfrac{2}{\pi}\bigr).$$</div>
+    <p>Used: $\mathbb{E}[Z^2\mid Z&gt;0]=\mathbb{E}[Z^2]=1$ (by symmetry of $z^2\phi(z)$), and Lemma 1 for the cross-term. So $D(1)\approx 0.363\sigma^2\approx 3.63$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- R = 1 picture -->
+<div class="slide">
+  <h2>$R=1$ picture: half-line cells, half-line means</h2>
+  <div class="divider"></div>
+  <svg viewBox="0 0 1100 280" width="100%" style="background:var(--light);border-radius:8px;">
+    <line x1="60" y1="200" x2="1040" y2="200" stroke="#666" stroke-width="1.5"/>
+    <!-- Wide bell curve -->
+    <path d="M 80 198
+             C 250 198 380 195 470 90
+             C 510 30 590 30 630 90
+             C 720 195 850 198 1020 198"
+          stroke="#003876" stroke-width="2.5" fill="#003876" fill-opacity="0.10"/>
+    <line x1="550" y1="60" x2="550" y2="220" stroke="#d94040" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="528" y="246" font-size="14" fill="#d94040">μ (threshold)</text>
+    <circle cx="395" cy="200" r="6" fill="#003876"/>
+    <circle cx="705" cy="200" r="6" fill="#003876"/>
+    <text x="345" y="190" font-size="14" fill="#003876">x̂₀</text>
+    <text x="715" y="190" font-size="14" fill="#003876">x̂₁</text>
+    <text x="220" y="266" font-size="13" fill="#666">cell 0: send "0"</text>
+    <text x="780" y="266" font-size="13" fill="#666">cell 1: send "1"</text>
+  </svg>
+  <p style="margin-top:16px;">The bit identifies the half-line; decoder outputs its conditional mean. Distortion $\sigma^2(1-2/\pi)$ is the conditional variance.</p>
+</div>
+
+<!-- R = 2 problem -->
+<div class="slide">
+  <h2>$R=2$: where to put four-cell thresholds?</h2>
+  <div class="divider"></div>
+  <p>Naive choice: thresholds at $165, 170, 175$. Optimal in general? <strong>No.</strong></p>
+  <div class="highlight">
+    <p>Optimal thresholds and reps depend on each other: best rep is the cell's <strong>conditional mean</strong>; best threshold is the <strong>midpoint</strong> of adjacent reps.</p>
+  </div>
+  <p>This circular dependence is solved by <strong>Lloyd&ndash;Max</strong>.</p>
+</div>
+
+<!-- Lloyd-Max statement -->
+<div class="slide">
+  <h2>Lloyd&ndash;Max algorithm</h2>
+  <div class="divider"></div>
+  <p>Fix the number of reconstruction levels $K$. Alternate two updates until convergence.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">① Centroid update</h3>
+      <p>Thresholds $\{\tau_i\}$ fixed:</p>
+      <div class="math-block">$$\hat x_i\leftarrow \mathbb{E}[X\mid \tau_i\le X&lt;\tau_{i+1}].$$</div>
+      <p>Each rep is the conditional mean of its cell.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">② Boundary update</h3>
+      <p>Reps $\{\hat x_i\}$ fixed:</p>
+      <div class="math-block">$$\tau_{i+1}\leftarrow \tfrac{1}{2}(\hat x_i+\hat x_{i+1}).$$</div>
+      <p>Each threshold is the midpoint of adjacent reps.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Lloyd-Max PROOF (split into two slides) -->
+<div class="slide">
+  <h2>Lloyd&ndash;Max &mdash; centroid update is optimal at fixed thresholds</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Step 1 of monotone-decrease proof</div>
+    <p>Distortion as a function of thresholds $\tau$ and reps $\hat x$:</p>
+    <div class="math-block">$$D(\tau,\hat x)=\sum_{i=1}^{K}\int_{\tau_i}^{\tau_{i+1}}(x-\hat x_i)^2 p(x)\,dx.$$</div>
+    <p>For fixed $\tau$, each integral $\int_{\tau_i}^{\tau_{i+1}}(x-\hat x_i)^2 p(x)\,dx$ is minimized over $\hat x_i$ by the conditional mean (apply the $R=0$ proof to the conditional law on cell $i$). So step ① <strong>globally minimizes</strong> $D$ over $\hat x$ at fixed $\tau$:</p>
+    <div class="math-block">$$D(\tau,\hat x^{\,\text{new}})\le D(\tau,\hat x^{\,\text{old}}).$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max &mdash; boundary update + convergence</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Step 2 + 3 of monotone-decrease proof</div>
+    <p><strong>Step 2.</strong> For fixed $\hat x$, the integrand at each $x$ is the smaller of $(x-\hat x_i)^2$ and $(x-\hat x_{i+1})^2$. The minimum switches at the midpoint $\frac{1}{2}(\hat x_i+\hat x_{i+1})$. So the midpoint <strong>globally minimizes</strong> $D$ over $\tau$ at fixed $\hat x$.</p>
+    <p><strong>Step 3.</strong> The sequence $D_t=D(\tau_t,\hat x_t)$ is therefore non-increasing and bounded below by $0$:</p>
+    <div class="math-block">$$D_0\ge D_1\ge D_2\ge\cdots\ge 0\;\Longrightarrow\; D_t\text{ converges.}\;\blacksquare$$</div>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 03 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Vector Quantization</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Quantizing blocks beats quantizing coordinates &mdash; even for i.i.d. components</p>
+</div>
+
+<!-- VQ definition -->
+<div class="slide">
+  <h2>Quantize blocks, not coordinates</h2>
+  <div class="divider"></div>
+  <p>Vector quantization quantizes a block jointly:</p>
+  <div class="math-block">$$Q^{(n)}:\mathbb{R}^{n}\longrightarrow \{1,\dots,2^{nR}\}.$$</div>
+  <p>Codebook of $2^{nR}$ representatives in $\mathbb{R}^n$. Encoder picks the nearest one; decoder looks it up.</p>
+  <div class="highlight">
+    <p><strong>Even for i.i.d. components</strong>, VQ can beat scalar quantization. The reason is geometric.</p>
+  </div>
+</div>
+
+<!-- VQ vs SQ visual -->
+<div class="slide">
+  <h2>Scalar = rectangles, vector = round cells</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div>
+      <h3 style="text-align:center;">Scalar quantization (2-D)</h3>
+      <svg viewBox="0 0 360 320" width="100%" style="background:var(--light);border-radius:8px;">
+        <rect x="40" y="40" width="280" height="280" stroke="#003876" stroke-width="2" fill="none"/>
+        <line x1="40" y1="110" x2="320" y2="110" stroke="#888" stroke-width="1"/>
+        <line x1="40" y1="180" x2="320" y2="180" stroke="#888" stroke-width="1"/>
+        <line x1="40" y1="250" x2="320" y2="250" stroke="#888" stroke-width="1"/>
+        <line x1="110" y1="40" x2="110" y2="320" stroke="#888" stroke-width="1"/>
+        <line x1="180" y1="40" x2="180" y2="320" stroke="#888" stroke-width="1"/>
+        <line x1="250" y1="40" x2="250" y2="320" stroke="#888" stroke-width="1"/>
+        <g fill="#003876">
+          <circle cx="75"  cy="75"  r="4"/><circle cx="145" cy="75"  r="4"/><circle cx="215" cy="75"  r="4"/><circle cx="285" cy="75"  r="4"/>
+          <circle cx="75"  cy="145" r="4"/><circle cx="145" cy="145" r="4"/><circle cx="215" cy="145" r="4"/><circle cx="285" cy="145" r="4"/>
+          <circle cx="75"  cy="215" r="4"/><circle cx="145" cy="215" r="4"/><circle cx="215" cy="215" r="4"/><circle cx="285" cy="215" r="4"/>
+          <circle cx="75"  cy="285" r="4"/><circle cx="145" cy="285" r="4"/><circle cx="215" cy="285" r="4"/><circle cx="285" cy="285" r="4"/>
+        </g>
+        <line x1="40" y1="40" x2="75" y2="75" stroke="#d94040" stroke-width="2"/>
+        <text x="40" y="32" font-size="13" fill="#d94040">corner: large MSE</text>
+      </svg>
+    </div>
+    <div>
+      <h3 style="text-align:center;">Vector quantization (hex)</h3>
+      <svg viewBox="0 0 360 320" width="100%" style="background:var(--light);border-radius:8px;">
+        <rect x="40" y="40" width="280" height="280" stroke="#003876" stroke-width="2" fill="none"/>
+        <g stroke="#888" stroke-width="1" fill="none">
+          <polygon points="180,80 220,103 220,150 180,173 140,150 140,103"/>
+          <polygon points="100,103 140,126 140,173 100,196 60,173 60,126"/>
+          <polygon points="260,103 300,126 300,173 260,196 220,173 220,126"/>
+          <polygon points="180,150 220,173 220,220 180,243 140,220 140,173"/>
+          <polygon points="100,173 140,196 140,243 100,266 60,243 60,196"/>
+          <polygon points="260,173 300,196 300,243 260,266 220,243 220,196"/>
+          <polygon points="180,220 220,243 220,290 180,313 140,290 140,243"/>
+        </g>
+        <g fill="#003876">
+          <circle cx="180" cy="125" r="4"/>
+          <circle cx="100" cy="148" r="4"/>
+          <circle cx="260" cy="148" r="4"/>
+          <circle cx="180" cy="195" r="4"/>
+          <circle cx="100" cy="220" r="4"/>
+          <circle cx="260" cy="220" r="4"/>
+          <circle cx="180" cy="265" r="4"/>
+        </g>
+        <line x1="180" y1="195" x2="200" y2="215" stroke="#2e8b57" stroke-width="2"/>
+        <text x="40" y="32" font-size="13" fill="#2e8b57">round cell: smaller MSE</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- Why round wins -->
+<div class="slide">
+  <h2>Why round cells win at fixed area</h2>
+  <div class="divider"></div>
+  <p>For a uniform source on a cell, the average squared distance to the centroid is the cell's <strong>second moment</strong>:</p>
+  <div class="math-block">$$M(\mathcal{C})=\frac{1}{|\mathcal{C}|}\int_{\mathcal{C}}\|x-c\|^2\,dx.$$</div>
+  <p>Among 2-D cells of fixed area, the disk minimizes $M$. A square is about <span class="tk-red">8% worse</span>; rectangles much worse.</p>
+  <p>In high dimension, mass concentrates in a <strong>typical shell</strong>. Good vector quantizers cover this shell with near-spherical cells; scalar quantization wastes budget on empty corners.</p>
+</div>
+
+
+<!-- ════════════ PART 04 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Shannon's Theorem</h1>
+  <div class="divider"></div>
+  <p class="subtitle">$R(D)=R^{(I)}(D)$ via random coding (achievability) and data processing (converse)</p>
+</div>
+
+<!-- Information R(D) -->
+<div class="slide">
+  <h2>Information rate&ndash;distortion function</h2>
+  <div class="divider"></div>
+  <p>Single-letter optimization over <strong>test channels</strong> $P_{\widehat X\mid X}$:</p>
+  <div class="math-block">$$R^{(I)}(D)\;\coloneqq\;\inf_{\substack{P_{\widehat X\mid X}\\ \mathbb{E}\,d(X,\widehat X)\le D}}\; I(X;\widehat X).$$</div>
+  <p><strong>Shannon's rate&ndash;distortion theorem.</strong> For a memoryless source under single-letter distortion,</p>
+  <div class="math-block">$$\boxed{\;R(D)=R^{(I)}(D).\;}$$</div>
+  <p>Two parts: <span class="tk-blue"><strong>achievability</strong></span> $R\le R^{(I)}(D)$ via random coding, and <span class="tk-blue"><strong>converse</strong></span> $R\ge R^{(I)}(D)$ via data processing.</p>
+</div>
+
+<!-- Why MI -->
+<div class="slide">
+  <h2>Why mutual information appears</h2>
+  <div class="divider"></div>
+  <p>A rate-$R$ code selects one out of $2^{nR}$ reconstructions. The index $M=f(X^n)$ takes at most $2^{nR}$ values, so</p>
+  <div class="math-block">$$nR\ge \log_2|\operatorname{range}(f)|\ge H(M)\ge I(X^n;M)\ge I(X^n;\widehat X^n).$$</div>
+  <p>(Last step: $\widehat X^n=g(M)$ is a deterministic function of $M$ &mdash; data-processing inequality.)</p>
+  <div class="highlight">
+    <p>The smallest information $\widehat X$ must carry about $X$ to keep distortion $\le D$ is exactly $\inf I(X;\widehat X)$ subject to $\mathbb{E}\,d\le D$.</p>
+  </div>
+</div>
+
+<!-- Random codebook construction -->
+<div class="slide">
+  <h2>Random codebook construction</h2>
+  <div class="divider"></div>
+  <p>Fix any test channel $P_{\widehat X\mid X}$ with $\mathbb{E}\,d\le D-\delta$ and $I(X;\widehat X)=I$. Let $P_{\widehat X}$ be the marginal.</p>
+  <p>Generate $M=2^{nR}$ codewords i.i.d. from this marginal:</p>
+  <div class="math-block">$$\widehat X^n(1),\ldots,\widehat X^n(M),\qquad \widehat X^n(m)\stackrel{\text{i.i.d.}}{\sim}P_{\widehat X}^{\otimes n}.$$</div>
+  <p><strong>Encoder.</strong> On input $X^n$, search for $m$ with $(X^n,\widehat X^n(m))\in T_\varepsilon^{(n)}(P_{X,\widehat X})$. If multiple, pick smallest. If none, set $m=1$ (error). Send $m$ using $nR$ bits.</p>
+  <p><strong>Decoder.</strong> Output $\widehat X^n(m)$.</p>
+</div>
+
+<!-- Joint typicality lemma -->
+<div class="slide">
+  <h2>Joint typicality lemma</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Lemma (joint AEP)</div>
+    <p>For any $x^n\in T_\varepsilon^{(n)}(P_X)$ and $\widehat X^n\sim P_{\widehat X}^{\otimes n}$ <strong>independent</strong> of $x^n$:</p>
+    <div class="math-block">$$2^{-n(I(X;\widehat X)+3\varepsilon)}\;\le\;\Pr\bigl[(x^n,\widehat X^n)\in T_\varepsilon^{(n)}\bigr]\;\le\;2^{-n(I(X;\widehat X)-3\varepsilon)}.$$</div>
+    <p><strong>Sketch.</strong> $|T_\varepsilon^{(n)}|\approx 2^{nH(X,\widehat X)}$; each $\hat x^n$ has marginal probability $\approx 2^{-nH(\widehat X)}$ under $P_{\widehat X}^{\otimes n}$. Product $\approx 2^{n[H(X,\widehat X)-H(X)-H(\widehat X)]}=2^{-nI(X;\widehat X)}$ after dividing by the count of typical $x^n$. The $3\varepsilon$ slack absorbs typical-set entropy bounds. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Achievability error bound -->
+<div class="slide">
+  <h2>Achievability &mdash; bounding "no jointly typical codeword"</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof (encoder error)</div>
+    <p>Condition on a typical $X^n=x^n$. Codewords are i.i.d., so the events $\{(x^n,\widehat X^n(m))\in T_\varepsilon\}$ are independent across $m$. Each has probability $\ge 2^{-n(I+3\varepsilon)}$ by the joint AEP. Using $(1-u)^M\le e^{-Mu}$:</p>
+    <div class="math-block">$$\Pr[\text{no match}\mid X^n=x^n]\le \bigl(1-2^{-n(I+3\varepsilon)}\bigr)^{2^{nR}}\le \exp\!\bigl(-2^{n(R-I-3\varepsilon)}\bigr).$$</div>
+    <p>For $R&gt;I+3\varepsilon$, the right side is doubly-exponentially small. Averaging over typical $x^n$ (and noting non-typical $x^n$ have $\Pr\to 0$): $\Pr[\text{no match}]\to 0$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Achievability distortion bound -->
+<div class="slide">
+  <h2>Achievability &mdash; distortion under "match found"</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof (distortion bound)</div>
+    <p>Let $\mathcal{E}=\{$no match$\}$. On $\mathcal{E}^c$, joint typicality forces empirical means close to true means:</p>
+    <div class="math-block">$$\frac{1}{n}\sum_{i=1}^{n}d(X_i,\widehat X^n_i(m^\star))\;\le\;\mathbb{E}\,d(X,\widehat X)+\varepsilon\;\le\;D-\delta+\varepsilon.$$</div>
+    <p>On $\mathcal{E}$, bound by $d_{\max}$. Total: $\mathbb{E}\,d^{(n)}\le \Pr[\mathcal{E}^c](D-\delta+\varepsilon)+\Pr[\mathcal{E}]\,d_{\max}\to D-\delta+\varepsilon$. Choose $\varepsilon&lt;\delta$ to get $\le D$. Combined with $R&gt;I+3\varepsilon$, every $R&gt;I(X;\widehat X)$ is achievable; optimizing the test channel gives $R\ge R^{(I)}(D)\Rightarrow$ achievable. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Search creates dependence -->
+<div class="slide">
+  <h2>Search creates the dependence</h2>
+  <div class="divider"></div>
+  <p>Codewords are independent of $X^n$ by construction. The encoder picks one satisfying a rare typicality event. Conditioning on that event, the empirical joint of $(X^n,\widehat X^n(m^\star))$ matches $P_{X,\widehat X}$.</p>
+  <div class="highlight">
+    <p>Generate many independent fakes; one of them, by sheer count, looks as if drawn jointly with the source.</p>
+  </div>
+  <p><strong>Threshold:</strong> $R&gt;I(X;\widehat X)\Rightarrow$ match found w.h.p.; $R&lt;I(X;\widehat X)\Rightarrow$ no match w.h.p.</p>
+</div>
+
+<!-- Converse step 1 -->
+<div class="slide">
+  <h2>Converse &mdash; rate bounds total mutual information</h2>
+  <div class="divider"></div>
+  <p>Assume $(R,D)$ achievable. Fix a code with $M=f(X^n)\in\{1,\ldots,2^{nR}\}$, $\widehat X^n=g(M)$, $\mathbb{E}\,d^{(n)}\le D$.</p>
+  <div class="proof">
+    <div class="proof-tag">Step 1</div>
+    <p>$M$ has range size $\le 2^{nR}$, and $\widehat X^n=g(M)$ is a deterministic function of $M$. By data processing on $X^n\to M\to\widehat X^n$:</p>
+    <div class="math-block">$$nR\;\ge\;\log_2|\operatorname{range}(M)|\;\ge\;H(M)\;\ge\;I(X^n;M)\;\ge\;I(X^n;\widehat X^n).$$</div>
+  </div>
+</div>
+
+<!-- Converse step 2 (compressed) -->
+<div class="slide">
+  <h2>Converse &mdash; single-letterization</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Step 2</div>
+    <p>Memoryless source: $h(X^n)=\sum_i h(X_i)$. By the chain rule, $h(X^n\mid\widehat X^n)=\sum_i h(X_i\mid X^{i-1},\widehat X^n)\le\sum_i h(X_i\mid\widehat X_i)$ (conditioning reduces entropy). Therefore</p>
+    <div class="math-block">$$I(X^n;\widehat X^n)=h(X^n)-h(X^n\mid\widehat X^n)\;\ge\;\sum_{i=1}^n\bigl[h(X_i)-h(X_i\mid\widehat X_i)\bigr]=\sum_{i=1}^n I(X_i;\widehat X_i).$$</div>
+  </div>
+</div>
+
+<!-- Converse step 3 (compressed) -->
+<div class="slide">
+  <h2>Converse &mdash; closing via convexity</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Step 3</div>
+    <p>By definition $I(X_i;\widehat X_i)\ge R^{(I)}(D_i)$ where $D_i=\mathbb{E}\,d(X_i,\widehat X_i)$. Apply Jensen to the convex non-increasing function $R^{(I)}$:</p>
+    <div class="math-block">$$\frac{1}{n}\sum_{i=1}^n R^{(I)}(D_i)\;\ge\;R^{(I)}\!\left(\tfrac{1}{n}\sum_{i=1}^n D_i\right)\;=\;R^{(I)}\bigl(\mathbb{E}\,d^{(n)}\bigr)\;\ge\;R^{(I)}(D).$$</div>
+    <p>Combining steps 1&ndash;3: $\;nR\ge I(X^n;\widehat X^n)\ge n R^{(I)}(D)\;\Longrightarrow\;R\ge R^{(I)}(D).\;\blacksquare$</p>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 05 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">05</div>
+  <h1>Binary Toy: Watching the Ball Get Covered</h1>
+  <div class="divider"></div>
+  <p class="subtitle">$n=24,\ D=1/4$ &mdash; literal bit strings, ball-volume proof</p>
+</div>
+
+<!-- Bernoulli setup -->
+<div class="slide">
+  <h2>Bernoulli source, Hamming distortion</h2>
+  <div class="divider"></div>
+  <p>Source: $X_i\stackrel{\text{i.i.d.}}{\sim}\mathrm{Bern}(1/2)$. Distortion: $d_H(x,\hat x)=\mathbb{1}\{x\ne\hat x\}$.</p>
+  <p>For $0&lt;D&lt;1/2$, propose the test channel</p>
+  <div class="math-block">$$X=\widehat X\oplus Z,\qquad \widehat X\sim\mathrm{Bern}(1/2),\quad Z\sim\mathrm{Bern}(D),\quad \widehat X\perp Z.$$</div>
+  <p>Then $\Pr[X\ne\widehat X]=\Pr[Z=1]=D$, so $\mathbb{E}\,d_H=D$.</p>
+</div>
+
+<!-- Binary R(D) achievability -->
+<div class="slide">
+  <h2>Binary $R^{(I)}(D)\le 1-H_b(D)$ via the test channel</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Achievability of the formula</div>
+    <p>The proposed channel has $\widehat X$ marginal Bernoulli$(1/2)$. Compute mutual information:</p>
+    <div class="math-block">$$I(X;\widehat X)=H(X)-H(X\mid\widehat X)=H(X)-H(\widehat X\oplus Z\mid\widehat X)=H(X)-H(Z)=1-H_b(D).$$</div>
+    <p>So $R^{(I)}(D)\le 1-H_b(D)$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Binary R(D) converse -->
+<div class="slide">
+  <h2>Binary $R^{(I)}(D)\ge 1-H_b(D)$ &mdash; matching lower bound</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Converse for the binary formula</div>
+    <p>Let $Z'=X\oplus\widehat X$. Since $\Pr[Z'=1]\le D\le 1/2$, $H(Z')\le H_b(D)$. Then</p>
+    <div class="math-block">$$I(X;\widehat X)=H(X)-H(Z'\mid\widehat X)\;\ge\;H(X)-H(Z')\;\ge\;1-H_b(D).$$</div>
+    <p>Combining: $R(D)=R^{(I)}(D)=1-H_b(D)$ for $0\le D\le 1/2$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Source string -->
+<div class="slide">
+  <h2>One source sequence, $n=24$</h2>
+  <div class="divider"></div>
+  <p>A single random source draw:</p>
+  <div class="math-block">$X^n=$&nbsp;<span class="bitstr">101000100001100010000100</span></div>
+  <p>Goal: distortion $D=1/4$, so a good reconstruction lies within $nD=6$ Hamming flips of $X^n$.</p>
+  <p>A random Bernoulli$(1/2)$ codeword <em>typically</em> differs from $X^n$ in $\approx n/2=12$ positions &mdash; nowhere near the ball.</p>
+</div>
+
+<!-- Four candidates -->
+<div class="slide">
+  <h2>Four independently drawn candidates</h2>
+  <div class="divider"></div>
+  <p>Four codewords i.i.d. from Bernoulli$(1/2)^{24}$:</p>
+  <table style="font-size:1.2rem;margin-top:8px;">
+    <thead>
+      <tr><th style="width:8%;">$m$</th><th>candidate $\widehat X^n(m)$</th><th style="width:18%;">$d_H$ to $X^n$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><span class="bitstr">110111111001001010011011</span></td><td><span class="tk-red"><strong>14</strong></span></td></tr>
+      <tr><td>2</td><td><span class="bitstr">101110001011010000010011</span></td><td><span class="tk-red"><strong>12</strong></span></td></tr>
+      <tr><td>5</td><td><span class="bitstr">100000000001010000001000</span></td><td><span class="tk-red"><strong>7</strong></span></td></tr>
+      <tr><td>6</td><td><span class="bitstr">101000111001001011100000</span></td><td><span class="tk-red"><strong>7</strong></span></td></tr>
+    </tbody>
+  </table>
+  <p>None reach the radius-$6$ ball &mdash; right marginal, no engineered relationship to $X^n$.</p>
+</div>
+
+<!-- Matched candidate -->
+<div class="slide">
+  <h2>Keep drawing &mdash; eventually one lands inside</h2>
+  <div class="divider"></div>
+  <p>In a random codebook of size $64$ (rate $R\approx 0.25$), one candidate hits the ball:</p>
+  <table style="font-size:1.2rem;margin-top:8px;">
+    <thead>
+      <tr><th style="width:8%;">$m$</th><th>candidate $\widehat X^n(m)$</th><th style="width:18%;">$d_H$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>14</td><td><span class="bitstr">101010101000100111000000</span></td><td><span class="tk-green"><strong>6</strong></span></td></tr>
+    </tbody>
+  </table>
+  <p>Error pattern $X^n\oplus\widehat X^n(14)$:</p>
+  <div class="math-block"><span class="bitstr">000010001001000101000100</span></div>
+  <p>Six ones &mdash; empirical crossover $1/4$. Selected pair behaves as if drawn through $\widehat X_i=X_i\oplus Z_i,\ Z_i\sim\mathrm{Bern}(1/4)$.</p>
+</div>
+
+<!-- Hamming ball volume bound -->
+<div class="slide">
+  <h2>Hamming ball volume bound &mdash; the binomial-pmf trick</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Lemma &mdash; $|B(0,nD)|\le 2^{nH_b(D)}$ for $D\le 1/2$</div>
+    <p>The ball is $B(0,nD)=\{y^n:\sum y_i\le nD\}$, so $|B(0,nD)|=\sum_{k=0}^{\lfloor nD\rfloor}\binom{n}{k}$. For $k\le nD\le n/2$, $D^k(1-D)^{n-k}$ is non-increasing in $k$ (factor $D/(1-D)\le 1$). Hence each term in the Bin$(n,D)$ pmf is at least the $k=nD$ term:</p>
+    <div class="math-block">$$1\ge\sum_{k=0}^{\lfloor nD\rfloor}\binom{n}{k}D^k(1-D)^{n-k}\ge D^{nD}(1-D)^{n-nD}\sum_{k=0}^{\lfloor nD\rfloor}\binom{n}{k}.$$</div>
+    <p>Solving: $|B(0,nD)|\le D^{-nD}(1-D)^{-(n-nD)}=2^{n[-D\log_2 D-(1-D)\log_2(1-D)]}=2^{nH_b(D)}.\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Threshold rate -->
+<div class="slide">
+  <h2>Volume counting recovers the threshold rate</h2>
+  <div class="divider"></div>
+  <p>Random Bernoulli$(1/2)$ codeword falls in $B(X^n,nD)$ with probability</p>
+  <div class="math-block">$$\frac{|B(0,nD)|}{2^n}\le\frac{2^{nH_b(D)}}{2^n}=2^{-n(1-H_b(D))}.$$</div>
+  <p>Codebook of size $M=2^{nR}$ contains a close match w.h.p. iff $R&gt;1-H_b(D)=R(D)$.</p>
+  <p>For $D=1/4$: $R(D)\approx 0.189$ bits/symbol. At $n=24$, that is $\approx 4.5$ bits total &mdash; about $23$ codewords. The matched-candidate slide at 64 codewords is in the "almost sure" regime.</p>
+</div>
+
+
+<!-- Recap -->
+<div class="slide">
+  <h2>Recap of Lecture 1</h2>
+  <div class="divider"></div>
+  <ul>
+    <li><strong>R&ndash;D problem:</strong> trade rate for fidelity under a fixed distortion $d$.</li>
+    <li><strong>Scalar quantization:</strong> $D(0)=\sigma^2$, $D(1)=\sigma^2(1-2/\pi)$. Lloyd&ndash;Max is monotone-decreasing alternation.</li>
+    <li><strong>Vector quantization:</strong> joint quantization shapes round cells; lower distortion at the same rate.</li>
+    <li><strong>Shannon's theorem:</strong> $R(D)=R^{(I)}(D)=\inf I(X;\widehat X)$ subject to $\mathbb{E}\,d\le D$.</li>
+    <li><strong>Achievability:</strong> random codebook of $2^{nR}$ contains a jointly typical codeword w.h.p. for $R&gt;I$.</li>
+    <li><strong>Converse:</strong> $nR\ge I(X^n;\widehat X^n)\ge\sum I(X_i;\widehat X_i)\ge nR^{(I)}(D)$ via DPI + convexity.</li>
+    <li><strong>Binary toy:</strong> $R(D)=1-H_b(D)$, with explicit MI computation and ball-volume bound.</li>
+  </ul>
+</div>
+
+<!-- Closer -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Lecture 1</div>
+  <p class="big-word-sub">Up next &mdash; Gaussian, Laplacian, and the Shannon lower bound.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MI Estimation 2 — InfoNCE and CLIP · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  p, li { font-size: 1rem; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+<h1>MI Estimation 2 · InfoNCE and CLIP &mdash; Notes</h1>
+
+<section>
+  <h2>The InfoNCE proof in finer detail</h2>
+  <p>The slide gives a Jensen-style proof. The complete argument (Poole et&nbsp;al. 2019, Oord et&nbsp;al. 2018):</p>
+  <div class="deriv">
+    \[
+    \mathcal{L}_{\mathrm{InfoNCE}}(f^\star)=-\mathbb{E}\log\frac{r(x,y)}{r(x,y)+\sum_k r(x,y_k^-)},
+    \]
+  </div>
+  <p>where $f^\star(x,y)=\log r(x,y)$. Add and subtract $\log K$ inside:</p>
+  <div class="deriv">
+    \[
+    =\mathbb{E}\log\frac{1}{K}\Bigl(r(x,y)+\sum_k r(x,y_k^-)\Bigr)-\mathbb{E}\log r(x,y)+\log K.
+    \]
+  </div>
+  <p>The first term is $\le \log\frac{1}{K}\bigl(\mathbb{E}r(x,y)+(K-1)\mathbb{E}_{p_X p_Y}r\bigr)=\log\frac{K}{K}=0$ (Jensen plus $\mathbb{E}_{p_X p_Y}r=1$). The second term is $-I(X;Y)$. So $\mathcal{L}_{\mathrm{InfoNCE}}(f^\star)\le \log K-I(X;Y)$, i.e.&nbsp;$I\ge\log K-\mathcal{L}$. The final inequality holds for any $f$ since $f^\star$ minimizes the loss.</p>
+</section>
+
+<section>
+  <h2>Why exactly $\log K$ saturation, not just an upper bound</h2>
+  <p>The slide states the bound saturates at $\log K$. Why is this <em>exactly</em> the ceiling? Because the InfoNCE loss is a softmax cross-entropy: its minimum value when the optimal classifier is perfect is $0$, and the maximum value is $\log K$ (uniform prediction). So $\log K-\mathcal{L}\in[0,\log K]$ regardless of MI.</p>
+  <p>For $I&gt;\log K$, the bound is trivially $\log K$ &mdash; no information about how much larger $I$ is. The estimator is bias-low by exactly $I-\log K$ in the limit of perfect critic.</p>
+</section>
+
+<section>
+  <h2>Temperature $\tau$ in CLIP</h2>
+  <p>The temperature scales the inner product before the softmax. Smaller $\tau$ means sharper softmax: a few similarity scores dominate. Larger $\tau$ smooths the distribution.</p>
+  <p>CLIP learns $\tau$ as a parameter, clipped to a maximum of $100$ to prevent training instability. The learned value at convergence corresponds to a sharply peaked similarity matrix &mdash; in the contrastive regime, the diagonal needs to dominate by orders of magnitude.</p>
+  <p>This is connected to information bottleneck: tightening $\tau$ corresponds to demanding the encoder produce very confident matches. The exact tradeoff is studied in Wang &amp; Isola (2020), "Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere".</p>
+</section>
+
+<section>
+  <h2>Why the symmetric loss</h2>
+  <p>The asymmetric loss $\mathcal{L}_{x\to y}$ trains image embeddings to retrieve their captions. The reverse $\mathcal{L}_{y\to x}$ trains text embeddings to retrieve their images. Both are valid InfoNCE objectives on the same data, just with $X$ and $Y$ swapped.</p>
+  <p>Empirically, training only one direction creates a representation imbalance: the encoder corresponding to the "querier" learns sharper features than the "key". The symmetric average eliminates this asymmetry.</p>
+  <p>Theoretically, $\frac{1}{2}(\mathcal{L}_{x\to y}+\mathcal{L}_{y\to x})$ is also a valid InfoNCE bound on $I(X;Y)$, since MI is symmetric.</p>
+</section>
+
+<section>
+  <h2>The CLIP zero-shot recipe in detail</h2>
+  <p>Beyond the basic 4-step recipe on the slide:</p>
+  <ol>
+    <li><strong>Prompt ensembling:</strong> use 80 different prompt templates ("a photo of a {label}", "a {label} in the wild", "a sketch of a {label}", etc.) and average the resulting text embeddings. Boosts ImageNet accuracy by $\sim 5$%.</li>
+    <li><strong>Class name engineering:</strong> ImageNet labels are sometimes ambiguous ("crane" — bird? machine?). The CLIP paper uses category-disambiguated names ("crane (bird)") for hard cases.</li>
+    <li><strong>Temperature at inference:</strong> the learned $\tau$ from training is reused; do not re-learn at evaluation time.</li>
+  </ol>
+  <p>The full evaluation protocol: encode test images $\to$ compute cosine similarity with $\sim 80$-prompt-ensemble text embeddings $\to$ argmax over labels.</p>
+</section>
+
+<section>
+  <h2>Robustness and other zero-shot capabilities</h2>
+  <p>Zero-shot ImageNet is a single benchmark; CLIP's broader appeal is robustness. Trained on $400$M image&ndash;text pairs from the web, it transfers across domains: ImageNet-Sketch ($\sim 10$% accuracy from supervised ResNet-50, $\sim 20$% from CLIP), ImageNet-A (adversarial natural examples, $\sim 50$% gap), and so on.</p>
+  <p>Information-theoretically, this is because the text supervision is a much weaker but much broader signal than ImageNet's $1000$-way labels. The MI maximization is across <em>any</em> caption and image, not just labeled categories.</p>
+</section>
+
+<section>
+  <h2>What CLIP does not do well</h2>
+  <p>For full context:</p>
+  <ul>
+    <li><strong>Fine-grained categories:</strong> bird species, car models &mdash; underrepresented in web text.</li>
+    <li><strong>Counting and spatial reasoning:</strong> "three cats on the left" doesn't reliably retrieve correct images.</li>
+    <li><strong>OCR-heavy tasks:</strong> only weak text reading from images.</li>
+    <li><strong>Compositional generalization:</strong> "purple cow" vs.&nbsp;"cow with purple background" can be confused.</li>
+  </ul>
+  <p>These are limitations of the data and the contrastive objective, not of InfoNCE itself. Subsequent work (Flamingo, BLIP, generative image-text models) addresses some of these by adding a generative component on top of the CLIP-style backbone.</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossy 2 — Gaussian and Laplacian · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossy Compression 2 · Notes</h1>
+<p class="meta">Companion to <code>lossy2-gaussian-laplacian.html</code>. Long-form reasoning that does not fit on the slides.</p>
+
+<section>
+  <h2>Why Gaussian achievability uses a "backward" channel</h2>
+  <p>The natural way to write a test channel is forward: pick $X$, then sample $\widehat X\mid X$. For the Gaussian rate&ndash;distortion problem, this forward form is more complicated &mdash; the conditional law $\widehat X\mid X$ is a shrunken Gaussian with both a non-trivial mean and a non-trivial variance.</p>
+  <p>The backward form $X=\widehat X+Z$ trades that complication for a clean independence statement: $\widehat X\perp Z$. The mutual information drops out instantly because $h(X\mid\widehat X)=h(Z)$, and the distortion $\mathbb{E}(X-\widehat X)^2=\mathbb{E}Z^2$ is also immediate. Both forms describe the same joint distribution; the backward form is just easier to compute with.</p>
+</section>
+
+<section>
+  <h2>What the Gaussian-vs-other-source comparison is really saying</h2>
+  <p>The slide says "Gaussian is the hardest source at fixed variance." Two distinct ways to read this, both correct:</p>
+  <ul>
+    <li><strong>Upper bound on $R_X(D)$:</strong> any source with variance $\sigma^2$ admits a code at rate $\le\frac12\log(\sigma^2/D)$. So $\frac12\log(\sigma^2/D)$ is universally achievable.</li>
+    <li><strong>Tightness for Gaussians:</strong> the bound is achieved by the Gaussian source. So the bound is the actual rate&ndash;distortion function only in that case.</li>
+  </ul>
+  <p>For non-Gaussian sources, $R_X(D)&lt;\frac12\log(\sigma^2/D)$ strictly &mdash; structure beyond variance helps. Skewed sources, multimodal sources, sparse sources are all easier than the variance-matched Gaussian.</p>
+</section>
+
+<section>
+  <h2>The auxiliary-density trick in the Laplacian converse</h2>
+  <p>The line "$I(X;\widehat X)\ge\mathbb{E}\log(q/p_X)$" looks like sleight of hand. Where does it come from?</p>
+  <p>By definition, $I(X;\widehat X)=\mathbb{E}\log\frac{p_{X\mid\widehat X}}{p_X}$. For any other conditional density $q_{X\mid\widehat X}$,</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}\log\frac{p_{X\mid\widehat X}}{q_{X\mid\widehat X}}
+    \;=\;\mathbb{E}\bigl[D_{\mathrm{KL}}(p_{X\mid\widehat X}\Vert q_{X\mid\widehat X})\bigr]\;\ge\;0,
+    \]
+  </div>
+  <p>so $\mathbb{E}\log p_{X\mid\widehat X}\ge\mathbb{E}\log q_{X\mid\widehat X}$, hence $I(X;\widehat X)\ge\mathbb{E}\log(q_{X\mid\widehat X}/p_X)$. The bound is tight when $q$ matches the true posterior, which is exactly what happens for the optimal mixture-based test channel.</p>
+  <p>Choosing $q$ to be a Laplace centered at $\widehat X$ with scale $D$ is engineering: that density makes the expectation collapse to a closed form involving only $\mathbb{E}|X|$ and $\mathbb{E}|X-\widehat X|$, both of which we have explicit bounds on.</p>
+</section>
+
+<section>
+  <h2>Verifying the Laplacian mixture by characteristic functions</h2>
+  <p>The mixture $V=\lambda^2D^2\,\delta_0+(1-\lambda^2D^2)\mathrm{Lap}(\lambda)$ has char. fn.</p>
+  <div class="deriv">
+    \[
+    \phi_V(t)=\lambda^2D^2\cdot 1+(1-\lambda^2D^2)\,\frac{\lambda^2}{\lambda^2+t^2}.
+    \]
+  </div>
+  <p>Multiply by $\phi_N(t)=1/(1+D^2t^2)$:</p>
+  <div class="deriv">
+    \[
+    \phi_V(t)\phi_N(t)\;=\;\frac{\lambda^2D^2(\lambda^2+t^2)+(1-\lambda^2D^2)\lambda^2}{(\lambda^2+t^2)(1+D^2t^2)}\;=\;\frac{\lambda^2(1+D^2t^2)}{(\lambda^2+t^2)(1+D^2t^2)}\;=\;\frac{\lambda^2}{\lambda^2+t^2}\;=\;\phi_X(t).
+    \]
+  </div>
+  <p>Numerator simplification: $\lambda^2D^2\lambda^2+\lambda^2D^2t^2+\lambda^2-\lambda^4D^2=\lambda^2+\lambda^2D^2t^2=\lambda^2(1+D^2t^2)$. So $V+N$ is exactly $\mathrm{Lap}(\lambda)$.</p>
+</section>
+
+<section>
+  <h2>The atom at zero is not an artifact</h2>
+  <p>The atom is forced by the converse. The auxiliary density $q_{X\mid\widehat X}$ is Laplace centered at $\widehat X$ with scale $D$, which means that conditional on $\widehat X=0$, the source has density $\frac{1}{2D}e^{-|X|/D}$ &mdash; a sharp peak at zero. For the converse equality to hold, the joint $P_{X,\widehat X}$ must have $\widehat X=0$ with non-trivial probability.</p>
+  <p>So the rate&ndash;distortion-optimal compressor, when reconstructing a Laplacian source under $\ell_1$ distortion, must zero out a fraction of coordinates. Not for engineering convenience &mdash; for information-theoretic optimality.</p>
+</section>
+
+<section>
+  <h2>Why output bound uses $\ell_1$, not $\ell_2$</h2>
+  <p>The proof telescopes a layerwise perturbation through 1-Lipschitz nonlinearities. The Lipschitz constant of $\sigma$ is 1 in $\ell_2$ <em>and</em> in $\ell_1$, but the matrix multiplication step is $\|W\Delta\|_1\le\|W\|_1\|\Delta\|_1$ where $\|W\|_1$ is the column-sum norm. That gives the clean product over layers.</p>
+  <p>An $\ell_2$ analogue exists via spectral norms: $\|W\Delta\|_2\le\|W\|_2\|\Delta\|_2$. The bound has the same structure, but the per-coordinate distortion problem then becomes squared-error rather than absolute-error, and the optimal reproduction is Gaussian rather than mixture-with-atom. No sparsity falls out. So the $\ell_1$ formulation is what makes pruning a theorem.</p>
+</section>
+
+<section>
+  <h2>Why CROM rotations Gaussianize</h2>
+  <p>For any fixed unit vector $r^n\in\mathbb{R}^n$, multiplying by a Haar-random orthogonal matrix produces $A r^n$ uniformly distributed on the sphere of radius $\|r^n\|$. In high dimension, a uniformly random point on the sphere has coordinates that are <strong>approximately independent</strong> Gaussian with variance $\|r^n\|^2/n$.</p>
+  <p>This is one of the more useful soft facts in high-dimensional probability: the sphere is so big that a uniform draw on it looks marginal-Gaussian on every coordinate, even though the joint constraint $\sum y_i^2=1$ couples them. Concentration tells us the coupling is weak in the relevant tail regime.</p>
+  <p>Once the residual coordinates look approximately Gaussian, the extreme-value behavior is predictable, so the next sparse-extreme step can be applied.</p>
+</section>
+
+<section>
+  <h2>Looking ahead</h2>
+  <p>Lecture 3 (Lattice codes and QUIP\#): replaces the random Gaussian codebook with a structured lattice. Rotations again play a role &mdash; this time as Hadamard transforms that "Gaussianize" raw LLM weights so they fit a fixed lattice grid.</p>
+  <p>Lecture 4 (TURBOQUANT): replaces "rotate then quantize sparse extremes" with "rotate then quantize every coordinate." The same Gaussianization story, deployed inside a coordinate-wise scalar quantizer to get matching distortion exponents.</p>
+</section>
+
+</body>
+</html>

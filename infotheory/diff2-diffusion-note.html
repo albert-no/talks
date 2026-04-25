@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diffusion 2 — Hierarchical VAE · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  p, li { font-size: 1rem; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+<h1>Diffusion 2 · Hierarchical VAE &mdash; Notes</h1>
+
+<section>
+  <h2>Why this particular variance schedule</h2>
+  <p>The choice $q(x_t\mid x_{t-1})=\mathcal{N}(\sqrt{\alpha_t}x_{t-1},\beta_t I)$ with $\alpha_t=1-\beta_t$ is called <em>variance-preserving</em> diffusion (Song &amp; Ermon, Ho et&nbsp;al., DDPM). The contraction factor $\sqrt{\alpha_t}=\sqrt{1-\beta_t}$ ensures $\operatorname{Var}(X_t)=\operatorname{Var}(X_{t-1})$ when $X_{t-1}$ has unit marginal variance. Iterating, $\operatorname{Var}(X_t)$ stays bounded as $t$ grows.</p>
+  <p>Alternative: <em>variance-exploding</em> (VE) diffusion with $X_t=X_{t-1}+\sigma_t\eta$, no contraction. Used in NCSN-style models. Forward variance grows unboundedly. Both VP and VE work; VP is cleaner for ELBO derivations because the marginal variance stays in a small range.</p>
+</section>
+
+<section>
+  <h2>Detailed expansion of the diffusion ELBO</h2>
+  <p>Starting from $\log p_\theta(x_0)\ge\mathbb{E}_{q(x_{1:T}\mid x_0)}[\log p_\theta(x_{0:T})-\log q(x_{1:T}\mid x_0)]$, expand both products:</p>
+  <div class="deriv">
+    \[
+    \log p_\theta(x_{0:T})-\log q(x_{1:T}\mid x_0)
+    =\log p(x_T)+\sum_{t=1}^T\log p_\theta(x_{t-1}\mid x_t)-\sum_{t=1}^T\log q(x_t\mid x_{t-1}).
+    \]
+  </div>
+  <p>Use Bayes on the forward chain: $q(x_t\mid x_{t-1})=q(x_{t-1}\mid x_t,x_0)q(x_t\mid x_0)/q(x_{t-1}\mid x_0)$. Substitute, telescope, and rearrange. The final form (up to constants):</p>
+  <div class="deriv">
+    \[
+    -\log p_\theta(x_0)\le \underbrace{D_{\mathrm{KL}}(q(x_T|x_0)\Vert p(x_T))}_{L_T}+\sum_{t=2}^T \underbrace{\mathbb{E}_q D_{\mathrm{KL}}(q(x_{t-1}|x_t,x_0)\Vert p_\theta(x_{t-1}|x_t))}_{L_{t-1}}\underbrace{-\mathbb{E}_{q(x_1|x_0)}\log p_\theta(x_0|x_1)}_{L_0}.
+    \]
+  </div>
+  <p>Each $L_t$ is a per-step contribution. Training a single network $\mu_\theta(x_t,t)$ over all $t$ shares parameters across the chain.</p>
+</section>
+
+<section>
+  <h2>Why the true reverse $q(x_{t-1}\mid x_t,x_0)$ is Gaussian</h2>
+  <p>This is special to <em>linear-Gaussian</em> forward processes. In general, $p(x_{t-1}\mid x_t)$ (without conditioning on $x_0$) is not Gaussian for arbitrary data. But conditioning on $x_0$ makes both factors $q(x_t\mid x_{t-1})$ and $q(x_{t-1}\mid x_0)$ Gaussian in $x_{t-1}$, and the product of two Gaussians is Gaussian. The forward process being linear is what gives us a closed form.</p>
+  <p>For non-linear forward processes (e.g. discrete diffusion), the analogous derivation yields a categorical or other simple form, but the closed-form reverse conditional remains the centerpiece of the analysis.</p>
+</section>
+
+<section>
+  <h2>Why $L_T$ vanishes asymptotically</h2>
+  <p>$q(x_T\mid x_0)=\mathcal{N}(\sqrt{\bar\alpha_T}x_0,(1-\bar\alpha_T)I)$. As $T\to\infty$ with $\bar\alpha_T\to 0$, this converges in distribution to $\mathcal{N}(0,I)=p(x_T)$, and the KL goes to zero. In practice: pick the schedule so $\bar\alpha_T$ is very small (e.g. $\sim 10^{-5}$).</p>
+  <p>Since $L_T$ is constant in $\theta$, it cannot be optimized. It contributes a fixed offset to the bound; we ignore it during training.</p>
+</section>
+
+<section>
+  <h2>Treatment of $L_0$ in practice</h2>
+  <p>$L_0=-\mathbb{E}_{q(x_1\mid x_0)}\log p_\theta(x_0\mid x_1)$ is the final-step decoder likelihood. For continuous data, often replaced by a Gaussian likelihood with unit variance. For pixel data with discrete intensities $\{0,1,\ldots,255\}/255$, Ho et&nbsp;al. (2020) use a discretized Gaussian decoder that integrates the Gaussian density over each pixel-value bin.</p>
+  <p>$L_0$ is typically small relative to the sum $\sum L_t$ for large $T$, so a simple approximation is acceptable.</p>
+</section>
+
+<section>
+  <h2>Numerical sanity check on the closed form</h2>
+  <p>Take the simplest case: $T=2$, $\beta_1=\beta_2=\beta$, $\alpha=1-\beta$, $\bar\alpha_1=\alpha$, $\bar\alpha_2=\alpha^2$.</p>
+  <p>$\widetilde\beta_2=\frac{1-\bar\alpha_1}{1-\bar\alpha_2}\beta_2=\frac{1-\alpha}{1-\alpha^2}\beta=\frac{\beta}{1+\alpha}$. Sanity: at $\alpha\to 1$ (no noise added), $\widetilde\beta_2\to\beta/2$, smaller than $\beta$ &mdash; as expected, conditioning on $x_0$ tightens the variance.</p>
+  <p>Mean coefficient on $x_0$: $\frac{\sqrt{\bar\alpha_1}\beta_2}{1-\bar\alpha_2}=\frac{\sqrt{\alpha}\beta}{1-\alpha^2}=\frac{\sqrt\alpha}{1+\alpha}$. Sums to 1 with the coefficient on $x_t$: $\frac{\sqrt{\alpha}(1-\bar\alpha_1)}{1-\bar\alpha_2}=\frac{\sqrt\alpha(1-\alpha)}{1-\alpha^2}=\frac{\sqrt\alpha}{1+\alpha}$. They're equal in this case (symmetry from $T=2$); in general they differ.</p>
+</section>
+
+<section>
+  <h2>Connection to information-theoretic rate&ndash;distortion</h2>
+  <p>Each forward step is a noisy channel from $X_{t-1}$ to $X_t$. Mutual information $I(X_0;X_t)$ is monotone non-increasing in $t$ (data processing). The reverse process learns to invert these channels approximately.</p>
+  <p>This connects to <em>successive refinement</em> from rate&ndash;distortion theory: a single source described at multiple distortion levels, with each level a coarsening of the previous. Diffusion's reverse chain is essentially a learned successive-refinement decoder.</p>
+</section>
+
+</body>
+</html>

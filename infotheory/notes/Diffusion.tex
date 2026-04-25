@@ -1,0 +1,215 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Generative modeling: VAEs and diffusion models
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Variational Inference and the Variational Autoencoder}
+\label{sec:vae}
+
+A \emph{generative model} aims to produce samples $x\in\cX$ whose distribution matches a data distribution $p_{\text{data}}(x)$.
+A common approach introduces a latent variable $Z$ with a simple prior and defines a flexible conditional model for $X$ given $Z$.
+
+\paragraph{Latent-variable model.}
+Choose a prior $p(z)$ (e.g., $\cN(0,I)$), and a conditional decoder family $p_\theta(x\mid z)$ parametrized by $\theta$.
+This defines a joint model
+\begin{equation}
+    p_\theta(x,z)=p(z)\,p_\theta(x\mid z)
+\end{equation}
+and a marginal likelihood
+\begin{equation}
+    p_\theta(x)=\int p_\theta(x,z)\,dz.
+\end{equation}
+
+\paragraph{Maximum likelihood training.}
+Given i.i.d. data $x_1,\dots,x_N\sim p_{\text{data}}$, maximum likelihood estimation (MLE) solves
+\begin{equation}
+    \theta^* \in \arg\max_{\theta}\; \frac{1}{N}\sum_{i=1}^N \log p_\theta(x_i)
+    \quad\Longleftrightarrow\quad
+    \theta^* \in \arg\min_{\theta}\; \frac{1}{N}\sum_{i=1}^N -\log p_\theta(x_i).
+\end{equation}
+The integral in $p_\theta(x)$ is typically intractable, which motivates variational inference.
+
+\paragraph{Variational posterior.}
+Introduce an approximate posterior (encoder) family $q_\phi(z\mid x)$.
+Then
+\begin{equation}
+\label{eq:vae-elbo-jensen}
+\begin{aligned}
+\log p_\theta(x)
+&= \log \int p_\theta(x,z)\,dz
+= \log \int q_\phi(z\mid x)\,\frac{p_\theta(x,z)}{q_\phi(z\mid x)}\,dz\\
+&= \log\, \Esub{z\sim q_\phi(\cdot\mid x)}{\frac{p_\theta(x,z)}{q_\phi(z\mid x)}}
+\;\ge\; \Esub{z\sim q_\phi(\cdot\mid x)}{\log\frac{p_\theta(x,z)}{q_\phi(z\mid x)}}.
+\end{aligned}
+\end{equation}
+The inequality is Jensen's inequality (concavity of $\log$).
+The right-hand side is the \emph{evidence lower bound} (ELBO).
+
+\begin{definition}[ELBO]
+For a given data point $x$, define
+\begin{equation}
+\label{eq:elbo-def}
+    \mathcal{L}_{\text{ELBO}}(\theta,\phi;x)
+    \coloneqq \Esub{z\sim q_\phi(\cdot\mid x)}{\log p_\theta(x\mid z)}
+    - \KL{q_\phi(z\mid x)}{p(z)}.
+\end{equation}
+\end{definition}
+
+\paragraph{Interpretation.}
+The ELBO has two terms:
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{Reconstruction / likelihood term:} encourage $p_\theta(x\mid z)$ to assign high probability to the data when $z\sim q_\phi(z\mid x)$.
+
+    \item \textbf{Regularization term:} push the approximate posterior $q_\phi(z\mid x)$ toward the prior $p(z)$.
+    This prevents the encoder from using an arbitrarily complex latent code and is essential for sampling.
+\end{itemize}
+
+\paragraph{Why ELBO is a lower bound.}
+A useful identity is
+\begin{equation}
+\label{eq:elbo-gap}
+    \log p_\theta(x)
+    = \mathcal{L}_{\text{ELBO}}(\theta,\phi;x)
+    + \KL{q_\phi(z\mid x)}{p_\theta(z\mid x)}.
+\end{equation}
+Since KL divergence is nonnegative, the ELBO is always a lower bound on the log-likelihood.
+Equality holds iff $q_\phi(z\mid x)=p_\theta(z\mid x)$.
+
+\paragraph{Common Gaussian parameterization.}
+VAEs often take
+\(
+    q_\phi(z\mid x)=\cN\bigl(\mu_\phi(x),\,\mathrm{diag}(\sigma_\phi(x)^2)\bigr)
+\)
+with a neural network outputting $\mu_\phi(x)$ and $\sigma_\phi(x)$.
+For continuous data (e.g., images scaled to $[0,1]$), one may use a Gaussian or logistic likelihood for $p_\theta(x\mid z)$.
+
+\begin{remark}[Bits vs. nats]
+In these notes, $\log$ is base $2$ (bits). In much of the VAE literature, $\ln$ is used (nats).
+The objectives differ by a constant factor of $\log_2(e)$.
+\end{remark}
+
+\subsection{Diffusion Models as Hierarchical VAEs}
+\label{sec:diffusion}
+
+A diffusion model defines a \emph{fixed} Markov chain that gradually corrupts data into Gaussian noise (forward process), and learns to reverse this corruption (reverse process).
+It can be viewed as a latent-variable model with latents $(X_1,\dots,X_T)$ and observed variable $X_0$.
+
+\subsubsection*{Forward (noising) process}
+
+Fix a variance schedule $\{\beta_t\}_{t=1}^T$ with $0<\beta_t<1$ and define $\alpha_t\coloneqq 1-\beta_t$ and $\bar\alpha_t\coloneqq \prod_{s=1}^t \alpha_s$.
+The forward process is
+\begin{equation}
+    q(x_{1:T}\mid x_0)=\prod_{t=1}^T q(x_t\mid x_{t-1}),
+    \qquad
+    q(x_t\mid x_{t-1}) = \cN\bigl(\sqrt{\alpha_t}\,x_{t-1},\,\beta_t I\bigr).
+\end{equation}
+One can show by iterating Gaussians that
+\begin{equation}
+\label{eq:xt-given-x0}
+    q(x_t\mid x_0) = \cN\bigl(\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I\bigr),
+\end{equation}
+so that $X_t$ is a noisy version of $X_0$ with signal-to-noise ratio controlled by $\bar\alpha_t$.
+As $t\to T$ with $\bar\alpha_T\approx 0$, $X_T$ is nearly standard normal.
+
+\subsubsection*{Reverse (denoising) model}
+
+The learned generative process runs backward:
+\begin{equation}
+    p_\theta(x_{0:T}) = p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}\mid x_t),
+    \qquad p(x_T)=\cN(0,I).
+\end{equation}
+A common choice is a Gaussian reverse kernel
+\begin{equation}
+    p_\theta(x_{t-1}\mid x_t)=\cN\bigl(\mu_\theta(x_t,t),\,\Sigma_t\bigr),
+\end{equation}
+where $\Sigma_t$ is fixed (or learned) and a neural network parametrizes the mean.
+
+\subsubsection*{ELBO decomposition}
+
+As with VAEs, we can lower-bound the data log-likelihood $\log p_\theta(x_0)$ by an ELBO built on the forward chain $q$.
+A standard calculation yields
+\begin{equation}
+\label{eq:diffusion-elbo}
+\log p_\theta(x_0)
+\ge
+\Esub{q(x_{1:T}\mid x_0)}{\log p_\theta(x_{0:T}) - \log q(x_{1:T}\mid x_0)}
+= L_0 - L_T - \sum_{t=1}^{T-1} L_t,
+\end{equation}
+where (up to constants)
+\begin{align}
+    L_0 &\equiv -\Esub{q(x_1\mid x_0)}{\log p_\theta(x_0\mid x_1)},\\
+    L_T &\equiv \KL{q(x_T\mid x_0)}{p(x_T)},\\
+    L_t &\equiv \Esub{q(x_t\mid x_0)}{\KL{q(x_{t-1}\mid x_t,x_0)}{p_\theta(x_{t-1}\mid x_t)}},\qquad t=1,\dots,T-1.
+\end{align}
+The dominant learning signal is matching the true reverse conditional $q(x_{t-1}\mid x_t,x_0)$.
+
+\subsubsection*{Closed form of the true reverse conditional}
+
+Because the forward chain is linear-Gaussian, the conditional $q(x_{t-1}\mid x_t,x_0)$ is Gaussian and can be computed in closed form.
+One convenient form is
+\begin{equation}
+\label{eq:true-reverse}
+q(x_{t-1}\mid x_t,x_0)
+=\cN\bigl(\mu_q(x_t,x_0),\,\tilde\beta_t I\bigr),
+\end{equation}
+with
+\begin{equation}
+\mu_q(x_t,x_0)=
+\frac{\sqrt{\bar\alpha_{t-1}}\,\beta_t}{1-\bar\alpha_t}\,x_0
++\frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}\,x_t,
+\qquad
+\tilde\beta_t\coloneqq \frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\,\beta_t.
+\end{equation}
+Thus, learning the reverse kernel reduces to estimating $x_0$ (or equivalently the noise) given $x_t$.
+
+\subsection{Equivalent Parameterizations: Predicting \texorpdfstring{$x_0$}{x0}, the Score, or the Noise}
+\label{sec:diffusion-parameterizations}
+
+Equation~\eqref{eq:xt-given-x0} implies a convenient reparameterization:
+\begin{equation}
+    X_t = \sqrt{\bar\alpha_t}\,X_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon,
+    \qquad \varepsilon\sim \cN(0,I).
+\end{equation}
+Given a sample $(x_0,t,\varepsilon)$, we can generate $x_t$ exactly.
+Training is then supervised regression.
+
+\subsubsection*{Predicting $x_0$}
+
+A network can be trained to output an estimate $\widehat x_0 = x_{0,\theta}(x_t,t)$.
+In the simplest (unweighted) form one minimizes
+\begin{equation}
+    \Esub{(x_0,t,\varepsilon)}{\|x_0 - x_{0,\theta}(x_t,t)\|^2},
+    \qquad x_t=\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\,\varepsilon.
+\end{equation}
+The optimal predictor under squared error is the conditional mean $\E{X_0\mid X_t=x_t}$.
+
+\subsubsection*{Predicting the noise $\varepsilon$}
+
+Solving for $x_0$ gives
+\(
+    x_0 = \frac{x_t-\sqrt{1-\bar\alpha_t}\,\varepsilon}{\sqrt{\bar\alpha_t}}.
+\)
+Substituting into $\mu_q(x_t,x_0)$ shows that the reverse mean can be written as an affine function of $x_t$ and $\varepsilon$.
+Therefore, instead of predicting $x_0$, one can predict the noise $\varepsilon$ via a network $\varepsilon_\theta(x_t,t)$ and train using
+\begin{equation}
+\label{eq:eps-loss}
+    \Esub{(x_0,t,\varepsilon)}{\|\varepsilon - \varepsilon_\theta(x_t,t)\|^2}.
+\end{equation}
+This is the most common parameterization in practice.
+
+\subsubsection*{Predicting the score}
+
+The \emph{score function} of the marginal $p_t(x)\coloneqq q(x_t=x)$ is
+\(\nabla_x\log p_t(x)\).
+Tweedie's formula relates the posterior mean to the score:
+\begin{equation}
+    \E{X_0\mid X_t=x_t}
+    = \frac{1}{\sqrt{\bar\alpha_t}}\Bigl(x_t + (1-\bar\alpha_t)\,\nabla_{x_t}\log p_t(x_t)\Bigr).
+\end{equation}
+Thus, predicting $x_0$ is equivalent (up to scaling) to learning the score.
+Score-based diffusion models directly parametrize $s_\theta(x_t,t)\approx \nabla_{x_t}\log p_t(x_t)$.
+
+\begin{remark}[Information-theoretic viewpoint]
+Each forward step $x_{t-1}\to x_t$ is a noisy channel that decreases $I(X_0;X_t)$.
+The reverse model learns to invert these channels approximately.
+This perspective is useful when connecting diffusion models to rate--distortion and successive refinement.
+\end{remark}

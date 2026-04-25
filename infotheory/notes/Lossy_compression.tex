@@ -1,0 +1,1352 @@
+\renewcommand{\Pr}{\operatorname{Pr}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lossy compression and rate--distortion
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Setup: Rate--Distortion Tradeoff}
+\label{subsec:lossy-setup}
+
+For real-valued sources, perfect reconstruction with a finite number of bits is impossible.
+A \emph{lossy} code trades rate (bits or nats per source symbol) for fidelity measured by a distortion function.
+The central question is:
+\begin{center}
+\emph{How many bits per sample are needed to describe a random object up to distortion $D$?}
+\end{center}
+
+\paragraph{Single-letter distortion.}
+Let $X\sim P_X$ take values in $\cX$ (often $\cX\subseteq\fR^d$).
+Choose a distortion function $d:\cX\times\widehat{\cX}\to\fR_{\ge 0}$.
+For mean-squared error (MSE),
+\[
+    d(x,\hat x)=(x-\hat x)^2,
+\]
+and the distortion level is $D=\E{(X-\widehat X)^2}$.
+For binary sources, a common choice is Hamming distortion
+\[
+    d_H(x,\hat x)=\I{x\neq \hat x}.
+\]
+For model compression and sparse representations, an important distortion is absolute error
+\[
+    d_1(x,\hat x)=|x-\hat x|.
+\]
+
+\paragraph{Block codes.}
+An $(n,R)$ lossy code consists of an encoder and decoder
+\[
+    f:\cX^n\to \{1,\dots,2^{nR}\},
+    \qquad
+    g:\{1,\dots,2^{nR}\}\to \widehat{\cX}^n,
+\]
+where $R$ is measured in bits per source symbol.
+Equivalently, if $R$ is measured in nats, the message set has size $e^{nR}$.
+The reconstruction is
+\[
+    \widehat X^n=g(f(X^n)).
+\]
+We measure average per-letter distortion by
+\begin{equation}
+    d^{(n)}(x^n,\hat x^n)
+    \coloneqq \frac{1}{n}\sum_{i=1}^n d(x_i,\hat x_i),
+    \qquad
+    \E{d^{(n)}(X^n,\widehat X^n)}.
+\end{equation}
+
+\begin{definition}[Achievable $(R,D)$]
+A pair $(R,D)$ is \emph{achievable} if for every $\varepsilon>0$ and all sufficiently large $n$, there exists an $(n,R+\varepsilon)$ code such that
+\[
+    \E{d^{(n)}(X^n,\widehat X^n)}\le D+\varepsilon.
+\]
+\end{definition}
+
+\begin{definition}[Rate--distortion function]
+The operational rate--distortion function is
+\begin{equation}
+    R(D)\coloneqq \inf\{R:\ (R,D)\text{ achievable}\}.
+\end{equation}
+\end{definition}
+
+\paragraph{Interpretation.}
+A lossless code must distinguish essentially all typical source sequences.
+A lossy code only needs to distinguish \emph{distortion balls}: two source sequences can share the same description if the same reconstruction is close enough to both.
+Rate--distortion theory asks for the smallest number of distortion balls needed to cover the typical set.
+
+\subsection{Scalar Quantization: A Concrete Example}
+\label{subsec:scalar-quant}
+
+As a warm-up, consider a scalar Gaussian source (e.g., heights).
+Assume $X\sim\cN(\mu,\sigma^2)$ with $\mu=170$ and $\sigma^2=10$.
+We want to store $X$ using $R$ bits per sample.
+
+\paragraph{Rate $R=0$.}
+If we output a constant $\widehat X=\mu$, then
+\[
+    D(0)=\Var{X}=\sigma^2.
+\]
+The best zero-bit description is the mean, because the mean minimizes squared error among all constants.
+
+\paragraph{Rate $R=1$ (one threshold).}
+A 1-bit quantizer partitions at $\mu$:
+\[
+    f(x)=\I{x>\mu}.
+\]
+Given the index, the optimal reconstruction is the conditional mean,
+\[
+    \hat x_0=\E{X\mid X\le \mu},\qquad
+    \hat x_1=\E{X\mid X>\mu}.
+\]
+For a Gaussian, this yields
+\begin{equation}
+    D(1)=\sigma^2\Bigl(1-\frac{2}{\pi}\Bigr)\approx 0.3634\,\sigma^2 \approx 3.63.
+\end{equation}
+The threshold does not store the precise value of $X$; it only tells us which half-line $X$ fell into.
+The decoder then uses the best representative for that cell.
+
+\paragraph{Rate $R=2$ (three thresholds).}
+With four cells (e.g., thresholds $165,170,175$) the distortion improves, but the choice of thresholds is not obviously optimal.
+The optimal thresholds and representatives depend on the source distribution and the distortion measure.
+
+\subsection{Lloyd--Max Algorithm}
+\label{subsec:lloyd-max}
+
+For a fixed number of reconstruction levels, the Lloyd--Max algorithm alternates between:
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Centroid update:} with thresholds $\{\tau_i\}$ fixed,
+    \[
+        \hat x_i \leftarrow \E{X\mid \tau_i\le X<\tau_{i+1}}.
+    \]
+
+    \item \textbf{Boundary update:} with representatives $\{\hat x_i\}$ fixed,
+    \[
+        \tau_{i+1}\leftarrow (\hat x_i+\hat x_{i+1})/2
+    \]
+    for squared-error distortion.
+\end{enumerate}
+Each step decreases distortion and the algorithm converges to a local optimum.
+The important point is that quantization is not only about choosing labels; it is about jointly choosing the partition and the reproduction values.
+
+\begin{figure}[ht]
+\centering
+    \begin{subfigure}{0.40\textwidth}
+        \includegraphics[width=\linewidth]{scribe19_image2a.png}
+        \caption{Fix thresholds, update representatives}
+        \label{fig:lm-a}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.08\textwidth}
+        \includegraphics[width=\linewidth]{scribe19_arrow_both_directions.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.40\textwidth}
+        \includegraphics[width=\linewidth]{scribe19_image2b.png}
+        \caption{Fix representatives, update thresholds}
+        \label{fig:lm-b}
+    \end{subfigure}
+\caption{Alternating minimization in Lloyd--Max quantization.}
+\label{fig:lm}
+\end{figure}
+
+\subsection{Vector Quantization}
+\label{subsec:vq}
+
+Scalar quantization treats each coordinate independently.
+Vector quantization (VQ) quantizes blocks $X^n$ jointly:
+\[
+  Q^{(n)} : \fR^{n} \longrightarrow \{1,\dots,2^{nR}\}.
+\]
+Even for independent components, VQ can be strictly better because it can shape quantization regions to match the source geometry.
+In high dimension, most probability mass is concentrated in a thin typical shell, and good vector quantizers place reconstruction points to cover this shell efficiently.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.34\textwidth]{scribe19_image3.png}
+  \caption{Example 2-D source.}
+  \label{fig:vq-source}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}{0.41\textwidth}
+    \includegraphics[width=\linewidth]{scribe19_image4a.png}
+    \caption{Scalar quantization (rectangles).}
+    \label{fig:vq-scalar}
+  \end{subfigure}\hspace{8mm}
+  \begin{subfigure}{0.38\textwidth}
+    \includegraphics[width=\linewidth]{scribe19_image4b.png}
+    \caption{Vector quantization (adapted regions).}
+    \label{fig:vq-vector}
+  \end{subfigure}
+  \caption{Scalar vs. vector quantization for a 2-D uniform source.}
+  \label{fig:vq}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.30\textwidth]{scribe19_Figure3.jpg}
+  \caption{Rectangular cells incur extra MSE compared to more circular cells.}
+  \label{fig:vq-distortion}
+\end{figure}
+
+\subsection{Information-Theoretic Rate--Distortion Function}
+\label{sec:rd-info}
+
+The operational definition of $R(D)$ admits an exact single-letter characterization.
+
+\begin{definition}[Information rate--distortion function]
+\label{def:rd-info}
+For a memoryless source $X\sim P_X$ and single-letter distortion $d$, define
+\begin{equation}
+    R^{(I)}(D)
+    \coloneqq
+    \inf_{P_{\widehat X\mid X}:\,\E{d(X,\widehat X)}\le D}
+    I(X;\widehat X).
+\end{equation}
+The infimum is over all conditional distributions (``test channels'') from $X$ to $\widehat X$.
+\end{definition}
+
+\begin{theorem}[Shannon's rate--distortion theorem]
+\label{thm:shannon-rd}
+For every memoryless source and single-letter distortion measure,
+\begin{equation}
+    R(D)=R^{(I)}(D).
+\end{equation}
+\end{theorem}
+
+\paragraph{Why mutual information appears.}
+A rate-$R$ code selects one out of $2^{nR}$ reconstructions.
+The random index cannot carry more than $nR$ bits about the source block.
+Thus the reconstruction cannot contain more than $nR$ bits of information about the source.
+The theorem says that the exact per-symbol information needed to reproduce $X$ up to distortion $D$ is
+\[
+    I(X;\widehat X),
+\]
+minimized over all test channels whose average distortion is at most $D$.
+
+\subsection{Random Coding: Why a Random Codebook Covers the Source}
+\label{subsec:random-coding-intuition}
+
+The achievability part of Theorem~\ref{thm:shannon-rd} is often the least intuitive part.
+The core idea is surprisingly simple:
+\begin{center}
+\emph{Generate many independent fake reconstructions.  One of them will look as if it was generated jointly with the true source.}
+\end{center}
+
+Fix a test channel $P_{\widehat X\mid X}$ with joint distribution
+\[
+    P_{X,\widehat X}(x,\hat x)=P_X(x)P_{\widehat X\mid X}(\hat x\mid x)
+\]
+and distortion $\E{d(X,\widehat X)}\le D$.
+Let $P_{\widehat X}$ be the marginal reproduction distribution.
+For blocklength $n$, generate a random codebook
+\begin{equation}
+    \widehat X^n(1),\ldots,\widehat X^n(M),
+    \qquad M=2^{nR},
+\end{equation}
+where each codeword is drawn i.i.d. according to $P_{\widehat X}$.
+Given a source sequence $X^n$, the encoder searches for an index $m$ such that
+\[
+    (X^n,\widehat X^n(m))
+\]
+is jointly typical with respect to $P_{X,\widehat X}$.
+If such an $m$ exists, the encoder sends $m$ and the decoder outputs $\widehat X^n(m)$.
+
+\paragraph{The rare-event calculation.}
+For a fixed source sequence $X^n$ that is typical under $P_X$, and for one independently generated codeword $\widehat X^n\sim P_{\widehat X}^{\otimes n}$,
+\begin{equation}
+    \Pr\bigl[(X^n,\widehat X^n)\text{ jointly typical}\bigr]
+    \approx 2^{-nI(X;\widehat X)}.
+\end{equation}
+This is because joint typicality asks for the pair to behave as if it came from $P_{X,\widehat X}$ rather than from the independent product $P_XP_{\widehat X}$.
+The ``penalty'' for forcing this dependence is exactly mutual information.
+With $M=2^{nR}$ independent trials, the expected number of jointly typical codewords is approximately
+\begin{equation}
+    2^{nR}\cdot 2^{-nI(X;\widehat X)}=2^{n(R-I(X;\widehat X))}.
+\end{equation}
+If $R>I(X;\widehat X)$, this number grows exponentially.
+Moreover,
+\begin{equation}
+    \Pr[\text{no jointly typical codeword}]
+    \approx
+    \left(1-2^{-nI(X;\widehat X)}\right)^{2^{nR}}
+    \le \exp\{-2^{n(R-I(X;\widehat X))}\},
+\end{equation}
+which vanishes rapidly.
+Thus a random codebook of rate slightly larger than $I(X;\widehat X)$ contains, with high probability, at least one reconstruction sequence that is jointly typical with $X^n$.
+
+\paragraph{What ``as if jointly sampled'' means.}
+The codewords were generated independently of $X^n$.
+But the encoder does not choose a uniformly random codeword; it chooses a codeword satisfying a rare joint-typicality event.
+Conditioned on this event, the selected pair $(X^n,\widehat X^n(m))$ has empirical frequencies close to $P_{X,\widehat X}$.
+Therefore, it has distortion close to
+\[
+    \E{d(X,\widehat X)}.
+\]
+The selection step creates the desired statistical dependence.
+This is the same phenomenon as drawing many independent strings and keeping the one whose empirical correlation with $X^n$ has the desired value.
+
+\subsection{Visual Binary Example: Bernoulli Source and Hamming Distortion}
+\label{subsec:binary-visual}
+
+Let
+\[
+    X_i\overset{\text{i.i.d.}}{\sim}\mathrm{Bern}(1/2),
+    \qquad
+    d_H(x,\hat x)=\I{x\neq \hat x}.
+\]
+For any $0<D<1/2$, the optimal test channel can be written as
+\begin{equation}
+    X=\widehat X\oplus Z,
+    \qquad
+    \widehat X\sim \mathrm{Bern}(1/2),
+    \qquad
+    Z\sim \mathrm{Bern}(D),
+\end{equation}
+with $\widehat X$ independent of $Z$.
+Equivalently, $\widehat X=X\oplus Z$.
+The reproduction marginal is again Bernoulli$(1/2)$, but $X$ and $\widehat X$ are not independent: they differ in a fraction $D$ of coordinates.
+Hence
+\begin{equation}
+    I(X;\widehat X)=H(X)-H(X\mid \widehat X)=1-\Hb{D}
+    \qquad\text{bits/symbol},
+\end{equation}
+and the rate--distortion function is
+\begin{equation}
+R(D)=
+\begin{cases}
+1-\Hb{D}, & 0\le D\le 1/2,\\
+0, & D\ge 1/2.
+\end{cases}
+\end{equation}
+
+\paragraph{Independent codewords look unrelated.}
+Suppose $n=24$ and $D=1/4$.
+Then a good reconstruction should be within $nD=6$ bit flips of $X^n$.
+Let
+\[
+X^n=\texttt{101000100001100010000100}.
+\]
+If we draw one random Bernoulli$(1/2)$ codeword, it typically differs from $X^n$ in about $12$ coordinates.
+A few independently sampled candidates might look like this:
+\begin{center}
+\begin{tabular}{c|c|c}
+index $m$ & candidate $\widehat X^n(m)$ & Hamming distance to $X^n$ \\
+\hline
+1 & \texttt{110111111001001010011011} & 14 \\
+2 & \texttt{101110001011010000010011} & 12 \\
+5 & \texttt{100000000001010000001000} & 7 \\
+6 & \texttt{101000111001001011100000} & 7
+\end{tabular}
+\end{center}
+None of these four candidates is close enough for distortion $D=1/4$.
+This is expected: each candidate has the correct marginal distribution, but it is independent of $X^n$.
+
+\paragraph{Many independent codewords contain a correlated-looking one.}
+If we keep sampling more Bernoulli$(1/2)$ codewords, eventually one may land in the Hamming ball of radius $6$ around $X^n$.
+For example, in a random codebook of size $64$, one possible candidate is
+\begin{center}
+\begin{tabular}{c|c|c}
+index $m$ & candidate $\widehat X^n(m)$ & Hamming distance to $X^n$ \\
+\hline
+14 & \texttt{101010101000100111000000} & 6
+\end{tabular}
+\end{center}
+The error pattern for this candidate is
+\[
+X^n\oplus \widehat X^n(14)
+=	\texttt{000010001001000101000100},
+\]
+which has six ones, i.e., empirical crossover probability $6/24=1/4$.
+Thus the selected pair behaves like
+\[
+    \widehat X_i = X_i\oplus Z_i,
+    \qquad Z_i\sim\mathrm{Bern}(1/4),
+\]
+even though every candidate was generated independently before seeing $X^n$.
+The encoder finds dependence by search.
+
+\paragraph{Threshold rate.}
+The volume of a Hamming ball of radius $nD$ is approximately
+\[
+    2^{n\Hb{D}}.
+\]
+Since the whole binary space has size $2^n$, a random Bernoulli codeword falls in the distortion-$D$ ball with probability approximately
+\[
+    2^{-n(1-\Hb{D})}.
+\]
+Therefore $2^{nR}$ random candidates will contain a close one with high probability when
+\[
+    R>1-\Hb{D}.
+\]
+For $D=1/4$,
+\[
+    1-\Hb{1/4}\approx 0.189\quad\text{bits/symbol}.
+\]
+Finite blocklengths need a safety margin, but asymptotically this is the exact threshold.
+
+\subsection{Gaussian Source with Quadratic Distortion}
+\label{subsec:gaussian-rd}
+
+Let $X\sim\cN(0,\sigma^2)$ and $d(x,\hat x)=(x-\hat x)^2$.
+Then
+\begin{equation}
+R(D)=
+\begin{cases}
+\tfrac12\log\Bigl(\dfrac{\sigma^2}{D}\Bigr), & 0<D\le \sigma^2,\\[1mm]
+0, & D\ge \sigma^2,
+\end{cases}
+\label{eq:gaussian-rd}
+\end{equation}
+where $\log$ is natural logarithm, so the rate is in nats.
+To express the rate in bits, divide the right-hand side by $\log 2$.
+
+\subsubsection*{Achievability: backward Gaussian test channel}
+
+Fix $0<D<\sigma^2$.
+Let
+\begin{equation}
+    \widehat X\sim \cN(0,\sigma^2-D),
+    \qquad
+    Z\sim \cN(0,D),
+    \qquad
+    X=\widehat X+Z,
+\end{equation}
+with $\widehat X$ independent of $Z$.
+Then $X\sim\cN(0,\sigma^2)$ and
+\[
+    \E{(X-\widehat X)^2}=\E{Z^2}=D.
+\]
+The mutual information is
+\begin{align}
+    I(X;\widehat X)
+    &= h(X)-h(X\mid \widehat X) \\
+    &= h(X)-h(Z) \\
+    &= \frac12\log(2\pi e\sigma^2)-\frac12\log(2\pi eD) \\
+    &= \frac12\log\frac{\sigma^2}{D}.
+\end{align}
+By the random-coding argument in Section~\ref{subsec:random-coding-intuition}, generate
+\[
+    e^{nR}
+\]
+codewords independently from $\cN(0,\sigma^2-D)^{\otimes n}$.
+If $R>I(X;\widehat X)$, then with high probability there exists a codeword $\widehat X^n(m)$ such that
+\[
+    X^n\approx \widehat X^n(m)+Z^n,
+    \qquad Z_i\overset{\text{i.i.d.}}{\sim}\cN(0,D),
+\]
+in the sense of joint typicality.
+The resulting empirical squared error is close to $D$.
+This proves achievability of any rate larger than the expression in~\eqref{eq:gaussian-rd}.
+
+\paragraph{Forward form of the same test channel.}
+The above test channel is called ``backward'' because it writes $X$ as a noisy version of $\widehat X$.
+Equivalently, the conditional distribution of $\widehat X$ given $X=x$ is Gaussian:
+\begin{equation}
+    \widehat X\mid X=x
+    \sim
+    \cN\left(\frac{\sigma^2-D}{\sigma^2}x,
+    \frac{D(\sigma^2-D)}{\sigma^2}\right).
+\end{equation}
+This is the best linear shrinkage of $X$ plus additional randomness.
+The reconstruction has smaller variance than the source, because a lossy description cannot reproduce all the source energy.
+
+\subsubsection*{Converse: no code can beat the Gaussian formula}
+
+Let $M=f(X^n)$ be the message of any $(n,R)$ code and let $\widehat X^n=g(M)$.
+Assume
+\[
+    \frac1n\E{\|X^n-\widehat X^n\|_2^2}\le D.
+\]
+Since $M$ takes at most $e^{nR}$ values,
+\begin{equation}
+    nR\ge H(M)\ge I(X^n;M)\ge I(X^n;\widehat X^n).
+\end{equation}
+Now let $E^n=X^n-\widehat X^n$.
+Then
+\begin{align}
+I(X^n;\widehat X^n)
+&= h(X^n)-h(X^n\mid \widehat X^n) \\
+&= h(X^n)-h(X^n-\widehat X^n\mid \widehat X^n) \\
+&\ge h(X^n)-h(E^n).
+\end{align}
+The Gaussian source has
+\[
+    h(X^n)=\frac n2\log(2\pi e\sigma^2).
+\]
+Among all random vectors with second moment constraint
+\[
+    \E{\|E^n\|_2^2}\le nD,
+\]
+the entropy is maximized by an isotropic Gaussian with covariance $DI$.
+Therefore
+\begin{equation}
+    h(E^n)\le \frac n2\log(2\pi eD).
+\end{equation}
+Combining the inequalities gives
+\begin{equation}
+    nR\ge \frac n2\log\frac{\sigma^2}{D},
+\end{equation}
+so
+\[
+    R\ge \frac12\log\frac{\sigma^2}{D}.
+\]
+This proves the converse.
+
+\paragraph{Geometric picture.}
+In $\fR^n$, a typical Gaussian source block lies near a sphere of radius $\sqrt{n\sigma^2}$.
+A distortion constraint $D$ means each codeword covers a ball of radius $\sqrt{nD}$.
+A crude volume comparison gives
+\[
+    \frac{\text{volume of source shell}}{\text{volume of one distortion ball}}
+    \approx
+    \left(\frac{\sqrt{n\sigma^2}}{\sqrt{nD}}\right)^n
+    =\left(\frac{\sigma^2}{D}\right)^{n/2}.
+\]
+Taking logarithms and dividing by $n$ gives
+\[
+    R\approx \frac12\log\frac{\sigma^2}{D}.
+\]
+The entropy proof above is the rigorous version of this geometric argument.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.58\textwidth]{scribe27_sphere.jpg}
+\caption{High-dimensional picture for Gaussian rate--distortion: cover a large sphere (source) by many small balls (distortion).}
+\label{fig:gauss-geometry}
+\end{figure}
+
+\subsection{Shannon Lower Bound and Why Gaussian Sources Are Worst Case}
+\label{subsec:slb-gaussian-worst}
+
+The Gaussian formula is not only an example.
+Under squared-error distortion, Gaussian sources are the hardest to compress among sources with the same variance.
+The main tool is the Shannon lower bound.
+
+\begin{theorem}[Shannon lower bound under squared error]
+\label{thm:slb}
+Let $X$ be a real-valued source with finite differential entropy $h(X)$.
+For squared-error distortion,
+\begin{equation}
+    R_X(D)\ge h(X)-\frac12\log(2\pi eD).
+    \label{eq:slb-scalar}
+\end{equation}
+More generally, for $X\in\fR^d$ and per-coordinate distortion
+$\frac1d\E{\|X-\widehat X\|_2^2}\le D$,
+\begin{equation}
+    R_X(D)\ge h(X)-\frac d2\log(2\pi eD).
+    \label{eq:slb-vector}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For any reconstruction $\widehat X$ satisfying $\E{(X-\widehat X)^2}\le D$,
+let $E=X-\widehat X$.
+Then
+\begin{align}
+I(X;\widehat X)
+&=h(X)-h(X\mid \widehat X) \\
+&=h(X)-h(X-\widehat X\mid \widehat X) \\
+&\ge h(X)-h(X-\widehat X) \\
+&=h(X)-h(E).
+\end{align}
+Among all scalar random variables with variance at most $D$, the Gaussian has the largest entropy.
+Hence
+\[
+    h(E)\le \frac12\log(2\pi eD),
+\]
+which proves~\eqref{eq:slb-scalar}.
+For the vector case, use
+\[
+    h(E^d)\le \frac12\log\bigl((2\pi e)^d\det K_E\bigr),
+\]
+where $K_E$ is the covariance matrix of $E^d$.
+If $\mathrm{tr}(K_E)\le dD$, then by the arithmetic--geometric mean inequality,
+\[
+    \det K_E\le \left(\frac{\mathrm{tr}(K_E)}{d}\right)^d\le D^d.
+\]
+Thus $h(E^d)\le \frac d2\log(2\pi eD)$.
+\end{proof}
+
+\paragraph{Gaussian achieves the Shannon lower bound.}
+If $X\sim\cN(0,\sigma^2)$, then
+\[
+    h(X)=\frac12\log(2\pi e\sigma^2).
+\]
+Substituting this into the Shannon lower bound gives
+\[
+    R_X(D)\ge \frac12\log\frac{\sigma^2}{D}.
+\]
+The backward Gaussian test channel achieves equality.
+Thus the Shannon lower bound is tight for Gaussian sources.
+
+\paragraph{Worst-case interpretation.}
+Suppose a source has variance $\sigma^2$ and finite second moment.
+It is always possible to cover the ball of radius approximately $\sqrt{n\sigma^2}$ by distortion balls of radius approximately $\sqrt{nD}$, yielding a universal lossy code with rate close to
+\[
+    \frac12\log\frac{\sigma^2}{D}.
+\]
+Therefore
+\begin{equation}
+    R_X(D)\le \frac12\log\frac{\sigma^2}{D}
+\end{equation}
+for any source with variance $\sigma^2$ (up to the usual asymptotic $\varepsilon$ terms).
+The Gaussian source attains this upper bound exactly.
+In this precise sense, among all sources with the same variance, the Gaussian is the least compressible under MSE distortion.
+
+\paragraph{Intuition.}
+Gaussian distributions have the largest differential entropy among all distributions with a fixed variance.
+They spread probability mass as diffusely as possible.
+A diffuse source has a large typical set, so more codewords are needed to cover it at the same distortion level.
+Non-Gaussian sources with the same variance have more structure and can usually be compressed at a lower rate.
+
+\subsection{Laplacian Source with Absolute Distortion}
+\label{subsec:laplace-l1-rd}
+
+Let
+\[
+    X\sim\mathrm{Lap}(\lambda),
+    \qquad
+    f_X(x)=\frac{\lambda}{2}e^{-\lambda |x|},
+\]
+so $\E{|X|}=1/\lambda$.
+Use absolute distortion
+\[
+    d_1(x,\hat x)=|x-\hat x|.
+\]
+Then the rate--distortion function is
+\begin{equation}
+R(D)=
+\begin{cases}
+-
+\log(\lambda D), & 0<D\le 1/\lambda,\\[1mm]
+0, & D\ge 1/\lambda.
+\end{cases}
+\label{eq:laplace-l1-rd}
+\end{equation}
+This example is central for model pruning, because normalized neural-network weights are often empirically close to Laplacian, and the $\ell_1$ distortion controls output perturbation in a useful way.
+
+\subsubsection*{Converse}
+
+Let $\widehat X$ be any reconstruction satisfying
+\[
+    \E{|X-\widehat X|}\le D.
+\]
+Consider the auxiliary conditional density
+\begin{equation}
+    q_{X\mid \widehat X}(x\mid \hat x)
+    =\frac{1}{2D}\exp\left(-\frac{|x-\hat x|}{D}\right),
+\end{equation}
+i.e., a Laplace density centered at $\hat x$ with scale $D$.
+Using nonnegativity of relative entropy,
+\begin{align}
+I(X;\widehat X)
+&=D_{\mathrm{KL}}(P_{X\mid \widehat X}\|P_X\mid P_{\widehat X}) \\
+&\ge
+\E{\log\frac{q_{X\mid \widehat X}(X\mid \widehat X)}{p_X(X)}}.
+\end{align}
+Now compute the expectation:
+\begin{align}
+\E{\log\frac{q_{X\mid \widehat X}(X\mid \widehat X)}{p_X(X)}}
+&=
+\E{\log\frac{(2D)^{-1}e^{-|X-\widehat X|/D}}{(\lambda/2)e^{-\lambda |X|}}} \\
+&= -\log(\lambda D)-\frac{1}{D}\E{|X-\widehat X|}+\lambda\E{|X|} \\
+&\ge -\log(\lambda D)-1+1 \\
+&= -\log(\lambda D).
+\end{align}
+Thus $I(X;\widehat X)\ge -\log(\lambda D)$ for every admissible reconstruction.
+
+\subsubsection*{Achievability}
+
+We now construct a test channel that achieves the lower bound.
+Let $N\sim\mathrm{Lap}(1/D)$ have density
+\[
+    f_N(n)=\frac{1}{2D}e^{-|n|/D}.
+\]
+Let $V$ be independent of $N$ with distribution
+\begin{equation}
+    P_V
+    =\lambda^2D^2\,\delta_0
+    +(1-\lambda^2D^2)\,\mathrm{Lap}(\lambda),
+    \label{eq:laplace-reproduction-mixture}
+\end{equation}
+where $\delta_0$ is a point mass at zero.
+For $0<D\le 1/\lambda$, the mixture weight $\lambda^2D^2$ is in $[0,1]$.
+One can verify by characteristic functions that
+\begin{equation}
+    X\coloneqq V+N \sim \mathrm{Lap}(\lambda).
+\end{equation}
+Indeed,
+\[
+\phi_N(t)=\frac{1}{1+D^2t^2},
+\qquad
+\phi_X(t)=\frac{\lambda^2}{\lambda^2+t^2},
+\]
+and the mixture distribution in~\eqref{eq:laplace-reproduction-mixture} has characteristic function
+\[
+\phi_V(t)=\lambda^2D^2+(1-\lambda^2D^2)\frac{\lambda^2}{\lambda^2+t^2},
+\]
+so $\phi_V(t)\phi_N(t)=\phi_X(t)$.
+Taking $\widehat X=V$, we have
+\[
+    \E{|X-\widehat X|}=\E{|N|}=D.
+\]
+The conditional density of $X$ given $V=v$ is exactly the auxiliary density used in the converse, so equality holds and
+\[
+    I(X;V)=-\log(\lambda D).
+\]
+
+\paragraph{Why sparsity appears.}
+The optimal reproduction distribution $P_V$ has an atom at zero with probability $\lambda^2D^2$.
+Thus, at the rate--distortion limit, a positive fraction of reconstructed symbols are exactly zero.
+This is not an artifact of a particular algorithm: it is a property of the optimal test channel.
+For Laplacian sources under $\ell_1$ distortion, sparsity is information-theoretically natural.
+
+\paragraph{Exponential one-sided version.}
+For magnitudes $U=|X|$, the natural source is exponential:
+\[
+    f_U(u)=\lambda e^{-\lambda u},\qquad u\ge 0.
+\]
+With one-sided distortion
+\[
+    d(u,v)=
+    \begin{cases}
+    u-v, & u\ge v,\\
+    \infty, & u<v,
+    \end{cases}
+\]
+the rate--distortion function is again
+\begin{equation}
+    R(D)=-\log(\lambda D),\qquad 0<D\le 1/\lambda,
+\end{equation}
+and the optimal reconstruction has distribution
+\begin{equation}
+    P_V=\lambda D\,\delta_0+(1-\lambda D)\,\mathrm{Exp}(\lambda).
+\end{equation}
+This is useful for neural networks because it lets us protect sign bits separately and compress only magnitudes.
+
+\subsection{Extreme-Value Theory as a Tool for Sparse Refinement}
+\label{sec:evt}
+
+Some practical rate--distortion schemes repeatedly identify unusually large coordinates of a residual vector.
+Extreme-value theory tells us where these maxima typically lie.
+
+\begin{example}[Max of exponentials]
+If $Y_1,\dots,Y_n\overset{\text{i.i.d.}}{\sim}\mathrm{Exp}(\lambda)$ and $M_n=\max_i Y_i$, then
+\begin{equation}
+    M_n = \frac{\log n}{\lambda} + O_p(1).
+\end{equation}
+The fluctuations converge to a Gumbel distribution after centering by $\frac{1}{\lambda}\log n$.
+\end{example}
+
+\paragraph{Rule of thumb.}
+For i.i.d. $X_i\sim\cN(0,\sigma^2)$,
+\begin{equation}
+    \max_i X_i = \sigma\sqrt{2\log n}+O_p(1).
+\end{equation}
+Thus, the value of the maximum is almost predictable from $n$ alone.
+This is why an encoder can sometimes describe only the \emph{index} of an extreme coordinate and let the decoder infer a good reconstruction value.
+
+\subsection{CROM: Rateless Lossy Compression via Extremes}
+\label{subsec:crom}
+
+Coding with Random Orthogonal Matrices (CROM) is a constructive lossy compression scheme built from two ideas:
+\begin{enumerate}[leftmargin=2em]
+    \item at very low rate, describe only the indices of a few extreme coordinates;
+    \item after each sparse description, rotate the residual so that its coordinates again look approximately Gaussian.
+\end{enumerate}
+The result is an iterative, rateless compression method that achieves the Gaussian distortion--rate curve while using sparse messages at each step.
+
+\subsubsection*{Zero-rate compression by the maximum}
+
+Let $X^n\sim\cN(0,I_n)$.
+The maximum coordinate satisfies
+\[
+    \max_{1\le i\le n}X_i\approx \sqrt{2\log n}.
+\]
+A near-zero-rate encoder can send only
+\[
+    m=\arg\max_i X_i.
+\]
+This costs $\log n$ nats total, or
+\[
+    R_n=\frac{\log n}{n}\to 0
+\]
+nats per symbol.
+The decoder reconstructs a vector with a positive spike at the selected coordinate and a small negative offset elsewhere, for example
+\begin{equation}
+\widehat X_i=
+\begin{cases}
+\alpha_n, & i=m,\\
+-\dfrac{\alpha_n}{n-1}, & i\neq m,
+\end{cases}
+\qquad \alpha_n\approx \sqrt{2\log n}.
+\end{equation}
+The negative offset keeps the reconstruction roughly mean-zero.
+The distortion reduction is approximately
+\[
+    \frac{2\log n}{n}=2R_n.
+\]
+For a unit-variance Gaussian source,
+\[
+    D_G(R)=e^{-2R}=1-2R+o(R)
+    \qquad (R\downarrow 0),
+\]
+so the zero-rate slope is exactly $-2$.
+Thus this simple maximum-index scheme extracts the correct first-order distortion reduction per nat at zero rate.
+
+\paragraph{Using several extremes.}
+Instead of sending only the largest coordinate, the encoder may send the indices of the $k_n$ largest coordinates, often with $k_n=(\log n)^\beta$.
+The rate is still vanishing:
+\[
+    R_n=\frac1n\log {n\choose k_n}\to 0,
+\]
+but the scheme can reduce distortion more robustly.
+The decoder places equal positive mass on the selected coordinates and a compensating negative mass on the unselected coordinates.
+
+\subsubsection*{Why rotation is needed}
+
+After the first sparse reconstruction, the residual
+\[
+    X^n-\widehat X^n
+\]
+is no longer i.i.d. Gaussian.
+Its largest coordinate has been partially removed, and the coordinates have a complicated dependence on the selected index.
+If we immediately apply the same maximum-index idea again, the residual may not have the clean extreme-value behavior we need.
+
+CROM solves this by multiplying the residual by a random orthogonal matrix $A$.
+For any fixed residual vector $r^n$, the rotated vector $Ar^n$ is uniformly distributed on the sphere of radius $\|r^n\|_2$.
+In high dimension, a uniformly random point on a sphere has coordinates that look nearly i.i.d. Gaussian with variance $\|r^n\|_2^2/n$.
+Thus rotation ``Gaussianizes'' the residual enough to reuse the extreme-value compressor.
+
+\subsubsection*{Iterative CROM idea}
+
+Set $X^{(1)}=A_1X^n$.
+At iteration $t$:
+\begin{enumerate}[leftmargin=2em]
+    \item Find the set $m^{(t)}$ of the $k_n$ largest coordinates of $X^{(t)}$.
+    \item Encode only this index set.
+    \item Let $U^{(t)}$ be a sparse unit vector supported on $m^{(t)}$, with a compensating offset on the remaining coordinates.
+    \item Subtract a scaled version $\alpha_t U^{(t)}$.
+    \item Rotate the new residual:
+    \[
+        X^{(t+1)}=A_{t+1}\bigl(X^{(t)}-\alpha_tU^{(t)}\bigr).
+    \]
+\end{enumerate}
+The decoder receives the index sets $m^{(1)},m^{(2)},\ldots$ and reconstructs by undoing the rotations and summing the sparse refinements.
+After $L$ iterations, the reconstruction has the form
+\begin{equation}
+    \widehat X^{(L)}
+    =\alpha_1A_1^TU^{(1)}+
+    \alpha_2A_1^TA_2^TU^{(2)}+
+    \cdots+
+    \alpha_LA_1^T\cdots A_L^TU^{(L)}.
+\end{equation}
+
+\paragraph{Ratelessness.}
+The decoder can stop after receiving the first $i$ refinement messages.
+At that point, it has a reconstruction at rate approximately $iR/L$.
+CROM is designed so that every prefix of the message stream lies near the Gaussian distortion--rate curve
+\[
+    D_G(R)=\sigma^2e^{-2R}.
+\]
+Thus the encoder need not know the final desired rate in advance: the bitstream is progressively useful.
+This is analogous to rateless channel coding, except that the decoder needs the initial prefix of the stream, not an arbitrary subset of packets.
+
+\paragraph{Takeaway.}
+Random coding proves existence by drawing an exponentially large codebook.
+CROM gives a more structured construction: each refinement sends only sparse extreme-coordinate information after a random rotation.
+The rotation step is what makes the simple zero-rate extreme-value idea reusable.
+
+\subsection{Application: Compressing Neural Networks}
+\label{sec:nn-compress}
+
+Modern neural network (NN) compression often starts by choosing a distortion metric on weights that controls the induced change in the network output.
+Rate--distortion theory then provides a principled limit for how well such weights can be compressed.
+This section explains why pruning appears naturally from the Laplacian $\ell_1$ rate--distortion function.
+
+\subsubsection*{A distortion metric that controls output perturbation}
+
+Consider a $d$-layer fully-connected network
+\[
+    f(x;w)=W^{(d)}\sigma(W^{(d-1)}\sigma(\cdots \sigma(W^{(1)}x)\cdots))
+\]
+with a 1-Lipschitz nonlinearity $\sigma$ such that $\sigma(0)=0$ (e.g., ReLU).
+Let $\widehat w$ be the compressed weights.
+A useful bound is the following.
+
+\begin{theorem}[Weight distortion implies output distortion]
+\label{thm:nn-l1-bound}
+Assume $\|\widehat W^{(\ell)}\|_1\le \|W^{(\ell)}\|_1$ for all layers.
+Then
+\begin{equation}
+\sup_{\|x\|_1\le 1}\,\|f(x;w)-f(x;\widehat w)\|_1
+\le
+\Bigl(\prod_{k=1}^{d}\|W^{(k)}\|_1\Bigr)
+\Bigl(\sum_{\ell=1}^{d}\frac{\|W^{(\ell)}-\widehat W^{(\ell)}\|_1}{\|W^{(\ell)}\|_1}\Bigr).
+\label{eq:nn-output-bound}
+\end{equation}
+\end{theorem}
+
+\paragraph{Proof idea.}
+Write the network output difference as a telescoping perturbation over layers.
+At the last layer,
+\begin{align}
+&\|W^{(d)}\sigma(h)-\widehat W^{(d)}\sigma(\widehat h)\|_1 \\
+&\quad\le
+\|(W^{(d)}-\widehat W^{(d)})\sigma(h)\|_1
++
+\|\widehat W^{(d)}(\sigma(h)-\sigma(\widehat h))\|_1.
+\end{align}
+The first term is controlled by $\|W^{(d)}-\widehat W^{(d)}\|_1$.
+The second term propagates the perturbation from earlier layers, multiplied by $\|\widehat W^{(d)}\|_1\le \|W^{(d)}\|_1$.
+Repeating this argument layer by layer gives~\eqref{eq:nn-output-bound}.
+
+The quantity
+\begin{equation}
+    \sum_{\ell=1}^{d}\frac{\|W^{(\ell)}-\widehat W^{(\ell)}\|_1}{\|W^{(\ell)}\|_1}
+\end{equation}
+is therefore a meaningful normalized weight distortion.
+For a single vector of normalized weights $u=(u_1,\ldots,u_n)$, this motivates the distortion
+\begin{equation}
+    d(u,\widehat u)=\frac1n\sum_{i=1}^n |u_i-\widehat u_i|.
+\end{equation}
+
+\subsubsection*{Why Laplacian weights lead to pruning}
+
+Empirically, many pretrained NN weights, after layerwise normalization, are well approximated by a Laplacian distribution.
+If
+\[
+    U\sim \mathrm{Lap}(\lambda),
+    \qquad
+    d(u,\widehat u)=|u-\widehat u|,
+\]
+then Section~\ref{subsec:laplace-l1-rd} shows that the optimal reproduction distribution is
+\[
+    P_{\widehat U}
+    =\lambda^2D^2\delta_0+(1-\lambda^2D^2)\mathrm{Lap}(\lambda).
+\]
+This contains an atom at zero.
+Therefore, an information-theoretically optimal compressed model is not merely quantized; it is sparse.
+In other words:
+\begin{center}
+\emph{For Laplacian-like weights under $\ell_1$ distortion, pruning is not just a heuristic.  It is part of the optimal reproduction law.}
+\end{center}
+A compression method that never outputs exact zeros cannot match this optimal marginal distribution and is generally suboptimal in the rate--distortion sense.
+
+\subsubsection*{Sign bits and magnitude compression}
+
+Changing the sign of a weight can have a large effect on the network output.
+A practical approach is therefore:
+\begin{enumerate}[leftmargin=2em]
+    \item store or protect the sign pattern;
+    \item compress the magnitudes $|w_i|$.
+\end{enumerate}
+If magnitudes are modeled as exponential, the one-sided exponential rate--distortion function again has a sparse optimal reconstruction:
+\[
+    P_{\widehat U}=\lambda D\delta_0+(1-\lambda D)\mathrm{Exp}(\lambda).
+\]
+This gives the same qualitative conclusion: many reconstructed magnitudes should be zero.
+
+\subsubsection*{Successive Refinement for Pruning (SuRP)}
+
+A random codebook that exactly achieves the rate--distortion function would have exponentially many codewords and is not practical for a neural network with millions of weights.
+The SuRP idea is to exploit successive refinement and extreme values.
+The reconstruction begins as the all-zero vector and gradually adds back large coordinates.
+
+For the symmetric Laplacian version, initialize $U^{(1)}=u$ and estimate the Laplacian parameter $\lambda_1$.
+At iteration $t$:
+\begin{enumerate}[leftmargin=2em]
+    \item Find an index $i$ with large positive residual and an index $j$ with large negative residual:
+    \[
+        U_i^{(t)}\ge \frac1{\lambda_t}\log\frac{n}{2\beta},
+        \qquad
+        U_j^{(t)}\le -\frac1{\lambda_t}\log\frac{n}{2\beta}.
+    \]
+    \item Send the pair of indices $(i,j)$.
+    \item The decoder adds a positive spike at $i$ and a negative spike at $j$:
+    \[
+        \widehat U_i \leftarrow \widehat U_i+\frac1{\lambda_t}\log\frac{n}{2\beta},
+        \qquad
+        \widehat U_j \leftarrow \widehat U_j-\frac1{\lambda_t}\log\frac{n}{2\beta}.
+    \]
+    \item The encoder subtracts the same spikes from the residual.
+    \item Update the effective Laplacian parameter for the next residual.
+\end{enumerate}
+For the magnitude-only exponential version, the encoder sends one index whose magnitude residual exceeds
+\[
+    \frac1{\lambda_t}\log\frac{n}{\beta},
+\]
+and the decoder adds that positive amount to the reconstructed magnitude.
+The signs are then restored separately.
+
+\paragraph{Relation to magnitude pruning.}
+Extreme-value theory says the largest Laplacian or exponential samples are near a logarithmic threshold.
+Thus SuRP repeatedly communicates large residual coordinates.
+Magnitude pruning can be viewed as a non-iterative cousin of this idea: keep large weights and remove small weights.
+SuRP differs in that the threshold and refinement rule come from the rate--distortion model rather than from an externally chosen pruning score.
+
+\paragraph{Zero-rate optimality.}
+Each SuRP iteration communicates only one or two indices, so the rate per weight is on the order of
+\[
+    \frac{\log n}{n}\to 0.
+\]
+For the Laplacian source with $\ell_1$ distortion, the distortion--rate function is
+\[
+    D(R)=\frac1\lambda e^{-R},
+\]
+whose zero-rate slope is
+\[
+    D'(0)=-\frac1\lambda.
+\]
+A single SuRP refinement reduces distortion at this optimal first-order slope, under the usual choice of threshold parameter (for example, $\beta$ growing like $\log n$).
+Thus SuRP is a zero-rate optimal refinement step.
+Repeated refinements build a sparse reconstruction progressively.
+
+\subsubsection*{Information-theoretic justification of pruning}
+
+The argument can be summarized in four steps.
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Output perturbation can be bounded by normalized $\ell_1$ weight distortion.}
+    This connects model compression to a classical lossy source coding problem.
+
+    \item \textbf{Normalized weights are often close to Laplacian.}
+    This suggests using the Laplacian source model rather than a Gaussian model for weights.
+
+    \item \textbf{The Laplacian $\ell_1$ rate--distortion function has a sparse optimal reproduction distribution.}
+    The atom at zero is the mathematical signature of pruning.
+
+    \item \textbf{A practical refinement algorithm communicates extreme residual coordinates.}
+    This produces a sparse model and has a zero-rate optimality guarantee.
+\end{enumerate}
+Therefore, pruning is not only an empirical trick for overparameterized networks.
+Under a Laplacian weight model and an $\ell_1$ perturbation metric, pruning is predicted by the rate--distortion optimum itself.
+
+\paragraph{Practical caveats.}
+The clean perturbation bound above is stated for fully-connected networks with 1-Lipschitz activations.
+Convolutional and transformer models require additional modeling choices, and in practice retraining or fine-tuning is often used after pruning.
+Also, preserving accuracy is not the only possible criterion; compression can affect calibration, robustness, and fairness.
+The information-theoretic view does not remove these engineering concerns, but it explains why sparse compressed reconstructions should be expected.
+
+\subsubsection*{Connection to gradient compression}
+
+The same Laplacian/extreme-value reasoning can also be applied to gradient compression in federated or distributed learning.
+If gradient coordinates are approximately Laplacian, then communicating a small number of large residual coordinates is a rate--distortion motivated compression rule.
+This resembles top-$k$ sparsification, but the threshold and coding interpretation are derived from the source distribution and the distortion objective.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Lossy compression and rate--distortion
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \subsection{Setup: Rate--Distortion Tradeoff}
+% \label{subsec:lossy-setup}
+% 
+% For real-valued sources, perfect reconstruction with a finite number of bits is impossible.
+% A \emph{lossy} code trades rate (bits per symbol) for fidelity measured by a distortion function.
+% 
+% \paragraph{Single-letter distortion.}
+% Let $X\sim P_X$ take values in $\cX$ (often $\cX\subseteq\fR^d$).
+% Choose a distortion function $d:\cX\times\widehat{\cX}\to\fR_{\ge 0}$.
+% For mean-squared error (MSE),
+% \(
+%     d(x,\hat x)=(x-\hat x)^2
+% \)
+% and the distortion level is $D=\E{(X-\widehat X)^2}$.
+% 
+% \paragraph{Block codes.}
+% An $(n,R)$ lossy code consists of an encoder and decoder
+% \[
+%     f:\cX^n\to \{1,\dots,2^{nR}\},
+%     \qquad
+%     g:\{1,\dots,2^{nR}\}\to \widehat{\cX}^n,
+% \]
+% with reconstruction $\widehat X^n=g(f(X^n))$.
+% We measure average per-letter distortion by
+% \begin{equation}
+%     d^{(n)}(x^n,\hat x^n)\coloneqq \frac{1}{n}\sum_{i=1}^n d(x_i,\hat x_i),
+%     \qquad
+%     \E{d^{(n)}(X^n,\widehat X^n)}.
+% \end{equation}
+% 
+% \begin{definition}[Achievable $(R,D)$]
+% A pair $(R,D)$ is \emph{achievable} if for every $\varepsilon>0$ and all sufficiently large $n$, there exists an $(n,R+\varepsilon)$ code such that
+% \(\E{d^{(n)}(X^n,\widehat X^n)}\le D+\varepsilon\).
+% \end{definition}
+% 
+% \begin{definition}[Rate--distortion function]
+% The operational rate--distortion function is
+% \begin{equation}
+%     R(D)\coloneqq \inf\{R:\ (R,D)\text{ achievable}\}.
+% \end{equation}
+% \end{definition}
+% 
+% \subsection{Scalar Quantization: A Concrete Example}
+% \label{subsec:scalar-quant}
+% 
+% As a warm-up, consider a scalar Gaussian source (e.g., heights).
+% Assume $X\sim\cN(\mu,\sigma^2)$ with $\mu=170$ and $\sigma^2=10$.
+% We want to store $X$ using $R$ bits per sample.
+% 
+% \paragraph{Rate $R=0$.}
+% If we output a constant $\widehat X=\mu$, then
+% \(D(0)=\Var{X}=\sigma^2\).
+% 
+% \paragraph{Rate $R=1$ (one threshold).}
+% A 1-bit quantizer partitions at $\mu$:
+% \(
+%     f(x)=\I{x>\mu}.
+% \)
+% Given the index, the optimal reconstruction is the conditional mean,
+% \(
+%     \hat x_0=\E{X\mid X\le \mu},\ \hat x_1=\E{X\mid X>\mu}.
+% \)
+% For a Gaussian, this yields
+% \begin{equation}
+%     D(1)=\sigma^2\Bigl(1-\frac{2}{\pi}\Bigr)\approx 0.3634\,\sigma^2 \approx 3.63.
+% \end{equation}
+% 
+% \paragraph{Rate $R=2$ (three thresholds).}
+% With four cells (e.g., thresholds $165,170,175$) the distortion improves, but the choice of thresholds is not obviously optimal.
+% 
+% \subsection{Lloyd--Max Algorithm}
+% \label{subsec:lloyd-max}
+% 
+% For a fixed number of reconstruction levels, the Lloyd--Max algorithm alternates between:
+% \begin{enumerate}[leftmargin=2em]
+%     \item \textbf{Centroid update:} with thresholds $\{\tau_i\}$ fixed,
+%     \(\hat x_i \leftarrow \E{X\mid \tau_i\le X<\tau_{i+1}}\).
+% 
+%     \item \textbf{Boundary update:} with representatives $\{\hat x_i\}$ fixed,
+%     \(\tau_{i+1}\leftarrow (\hat x_i+\hat x_{i+1})/2\) for squared-error distortion.
+% \end{enumerate}
+% Each step decreases distortion and the algorithm converges to a local optimum.
+% 
+% \begin{figure}[ht]
+% \centering
+%     \begin{subfigure}{0.40\textwidth}
+%         \includegraphics[width=\linewidth]{scribe19_image2a.png}
+%         \caption{Fix thresholds, update representatives}
+%         \label{fig:lm-a}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[b]{0.08\textwidth}
+%         \includegraphics[width=\linewidth]{scribe19_arrow_both_directions.png}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[b]{0.40\textwidth}
+%         \includegraphics[width=\linewidth]{scribe19_image2b.png}
+%         \caption{Fix representatives, update thresholds}
+%         \label{fig:lm-b}
+%     \end{subfigure}
+% \caption{Alternating minimization in Lloyd--Max quantization.}
+% \label{fig:lm}
+% \end{figure}
+% 
+% \subsection{Vector Quantization}
+% \label{subsec:vq}
+% 
+% Scalar quantization treats each dimension independently.
+% Vector quantization (VQ) quantizes blocks $X^n$ jointly:
+% \[
+%   Q^{(n)} : \fR^{n} \longrightarrow \{1,\dots,2^{nR}\}.
+% \]
+% Even for independent components, VQ is strictly better at high rate because it can shape quantization regions to match the source geometry.
+% 
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=.34\textwidth]{scribe19_image3.png}
+%   \caption{Example 2-D source.}
+%   \label{fig:vq-source}
+% \end{figure}
+% 
+% \begin{figure}[ht]
+%   \centering
+%   \begin{subfigure}{0.41\textwidth}
+%     \includegraphics[width=\linewidth]{scribe19_image4a.png}
+%     \caption{Scalar quantization (rectangles).}
+%     \label{fig:vq-scalar}
+%   \end{subfigure}\hspace{8mm}
+%   \begin{subfigure}{0.38\textwidth}
+%     \includegraphics[width=\linewidth]{scribe19_image4b.png}
+%     \caption{Vector quantization (adapted regions).}
+%     \label{fig:vq-vector}
+%   \end{subfigure}
+%   \caption{Scalar vs. vector quantization for a 2-D uniform source.}
+%   \label{fig:vq}
+% \end{figure}
+% 
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.30\textwidth]{scribe19_Figure3.jpg}
+%   \caption{Rectangular cells incur extra MSE compared to more circular cells.}
+%   \label{fig:vq-distortion}
+% \end{figure}
+% 
+% \subsection{Information-Theoretic Rate--Distortion Function}
+% \label{sec:rd-info}
+% 
+% The operational definition of $R(D)$ admits an exact single-letter characterization.
+% 
+% \begin{definition}[Information rate--distortion function]
+% \label{def:rd-info}
+% For a memoryless source $X\sim P_X$ and single-letter distortion $d$, define
+% \begin{equation}
+%     R^{(I)}(D)
+%     \coloneqq
+%     \inf_{P_{\widehat X\mid X}:\,\E{d(X,\widehat X)}\le D}
+%     I(X;\widehat X).
+% \end{equation}
+% The infimum is over all conditional distributions (``test channels'') from $X$ to $\widehat X$.
+% \end{definition}
+% 
+% \begin{theorem}[Shannon's rate--distortion theorem]
+% \label{thm:shannon-rd}
+% For every memoryless source and single-letter distortion measure,
+% \begin{equation}
+%     R(D)=R^{(I)}(D).
+% \end{equation}
+% \end{theorem}
+% 
+% \paragraph{Why mutual information appears.}
+% A rate-$R$ code selects one out of $2^{nR}$ reconstructions.
+% The random index cannot carry more than $nR$ bits about the source block.
+% The theorem formalizes this by showing that the per-letter information that the reconstruction carries about the source is exactly $I(X;\widehat X)$.
+% 
+% \subsubsection*{Typicality lemma (intuition)}
+% If we draw a random codeword $\widehat X^n$ i.i.d. from the marginal of a target joint distribution $P_{X,\widehat X}$, then the probability that $(X^n,\widehat X^n)$ is jointly typical (with respect to $P_{X,\widehat X}$) is roughly $2^{-nI(X;\widehat X)}$.
+% Hence, to find \emph{one} jointly typical match among $2^{nR}$ codewords, we need $2^{nR}\cdot 2^{-nI}\gg 1$, i.e., $R>I(X;\widehat X)$.
+% This is the heart of the random-coding achievability proof.
+% 
+% \subsection{Examples of Rate--Distortion Functions}
+% \label{sec:rd-examples}
+% 
+% \subsubsection*{Binary source with Hamming distortion}
+% 
+% Let $X\sim\mathrm{Bern}(p)$ with $p\le \tfrac12$ and distortion
+% \(d_H(x,\hat x)=\I{x\neq \hat x}\).
+% Then
+% \begin{equation}
+% R(D)=
+% \begin{cases}
+% \Hb{p}-\Hb{D}, & 0\le D\le p,\\
+% 0, & D\ge p.
+% \end{cases}
+% \end{equation}
+% 
+% \paragraph{Sketch.}
+% Let $Z\coloneqq X\oplus \widehat X$ be the error bit.
+% Then $H(X\mid \widehat X)=H(Z\mid \widehat X)\le H(Z)\le \Hb{D}$.
+% So $I(X;\widehat X)=H(X)-H(X\mid \widehat X)\ge \Hb{p}-\Hb{D}$.
+% Achievability uses a binary symmetric test channel with crossover $D$.
+% 
+% \subsubsection*{Gaussian source with quadratic distortion}
+% 
+% Let $X\sim\cN(0,\sigma^2)$ and $d(x,\hat x)=(x-\hat x)^2$.
+% Then
+% \begin{equation}
+% R(D)=
+% \begin{cases}
+% \tfrac12\log\Bigl(\frac{\sigma^2}{D}\Bigr), & 0<D\le \sigma^2,\\
+% 0, & D\ge \sigma^2.
+% \end{cases}
+% \end{equation}
+% 
+% \paragraph{Sketch.}
+% For any reconstruction $\widehat X$ with $\E{(X-\widehat X)^2}\le D$,
+% \[
+% I(X;\widehat X)=h(X)-h(X\mid \widehat X)=h(X)-h(X-\widehat X\mid \widehat X)
+% \ge h(X)-h(X-\widehat X).
+% \]
+% By Theorem~\ref{thm:gauss-maxent}, $h(X-\widehat X)\le \tfrac12\log(2\pi e D)$, so
+% \(I(X;\widehat X)\ge \tfrac12\log(\sigma^2/D)\).
+% Achievability uses a Gaussian test channel
+% \(X=\widehat X+Z\) with $Z\sim\cN(0,D)$ independent.
+% 
+% \paragraph{Geometric picture.}
+% In $\fR^n$, a typical Gaussian source block lies near a sphere of radius $\sqrt{n\sigma^2}$.
+% A distortion constraint $D$ means each codeword covers a ball of radius $\sqrt{nD}$.
+% Comparing volumes yields the same bound $R\ge \tfrac12\log(\sigma^2/D)$.
+% 
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.58\textwidth]{scribe27_sphere.jpg}
+% \caption{High-dimensional picture for Gaussian rate--distortion: cover a large sphere (source) by many small balls (distortion).}
+% \label{fig:gauss-geometry}
+% \end{figure}
+% 
+% \subsubsection*{Laplacian source with absolute distortion}
+% 
+% Let $X\sim\mathrm{Lap}(1/\lambda)$ with pdf
+% \(f_X(x)=\tfrac{\lambda}{2}e^{-\lambda|x|}\)
+% and distortion $d_1(x,\hat x)=|x-\hat x|$.
+% Then
+% \begin{equation}
+% R(D)=
+% \begin{cases}
+% -\log(\lambda D), & 0<D\le 1/\lambda,\\
+% 0, & D\ge 1/\lambda.
+% \end{cases}
+% \end{equation}
+% 
+% \paragraph{One useful consequence: sparsity in the optimal reproduction.}
+% A test channel that achieves the bound has a reproduction distribution of the form
+% \begin{equation}
+%     f_{\widehat X}(\hat x)
+%     = \lambda^2D^2\,\delta(\hat x)
+%     + (1-\lambda^2D^2)\,\frac{\lambda}{2}e^{-\lambda|\hat x|},
+% \end{equation}
+% which has an atom at zero.
+% Thus, \emph{rate--distortion optimal reconstructions are intrinsically sparse} for Laplacian-like sources under $\ell_1$ distortion.
+% This observation will reappear in neural network pruning.
+% 
+% \subsection{Extreme-Value Theory (Tool for Sparse Refinement)}
+% \label{sec:evt}
+% 
+% In some iterative compression schemes we repeatedly identify unusually large coordinates of a residual vector.
+% Extreme-value theory tells us where these maxima typically lie.
+% 
+% \begin{example}[Max of exponentials]
+% If $Y_1,\dots,Y_n\overset{\text{i.i.d.}}{\sim}\mathrm{Exp}(\lambda)$ and $M_n=\max_i Y_i$, then
+% \begin{equation}
+%     M_n = \frac{\log n}{\lambda} + O_p(1).
+% \end{equation}
+% The fluctuations converge to a Gumbel distribution after centering by $\frac{1}{\lambda}\log n$.
+% \end{example}
+% 
+% \paragraph{Rule of thumb.}
+% For i.i.d. $X_i\sim\cN(0,\sigma^2)$,
+% \(\max_i X_i = \sigma\sqrt{2\log n}+O_p(1)\).
+% 
+% \subsection{Application: Compressing Neural Networks}
+% \label{sec:nn-compress}
+% 
+% Modern neural network (NN) compression often starts by choosing a distortion metric on weights that upper-bounds the induced change in the network output.
+% Rate--distortion theory then provides a principled limit for how well such weights can be compressed.
+% 
+% \subsubsection*{A distortion metric that controls output perturbation}
+% 
+% Consider a $d$-layer fully-connected network
+% \(f(x;w)=W^{(d)}\sigma(\cdots\sigma(W^{(1)}x)\cdots)\)
+% with a 1-Lipschitz nonlinearity $\sigma$ (e.g., ReLU).
+% A typical bound is:
+% 
+% \begin{theorem}[Weight distortion implies output distortion]
+% \label{thm:nn-l1-bound}
+% Assume $\|\widehat W^{(\ell)}\|_1\le \|W^{(\ell)}\|_1$ for all layers.
+% Then
+% \begin{equation}
+% \sup_{\|x\|_1\le 1}\,\|f(x;w)-f(x;\widehat w)\|_1
+% \le
+% \Bigl(\prod_{k=1}^{d}\|W^{(k)}\|_1\Bigr)
+% \Bigl(\sum_{\ell=1}^{d}\frac{\|W^{(\ell)}-\widehat W^{(\ell)}\|_1}{\|W^{(\ell)}\|_1}\Bigr).
+% \end{equation}
+% \end{theorem}
+% 
+% This motivates a normalized $\ell_1$ distortion on weights.
+% Empirically, many pretrained weight distributions are close to Laplacian after normalization.
+% Then the Laplacian $\ell_1$ rate--distortion calculation above predicts that an optimal compressor should generate \emph{sparse} reconstructions, providing an information-theoretic justification for pruning.
+% 
+% \subsubsection*{Successive refinement viewpoint}
+% 
+% A direct random codebook achieving the rate--distortion function is computationally infeasible for models with millions of weights.
+% One practical alternative is to iteratively encode the residual error.
+% If the residual after an optimal step has the same distributional form as the original source (\emph{successive refinability}), then repeated refinement can approach the information-theoretic limit with manageable complexity.
+% 

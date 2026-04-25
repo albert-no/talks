@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossy 3 — Lattice Codes and QUIP# · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossy 3 · Lattice Codes and QUIP\# &mdash; Notes</h1>
+<p class="meta">Companion to <code>lossy3-lattice-quip.html</code>.</p>
+
+<section>
+  <h2>Where the storage / search numbers come from</h2>
+  <p>For dimension $d=8$ and rate $R=4$ bits/coordinate, the codebook has $2^{32}\approx 4.29\times 10^9$ entries, each a vector of $8$ floats. At 4&nbsp;bytes each, that is $\approx 137$ GB just to hold the codebook. Search through it for $10^{10}$ weights: $10^{10}\cdot 4.29\times 10^9$ inner products, far beyond what is achievable with any finite compute budget.</p>
+  <p>Even at $d=4,R=2$ (8&nbsp;billion weights, $K=256$ codepoints): codebook fits in cache, but per-vector search of 256 candidates over $10^{10}/4=2.5\times 10^9$ blocks is borderline. The point is not the precise crossover; it is that scaling $d$ to where the rate-distortion gain matters destroys feasibility.</p>
+</section>
+
+<section>
+  <h2>What does $E_8$ buy you in practice?</h2>
+  <p>$E_8$ is the lattice of vectors in $\mathbb{R}^8$ whose coordinates are either all integers or all half-integers, and whose coordinate sum is even. It has 240 nearest neighbors (vs. 16 for $\mathbb{Z}^8$), giving denser sphere packing and rounder Voronoi cells.</p>
+  <p>Numerically, $G(E_8)\approx 0.0717$ vs. $G(\mathbb{Z}^8)=1/12\approx 0.0833$. The MSE improvement at fixed rate is the ratio: $\approx 14\%$ lower distortion for free, just by switching the lattice.</p>
+  <p>QUIP\# uses $E_8$ specifically because of this gain: at 8 bits per block (i.e. $R\approx 1$ per coordinate, since $\log_2 256 = 8$), scalar quantization (or $\mathbb{Z}^8$) leaves measurable LLM perplexity on the table that $E_8$ recovers.</p>
+</section>
+
+<section>
+  <h2>Fast rounding for $E_8$ &mdash; the algorithm</h2>
+  <ol>
+    <li><strong>Round to $\mathbb{Z}^8$:</strong> $\mathbf{n}_1=\lfloor x+\tfrac12\rfloor$ component-wise.</li>
+    <li><strong>Fix parity:</strong> if $\sum n_{1,i}$ is odd, find the index $i^\star$ with the largest absolute rounding error $|x_{i^\star}-(n_{1,i^\star}-\operatorname{sgn}(\cdot))|$ and flip its rounding direction. Result: $\mathbf{n}_1\in D_8$.</li>
+    <li><strong>Try the half-integer translate:</strong> $\mathbf{n}_2$ obtained by repeating steps 1–2 on $x-(\tfrac12,\ldots,\tfrac12)$ and adding back $(\tfrac12,\ldots,\tfrac12)$.</li>
+    <li><strong>Pick whichever is closer to $x$.</strong></li>
+  </ol>
+  <p>Total work: $\mathcal{O}(d)$ rounding plus $\mathcal{O}(d)$ comparisons. No codebook lookup at all.</p>
+</section>
+
+<section>
+  <h2>Why Hadamard, specifically</h2>
+  <p>A Hadamard matrix $H_d$ has entries in $\{-1,+1\}$ and $H_d H_d^\top = d I$, so $\frac{1}{\sqrt d}H_d$ is orthogonal. The multiplication is structured: $H_d x$ can be computed in $\mathcal{O}(d\log d)$ time via the fast Walsh&ndash;Hadamard transform, far cheaper than a generic dense rotation $\mathcal{O}(d^2)$.</p>
+  <p>QUIP\# uses <em>randomized</em> Hadamard transforms: $\mathbf{U}=H_d D_U/\sqrt{d}$ where $D_U$ is a diagonal of independent $\pm 1$ random signs. The randomization is what makes the central-limit argument apply to <em>every</em> weight matrix, regardless of its structure. Without the diagonal, $H_d \mathbf{W}$ would have predictable failure modes for adversarial $\mathbf{W}$.</p>
+</section>
+
+<section>
+  <h2>The CLT argument made precise</h2>
+  <p>After randomized Hadamard rotation, each entry of $\widetilde{\mathbf{W}}=\mathbf{U}\mathbf{W}\mathbf{V}^\top$ is a weighted sum of all $mn$ entries of $\mathbf{W}$ with random $\pm 1/\sqrt{mn}$ coefficients (up to constants). The Berry&ndash;Esseen theorem gives a quantitative CLT: the marginal CDF of $\widetilde{W}_{ij}$ deviates from the Gaussian CDF by $\mathcal{O}(\rho/\sigma^3\sqrt{N})$ where $\rho$ is the third absolute moment and $N$ is the effective sample size.</p>
+  <p>For LLM weight matrices with millions of entries, this deviation is small. The <em>maximum</em> entry of $\widetilde{\mathbf{W}}$ is also tightly controlled &mdash; this is the "incoherence" property: no entry is much larger than the typical scale, so the lattice can quantize everything at the same $\Delta$.</p>
+</section>
+
+<section>
+  <h2>What entropy coding adds on top</h2>
+  <p>After lattice quantization, integer indices $\mathbf{n}_b$ are not uniformly distributed: they concentrate near the origin (because the data is concentrated). Entropy coding compresses these indices to roughly the Shannon entropy of the index distribution, which can be substantially less than $\log_2|\mathcal{C}_{\text{lattice}}|$.</p>
+  <p>This is where the "rate&ndash;distortion limit" actually closes: lattice rounding handles the geometric matching, entropy coding handles the rest. Together they approach the Shannon bound up to small lattice-shaping losses.</p>
+</section>
+
+<section>
+  <h2>Practical caveats not covered on the slides</h2>
+  <ul>
+    <li><strong>Calibration data:</strong> the QUIP\# pipeline uses a small calibration dataset to compute Hessian-aware error bounds (the GPTQ-style proxy). This refines which weights to round in which direction. The lattice rule alone is not the end of the story.</li>
+    <li><strong>Per-channel scales:</strong> different output channels have different weight magnitudes. QUIP\# scales each channel before incoherence processing.</li>
+    <li><strong>Activation quantization:</strong> the slide discussion only covers weight quantization. Activation quantization (KV cache, post-rotation activations) is the topic of Lecture 4 and a separate strand of the literature.</li>
+  </ul>
+</section>
+
+</body>
+</html>

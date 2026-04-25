@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diffusion 3 — Parameterizations · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  p, li { font-size: 1rem; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+<h1>Diffusion 3 · Parameterizations &mdash; Notes</h1>
+
+<section>
+  <h2>Why $\varepsilon$-prediction wins in practice</h2>
+  <p>The three parameterizations are mathematically equivalent, but the implied loss landscapes differ. Setting up:</p>
+  <ul>
+    <li>$x_0$-prediction: target has variance $\operatorname{Var}(X_0)\approx 1$, but at large $t$ the input $x_t$ is mostly noise &mdash; the conditional posterior mean has very small magnitude relative to its targets, so the loss is high-variance for any near-optimal predictor.</li>
+    <li>$\varepsilon$-prediction: target $\varepsilon\sim\mathcal{N}(0,I)$ has unit variance at every $t$; the loss scale is constant across noise levels.</li>
+    <li>score-prediction: target $\nabla\log p_t\sim 1/\sqrt{1-\bar\alpha_t}$ has scale that <em>diverges</em> as $t\to 0$ (because $1-\bar\alpha_t\to 0$). Numerical instability at small $t$ unless rescaled.</li>
+  </ul>
+  <p>Empirically, $\varepsilon$-prediction with the simple unweighted MSE objective $\mathbb{E}\|\varepsilon-\varepsilon_\theta\|^2$ trains stably and produces strong samples (DDPM, 2020). Score-prediction with a $\sqrt{1-\bar\alpha_t}$ weight is mathematically equivalent.</p>
+</section>
+
+<section>
+  <h2>Tweedie's formula in the general exponential-family form</h2>
+  <p>Robbins (1956), Efron (2011): for any $\mu$ and any noise distribution from the exponential family, the posterior expectation has a clean form involving the marginal density's score. In the Gaussian case with $X=\mu+\sigma Z$, $Z\sim\mathcal{N}(0,1)$:</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}[\mu\mid X=x]\;=\;x+\sigma^2\,\nabla_x\log p_X(x).
+    \]
+  </div>
+  <p>For the diffusion case, $\mu=\sqrt{\bar\alpha_t}X_0$ plays the role of the noiseless mean, and $\sigma^2=1-\bar\alpha_t$. Plugging in:</p>
+  <div class="deriv">
+    \[
+    \sqrt{\bar\alpha_t}\,\mathbb{E}[X_0\mid x_t]\;=\;x_t+(1-\bar\alpha_t)\,\nabla\log p_t(x_t),
+    \]
+  </div>
+  <p>which divides to the slide form. So the diffusion Tweedie is one specialization of the classical Tweedie.</p>
+</section>
+
+<section>
+  <h2>Score-matching versus denoising loss</h2>
+  <p>"Direct" score matching minimizes $\mathbb{E}\|s_\theta(x)-\nabla\log p(x)\|^2$ &mdash; intractable because we don't know $\nabla\log p$. Vincent (2011) showed equivalence to <em>denoising score matching</em>:</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}_{x_0,\,\tilde x}\|s_\theta(\tilde x)-\nabla_{\tilde x}\log q(\tilde x\mid x_0)\|^2,
+    \]
+  </div>
+  <p>where $\tilde x=x_0+\sigma\eta$. The conditional score is computable in closed form ($-\eta/\sigma$ for Gaussian noise), so the loss is tractable.</p>
+  <p>Diffusion's $\varepsilon$-prediction is exactly this denoising-score-matching objective with $\sigma=\sqrt{1-\bar\alpha_t}$, summed over $t$.</p>
+</section>
+
+<section>
+  <h2>Why all three views give the same model</h2>
+  <p>At optimum, $x_{0,\theta}^\star=\mathbb{E}[X_0\mid x_t]$, $\varepsilon_\theta^\star=\mathbb{E}[\varepsilon\mid x_t]$, $s_\theta^\star=\nabla\log p_t$. The three are related by deterministic invertible transformations (Tweedie + master reparameterization). So a network trained well in any one parameterization implicitly fits the other two perfectly &mdash; up to the loss-conditioning differences.</p>
+  <p>This is why a single diffusion model can be evaluated in any view at inference time. DDPM samplers use $\varepsilon_\theta$; DDIM samplers can use $x_{0,\theta}$; the SDE samplers in Song et&nbsp;al. use $s_\theta$. All produce the same denoiser; the difference is the discretization of the reverse process.</p>
+</section>
+
+<section>
+  <h2>Channel-coding view in detail</h2>
+  <p>Each forward step $X_{t-1}\to X_t$ is an additive white Gaussian noise channel with SNR $\alpha_t/\beta_t=(1-\beta_t)/\beta_t$. Channel capacity per use:</p>
+  <div class="deriv">
+    \[
+    C_t=\tfrac12\log\bigl(1+\tfrac{\alpha_t}{\beta_t}\operatorname{Var}(X_{t-1})\bigr).
+    \]
+  </div>
+  <p>This is the maximum mutual information any reverse process can hope to recover from one step. The variational gap in the ELBO measures how far the learned reverse falls short of this bound.</p>
+  <p>Successive refinement (Equitz &amp; Cover 1991): a source admits successive refinement if the same total rate can be achieved by stopping a coarsening procedure at any granularity. Gaussian sources under MSE are successively refinable, so diffusion's choice of decreasing-distortion targets is information-theoretically natural.</p>
+</section>
+
+<section>
+  <h2>The "log SNR" view</h2>
+  <p>Salimans &amp; Ho (2021), Kingma et&nbsp;al. (VDM): all three parameterizations are unified by treating the noise schedule via the signal-to-noise ratio $\mathrm{SNR}(t)=\bar\alpha_t/(1-\bar\alpha_t)$. The ELBO can be written as a single integral over $\log\mathrm{SNR}$:</p>
+  <div class="deriv">
+    \[
+    -\log p(x_0)\;\le\;\frac12\,\mathbb{E}\!\int_{\mathrm{SNR}_{\min}}^{\mathrm{SNR}_{\max}}\!\|x_0-x_{0,\theta}(x_t,\mathrm{snr})\|^2\,d\mathrm{snr}.
+    \]
+  </div>
+  <p>This unifies the parameterization choice into a single weighted MSE in $x_0$-space, with the weight derived from the SNR schedule. Practically nothing new, but conceptually clean.</p>
+</section>
+
+<section>
+  <h2>Connection to the rate&ndash;distortion / lossy-compression module</h2>
+  <p>In Module 1 we proved $R(D)=\frac12\log(\sigma^2/D)$ for Gaussian sources. The diffusion forward process at level $t$ produces $X_t=\sqrt{\bar\alpha_t}X_0+\sqrt{1-\bar\alpha_t}\varepsilon$, which has effective SNR $\bar\alpha_t/(1-\bar\alpha_t)$. The capacity $C_t$ at this step matches the per-step rate&ndash;distortion bound of the source.</p>
+  <p>So a diffusion model with optimal reverse kernels achieves the rate&ndash;distortion limit at each level, and the entire chain implements an optimal successive-refinement code. The training procedure approximates this optimum.</p>
+</section>
+
+</body>
+</html>

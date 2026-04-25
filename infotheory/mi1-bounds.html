@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI Estimation 1 — Variational Bounds</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.tk-blue { color: var(--yonsei-blue); }
+.tk-red  { color: var(--warn); }
+.tk-green{ color: var(--success); }
+.proof {
+  background: linear-gradient(135deg, rgba(0,56,118,0.04) 0%, rgba(0,56,118,0.01) 100%);
+  border-left: 4px solid var(--yonsei-blue);
+  padding: 14px 22px 8px;
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
+}
+.proof-tag {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--yonsei-blue);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body data-brand-logo="../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- ═══ TITLE ═══ -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">MI Estimation · Lecture 1 of 2</div>
+  <h1>Variational Lower Bounds<br>on Mutual Information</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Barber&ndash;Agakov, Donsker&ndash;Varadhan (MINE), and NWJ</p>
+  <p style="font-weight:500;font-size:1.8rem;margin-top:32px;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- CONTENTS -->
+<div class="slide">
+  <h2>Contents</h2>
+  <div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Why estimate mutual information?</div>
+      <div class="toc-sub">Density-ratio framing, samples-only setting</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Barber&ndash;Agakov (BA) bound</div>
+      <div class="toc-sub">From a tractable conditional model</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Donsker&ndash;Varadhan (DV) bound</div>
+      <div class="toc-sub">Dual representation of KL, MINE estimator</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Nguyen&ndash;Wainwright&ndash;Jordan (NWJ) bound</div>
+      <div class="toc-sub">Trade tightness for variance via $\log u\le u-1$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Bias / variance tradeoffs</div>
+      <div class="toc-sub">Choosing the right bound for your task</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════ PART 01 ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Motivation and Setup</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Density ratios, samples-only access, the central problem</p>
+</div>
+
+<!-- Why estimate MI -->
+<div class="slide">
+  <h2>Why estimate mutual information?</h2>
+  <div class="divider"></div>
+  <p>MI quantifies statistical dependence between two random variables:</p>
+  <div class="math-block">$$I(X;Y)\;=\;D_{\mathrm{KL}}\bigl(p_{X,Y}\,\Vert\,p_X p_Y\bigr)\;=\;\mathbb{E}\!\left[\log\dfrac{p(X,Y)}{p(X)p(Y)}\right].$$</div>
+  <p>Used as an objective in:</p>
+  <ul>
+    <li><strong>Representation learning:</strong> maximize $I(T;Y)$ to retain task-relevant info.</li>
+    <li><strong>Contrastive learning:</strong> maximize $I(T_1;T_2)$ across views (SimCLR, CLIP).</li>
+    <li><strong>Information bottleneck:</strong> minimize $I(T;X)$ under a fidelity constraint.</li>
+  </ul>
+  <p>Problem: $p(x,y)$ and the marginals are unknown. We have only samples.</p>
+</div>
+
+<!-- Sampling access -->
+<div class="slide">
+  <h2>Samples-only setting</h2>
+  <div class="divider"></div>
+  <p>Given i.i.d. samples $(x_i,y_i)\sim p_{X,Y}$ for $i=1,\ldots,N$.</p>
+  <p>From these we can also sample from the product of marginals: shuffle pairs to form $(x_i,y_j)$ with $j\ne i$. So we have empirical access to:</p>
+  <div class="math-block">$$P=p_{X,Y}\quad\text{(joint)},\qquad Q=p_X p_Y\quad\text{(product of marginals)}.$$</div>
+  <p>$I(X;Y)=D_{\mathrm{KL}}(P\Vert Q)$. The question becomes: <strong>how do we estimate KL from samples of $P$ and $Q$?</strong></p>
+</div>
+
+<!-- Density ratio framing -->
+<div class="slide">
+  <h2>The density-ratio framing</h2>
+  <div class="divider"></div>
+  <p>Define</p>
+  <div class="math-block">$$r(x,y)\;\coloneqq\;\dfrac{p(x,y)}{p(x)p(y)},\qquad I(X;Y)=\mathbb{E}_{p_{X,Y}}[\log r(X,Y)].$$</div>
+  <p>If we knew $r$, MI would be a single expectation under $p_{X,Y}$ &mdash; estimable from samples.</p>
+  <p>Strategy: learn a critic $T_\theta(x,y)\approx\log r(x,y)$ (or an unnormalized version) by optimizing a variational lower bound. The optimum recovers $\log r$.</p>
+</div>
+
+
+<!-- ════════════ PART 02 — BA ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Barber&ndash;Agakov (BA) Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Use a conditional model $q(x\mid y)$</p>
+</div>
+
+<!-- BA statement -->
+<div class="slide">
+  <h2>The BA bound</h2>
+  <div class="divider"></div>
+  <p>For any conditional density $q(x\mid y)$ on the same alphabet:</p>
+  <div class="math-block">$$I(X;Y)\;\ge\;H(X)+\mathbb{E}_{p(x,y)}[\log q(x\mid y)]\;\eqqcolon\;I_{\mathrm{BA}}(q).$$</div>
+  <p>Tight when $q(x\mid y)=p(x\mid y)$.</p>
+</div>
+
+<!-- BA proof -->
+<div class="slide">
+  <h2>BA proof</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <p>Start from $I(X;Y)=H(X)-H(X\mid Y)$ and expand the conditional entropy:</p>
+    <div class="math-block">$$H(X\mid Y)=-\mathbb{E}_{p(x,y)}[\log p(x\mid y)]=-\mathbb{E}_{p(x,y)}[\log q(x\mid y)]-\mathbb{E}_{p(y)}\!\bigl[D_{\mathrm{KL}}(p(\cdot\mid y)\,\Vert\,q(\cdot\mid y))\bigr].$$</div>
+    <p>Substitute back:</p>
+    <div class="math-block">$$I(X;Y)=H(X)+\mathbb{E}_{p(x,y)}[\log q(x\mid y)]+\mathbb{E}_{p(y)}D_{\mathrm{KL}}(\cdot)\;\ge\;H(X)+\mathbb{E}_{p(x,y)}[\log q(x\mid y)].\;\blacksquare$$</div>
+  </div>
+</div>
+
+<!-- BA practical -->
+<div class="slide">
+  <h2>BA in practice</h2>
+  <div class="divider"></div>
+  <p>$H(X)$ is independent of $q$ &mdash; it is a constant. So:</p>
+  <ul>
+    <li><strong>Optimization use:</strong> maximize $\mathbb{E}_{p(x,y)}[\log q_\theta(x\mid y)]$ &mdash; just maximum likelihood of $X\mid Y$.</li>
+    <li><strong>Numerical estimate:</strong> need $H(X)$, which is usually unknown.</li>
+  </ul>
+  <p>BA is typically used to <em>train representations</em>, not to <em>report MI numbers</em>. When the task is "make $T$ predictive of $Y$", BA reduces to MLE of the conditional &mdash; no MI machinery needed.</p>
+</div>
+
+
+<!-- ════════════ PART 03 — DV ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Donsker&ndash;Varadhan (DV) Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Dual representation of KL, basis of MINE</p>
+</div>
+
+<!-- DV statement -->
+<div class="slide">
+  <h2>Donsker&ndash;Varadhan representation of KL</h2>
+  <div class="divider"></div>
+  <p>For any distributions $P,Q$ on a common space:</p>
+  <div class="math-block">$$D_{\mathrm{KL}}(P\,\Vert\,Q)\;=\;\sup_T\;\bigl\{\,\mathbb{E}_P[T]-\log\mathbb{E}_Q[e^T]\,\bigr\},$$</div>
+  <p>supremum over measurable $T$ for which the expectations exist.</p>
+  <p>Apply with $P=p_{X,Y}$, $Q=p_X p_Y$:</p>
+  <div class="math-block">$$I(X;Y)\;\ge\;\mathbb{E}_{p(x,y)}[T(x,y)]-\log\mathbb{E}_{p(x)p(y)}[e^{T(x,y)}]\;\eqqcolon\;I_{\mathrm{DV}}(T).$$</div>
+</div>
+
+<!-- DV proof -->
+<div class="slide">
+  <h2>DV proof</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Proof of the variational form</div>
+    <p>For any $T$ with $\mathbb{E}_Q[e^T]&lt;\infty$, define a tilted distribution $G$ via $dG/dQ=e^T/\mathbb{E}_Q[e^T]$. Compute</p>
+    <div class="math-block">$$D_{\mathrm{KL}}(P\Vert G)=\mathbb{E}_P\!\left[\log\dfrac{dP/dQ}{e^T/\mathbb{E}_Q[e^T]}\right]=D_{\mathrm{KL}}(P\Vert Q)-\mathbb{E}_P[T]+\log\mathbb{E}_Q[e^T].$$</div>
+    <p>Non-negativity of KL: $D_{\mathrm{KL}}(P\Vert Q)\ge \mathbb{E}_P[T]-\log\mathbb{E}_Q[e^T]$, with equality iff $P=G$, i.e.&nbsp;$T=\log(dP/dQ)+c$. $\;\blacksquare$</p>
+  </div>
+</div>
+
+<!-- Optimal critic -->
+<div class="slide">
+  <h2>The optimal critic recovers $\log r$</h2>
+  <div class="divider"></div>
+  <p>Equality in DV holds at $T^\star(x,y)=\log r(x,y)+c$ for any constant $c$. So learning the critic by maximizing $I_{\mathrm{DV}}(T)$ recovers the log-density-ratio (up to a constant).</p>
+  <div class="math-block">$$I_{\mathrm{DV}}(T^\star)=\mathbb{E}[\log r(X,Y)]+c-\log\mathbb{E}_Q[e^{c}\,r(X,Y)]=\mathbb{E}[\log r]+c-c-\log\,1=I(X;Y).$$</div>
+  <p>(Using $\mathbb{E}_Q[r]=\mathbb{E}_{p_X p_Y}[p_{X,Y}/(p_X p_Y)]=1$.) Tight bound when fully optimized.</p>
+</div>
+
+<!-- MINE -->
+<div class="slide">
+  <h2>MINE: parameterize $T$ as a neural network</h2>
+  <div class="divider"></div>
+  <p>Mutual Information Neural Estimator (Belghazi et&nbsp;al. 2018):</p>
+  <ul>
+    <li>Parameterize $T_\theta(x,y)$ by a neural network.</li>
+    <li>Approximate the two expectations by minibatches: positives from $(x_i,y_i)\sim p_{X,Y}$, negatives by shuffling.</li>
+    <li>Gradient-ascend $I_{\mathrm{DV}}(T_\theta)$.</li>
+  </ul>
+  <p><strong>Catch.</strong> The $\log\mathbb{E}_Q[e^T]$ term is volatile under finite samples &mdash; a single large $T$ value dominates the inner expectation. Variance grows exponentially in MI.</p>
+  <div class="cite">Belghazi, Baratin, Rajeswar, Ozair, Bengio, Courville, Hjelm, "MINE: Mutual Information Neural Estimation", ICML 2018</div>
+</div>
+
+
+<!-- ════════════ PART 04 — NWJ ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Nguyen&ndash;Wainwright&ndash;Jordan (NWJ) Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Replace the log-partition function with a linear surrogate</p>
+</div>
+
+<!-- NWJ derivation -->
+<div class="slide">
+  <h2>From DV to NWJ via $\log u\le u-1$</h2>
+  <div class="divider"></div>
+  <div class="proof">
+    <div class="proof-tag">Derivation</div>
+    <p>For $u&gt;0$, $\log u\le u-1$. Apply to the DV log-partition with $u=\mathbb{E}_Q[e^T]$:</p>
+    <div class="math-block">$$\log\mathbb{E}_Q[e^T]\;\le\;\mathbb{E}_Q[e^T]-1.$$</div>
+    <p>Therefore</p>
+    <div class="math-block">$$I_{\mathrm{DV}}(T)=\mathbb{E}_P[T]-\log\mathbb{E}_Q[e^T]\;\ge\;\mathbb{E}_P[T]-\mathbb{E}_Q[e^T]+1.$$</div>
+    <p>Reparameterize $T\to T+1$ (shift) to get the cleaner form.</p>
+  </div>
+</div>
+
+<!-- NWJ statement -->
+<div class="slide">
+  <h2>The NWJ bound</h2>
+  <div class="divider"></div>
+  <p>For any critic $T$:</p>
+  <div class="math-block">$$I(X;Y)\;\ge\;\mathbb{E}_{p(x,y)}[T(x,y)]-\mathbb{E}_{p(x)p(y)}[e^{T(x,y)-1}]\;\eqqcolon\;I_{\mathrm{NWJ}}(T).$$</div>
+  <p>Tight at $T^\star(x,y)=\log r(x,y)+1$.</p>
+  <div class="highlight">
+    <p>NWJ replaces the variance-heavy $\log\mathbb{E}[e^T]$ with a tractable $\mathbb{E}[e^{T-1}]$ &mdash; cheaper to estimate, but the bound is generally <strong>looser</strong> at finite-sample optima.</p>
+  </div>
+</div>
+
+<!-- Comparison -->
+<div class="slide">
+  <h2>DV vs.&nbsp;NWJ vs.&nbsp;BA</h2>
+  <div class="divider"></div>
+  <table style="font-size:1.3rem;">
+    <thead>
+      <tr><th>Bound</th><th>Form</th><th>Optimal critic</th><th>Trade-off</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>BA</td><td>$H(X)+\mathbb{E}\log q(x\mid y)$</td><td>$q(x\mid y)=p(x\mid y)$</td><td>Needs $H(X)$; reduces to MLE.</td></tr>
+      <tr><td>DV</td><td>$\mathbb{E}_P[T]-\log\mathbb{E}_Q[e^T]$</td><td>$T=\log r+c$</td><td>Tightest; high variance.</td></tr>
+      <tr><td>NWJ</td><td>$\mathbb{E}_P[T]-\mathbb{E}_Q[e^{T-1}]$</td><td>$T=\log r+1$</td><td>Stable; looser at fixed critic class.</td></tr>
+    </tbody>
+  </table>
+  <p>Three derivations of essentially the same critic, with different finite-sample behavior.</p>
+</div>
+
+
+<!-- ════════════ PART 05 — Tradeoffs ════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">05</div>
+  <h1>Bias / Variance Tradeoffs</h1>
+  <div class="divider"></div>
+  <p class="subtitle">High-MI regimes, finite-batch effects</p>
+</div>
+
+<!-- High MI -->
+<div class="slide">
+  <h2>What goes wrong at high MI</h2>
+  <div class="divider"></div>
+  <p>For a strongly dependent pair, $\log r$ has a long right tail. The DV term $\log\mathbb{E}_Q[e^T]$ is dominated by the largest sample of $T$. McAllester &amp; Stratos (2020):</p>
+  <div class="math-block">$$\text{Variance of empirical }\log\mathbb{E}_Q[e^T]\;\sim\;\dfrac{e^{I(X;Y)}}{N}.$$</div>
+  <p>Variance grows <strong>exponentially</strong> in the true MI. To estimate $I=10$ nats, need $N\sim e^{10}\approx 22000$ samples just to control variance &mdash; before bias.</p>
+  <div class="highlight">
+    <p>No fully sample-efficient estimator of high MI exists. This is a genuine information-theoretic barrier, not a software bug.</p>
+  </div>
+</div>
+
+<!-- Toy bivariate Gaussian -->
+<div class="slide">
+  <h2>Toy benchmark: bivariate Gaussian</h2>
+  <div class="divider"></div>
+  <p>Let $(X,Y)$ be jointly Gaussian with correlation $\rho\in(-1,1)$, unit variances. Closed-form MI:</p>
+  <div class="math-block">$$I(X;Y)\;=\;-\tfrac{1}{2}\log(1-\rho^2).$$</div>
+  <p>Behavior of estimators:</p>
+  <ul>
+    <li>$|\rho|\le 0.5$ ($I\le 0.14$ nats): all estimators converge with $\sim 10^3$ samples.</li>
+    <li>$|\rho|=0.99$ ($I\approx 1.96$ nats): DV diverges without huge batches; NWJ stable but biased low.</li>
+  </ul>
+  <p>Standard benchmark for sanity-checking new estimators.</p>
+</div>
+
+<!-- Choice guide -->
+<div class="slide">
+  <h2>Which bound for which task?</h2>
+  <div class="divider"></div>
+  <ul>
+    <li><strong>Optimization-only objective</strong> (representation learning): use BA &mdash; reduces to MLE. Don't worry about MI numbers.</li>
+    <li><strong>Stable contrastive objective:</strong> InfoNCE (next lecture). Bounded above by $\log K$, very stable, used by SimCLR / CLIP.</li>
+    <li><strong>Want a tight numerical MI estimate</strong> at low-to-moderate MI: NWJ or DV with careful sample budget.</li>
+    <li><strong>High MI ($I\gg 1$ nat):</strong> no estimator is reliable. Report an interval with a clear caveat.</li>
+  </ul>
+</div>
+
+
+<!-- Recap -->
+<div class="slide">
+  <h2>Recap of Lecture 1</h2>
+  <div class="divider"></div>
+  <ul>
+    <li><strong>MI estimation problem:</strong> only samples from $P=p_{X,Y}$ and $Q=p_X p_Y$.</li>
+    <li><strong>Density-ratio framing:</strong> learn a critic $T\approx\log r$ by optimizing a variational lower bound.</li>
+    <li><strong>BA:</strong> $I\ge H(X)+\mathbb{E}\log q(x\mid y)$, reduces to conditional MLE.</li>
+    <li><strong>DV:</strong> $I\ge\mathbb{E}_P[T]-\log\mathbb{E}_Q[e^T]$, tight at $T=\log r+c$. Basis of MINE.</li>
+    <li><strong>NWJ:</strong> $I\ge\mathbb{E}_P[T]-\mathbb{E}_Q[e^{T-1}]$, more stable, slightly looser.</li>
+    <li><strong>High-MI barrier:</strong> variance grows like $e^I/N$. Reliable estimation only at low-to-moderate MI.</li>
+  </ul>
+</div>
+
+<!-- Closer -->
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Lecture 1</div>
+  <p class="big-word-sub">Up next &mdash; InfoNCE and CLIP.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div>
+
+<script src="../reference/deck.js"></script>
+</body>
+</html>

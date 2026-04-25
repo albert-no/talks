@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diffusion 1 — VAE and ELBO · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body { max-width: 760px; margin: 48px auto; padding: 0 24px 96px; color: var(--charcoal); background: var(--white); font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif; font-weight: 300; line-height: 1.65; }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+  .deriv { background: var(--light); border-left: 3px solid var(--yonsei-blue); padding: 12px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Diffusion 1 · Variational Bound and the VAE &mdash; Notes</h1>
+<p class="meta">Companion to <code>diff1-vae-elbo.html</code>.</p>
+
+<section>
+  <h2>Why we cannot just use $\log p_\theta(x)$ directly</h2>
+  <p>The integral $\int p_\theta(x,z)dz$ requires summing over all possible latent codes, weighted by their joint likelihood with $x$. For a continuous latent of dimension $\sim 100$ and a flexible decoder neural network, this integral has no closed form and Monte Carlo estimation has astronomical variance: most $z$ samples have negligible $p_\theta(x,z)$, so a uniform-in-$z$ sampler almost never sees the relevant mass.</p>
+  <p>The variational posterior $q_\phi(z\mid x)$ is an importance-sampling proposal: it concentrates probability mass on the $z$ values that explain $x$, so the importance ratio $p_\theta(x,z)/q_\phi(z\mid x)$ is well-behaved. Jensen on the log-importance-ratio yields the ELBO.</p>
+</section>
+
+<section>
+  <h2>The KL gap is informative, not just non-negative</h2>
+  <p>From the second derivation:</p>
+  <div class="deriv">
+    \[
+    \log p_\theta(x)-\mathcal{L}_{\mathrm{ELBO}}=D_{\mathrm{KL}}\bigl(q_\phi(\cdot\mid x)\,\Vert\,p_\theta(\cdot\mid x)\bigr).
+    \]
+  </div>
+  <p>Two consequences:</p>
+  <ol>
+    <li>Maximizing the ELBO simultaneously increases $\log p_\theta$ (good for the model) and decreases the KL gap (better posterior approximation).</li>
+    <li>The bound is <strong>tight</strong> when the variational posterior matches the true one. So ELBO maximization drives $q_\phi$ toward the true $p_\theta(z\mid x)$.</li>
+  </ol>
+  <p>This double interpretation is why ELBO is also called variational EM: the encoder approximates the true posterior; the decoder refines the model.</p>
+</section>
+
+<section>
+  <h2>The reparameterization trick is more than a coding hack</h2>
+  <p>It is a special case of the <em>pathwise derivative estimator</em> in stochastic optimization. The general form is</p>
+  <div class="deriv">
+    \[
+    \nabla_\phi\,\mathbb{E}_{z\sim q_\phi}[f(z)]
+    \;=\;\mathbb{E}_\varepsilon\bigl[\nabla_\phi f(g_\phi(\varepsilon))\bigr],
+    \]
+  </div>
+  <p>and applies whenever $z=g_\phi(\varepsilon)$ for parameter-free $\varepsilon$. The Gaussian case is the canonical example. Other cases:</p>
+  <ul>
+    <li>Logistic ($z=\sigma(\mu+\sigma\,\varepsilon)$ with $\varepsilon$ logistic);</li>
+    <li>Categorical via Gumbel-softmax: $z\propto\operatorname{softmax}((\log\pi_i+G_i)/\tau)$ with $G_i$ Gumbel.</li>
+  </ul>
+  <p>The alternative is the <em>score-function estimator</em> (REINFORCE): $\nabla_\phi\mathbb{E}_{q_\phi}[f(z)]=\mathbb{E}_{q_\phi}[f(z)\nabla_\phi\log q_\phi(z)]$. Always applicable but generally higher variance. VAEs use reparameterization for the variance benefit.</p>
+</section>
+
+<section>
+  <h2>The closed-form Gaussian KL for VAE</h2>
+  <p>Direct computation, using $p=\mathcal{N}(0,I)$ and $q=\mathcal{N}(\mu,\operatorname{diag}(\sigma^2))$:</p>
+  <div class="deriv">
+    \[
+    D_{\mathrm{KL}}(q\,\Vert\,p)=\mathbb{E}_q[\log q-\log p]=\sum_j\Bigl[\tfrac{\mu_j^2+\sigma_j^2}{2}-\tfrac12-\log\sigma_j+\log 1\Bigr].
+    \]
+  </div>
+  <p>Simplify: $\frac12\sum_j(\mu_j^2+\sigma_j^2-1-\log\sigma_j^2)$. Each term is non-negative; equals zero iff $\mu_j=0$ and $\sigma_j=1$, which is the prior.</p>
+  <p>This closed form makes ELBO completely differentiable with respect to encoder parameters &mdash; the KL term needs no Monte Carlo at all.</p>
+</section>
+
+<section>
+  <h2>Posterior collapse and "free bits"</h2>
+  <p>In language and image models with very expressive decoders, the optimization dynamics often push $q_\phi(z\mid x)\to p(z)$ during training. KL goes to zero; the latent codes nothing. Two diagnostics:</p>
+  <ol>
+    <li><strong>Per-dimension KL:</strong> compute $D_{\mathrm{KL}}\bigl(q_\phi(z_j\mid x)\,\Vert\,p(z_j)\bigr)$ averaged over $x$. Healthy dimensions have KL $\gtrsim 0.1$ nats; collapsed dimensions sit near $0$.</li>
+    <li><strong>Mutual information:</strong> $I(X;Z)=\mathbb{E}_x[D_{\mathrm{KL}}(q_\phi(z\mid x)\,\Vert\,q_\phi(z))]$ where $q_\phi(z)=\mathbb{E}_x[q_\phi(z\mid x)]$ is the aggregate posterior. Should be positive.</li>
+  </ol>
+  <p>The "free bits" trick clamps the per-dimension KL at a minimum: $\max(\lambda, D_{\mathrm{KL}}(q_j\,\Vert\,p_j))$ for each dimension $j$. The optimizer can then "spend" KL up to $\lambda$ for free, encouraging usage.</p>
+</section>
+
+<section>
+  <h2>The information-theoretic ELBO interpretation in more detail</h2>
+  <p>Rewrite the ELBO over the data distribution:</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}_x[\mathcal{L}_{\mathrm{ELBO}}]
+    \;=\;\mathbb{E}_{x,z\sim p_{\text{data}}q_\phi}[\log p_\theta(x\mid z)]\;-\;\mathbb{E}_x[D_{\mathrm{KL}}(q_\phi(\cdot\mid x)\,\Vert\,p)].
+    \]
+  </div>
+  <p>The KL term equals $I_{q_\phi}(X;Z)+D_{\mathrm{KL}}(q_\phi(z)\,\Vert\,p(z))$ (decomposing total variational rate into mutual information plus marginal mismatch).</p>
+  <p>Maximizing ELBO trades off:</p>
+  <ul>
+    <li>better reconstruction (negative distortion),</li>
+    <li>against lower mutual information $I(X;Z)$ (rate),</li>
+    <li>plus a marginal-matching term that pulls the aggregate posterior toward the prior.</li>
+  </ul>
+  <p>This is the "$\beta$-VAE" tradeoff family in information-theoretic clothing.</p>
+</section>
+
+<section>
+  <h2>Why diffusion is "the next step"</h2>
+  <p>Two unsatisfying aspects of vanilla VAEs that diffusion improves on:</p>
+  <ol>
+    <li><strong>Posterior collapse.</strong> A trained encoder is fragile. A <em>fixed</em> forward process (Gaussian noise injection) cannot collapse.</li>
+    <li><strong>Latent is poorly structured.</strong> $z\in\mathbb{R}^d$ is informative but not interpretable. Diffusion's "latents" are noisy versions of $x$ at increasing noise levels &mdash; explicit, structured.</li>
+  </ol>
+  <p>Lecture 2 unpacks this: a diffusion model is a hierarchical VAE with $T$ latents $X_1,\ldots,X_T$, a frozen forward process, and a learned reverse process.</p>
+</section>
+
+</body>
+</html>
