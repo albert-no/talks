@@ -54,6 +54,24 @@
 </section>
 
 <section>
+  <h2>Slide 28 — DP Bounds MI Advantage (proof)</h2>
+
+  <h3>Full derivation</h3>
+  <p>The slide states the bound and gives the one-line sketch. Here is the complete argument.</p>
+  <p><strong>Claim.</strong> If $M$ is $(\varepsilon, \delta)$-DP, then for any adversary $\mathcal{A}$,
+  $$\mathrm{Adv}_{\mathrm{MI}}(\mathcal{A}) \leq e^\varepsilon - 1 + \delta.$$</p>
+  <p><strong>Proof.</strong> By $(\varepsilon,\delta)$-DP applied to the event $\{\mathcal{A}(M(\cdot)) = 1\}$:
+  $$\Pr[\mathcal{A}(M(D_1))=1] \leq e^\varepsilon \Pr[\mathcal{A}(M(D_0))=1] + \delta.$$
+  Let $p = \Pr[\mathcal{A}(M(D_0))=1]$ and $q = \Pr[\mathcal{A}(M(D_1))=1]$. Then $q \leq e^\varepsilon p + \delta$, so
+  $$q - p \leq (e^\varepsilon - 1)p + \delta \leq e^\varepsilon - 1 + \delta,$$
+  since $p \leq 1$. By symmetry (apply DP in the other direction), $p - q \leq e^\varepsilon - 1 + \delta$ as well.
+  Therefore $|q - p| \leq e^\varepsilon - 1 + \delta$. $\square$</p>
+
+  <h3>Why the table values</h3>
+  <p>For $\varepsilon = 0.1$, $\delta = 10^{-5}$: $e^{0.1} - 1 + 10^{-5} \approx 0.105$. For $\varepsilon = 1$: $e - 1 \approx 1.718$ (bound exceeds 1, so it's not tight but not vacuous). For $\varepsilon = 8$: $e^8 - 1 \approx 2980$ — completely vacuous; large-$\varepsilon$ DP gives no useful MI guarantee.</p>
+</section>
+
+<section>
   <h2>Other extended notes</h2>
   <p class="meta">Add one section per slide where the slide intentionally compressed detail. Keep entries tight: prose explanations, secondary citations, derivations the audience can consult after the talk.</p>
 </section>

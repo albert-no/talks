@@ -40,7 +40,7 @@
   <h1>Membership Inference:<br>Foundations</h1>
   <div class="divider"></div>
   <p class="subtitle">From genomic data to machine learning privacy</p>
-  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
   <p style="margin-top:6px;">2026</p>
 </div>
 
@@ -107,14 +107,13 @@
     <p>Mechanism $M$ trained on $D$, data point $x$:</p>
     <p style="font-weight:500; text-align:center;"><strong>Was $x$ used to produce $M$'s output?</strong></p>
   </div>
-  <p><strong>Membership inference</strong>: the fundamental privacy attack against ML systems.</p>
-  <p>Predates deep learning. Spans genomics, statistics, ML.</p>
-  <p>Foundation for data extraction, model inversion.</p>
+  <p><strong>Membership inference</strong>: fundamental privacy attack against ML systems.</p>
+  <p>Spans genomics, statistics, ML. Foundation for extraction and inversion.</p>
 </div>
 
 <!-- SLIDE 3 — Why Should You Care? -->
 <div class="slide bg-dark">
-  <h2>Why Should You Care?</h2>
+  <h2>Why MIA Matters</h2>
   <div class="divider"></div>
   <div class="grid-3" style="margin-top:12px;">
     <div class="card">
@@ -140,27 +139,18 @@
 <div class="slide bg-deep">
   <h2>Real-World Stakes</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <ul class="arrow">
-        <li><strong>2008, Homer et al.:</strong> individuals identified from aggregate genomic data; NIH closed public GWA databases</li>
-        <li><strong>2017, Shokri et al.:</strong> MIA vs Google, Amazon ML-as-a-service</li>
-        <li><strong>2021, Carlini et al.:</strong> training data extracted from GPT-2</li>
-        <li><strong>2023, NYT v. OpenAI:</strong> MIA as legal evidence of data use</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card" style="height:100%; display:flex; flex-direction:column; justify-content:center;">
-        <p style="text-align:center; color:var(--gray-text);">Stakes escalated:</p>
-        <div class="diagram-flow" style="justify-content:center;">
-          <div class="diagram-box">Genomic<br>Databases</div>
-          <span class="diagram-arrow">→</span>
-          <div class="diagram-box">Cloud ML<br>APIs</div>
-          <span class="diagram-arrow">→</span>
-          <div class="diagram-box filled">Foundation<br>Models</div>
-        </div>
-      </div>
-    </div>
+  <ul class="arrow">
+    <li><strong>2008, Homer et al.:</strong> identifiable from aggregate genomic data; NIH closes public databases</li>
+    <li><strong>2017, Shokri et al.:</strong> MIA vs Google, Amazon ML-as-a-service</li>
+    <li><strong>2021, Carlini et al.:</strong> training data extracted from GPT-2</li>
+    <li><strong>2023, NYT v. OpenAI:</strong> MIA as legal evidence of data use</li>
+  </ul>
+  <div class="diagram-flow" style="justify-content:center; margin-top:24px;">
+    <div class="diagram-box">Genomic DBs</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box">Cloud ML APIs</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box filled">Foundation Models</div>
   </div>
 </div>
 
@@ -175,7 +165,7 @@
 <!-- SLIDE 7 — Homer et al. Overview -->
 <div class="slide bg-dark">
   <div class="pill">Homer et al. 2008</div>
-  <h2>Identifying Individuals in Aggregate Genomic Data</h2>
+  <h2>Homer et al.: The Attack</h2>
   <div class="divider"></div>
   <p><strong>Individuals identifiable</strong> from aggregate allele frequencies, even in 40+ person mixtures.</p>
   <ul class="arrow">
@@ -192,21 +182,20 @@
 <!-- SLIDE 8 — Homer: Setup -->
 <div class="slide bg-deep">
   <div class="pill">Homer et al. 2008</div>
-  <h2>The Attack Setup</h2>
+  <h2>Three Ingredients</h2>
   <div class="divider"></div>
-  <p>Three ingredients:</p>
   <div class="grid-3">
     <div class="card">
       <h3>Individual</h3>
-      <p>$Y_{i,j}$: target's allele at SNP $j$</p>
+      <p>$Y_{i,j}$: allele at SNP $j$</p>
     </div>
     <div class="card">
       <h3>Mixture</h3>
-      <p>$M_j$: published study frequency</p>
+      <p>$M_j$: study frequency</p>
     </div>
     <div class="card">
       <h3>Population</h3>
-      <p>$\text{Pop}_j$: reference baseline</p>
+      <p>$\text{Pop}_j$: baseline</p>
     </div>
   </div>
   <div class="highlight">
@@ -246,18 +235,14 @@
 <!-- SLIDE 10 — Homer: Aggregation -->
 <div class="slide bg-deep">
   <div class="pill">Homer et al. 2008</div>
-  <h2>Aggregation: Weak Signals, Strong Test</h2>
+  <h2>Aggregation: Weak to Strong</h2>
   <div class="divider"></div>
-  <p>Each SNP: <strong>tiny</strong> signal.</p>
-  <p>Aggregate across ~500,000 SNPs via one-sample <strong>$t$-test</strong>:</p>
+  <p>Each SNP: <strong>tiny</strong> signal. Aggregate ~500,000 SNPs via one-sample $t$-test:</p>
   <div class="math-block">
-    $$T(Y_i) = \frac{\overline{D}(Y_i) - 0}{s_D / \sqrt{n_{\text{SNP}}}}$$
+    $$T(Y_i) = \frac{\overline{D}(Y_i)}{s_D / \sqrt{n_{\text{SNP}}}}$$
   </div>
-  <p>Under $H_0$ (non-member): $\overline{D} \approx 0$.</p>
-  <p>Under $H_1$ (member): $\overline{D} < 0$.</p>
   <div class="highlight">
-    <p><strong>Key principle:</strong> aggregate many weak per-SNP signals $\to$ $p < 10^{-6}$.</p>
-    <p>Same principle powers MIA in ML.</p>
+    <p>Many weak signals $\to$ $p < 10^{-6}$. Same principle powers MIA in ML.</p>
   </div>
 </div>
 
@@ -302,7 +287,7 @@
     <li>Precedent: <strong>aggregate statistics ≠ privacy protection</strong></li>
     <li>Motivated differential privacy for genomic data</li>
   </ul>
-  <p>First major policy change driven by an MI-style attack.</p>
+  <p><strong>First major policy change</strong> from an MI-style attack.</p>
 </div>
 
 
@@ -330,7 +315,6 @@
       <p>Parameters and outputs leak training membership.</p>
     </div>
   </div>
-  <p>Unifying insight across all MI work.</p>
 </div>
 
 <!-- SLIDE 14 — Analogy to ML -->
@@ -346,7 +330,7 @@
     <tr><td>$t$-test aggregation</td><td>Likelihood ratio test</td></tr>
     <tr><td>Member of study?</td><td>Member of training set?</td></tr>
   </table>
-  <p>Same structure: compare individual signal vs mechanism output, calibrated by population baseline.</p>
+  <p>Same structure: individual signal vs mechanism output, calibrated by population baseline.</p>
 </div>
 
 <!-- SLIDE 15 — Transition -->
@@ -354,7 +338,7 @@
   <h2>From Aggregate Statistics to Learned Models</h2>
   <div class="divider"></div>
   <p>Homer et al. attacked <strong>simple summary statistics</strong> (allele frequencies).</p>
-  <p>ML models are far more complex, but the core vulnerability remains:</p>
+  <p>ML models: more complex, same core vulnerability.</p>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box">Training Data $D$</div>
     <span class="diagram-arrow">→</span>
@@ -364,7 +348,7 @@
     <span class="diagram-arrow">→</span>
     <div class="diagram-box" style="border-color:var(--warn); color:var(--warn);">Predictions leak $D$</div>
   </div>
-  <p>First formalize: <strong>what is a membership inference attack?</strong> What does resisting it mean?</p>
+  <p>Next: formalize the MI attack and what resisting it means.</p>
 </div>
 
 <!-- SLIDE 16 — Reconstruction Recap -->
@@ -387,7 +371,7 @@
 
 <!-- SLIDE 17 — Why Reconstruction is Insufficient -->
 <div class="slide bg-dark">
-  <h2>Why Reconstruction Is Not Enough</h2>
+  <h2>Reconstruction: Insufficient for Privacy</h2>
   <div class="divider"></div>
   <p>Mechanism that <strong>samples</strong> a random training record:</p>
   <div class="math-block">
@@ -413,9 +397,9 @@
 <div class="slide bg-deep">
   <h2>Cryptographic Analogy: IND-CPA</h2>
   <div class="divider"></div>
-  <p>Crypto security is not "can you recover the plaintext?" but:</p>
+  <p>Crypto security: not "recover the plaintext" but:</p>
   <div class="highlight" style="padding:20px 24px;">
-    <p><strong>IND-CPA:</strong> Can you distinguish encryptions of $m_0$ vs $m_1$?</p>
+    <p><strong>IND-CPA:</strong> Distinguish encryptions of $m_0$ vs $m_1$?</p>
   </div>
   <div class="grid-2">
     <div>
@@ -429,7 +413,7 @@
       <p>Correct notion.</p>
     </div>
   </div>
-  <p>Same shift for privacy: reconstruction (recovery) to <strong>indistinguishability</strong> (distinguishing).</p>
+  <p>Same shift for privacy: reconstruction to <strong>indistinguishability</strong>.</p>
 </div>
 
 <!-- SLIDE 19 — Privacy = Indistinguishability -->
@@ -501,17 +485,16 @@
 <div class="slide bg-deep">
   <h2>Neighboring Databases</h2>
   <div class="divider"></div>
-  <p>MI game operates on <strong>neighboring databases</strong>: differ in one individual.</p>
+  <p>MI game on <strong>neighboring databases</strong>: differ in one individual.</p>
   <div class="math-block">
-    $$D_1 = D \cup \{x\} \qquad D_0 = D \setminus \{x\}$$
+    $$D_1 = D \cup \{x\}, \quad D_0 = D \setminus \{x\}$$
   </div>
-  <p>Same adjacency notion as DP:</p>
+  <p>Same adjacency as DP:</p>
   <div class="math-block">
-    $$(\varepsilon, \delta)\text{-DP:} \quad \Pr[M(D_1) \in S] \leq e^\varepsilon \Pr[M(D_0) \in S] + \delta \quad \forall S, \forall x$$
+    $$(\varepsilon, \delta)\text{-DP:} \quad \Pr[M(D_1) \in S] \leq e^\varepsilon \Pr[M(D_0) \in S] + \delta$$
   </div>
   <div class="highlight">
-    <p>DP: outputs <strong>statistically close</strong> across databases.</p>
-    <p>MIA tests closeness empirically.</p>
+    <p>DP: <strong>statistical closeness</strong> across databases. MIA tests it empirically.</p>
   </div>
 </div>
 
@@ -540,7 +523,7 @@
       <p>Partial leakage</p>
     </div>
   </div>
-  <p>Equals <strong>total variation distance</strong> between $M(D_1)$ and $M(D_0)$ as seen by $\mathcal{A}$.</p>
+  <p><strong>Total variation distance</strong> between $M(D_1)$ and $M(D_0)$ as seen by $\mathcal{A}$.</p>
 </div>
 
 <!-- SLIDE 24 — Hypothesis Testing Connection (merged with prior 24b) -->
@@ -570,18 +553,17 @@
 <div class="slide bg-dark">
   <h2>Test Statistic</h2>
   <div class="divider"></div>
-  <p>Adversary needs a <strong>test statistic</strong>: any function of observable signal.</p>
+  <p><strong>Test statistic</strong>: function of observable signal.</p>
   <div class="math-block">
-    $$T(x) = g(M(D), x) \quad \text{e.g., } T(x) = \ell(f_\theta, x) \text{ (loss on } x\text{)}$$
+    $$T(x) = g(M(D), x) \quad \text{e.g., } T(x) = \ell(f_\theta, x)$$
   </div>
-  <p>Common test statistics:</p>
   <table>
-    <tr><th>Test Statistic</th><th>Signal</th><th>Access Level</th></tr>
-    <tr><td>Loss $\ell(f_\theta, x)$</td><td>Model fit on $x$</td><td>Black-box (logits)</td></tr>
-    <tr><td>Confidence $\max_c f_\theta(x)_c$</td><td>Prediction certainty</td><td>Black-box (probs)</td></tr>
-    <tr><td>Entropy $H(f_\theta(x))$</td><td>Output uncertainty</td><td>Black-box (probs)</td></tr>
-    <tr><td>Gradient $\|\nabla_\theta \ell\|$</td><td>Gradient magnitude</td><td>White-box</td></tr>
-    <tr><td>Predicted label</td><td>Correct or not</td><td>Label-only</td></tr>
+    <tr><th>Test Statistic</th><th>Access Level</th></tr>
+    <tr><td>Loss $\ell(f_\theta, x)$</td><td>Black-box (logits)</td></tr>
+    <tr><td>Confidence $\max_c f_\theta(x)_c$</td><td>Black-box (probs)</td></tr>
+    <tr><td>Entropy $H(f_\theta(x))$</td><td>Black-box (probs)</td></tr>
+    <tr><td>Gradient $\|\nabla_\theta \ell\|$</td><td>White-box</td></tr>
+    <tr><td>Predicted label</td><td>Label-only</td></tr>
   </table>
 </div>
 
@@ -592,7 +574,7 @@
   <p><strong>Most powerful</strong> test at significance $\alpha$?</p>
   <div class="highlight" style="padding:24px 28px;">
     <p><strong>Neyman-Pearson Lemma:</strong> most powerful test is the <strong>likelihood ratio test</strong>:</p>
-    <div class="math-block" style="background:var(--black-15);">
+    <div class="math-block">
       $$\Lambda(x) = \frac{p(T(x) \mid H_1)}{p(T(x) \mid H_0)} = \frac{p(T(x) \mid x \in D)}{p(T(x) \mid x \notin D)} \quad \gtrless \quad \tau$$
     </div>
   </div>
@@ -635,39 +617,45 @@
 </div>
 <!-- SLIDE 28 — DP implies MI hardness -->
 <div class="slide bg-deep">
-  <h2>DP Implies Hardness of MI</h2>
+  <h2>DP Bounds MI Advantage</h2>
   <div class="divider"></div>
   <p>If $M$ is $(\varepsilon, \delta)$-DP, then for <strong>any</strong> adversary $\mathcal{A}$:</p>
   <div class="math-block">
     $$\text{Adv}_{\text{MI}}(\mathcal{A}) \leq e^\varepsilon - 1 + \delta$$
   </div>
-  <p><strong>Proof sketch:</strong> DP gives $\Pr[\mathcal{A}(M(D_1))=1] \leq e^\varepsilon \Pr[\mathcal{A}(M(D_0))=1] + \delta$.</p>
-  <p>Rearrange.</p>
+  <div class="highlight">
+    <p><strong>Proof sketch:</strong> DP gives $\Pr[\mathcal{A}(M(D_1))=1] \leq e^\varepsilon \Pr[\mathcal{A}(M(D_0))=1] + \delta$; rearrange.</p>
+  </div>
+</div>
+
+<!-- SLIDE 28b — DP-MI numerical bound (split from prior slide) -->
+<div class="slide bg-dark">
+  <h2>DP-MI Bound: Numerical</h2>
+  <div class="divider"></div>
   <table>
     <tr><th>$\varepsilon$</th><th>$\delta$</th><th>Max MI Advantage</th></tr>
     <tr><td>0.1</td><td>$10^{-5}$</td><td>$\leq 0.105$</td></tr>
     <tr><td>1.0</td><td>$10^{-5}$</td><td>$\leq 1.718$</td></tr>
     <tr><td>8.0</td><td>$10^{-5}$</td><td>$\leq 2980$ (vacuous)</td></tr>
   </table>
-  <p>Small $\varepsilon$: strong MI protection. Large $\varepsilon$: vacuous bound.</p>
+  <div class="highlight">
+    <p>Small $\varepsilon$: <strong>strong MI protection</strong>. Large $\varepsilon$: vacuous bound.</p>
+  </div>
 </div>
 
 <!-- SLIDE 29 — MI yields DP lower bounds -->
 <div class="slide bg-dark">
-  <h2>MI Attacks Yield DP Lower Bounds</h2>
+  <h2>MI as Privacy Auditing Tool</h2>
   <div class="divider"></div>
-  <p>Converse direction is equally important:</p>
   <div class="highlight" style="padding:24px 28px;">
-    <p>MI attack with advantage $\alpha$ against $M$ $\to$ $M$ is <strong>not</strong> $(\varepsilon, \delta)$-DP for any $e^\varepsilon - 1 + \delta < \alpha$.</p>
+    <p>MI advantage $\alpha$ against $M$ $\Rightarrow$ $M$ is <strong>not</strong> $(\varepsilon, \delta)$-DP for any $e^\varepsilon - 1 + \delta < \alpha$.</p>
   </div>
-  <p>MI as a <strong>privacy auditing tool</strong>:</p>
   <ul class="num">
     <li>Train model with your pipeline</li>
     <li>Run best available MI attack</li>
     <li>Attack success: <strong>empirical lower bound</strong> on leakage</li>
     <li>Bound exceeds target $\varepsilon$: pipeline not private enough</li>
   </ul>
-  <p>Revisited in Section IV (privacy auditing).</p>
 </div>
 
 <!-- SLIDE 30 — Summary: MI as fundamental -->
@@ -708,7 +696,7 @@
   <h2>Privacy Attack Taxonomy</h2>
   <div class="divider"></div>
   <div class="grid-2" style="margin-top:8px;">
-    <div class="card" style="border-color:var(--blue);">
+    <div class="card" style="border-color:var(--yonsei-blue);">
       <h3>Membership Inference</h3>
       <p>Was $x$ in training?</p>
     </div>
@@ -774,14 +762,16 @@
 
 <!-- SLIDE 34 — TPR at Low FPR (motivation) -->
 <div class="slide bg-deep">
-  <h2>The Right Metric: TPR at Low FPR</h2>
+  <h2>TPR at Low FPR</h2>
   <div class="divider"></div>
   <div class="highlight" style="padding:20px 24px;">
     <p><strong>Carlini et al. 2022:</strong> "60% balanced accuracy with 0% TPR at 0.1% FPR is useless in practice."</p>
   </div>
-  <p>Average accuracy hides the <strong>vulnerable tail</strong>.</p>
-  <p>Privacy threats live at <strong>low FPR</strong>: high-confidence positives.</p>
-  <p>Always plot ROC on a <strong>log-log scale</strong>: reveals the practical regime.</p>
+  <ul class="arrow">
+    <li>Average accuracy hides the <strong>vulnerable tail</strong></li>
+    <li>Threats at <strong>low FPR</strong>: high-confidence positives</li>
+    <li>Plot ROC on a <strong>log-log scale</strong></li>
+  </ul>
 </div>
 
 <!-- SLIDE 34b — TPR at Low FPR (metrics comparison) -->
@@ -843,7 +833,7 @@
 </div><!-- end deck -->
 
 <!-- Slide number + progress bar (fixed to viewport) -->
-<div class="slide-num" id="slideNum">1 / 42</div>
+<div class="slide-num" id="slideNum">1 / 43</div>
 <div class="progress-bar" id="progressBar" style="width:0.5%;"></div>
 
 <!-- Navigation -->

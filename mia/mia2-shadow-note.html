@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MIA 2 — Shadow Models · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 24px 96px;
+    color: var(--charcoal);
+    background: var(--white);
+    font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  table { border-collapse: collapse; margin: 12px 0; width: 100%; }
+  th, td { border: 1px solid var(--slate); padding: 6px 10px; text-align: left; font-size: 0.95rem; }
+  th { background: var(--light); }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>MIA 2 · Shadow Models — Notes</h1>
+<p class="meta">Companion to <code>mia2-shadow.html</code>. Detail that doesn't fit on the slides.</p>
+
+<section>
+  <h2>Slide 13 — Results: Google Prediction API (full table)</h2>
+
+  <p>The slide shows three datasets. The fourth result (Texas-100) is moved here to keep element budget within 5:</p>
+
+  <table>
+    <tr><th>Dataset</th><th>Classes</th><th>Model Acc.</th><th>Attack Precision</th><th>Attack Recall</th></tr>
+    <tr><td>Texas-100</td><td>100</td><td>53%</td><td>90%</td><td>87%</td></tr>
+  </table>
+
+  <p>Texas-100 mirrors the Purchase-100 pattern: many classes, low model accuracy, high attack precision. The trend holds: more classes and more overfitting increase vulnerability.</p>
+</section>
+
+<section>
+  <h2>Slide 28 — From Translation to Language Models (full comparison)</h2>
+
+  <p>The slide shows the first three comparison rows. The remaining two rows are here for completeness:</p>
+
+  <table>
+    <tr><th>Seq2Seq MIA</th><th>LLM MIA (future)</th></tr>
+    <tr><td>Known training data distribution</td><td>Unknown, web-scale training data</td></tr>
+    <tr><td>Global threshold works</td><td>Need calibration (text difficulty varies)</td></tr>
+  </table>
+
+  <h3>Why calibration matters for LLMs</h3>
+  <p>In seq2seq, sentence pairs come from a controlled corpus so the perplexity distribution is relatively homogeneous. For LLMs trained on web-scale data, a rare technical document and a common news article have very different baseline perplexities — a global threshold will falsely label all rare-domain text as members. Calibration approaches (e.g., Min-K%, zlib ratio, neighborhood comparisons) address this by normalizing perplexity against a reference distribution. This distinction is a central motivation for the LLM MIA literature in Lecture 5.</p>
+</section>
+
+</body>
+</html>

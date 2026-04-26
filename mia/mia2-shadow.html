@@ -40,7 +40,7 @@
   <h1>Membership Inference:<br>Shadow Models</h1>
   <div class="divider"></div>
   <p class="subtitle">Shokri paradigm and extensions</p>
-  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
   <p style="margin-top:6px;">2026</p>
 </div>
 
@@ -86,7 +86,7 @@
 <!-- SLIDE 37 — Shokri Overview -->
 <div class="slide bg-dark">
   <div class="pill">Shokri et al. 2017</div>
-  <h2>Membership Inference Attacks Against ML Models</h2>
+  <h2>Shokri et al.: Paper Overview</h2>
   <div class="divider"></div>
   <p>First systematic <strong>black-box MIA</strong>.</p>
   <ul class="arrow">
@@ -104,10 +104,9 @@
   <h2>Key Insight</h2>
   <div class="divider"></div>
   <div class="highlight" style="padding:28px 32px;">
-    <p>Train <strong>shadow models</strong> mimicking the target.</p>
-    <p>You control their data, so you get a <strong>labeled dataset</strong> of (prediction, in/out) pairs for an attack classifier.</p>
+    <p><strong>Shadow models</strong> mimic the target. Controlled data yields <strong>labeled (prediction, in/out) pairs</strong> for an attack classifier.</p>
   </div>
-  <p>Turns an unsupervised problem into <strong>supervised classification</strong>.</p>
+  <p>Unsupervised problem <strong>reduced to supervised classification</strong>.</p>
 </div>
 
 <!-- SLIDE 39 — Architecture Overview -->
@@ -116,14 +115,14 @@
   <h2>Attack Architecture</h2>
   <div class="divider"></div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box" style="border-color:var(--warn);">Target $f_\theta$<br>(black-box)</div>
+    <div class="diagram-box" style="border-color:var(--warn);">Target $f_\theta$ (black-box)</div>
     <span class="diagram-arrow">→</span>
     <div class="diagram-box">Query with $x$</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="border-color:var(--accent);">Confidence<br>$\sigma(f_\theta(x))$</div>
+    <div class="diagram-box" style="border-color:var(--accent);">Confidence $\sigma(f_\theta(x))$</div>
   </div>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box filled">Shadow Models<br>$f_{\theta_1}, \ldots, f_{\theta_k}$</div>
+    <div class="diagram-box filled">Shadow Models $f_{\theta_1}, \ldots, f_{\theta_k}$</div>
     <span class="diagram-arrow">→</span>
     <div class="diagram-box">Labeled Data</div>
     <span class="diagram-arrow">→</span>
@@ -141,10 +140,10 @@
     <ul class="num">
       <li><strong>Shadow data:</strong> datasets $D_1^s, \ldots, D_k^s$ from a similar distribution</li>
       <li><strong>Train shadows:</strong> $k$ models $f_{\theta_1}, \ldots, f_{\theta_k}$</li>
-      <li><strong>Collect predictions:</strong> query each shadow on its train data (in) and held-out data (out)</li>
+      <li><strong>Collect predictions:</strong> shadows queried on train (in) and held-out (out)</li>
       <li><strong>Attack dataset:</strong> $\{(\sigma(f_{\theta_j}(x)), \text{in/out})\}$</li>
       <li><strong>Attack model:</strong> binary classifier $\mathcal{A}_c$ per class $c$</li>
-      <li><strong>Inference:</strong> query target on $x$, feed confidence to $\mathcal{A}_c$ for $c = f_\theta(x)$</li>
+      <li><strong>Inference:</strong> query target, feed $\sigma(f_\theta(x))$ to $\mathcal{A}_{f_\theta(x)}$</li>
     </ul>
   </div>
 </div>
@@ -152,7 +151,7 @@
 <!-- SLIDE 41 — Shadow Model Training -->
 <div class="slide bg-dark">
   <div class="pill">Shokri et al. 2017</div>
-  <h2>Step 1: Shadow Model Training</h2>
+  <h2>Shadow Model Training</h2>
   <div class="divider"></div>
   <p>$k$ shadow models <strong>approximating target behavior</strong>:</p>
   <div class="cols">
@@ -169,7 +168,7 @@
       <ul class="arrow">
         <li>Similar <strong>overfitting patterns</strong></li>
         <li>Member vs. non-member confidence gap: <strong>generalizable signal</strong></li>
-        <li>Attack learns membership signature across models</li>
+        <li><strong>Cross-model</strong> membership signature</li>
       </ul>
     </div>
   </div>
@@ -178,9 +177,8 @@
 <!-- SLIDE 42 — Generating Shadow Data -->
 <div class="slide bg-deep">
   <div class="pill">Shokri et al. 2017</div>
-  <h2>Generating Shadow Training Data</h2>
+  <h2>Three Shadow Data Strategies</h2>
   <div class="divider"></div>
-  <p>Three strategies when target's distribution is unknown:</p>
   <div class="grid-3">
     <div class="card">
       <h3>Model-Based</h3>
@@ -203,7 +201,7 @@
 <!-- SLIDE 43 — Collecting Attack Data -->
 <div class="slide bg-dark">
   <div class="pill">Shokri et al. 2017</div>
-  <h2>Step 2: Collecting Attack Training Data</h2>
+  <h2>Attack Data Collection</h2>
   <div class="divider"></div>
   <p>For each shadow model $f_{\theta_j}$:</p>
   <div class="grid-2">
@@ -218,14 +216,14 @@
       <p>Record $(\sigma(f_{\theta_j}(x)), \texttt{OUT})$</p>
     </div>
   </div>
-  <p>Attack dataset: <strong>labeled examples</strong> of shadow behavior on members vs. non-members.</p>
-  <p>Assumption: target exhibits the same member/non-member gap as the shadows.</p>
+  <p><strong>Labeled attack dataset</strong> from shadow member/non-member gap.</p>
+  <p><em>Assumption:</em> target gap mirrors shadow gap.</p>
 </div>
 
 <!-- SLIDE 44 — Per-Class Attack Models -->
 <div class="slide bg-deep">
   <div class="pill">Shokri et al. 2017</div>
-  <h2>Step 3: Per-Class Attack Models</h2>
+  <h2>Per-Class Attack Models</h2>
   <div class="divider"></div>
   <p>One <strong>binary classifier per class</strong> $c$:</p>
   <div class="math-block">
@@ -234,8 +232,7 @@
   <p><strong>Input:</strong> confidence $\sigma(f_\theta(x))$ for class-$c$ predictions</p>
   <p><strong>Output:</strong> member (1) or non-member (0)</p>
   <div class="highlight">
-    <p><strong>Why per-class?</strong> Confidence distributions differ by class.</p>
-    <p>Needs class-specific calibration.</p>
+    <p><strong>Per-class:</strong> confidence distributions differ by class. Class-specific calibration required.</p>
   </div>
 </div>
 
@@ -253,7 +250,7 @@
       <li>If $\hat{m} = 1$: declare <strong>member</strong></li>
     </ul>
   </div>
-  <p>Classifier learns per-class confidence-pattern differences between members and non-members.</p>
+  <p>Classifier learns per-class <strong>confidence pattern</strong> separating members from non-members.</p>
 </div>
 
 <!-- SLIDE 46 — Results: Google -->
@@ -266,7 +263,6 @@
     <tr><td>Purchase-100</td><td>100</td><td>67%</td><td><strong>93%</strong></td><td>91%</td></tr>
     <tr><td>Location-30</td><td>30</td><td>57%</td><td>78%</td><td>73%</td></tr>
     <tr><td>CIFAR-100</td><td>100</td><td>—</td><td>85%</td><td>82%</td></tr>
-    <tr><td>Texas-100</td><td>100</td><td>53%</td><td>90%</td><td>87%</td></tr>
   </table>
   <div class="highlight">
     <p>Commercial black-box services vulnerable. <strong>High precision</strong>: most positives correct.</p>
@@ -278,10 +274,10 @@
   <div class="pill">Shokri et al. 2017</div>
   <h2>Results: Amazon ML</h2>
   <div class="divider"></div>
-  <p>Similar results on Amazon ML: attack generalizes.</p>
+  <p>Attack generalizes to Amazon ML.</p>
   <ul class="check">
     <li>Effective across <strong>different ML platforms</strong></li>
-    <li>Works without knowing target's model type</li>
+    <li>Model-type-agnostic</li>
     <li><strong>More classes</strong>: higher vulnerability</li>
     <li><strong>More overfitting</strong>: higher vulnerability</li>
   </ul>
@@ -293,7 +289,7 @@
 <!-- SLIDE 48 — Why More Classes -->
 <div class="slide bg-deep">
   <div class="pill">Shokri et al. 2017</div>
-  <h2>Why More Classes = More Vulnerable</h2>
+  <h2>Class Count and Vulnerability</h2>
   <div class="divider"></div>
   <p>Output lives on the <strong>probability simplex</strong> $\Delta^{C-1}$:</p>
   <div class="math-block">
@@ -326,7 +322,7 @@
     <li><strong>No theory:</strong> empirical only, no optimality guarantees</li>
   </ul>
   <div class="highlight">
-    <p><strong>Open question:</strong> can we drop the assumptions? (Yes: Salem, Sablayrolles.)</p>
+    <p><strong>Open question:</strong> drop the assumptions? (Yes: Salem, Sablayrolles.)</p>
   </div>
 </div>
 
@@ -357,7 +353,7 @@
 
 <!-- SLIDE 51 — Threshold Baseline -->
 <div class="slide bg-dark">
-  <h2>The Simplest Attack: Threshold on Confidence</h2>
+  <h2>Confidence Threshold Baseline</h2>
   <div class="divider"></div>
   <p>Simplest attack, pre-shadow:</p>
   <div class="math-block">
@@ -382,7 +378,7 @@
       </ul>
     </div>
   </div>
-  <p>Often competitive with full shadow pipeline (Salem et al. 2019).</p>
+  <p><em>Often competitive with full shadow pipeline</em> (Salem et al. 2019).</p>
 </div>
 
 
@@ -401,11 +397,10 @@
   <p>Shokri: <strong>classifiers</strong>.</p>
   <p>Hayes et al.: MIA on <strong>GANs</strong>.</p>
   <div class="highlight">
-    <p><strong>Challenge:</strong> no confidence vector.</p>
-    <p>How to define membership for a generative model?</p>
+    <p><strong>Challenge:</strong> no confidence vector. Membership definition requires new signals.</p>
   </div>
   <ul class="arrow">
-    <li>Memorization: GAN generates outputs near specific training examples</li>
+    <li><strong>Memorization:</strong> GAN outputs close to training examples</li>
     <li><strong>Discriminator</strong> score as membership signal</li>
     <li><strong>Reconstruction error</strong> as membership signal</li>
   </ul>
@@ -467,8 +462,8 @@
     <li>Still <strong>well above 50%</strong></li>
     <li>Smaller training sets → higher vulnerability</li>
     <li>More mode collapse → higher vulnerability</li>
+    <li><strong>Generative models also leak.</strong> MIA extends beyond classification.</li>
   </ul>
-  <p>MIA is not limited to classification: generative models also leak.</p>
 </div>
 
 
@@ -543,9 +538,8 @@
     <li>Fine-tuned models more vulnerable than from-scratch</li>
   </ul>
   <div class="highlight" style="padding:20px 24px;">
-    <p><strong>First MIA on sequence models.</strong> Paves the way to <strong>LLM MIA</strong>.</p>
+    <p><strong>First sequence-model MIA.</strong> Perplexity: baseline for all LLM MIA work.</p>
   </div>
-  <p>Perplexity becomes the baseline for all LLM MIA work in Section VI.</p>
 </div>
 
 <!-- SLIDE 59 — Seq2Seq to LLMs -->
@@ -558,10 +552,8 @@
     <tr><td>Source-target pair $(x, y)$</td><td>Text sequence $x = (x_1, \ldots, x_T)$</td></tr>
     <tr><td>Conditional PPL: $p(y \mid x)$</td><td>Unconditional PPL: $p(x)$</td></tr>
     <tr><td>Small training sets (millions)</td><td>Massive pre-training (trillions of tokens)</td></tr>
-    <tr><td>Known training data distribution</td><td>Unknown, web-scale training data</td></tr>
-    <tr><td>Global threshold works</td><td>Need calibration (text difficulty varies)</td></tr>
   </table>
-  <p>Seq2seq → LLMs introduces <strong>two new challenges</strong>: unknown training distribution, calibration against text difficulty.</p>
+  <p><strong>New challenges:</strong> unknown training distribution, calibration for text difficulty. (see notes)</p>
 </div>
 
 <!-- SLIDE 60 — Section 2 Summary -->

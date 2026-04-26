@@ -35,6 +35,11 @@
 <p class="meta">Companion to <code>mia4-modern.html</code>. Detail that doesn't fit on the slides.</p>
 
 <section>
+  <h2>Slide — Per-Example Calibration</h2>
+  <p>Analogy dropped from slide for density: per-example calibration is like per-question grading on an exam. A globally hard question (e.g., a memorized rare example) needs its own threshold; a globally easy one needs another. One cutoff for all questions (Yeom's global threshold) loses information about point difficulty.</p>
+</section>
+
+<section>
   <h2>Slides 147 + 147b — MIA Pipeline Comparison (full pseudocode)</h2>
 
   <p>The slide deck splits this comparison across two slides for readability. The full side-by-side pseudocode is reproduced here for after-talk reference.</p>
@@ -66,6 +71,35 @@
     <li><strong>LiRA</strong> answers: "is the loss small <em>relative to what we'd expect</em> if $z$ were not in the training set?" — calibrates per-example, expensive.</li>
     <li><strong>RMIA</strong> answers: "is the target/reference loss ratio at $z$ unusually large compared to the rest of the population?" — calibrates against the population instead of the per-example shadow distribution, cheap.</li>
   </ul>
+</section>
+
+<section>
+  <h2>Defense Comparison — Full 5-Column Table</h2>
+  <p>The on-slide table was split to 2 slides (3 rows each) and the "Adaptive" column was dropped to reduce width. Full table with adaptive-resistance column:</p>
+  <table>
+    <tr><th>Defense</th><th>MIA Reduction</th><th>Cost</th><th>Formal</th><th>Adaptive</th></tr>
+    <tr><td>L2 + Dropout</td><td>Mid</td><td>Low</td><td>No</td><td>Partial</td></tr>
+    <tr><td>Early Stopping</td><td>Mid</td><td>Low</td><td>No</td><td>Partial</td></tr>
+    <tr><td>Label Smoothing</td><td>Low-Mid</td><td>Low</td><td>No</td><td>No</td></tr>
+    <tr><td>MemGuard</td><td>High*</td><td>Low</td><td>No</td><td>No (non-adaptive only)</td></tr>
+    <tr><td>Distillation</td><td>Mid</td><td>Mid</td><td>No</td><td>Partial</td></tr>
+    <tr><td>DP-SGD</td><td>High</td><td>High</td><td>Yes</td><td>Yes</td></tr>
+  </table>
+  <p>*MemGuard is effective only against non-adaptive adversaries.</p>
+</section>
+
+<section>
+  <h2>Cost vs. Power — Full 5-Row Table (LiRA offline vs online)</h2>
+  <p>The on-slide table merged LiRA offline and online into one row to stay within budget. Full distinction:</p>
+  <table>
+    <tr><th>Method</th><th>Shadow Models</th><th>Per-Example Cost</th><th>Relative Power</th></tr>
+    <tr><td>Threshold</td><td>0</td><td>1 query</td><td>★☆☆☆</td></tr>
+    <tr><td>Shadow (Shokri)</td><td>$k$ (typically 10–100)</td><td>1 query + training cost</td><td>★★☆☆</td></tr>
+    <tr><td>RMIA</td><td>2–8</td><td>$R$ queries per point</td><td>★★★☆</td></tr>
+    <tr><td>LiRA (offline)</td><td>64–256</td><td>$N$ loss evaluations</td><td>★★★★</td></tr>
+    <tr><td>LiRA (online)</td><td>$N \cdot |D|$</td><td>$N$ full model trainings</td><td>★★★★</td></tr>
+  </table>
+  <p>LiRA online is strictly stronger than offline but requires $O(N \cdot |D|)$ models — infeasible for large datasets.</p>
 </section>
 
 </body>

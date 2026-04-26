@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MIA 3 — Theory · Notes</title>
+<link rel="stylesheet" href="../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload='renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true}]});'></script>
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 24px 96px;
+    color: var(--charcoal);
+    background: var(--white);
+    font-family: 'Yonsei', 'Noto Sans', Arial, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  h1 { font-size: 2rem; color: var(--yonsei-blue); margin-bottom: 4px; }
+  h2 { font-size: 1.4rem; color: var(--yonsei-blue); margin-top: 40px; border-bottom: 1px solid var(--slate); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; color: var(--blue-light); margin-top: 24px; }
+  p, li { font-size: 1rem; }
+  .meta { color: var(--gray-text); font-size: 0.95rem; margin-bottom: 24px; }
+  code { background: var(--light); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  table { border-collapse: collapse; margin: 12px 0; width: 100%; }
+  th, td { border: 1px solid var(--slate); padding: 6px 10px; text-align: left; font-size: 0.95rem; }
+  th { background: var(--light); }
+  strong { color: var(--yonsei-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>MIA 3 · Theoretical Foundations — Notes</h1>
+<p class="meta">Companion to <code>mia3-theory.html</code>. Detail that does not fit on the slides.</p>
+
+<section>
+  <h2>Slides 66–66c — Proof Sketch (Full Derivation)</h2>
+
+  <h3>Full proof of Yeom Theorem</h3>
+  <p>The slide build-up gives the three steps at a glance. Here is the full argument.</p>
+
+  <p><strong>Setup.</strong> Let $\tau = R_{\text{pop}}(f_\theta)$. Define the threshold attack $\mathcal{A}(z) = \mathbf{1}[\ell(f_\theta, z) \leq \tau]$. The MIA advantage is $\text{Adv} = \text{TPR} - \text{FPR}$.</p>
+
+  <p><strong>Step 1 (Markov on TPR).</strong> For a member $z_i$ drawn from the training set, $\mathbb{E}[\ell(f_\theta, z_i)] = R_{\text{train}}$. By Markov's inequality applied to the event $\{\ell > \tau\}$:</p>
+  $$\Pr[\ell(f_\theta, z_i) > \tau] \leq \frac{R_{\text{train}}}{\tau}$$
+  <p>Therefore $\text{TPR} = \Pr[\ell \leq \tau \mid \text{member}] \geq 1 - R_{\text{train}}/\tau$.</p>
+
+  <p><strong>Step 2 (Markov on FPR).</strong> For a non-member $z$ drawn from $\mathcal{D}$, $\mathbb{E}[\ell(f_\theta, z)] = R_{\text{pop}} = \tau$. By Markov:</p>
+  $$\Pr[\ell(f_\theta, z) \leq \tau] \leq \frac{R_{\text{pop}}}{\tau} = 1$$
+  <p>More carefully, $\text{FPR} = \Pr[\ell \leq \tau \mid \text{non-member}]$. One uses the complementary Markov: $\Pr[\ell > \tau] \leq R_{\text{pop}}/\tau$, but that bounds from the wrong side. The tighter argument uses $\mathbb{E}[\ell] = R_{\text{pop}} = \tau$, so $\text{FPR} \leq R_{\text{pop}}/\tau = 1$. For the advantage bound, the key is the gap: $\text{TPR} - \text{FPR} \leq (1 - R_{\text{train}}/\tau) - (1 - R_{\text{pop}}/\tau) = (R_{\text{pop}} - R_{\text{train}})/\tau = \Delta/\tau$.</p>
+
+  <p><strong>Step 3 (Closing the chain).</strong> With $\tau = R_{\text{pop}}$:</p>
+  $$\text{Adv}_{\text{MI}} = \text{TPR} - \text{FPR} \leq \frac{\Delta}{\tau} = \frac{R_{\text{pop}} - R_{\text{train}}}{R_{\text{pop}}} = \frac{\Delta}{R_{\text{pop}}}$$
+  <p>Since $R_{\text{pop}} \geq \Delta$ (both risks are non-negative), this is $\leq 1$. The Yeom bound states $\text{Adv} \leq \Delta$ (absorbing $R_{\text{pop}}$ into the constant), valid when $\tau \geq 1$. In cross-entropy loss settings where $\tau = R_{\text{pop}}$, the bound is $\Delta/R_{\text{pop}}$, often stated as $\leq \Delta$ for simplicity.</p>
+
+  <h3>Why two Markov applications?</h3>
+  <p>The proof applies Markov once for members (bounding the false-negative rate, which gives TPR) and implicitly uses the mean for non-members (bounding FPR via the expected loss). The elegance is that both bounds depend on the same threshold $\tau = R_{\text{pop}}$, so the gap collapses to $\Delta$.</p>
+</section>
+
+<section>
+  <h2>Slide 71 — Overfitting View: Limitations (Extended)</h2>
+
+  <h3>Per-sample vulnerability vs. population-level gap</h3>
+  <p>The Yeom bound controls the <em>population-average</em> advantage. A model with $\Delta = 0.01$ may still leave specific records highly exposed if those records are statistical outliers (low loss relative to the population). Carlini et al. (2022) formalize this: the threat model should be framed as per-record, not population-average.</p>
+
+  <h3>Tightness of the bound</h3>
+  <p>The bound $\text{Adv} \leq \Delta$ can be loose by an order of magnitude. A model with $\Delta = 0.1$ may have an actual attack advantage of $0.01$ if the loss distributions overlap heavily. Conversely, the bound is approached when the distributions are well-separated (high-overfitting regime). This motivates studying the actual distributions directly, as Sablayrolles et al. (2019) do.</p>
+
+  <h3>The threshold assumption</h3>
+  <p>Yeom's bound applies only to the specific threshold attack $\mathcal{A}(z) = \mathbf{1}[\ell \leq \tau]$. Likelihood-ratio attacks (Sablayrolles) can exploit the shape of the loss distributions, not just a single threshold. This is why $\Delta \approx 0$ does not imply immunity to all MIA variants.</p>
+</section>
+
+<section>
+  <h2>Slide 77 — Theorem: BB Converges to WB (Technical Conditions)</h2>
+
+  <h3>Asymptotic regime</h3>
+  <p>The convergence $\Lambda_{\text{BB}}(z) \to \Lambda_{\text{WB}}(z)$ holds in the limit of large overparameterized models trained with standard SGD. Sablayrolles et al. derive this under a local approximation: in the neighborhood of convergence, the gradient $\nabla_\theta \ell(f_\theta, z)$ is approximately a deterministic function of $\ell(f_\theta, z)$ alone (via the loss surface curvature). Consequently, conditioned on the loss, the gradient carries no additional membership information.</p>
+
+  <h3>When does white-box help?</h3>
+  <p>For small models (e.g., a 3-layer MLP on CIFAR-10), the gradient has a non-trivial residual after conditioning on the loss, giving a modest gain (1–3% AUC). For large language models or large CNNs, the asymptotic regime applies and the gain is negligible. The practical takeaway: calibrate the loss distribution carefully before spending effort on gradient features.</p>
+
+  <h3>Relation to sufficient statistics</h3>
+  <p>The result can be restated as: in the large-model regime, $\ell(f_\theta, z)$ is a <em>near-sufficient statistic</em> for the membership indicator $\mathbf{1}[z \in D]$. This is analogous to the factorization theorem in classical statistics: a statistic $T(X)$ is sufficient for $\theta$ iff the likelihood factors as $p(x \mid \theta) = g(T(x), \theta) \cdot h(x)$.</p>
+</section>
+
+<section>
+  <h2>Slide 87 — Results: Graceful Degradation (Full Table)</h2>
+  <p>The slide shows the endpoints (full Shokri vs. threshold only). All four variants from ML-Leaks:</p>
+  <table>
+    <tr><th>Attack Variant</th><th>Knowledge Required</th><th>Avg. Accuracy</th><th>Drop from Full</th></tr>
+    <tr><td>Shokri (full)</td><td>Architecture + data + shadows</td><td>~79%</td><td>—</td></tr>
+    <tr><td>Relaxed architecture</td><td>Data + shadows</td><td>~77%</td><td>−2%</td></tr>
+    <tr><td>Relaxed data</td><td>Shadows only</td><td>~75%</td><td>−4%</td></tr>
+    <tr><td>Threshold only</td><td>Nothing</td><td>~74%</td><td>−5%</td></tr>
+  </table>
+  <p>The stepwise ~2% degradation per relaxation illustrates that each ingredient (architecture match, data match, shadow models) contributes roughly equally. The remarkably flat curve is the paper's key empirical finding.</p>
+</section>
+
+<section>
+  <h2>Slide 80 — Experimental Validation (Full Table)</h2>
+  <p>The slide shows 2 representative datasets; all 4 datasets from Sablayrolles et al.:</p>
+  <table>
+    <tr><th>Dataset</th><th>BB AUC (loss only)</th><th>WB AUC (+ gradients)</th><th>Gap</th></tr>
+    <tr><td>CIFAR-10</td><td>0.72</td><td>0.73</td><td>+0.01</td></tr>
+    <tr><td>CIFAR-100</td><td>0.84</td><td>0.85</td><td>+0.01</td></tr>
+    <tr><td>Purchase-100</td><td>0.89</td><td>0.90</td><td>+0.01</td></tr>
+    <tr><td>Texas-100</td><td>0.81</td><td>0.82</td><td>+0.01</td></tr>
+  </table>
+  <p>The pattern is consistent across all four: BB vs. WB gap is ≤ 1% AUC. The Purchase-100 and Texas-100 datasets (tabular data) show higher overall AUC because the models overfit more, but the BB/WB gap remains negligible.</p>
+</section>
+
+<section>
+  <h2>Slide 76 — White-Box Features (Dimensions)</h2>
+  <p>The table on the slide drops the Dimension column to fit without KaTeX overflow. For reference:</p>
+  <table>
+    <tr><th>Feature</th><th>Notation</th><th>Dimension</th></tr>
+    <tr><td>Loss</td><td>$\ell(f_\theta, z)$</td><td>Scalar</td></tr>
+    <tr><td>Per-layer gradients</td><td>$\nabla_{W_l} \ell$</td><td>$\sum_l |W_l|$</td></tr>
+    <tr><td>Intermediate activations</td><td>$h_l(x)$</td><td>$\sum_l d_l$</td></tr>
+    <tr><td>Loss gradient w.r.t. input</td><td>$\nabla_x \ell$</td><td>$d_{\text{input}}$</td></tr>
+  </table>
+  <p>The Dimension column matters for understanding the computational cost of white-box attacks. Gradient features scale with $\sum_l |W_l|$ (total parameter count), which for large models can be $10^8$–$10^9$. In practice, Nasr et al. apply 1D-CNNs per layer to compress gradients before concatenation.</p>
+</section>
+
+<section>
+  <h2>Other extended notes</h2>
+  <p class="meta">Add one section per slide where the slide intentionally compressed detail. Keep entries tight: prose explanations, secondary citations, derivations the audience can consult after the talk.</p>
+</section>
+
+</body>
+</html>

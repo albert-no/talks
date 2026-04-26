@@ -1,331 +1,299 @@
-# Talks Design System
+# Talks design system
 
-Canonical spec for all decks in this repo. Applies to both **custom HTML decks** (e.g. `dllm/dllm.html`, `mia/mia1-foundations.html`, `privacy/DP-FL.html`) and the **Marp markdown** template (`template.md`). When the two disagree, `reference/deck.css` is the source of truth — Marp follows it.
+Canonical rules for slide decks. **Audience**: academic conference talks and master-level lectures. **Mode**: math-heavy with rigorous theorem/proof, plus high-level intuition. **Visual**: minimal — short abstract phrases, not full sentences. Applies to custom HTML decks and the Marp template; when they disagree, `reference/deck.css` wins.
 
-Companion to `CLAUDE.md`. `CLAUDE.md` tells you *how* the repo is organized and built; this file tells you *what things look like* and *which class to use*.
+**Source files.** `reference/colors_and_type.css` (font-face + CSS tokens), `reference/deck.css` (engine + components). Decks `<link>` to these — never duplicate.
 
-**Source files:** the canonical tokens and components live in `reference/colors_and_type.css` (font loading + CSS variables) and `reference/deck.css` (slide engine + components). Decks link to these via `<link rel="stylesheet" href="../reference/…">`. Do not duplicate.
-
-**Type scale note (2026-04).** The type scale below is the MID presentation scale — larger than the original compact scale to be readable from the back of a lecture hall. `h1` 3.6rem, `h2` 2.7rem, body 1.55rem. Bullet dots and diagram boxes are correspondingly larger.
-
-**Reference target.** Kangwook Lee's BLISS seminar deck (<https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html>) is our readability benchmark. Zoomed-in captures of his rendering live in `reference/kangwook1.png`–`kangwook4.png`; the fonts in those shots are the *minimum acceptable* visual weight for our decks. If your slide renders noticeably smaller than those, something is wrong — most likely a per-deck `<style>` is shadowing the canonical tokens.
-
-**Priority 0 — the strongest rule in this document: the font-size binary.** Every other rule here defers to this one. Important content (audience must read it during the talk) renders at body size. Non-important content (audience can follow without reading it) has exactly two on-slide homes: `<div class="cite">` citation footnotes (§2.19) and `.small` sub-labels inside a diagram when compression fails. `.tiny` is banned everywhere. `.small` on prose — `<p>`, `<li>`, captions, summary remarks, text inside `.highlight` / `.card` / `.cols` / `.grid-*` / `.math-block` / under a `<table>` — is banned. Non-important prose that isn't a citation or diagram sub-label belongs in the per-slide appendix / speaker-notes file, not on the slide. Full rule and rationale in §1.2; compression workflow in §7.12. See also §5.2 for the do/don't checklist.
-
-**Priority 1 — after Priority 0: line breaks and content length.** Minimal slides. Leave content alone if it already fits on one line; two short sentences on one line are fine. Act only when prose visibly wraps: compress first (§7.12); if still multi-line, split at a natural boundary into two adjacent `<p>` tags; glue inseparable phrases with `&nbsp;` reactively. `<br>` is allowed at a deliberate internal clause break, banned as an orphan-shim (§7.10). Full rule in §7.16.
-
-**Priority 2 — after Priorities 0 and 1, which always come first: overflow.** Content must stay inside the 1280×720 slide bounds and clear of the auto-injected `.brand-footer` ("YONSEI UNIVERSITY") at bottom-left. When content overflows: compress to noun phrases (§7.12), then split into a new slide, then move secondary detail to a companion `<deck>-note.html` file (§7.18). Never shrink type to fit (Priority 0). Never wedge content with line-break tricks (Priority 1). Discipline is upstream — write short, abstract slides from the first draft so overflow doesn't happen. Full rule in §7.17.
-
-**Priority 3 — after Priorities 0, 1, and 2: empty space.** Empty space at the bottom of a slide is fine; empty space *in the middle* is not. Don't pad with `<div class="spacer*">`. Don't wrap 2–3-line content in `.cols + .card` — `.cols { flex: 1; align-items: stretch }` makes the cards stretch to full slide height and become tall hollow boxes; use `.grid-2` with bare `<h3>` + `<p>` for short dichotomies. If a slide is too sparse to hold itself, merge or expand — never pad. Full rule in §7.19.
-
-A deck's own `<style>` block must not redefine `p`, `li`, `h1`, `h2`, `h3`, `.subtitle`, `.cite`, `.small`, `.tiny`, or `.math-block` `font-size`. Those belong to `reference/deck.css`. Inline `style="font-size:…"` on prose is equally forbidden — the browser treats it the same. If you find such overrides, or `class="small"` / `class="tiny"` on prose, in an existing deck, remove them, then fix the content they were trying to mask: shorten the prose or split the slide.
-
-Component-internal text at a component's native font-size (pill labels, token chips, code blocks, the `.diagram-box` native 1.15rem) is not an authoring override — these are design tokens. The rule above targets author-applied `.small` / `.tiny` classes and inline `font-size` on prose, and author-added `<span class="small">` / `<span class="tiny">` sub-labels inside components. When in doubt: if a human typed `class="small"` or `class="tiny"` in the deck source, the rule applies.
-
-**When content doesn't fit, reduce content. Split into as many slides as needed — there is no slide budget.** Never shrink type to cram a sentence onto one line.
+**Reference target.** Kangwook Lee's BLISS deck (<https://kangwooklee.com/talks/2026_03_BLISS/bliss_seminar.html>; captures in `reference/kangwook*.png`) is the minimum acceptable visual weight. If a deck renders smaller, suspect a per-deck `<style>` shadowing the canonical tokens — see GOTCHAS.
 
 ---
 
-## 1. Design Tokens
+## Quick reference
 
-### 1.1 Color
+| What I want to do | Where to look |
+|---|---|
+| Add a content slide | Recipes → Content slide |
+| State a theorem rigorously | Math-heavy → Theorem |
+| Show a proof rigorously | Math-heavy → Proof |
+| Show proof intuition (color, build-up) | Math-heavy → Intuition + Build-up |
+| Inline / display math | Recipes → Math slide |
+| Cite a paper | Components → `.cite` + Recipes → Paper-overview |
+| Section divider | Recipes → Section divider |
+| Title slide / Closer | Recipes → Title / Closer |
+| Diagram with math labels | Recipes → Diagram (HTML + SVG arrows) |
+| Trace a debugging issue | `GOTCHAS.md` |
 
-| Token | Value | Use |
+---
+
+## Priorities (ranked, non-negotiable)
+
+When rules conflict, lower number wins.
+
+### 0. Font sizes — strongest rule
+
+Important content (audience must read it during the talk) → body size. Non-important content → companion `<deck>-note.html` file, *not* shrunk to fit.
+
+- The canonical scale is `reference/deck.css`. Don't redefine `p`, `li`, `h1`, `h2`, `h3`, `.subtitle`, `.cite`, `.small`, `.tiny`, or `.math-block` `font-size` in a deck's inline `<style>`. Don't put inline `style="font-size:…"` on prose.
+- `.tiny` is banned everywhere. `.small` on prose (paragraphs, list items, captions, anything inside `.highlight` / `.card` / `.cols` / `.grid-*` / `.math-block` / under a `<table>`) is banned.
+- Two on-slide slots permit sub-body text: `<div class="cite">` citations, and `.small` inside a diagram (only when the label is a non-crucial sub-label *and* compression breaks the layout).
+- Component-internal text (pill labels, token chips, code blocks) stays at its native compact size — these are design tokens, not author overrides.
+- When a slide feels cramped, **cut content or split the slide**. There is no slide budget.
+
+### 1. Density — 7×7 rule + abstract phrases
+
+**Hard ceiling: 7×7.** ≤ 7 visual lines per slide, ≤ 7 words per line. Soft target: ≤ 40 words of body text per content slide.
+
+**Phrases, not sentences.** Telegraphic noun phrases. Drop narrative connectors ("this means…", "in other words…", "essentially", "actually"). Drop soft qualifiers ("very", "quite", "fairly"). Speaker narrates; the slide is a visual anchor. This applies to `h2` titles too — short and abstract (3–6 words), not action-title sentences.
+
+**Math is not prose.** A theorem statement, definition, or equation in a `.math-block` doesn't count toward the 40-word ceiling. The ceiling exists to keep prose lean — math earns its space.
+
+When prose visibly wraps:
+
+1. **Compress.** Most overflow is wordiness, not a layout problem. Collapse to noun phrases.
+2. **Split** at a natural sentence/colon/independent-clause boundary into two adjacent `<p>` tags. `<br>` only at a deliberate internal clause break (rare).
+3. **Glue inseparable phrases with `&nbsp;`** reactively when the browser visibly breaks one — article+noun (`a&nbsp;dataset`), preposition+object (`in&nbsp;the&nbsp;model`), number+unit (`7B&nbsp;parameters`).
+4. **Never break within a phrase.** `<br>` as orphan-shim is banned (see GOTCHAS).
+
+### 2. Overflow — content stays in bounds
+
+Content must fit inside 1280×720 and clear the auto-injected `.brand-footer` at bottom-left (~40 px reserved). Footer collision is overflow even if text is inside the slide rectangle.
+
+When something overflows: compress (Priority 1) → split the slide → move secondary detail to `<deck>-note.html`. **Never** shrink type. **Never** compress vertical rhythm (`margin`, `padding`, `line-height`) on prose. Discipline is upstream — write short phrases from the first draft.
+
+For multi-slide proofs, a "(continued)" `h2` and a brief one-line recap is the canonical recovery — see Math-heavy → Proof.
+
+**Visual element budget.** A content slide gets `h2` + `divider` + at most **5 child elements**. A `.math-block` counts as 1 (taller than a prose line). A `<table>` counts by row count (header + N data rows). A `.highlight` counts as 1 regardless of internal `<p>` count. **If a slide carries `.math-block` + `<table>` + `.highlight` together, it's already over budget — split before previewing.** This rule predicts overflow without rendering; honor it at draft time.
+
+### 3. Empty space — no middle voids
+
+Empty space at the *bottom* of a slide is fine. Empty space *in the middle* is not.
+
+- Don't pad with `<div class="spacer*">`. Trust natural element margins.
+- Don't wrap 2–3-line content in `.cols + .card` — `.cols { flex: 1; align-items: stretch }` makes short cards stretch into tall hollow boxes. Use `.grid-2` (no flex stretch) with bare `<h3>` + `<p>` for short dichotomies.
+- If a slide is too sparse to hold itself, merge or expand. Never pad.
+
+### Style rules (informed by priorities)
+
+1. **One idea per slide.** And **one exhibit** — one chart, table, diagram, theorem, proof chunk, or equation block per slide. If two seem needed, ask: one comparison (combine) or two points (two slides)?
+2. **Speaker narrates; slide is a visual anchor.** Telegraphic phrases over sentences.
+3. **Prose emphasis.** `**strong**` → Yonsei Blue. `*em*` → muted gray (never italic — see GOTCHAS).
+4. **Key insight** → `<div class="highlight">` (HTML) or `>` blockquote (Marp). Max one per slide.
+5. **Math.** Inline `$…$`, display `$$…$$` inside `<div class="math-block">`.
+6. **Paper attribution** → `<div class="cite">` footnote at the bottom. Not a side card.
+7. **Ghost deck test.** Read only the `h2` titles in sequence. They should outline the lecture arc clearly. If they don't, fix the outline before drafting bodies. Titles stay short and abstract — not full sentences.
+
+---
+
+## Tokens
+
+### Color
+
+| Token | Value | Generic use |
 |---|---|---|
-| `--yonsei-blue` | `#003876` | Primary accent. All `strong`, dividers, list bullets, h2 underline. |
-| `--blue-light` | `#1a5296` | Secondary accent in cards, pill outlines, timeline numerals. |
-| `--accent` | `#005baa` | Tertiary accent; token-pad fills. Use sparingly. |
+| `--yonsei-blue` | `#003876` | Primary accent: `strong`, dividers, list bullets, h2 underline. |
+| `--blue-light` | `#1a5296` | Secondary accent: cards, pill outlines. |
+| `--accent` | `#005baa` | Tertiary; use sparingly. |
 | `--charcoal` | `#1a1a1a` | Body text. |
-| `--dark` | `#2d2d2d` | Reserved alt text. Rarely needed. |
-| `--gray-text` | `#666666` | Muted text (`em`, `.small`, `.tiny`, subtitles). Min 14px. |
-| `--slate` | `#e8ecf0` | Card borders, table rules, token-fixed fill. |
-| `--light` / `--subtle` | `#f4f6f9` | Card background, math block background, divider slide background. |
-| `--line` | `#d9e1ea` | Marp table rule color. |
+| `--gray-text` | `#666666` | Muted (`em`, `.cite`, subtitles). AA at ≥14px. |
+| `--slate` | `#e8ecf0` | Borders, table rules. |
+| `--light` / `--subtle` | `#f4f6f9` | Card / math-block / divider-slide background. |
 | `--white` | `#FFFFFF` | Slide background. |
-| `--success` | `#2e8b57` | `ul.check` ticks, `.token-safe`. Affirmative only. |
-| `--warn` | `#d94040` | `.token-eos`, urgent/negative. Never for regular body copy. |
-| `--blue-glow` | `rgba(0,56,118,0.12)` | Corner accent gradient on every slide. |
+| `--success` | `#2e8b57` | `ul.check`, `.token-safe`. |
+| `--warn` | `#d94040` | `.token-eos`. |
 
-**Contrast note.** `--charcoal` on white ≈ 15:1 (AAA). `--yonsei-blue` on white ≈ 10.6:1 (AAA). `--gray-text` on white ≈ 5.7:1 — **passes AA for body text ≥14px, fails for anything <14px**. `.tiny` at 0.8rem on gray is the edge case; prefer `--charcoal` there if readability matters.
+**Color in math contexts** (one role per color, applied consistently across the deck):
 
-### 1.2 Typography
-
-Font family: Yonsei official typeface (`'Yonsei', 'Noto Sans', Arial, sans-serif`). Yonsei TTFs ship locally in `reference/fonts/` and are declared via `@font-face` in `colors_and_type.css` (Light 300, Bold 700, plus `YonseiBody` for Korean body copy and `YonseiLogo` for the wordmark). Noto Sans is a web-safe fallback from Google Fonts; the offline bundler strips it.
-
-| Role | Size | Weight | Tracking | Line height |
-|---|---|---|---|---|
-| `h1` | 3.6rem (4rem on title, 4.2rem on left-section) | 700 | -0.04em | 1.08 |
-| `h2` | 2.7rem | 700 | -0.03em | 1.12 |
-| `h3` | 1.85rem | 700 | -0.02em | 1.22 |
-| body `p`, `li` | 1.55rem | 300–400 | -0.01em | 1.5 |
-| `.subtitle` | 1.75rem (1.9rem on title) | 300 | — | — |
-| `.cite` | 0.85rem | — | — | — |
-| `.small` | 1.15rem | — | — | — |
-| `.tiny` | 0.95rem | — | — | — |
-
-**Authoring rule on `.small` / `.tiny` (binary: important vs non-important).** Anything the audience should read during the talk is *important* and must render at body size — readable from the back row. The only non-important on-slide slots are (1) `<div class="cite">` citations and (2) `.small` sub-labels inside a diagram when compression fails. `.tiny` is banned everywhere. `.small` on prose — paragraphs, list items, captions, summary remarks, text inside `.highlight` / `.card` / `.cols` / `.math-block` / under a `<table>` — is banned. Non-important prose that isn't a citation or diagram sub-label belongs in the per-slide appendix / speaker-notes file, not on the slide. See §7.12 for the compression workflow and §2.19 for `.cite`.
-
-Accent rules: `strong` → blue + weight 600. `em` → `--gray-text`, **not italic**. These are semantic — never hardcode colors inline when the right accent will do.
-
-**Widow/orphan control (2026-04).** `deck.css` applies `text-wrap: balance` to `h1`, `h2`, `h3`, and `.subtitle`, and `text-wrap: pretty` to `p`, `li`, `.small`, and `.tiny`. This lets the browser rebalance line breaks so that headings split evenly and body paragraphs don't leave a single dangling word on the last line. Decks should not override these on the canonical selectors. See §7.9 and §7.10 for the associated authoring rules (no em-dashes as connectors; no orphan words).
-
-> **No italic, ever (prose).** Yonsei ships only four `font-style: normal` TTFs and we import Noto Sans without italic, so the browser synthesizes oblique by skewing normal glyphs — kerning breaks, adjacent words visually glue (e.g. "all positions" reads "allpositions"). Don't use `<i>`, inline `font-style: italic`, or rely on default `em` italic. In LaTeX math, wrap English phrases in `\text{…}`; bare words in math mode inherit the italic math face with zero spacing. See §7.6.
-
-### 1.3 Spacing
-
-Slide padding: `56px 72px 48px` (top / sides / bottom). Title slide uses `72px 88px`. Don't change these — they anchor the print-to-PDF layout.
-
-| Spacer | Height | Note |
-|---|---|---|
-| `.spacer-sm` | 12px | Rarely useful — see §7.19 (Priority 3). Default to natural margins. |
-| `.spacer` | 20px | Rarely useful — see §7.19. |
-| `.spacer-lg` | 32px | Rarely useful — see §7.19. |
-| `.flex-grow` | flex: 1 | Fills remaining vertical space (e.g. push a closing line to the bottom). Different from spacers — this is intentional layout, not padding. |
-
-Component internal padding lives on the component — see §2.
-
-### 1.4 Border radius
-
-| Value | Use |
+| Color | Math meaning |
 |---|---|
-| `12px` | `.card` |
-| `10px` | `.diagram-box` |
-| `8px` | `.math-block`, `.highlight` (right edge), `pre` |
-| `6px` | `.token` |
-| `3px` / `2px` | `.divider` end caps |
-| `3.667em` | `.pill` (intentionally pill-shaped) |
-| `50%` | `ul` bullet, numbered list counters |
+| `--yonsei-blue` | What's being introduced / the active step / the term to focus on |
+| `--charcoal` | Established / given / already proved |
+| `--gray-text` | Future / not yet proven / parenthetical aside |
+| `--success` | Equality that closes a chain / final claim |
+| `--warn` | Counterexample / where standard argument breaks |
 
-### 1.5 Motion
+Never recolor for decoration. Pick once, apply consistently — color carries semantic load when it's stable.
 
-```css
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-```
+### Typography
 
-Applied to every direct child of `.slide.active`, with staggered delays `0.06s → 0.30s` for children 2–6. Duration 0.4s, easing `ease`. Disabled in `@media print`.
+`'Yonsei', 'Noto Sans', Arial, sans-serif`. Yonsei TTFs declared via `@font-face` in `colors_and_type.css`. No italic face exists — see GOTCHAS.
 
-### 1.6 Viewport
+| Role | Size | Weight | Line height |
+|---|---|---|---|
+| `h1` | 3.6rem (4rem on title, 4.2rem on left-section) | 700 | 1.08 |
+| `h2` | 2.7rem | 700 | 1.12 |
+| `h3` | 1.85rem | 700 | 1.22 |
+| body `p`, `li` | 1.55rem | 300–400 | 1.5 |
+| `.subtitle` | 1.75rem (1.9rem on title) | 300 | — |
+| `.cite` | 0.85rem | — | — |
+| `.small` | 1.15rem | — | (gated — see Priority 0) |
+| `.tiny` | 0.95rem | — | (banned — see Priority 0) |
 
-Fixed 1280 × 720px canvas, scaled to viewport via JS `transform`. Same dimensions govern the print stylesheet (`@page { size: 1280px 720px }`). Don't design for any other aspect ratio.
+`text-wrap: balance` on `h1`/`h2`/`h3`/`.subtitle`; `text-wrap: pretty` on `p`/`li`/`.small`/`.tiny`. Don't override.
+
+### Spacing & misc
+
+- Slide padding `56px 72px 48px` (title slide `72px 88px`). Don't change — anchors print layout.
+- Border radius: `12px` (card), `10px` (diagram-box), `8px` (math-block, highlight, pre), `6px` (token), `3.667em` (pill).
+- Spacers (`.spacer-sm`/`.spacer`/`.spacer-lg`) — almost never useful. See Priority 3.
+- Viewport: fixed 1280×720, scaled via JS `transform`. Same for `@page` print size.
+- Motion: `fadeIn` 0.4s on every direct child of `.slide.active`, staggered 0.06–0.30s. Disabled in print. Don't override. **No other animation language** — proof build-ups use multi-slide progressions, not CSS keyframes (see Math-heavy → Build-up).
 
 ---
 
-## 2. Components
+## Components
 
-### 2.1 `.slide` — slide container
+Every class below is defined in `reference/deck.css`. Reuse — don't invent.
 
-Every slide is `<div class="slide">` inside `#deck`. Exactly one has `.active` at a time (the engine toggles this). `padding: 56px 72px 48px`, `display:flex; flex-direction:column`.
+**Containers** — `.slide`, `.title-slide`, `.section-slide`, `.section-slide.left`, `.end-slide`.
 
-Background modifiers (all currently render **white** except `.bg-accent`):
-- `.bg-navy`, `.bg-dark`, `.bg-deep` — intentional aliases for white; kept for future theming without touching markup.
-- `.bg-light` — `--light` background. Good for side-by-side contrast slides.
-- `.bg-accent` — Yonsei blue background, white text. Inverts all component defaults (cards get translucent white, bullets go white, highlight border goes white). Reserve for section dividers and big statement slides.
+**Backgrounds** — `.bg-light` (subtle gray), `.bg-accent` (Yonsei blue, white text, inverts component defaults; reserve for section dividers and statement slides).
 
-Every slide gets a subtle top-right radial-gradient corner accent via `.slide::before`. Don't override.
+**Building blocks** — `.card`, `.highlight` (max one per slide), `.pill` / `.pill-fill`, `.divider`, `.math-block`, `.diagram-flow` / `.diagram-box`, `.cite`, `.brand-footer` (auto-injected).
 
-### 2.2 `.title-slide`
+**Token chips** — `.token-mask` / `-gen` / `-fixed` / `-eos` / `-safe` / `-pad` / `-pad2` / `-pad3`.
 
-First slide. Adds `border-top: 5px solid var(--yonsei-blue)`, larger h1 (3rem, blue), and a `.title-logo` image element positioned top-right (80px, the Yonsei emblem at `reference/kor-eng2.png`). Required markup:
+**Layout** — `.cols`, `.col-2-3` / `.col-1-3`, `.grid-2`, `.grid-3`.
 
-```html
-<div class="slide title-slide active">
-  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
-  <div class="pill pill-fill">…type of talk…</div>
-  <h1>Talk title</h1>
-  <div class="divider"></div>
-  <p class="subtitle">One-line subtitle</p>
-  <p>Speaker · Affiliation · Date</p>
-</div>
-```
+**Lists** — `ul` (default blue dot), `ul.check` (green ✓), `ul.arrow` (blue →), `ul.num` (numbered badge).
 
-### 2.3 `.section-slide`
+**TOC slide** — `.toc-list` / `.toc-item` / `.toc-num` / `.toc-rule` / `.toc-label` / `.toc-sub`.
 
-Part dividers between acts of the talk. Centered, often paired with `.bg-accent`:
+**Engine UI** (auto-injected, hidden in print) — `.progress-bar`, `.slide-num`.
 
-```html
-<div class="slide section-slide bg-accent">
-  <h1>Part II</h1>
-  <div class="divider"></div>
-  <p class="subtitle">Controllability</p>
-</div>
-```
+For exact CSS — padding, border, hover, `.bg-accent` inversion — read `reference/deck.css`. Don't paraphrase here.
 
-### 2.4 `.divider`
+---
 
-Blue underline rule, 64 × 3px. Place immediately after `h2` on content slides, or under `h1` on title/section slides. Inverts to white inside `.bg-accent`.
+## Math-heavy talks (theorem / proof / intuition)
 
-### 2.5 `.pill`
+The repo's primary mode. Three slide types and one pairing pattern.
 
-Inline tag / chip. `1.5px` blue outline, `--blue-light` text, 6×20px padding.
+### Theorem
 
-Variants:
-- default — outlined
-- `.pill-fill` — solid blue, white text. Used for talk-type label on title slide.
+Rigorous statement. Assumptions, claim, citation. Use a `.card` with an inline label (`<h3>Theorem N (Author, Year).</h3>`) and place the assertion in a `.math-block`.
 
-### 2.6 `.card`
-
-Neutral panel. `--light` background, `--slate` border, 12px radius, `24px 28px` padding. Inverts inside `.bg-accent` (translucent white fill + border).
-
-Common pattern — 3-card grid:
-```html
-<div class="grid-3">
-  <div class="card" style="text-align:center;">…</div>
-  …
-</div>
-```
-
-### 2.7 `.highlight`
-
-Key-insight callout. Left border 3px blue, soft blue gradient background. Right-side border-radius only. Use **one per slide max** — it loses impact otherwise.
-
-In Marp, `>` blockquotes render as this component automatically.
-
-### 2.8 Layout helpers
-
-| Class | Behavior |
-|---|---|
-| `.cols` | Horizontal flex; equal children unless overridden. |
-| `.col-2-3`, `.col-1-3` | Flex-ratio overrides inside `.cols`. |
-| `.grid-2` | 2-column grid, 24px gap. |
-| `.grid-3` | 3-column grid, 24px gap. |
-
-### 2.9 Lists
-
-Default `ul` uses a blue dot bullet. Variants:
-- `ul.check` — green ✓
-- `ul.arrow` — blue →
-- `ul.num` — blue circular numeric badge
-
-All invert on `.bg-accent`. Items get `padding-left: 24px` and `margin-bottom: 8px`.
-
-### 2.10 `.math-block`
-
-Display-math wrapper. `--light` background, 8px radius, centered, 1.15rem. Put KaTeX `$$…$$` inside:
-
-```html
-<div class="math-block">$$\mathcal{L} = \mathbb{E}[-\log p_\theta(x_0)]$$</div>
-```
-
-Inline math: just `$x$` in the flow — auto-renders via the `<script>` in the head.
-
-### 2.11 `.diagram-flow` / `.diagram-box`
-
-Horizontal flowchart. `.diagram-box` is an outlined blue rounded box; `.filled` inverts it. Arrows between boxes go in a separate span (`.diagram-arrow`).
-
-### 2.12 `.token-*`
-
-Mini chips for showing token states in decoding diagrams.
-
-| Class | Color | Meaning |
-|---|---|---|
-| `.token-mask` | dashed slate | `[MASK]` token |
-| `.token-gen` | solid blue | just generated |
-| `.token-fixed` | solid gray | already committed |
-| `.token-eos` | solid red (`--warn`) | end-of-sequence |
-| `.token-safe` | solid green | passed a safety check |
-| `.token-pad` / `-pad2` / `-pad3` | blue / purple / amber | arbitrary categories when you need 3+ |
-
-### 2.13 Tables
-
-Thin, uppercase headers in blue, `--slate` rules. No outer borders. Inverts on `.bg-accent`.
-
-### 2.14 `.progress-bar` + `.slide-num`
-
-Engine adds these once per deck. `.progress-bar` is a 3px blue bar anchored to slide bottom; `.slide-num` sits bottom-right. Both hidden in print.
-
-### 2.15 `.brand-footer`
-
-Subtle Yonsei lockup at bottom-left of content slides. Gives every slide (not just the title) the same institutional anchor the official Yonsei template uses. Optional per deck — include when presenting externally; skip for internal/draft decks.
-
-```css
-.brand-footer {
-  position: absolute; bottom: 18px; left: 28px;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.72rem; color: var(--gray-text);
-  letter-spacing: 0.12em; text-transform: uppercase;
-  font-weight: 500;
-  z-index: 100;
-}
-.brand-footer img { height: 18px; opacity: 0.9; }
-.bg-accent .brand-footer { color: rgba(255,255,255,0.85); }
-```
-
-Markup:
-```html
-<div class="brand-footer">
-  <img src="../reference/kor-eng2.png" alt="">
-  <span>Yonsei University</span>
-</div>
-```
-
-Hidden in print (add `.brand-footer { display:none !important; }` inside `@media print` if it clutters the PDF; keep visible otherwise).
-
-### 2.16 `.toc` — agenda / contents slide
-
-Numbered list with a blue vertical rule between each number and its label. One-row-per-section; four rows is the sweet spot (matches official template).
-
-```css
-.toc-list { display: flex; flex-direction: column; gap: 22px; margin-top: 16px; }
-.toc-item {
-  display: grid;
-  grid-template-columns: auto 3px 1fr;
-  gap: 24px;
-  align-items: center;
-}
-.toc-num {
-  font-size: 1.6rem; font-weight: 600;
-  color: var(--yonsei-blue); letter-spacing: -0.02em;
-}
-.toc-rule {
-  background: var(--yonsei-blue);
-  align-self: stretch;
-  min-height: 40px;
-  border-radius: 2px;
-}
-.toc-label { font-size: 1.25rem; font-weight: 500; color: var(--charcoal); }
-.toc-sub { font-size: 0.95rem; color: var(--gray-text); margin-top: 2px; }
-```
-
-Usage:
 ```html
 <div class="slide">
-  <h2>Contents</h2><div class="divider"></div>
-  <div class="toc-list">
-    <div class="toc-item">
-      <div class="toc-num">01</div>
-      <div class="toc-rule"></div>
-      <div>
-        <div class="toc-label">Where do dLLMs stand?</div>
-        <div class="toc-sub">Field progress</div>
-      </div>
+  <h2>Concentration of empirical mean</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Hoeffding, 1963).</h3>
+    <p>Let $X_1, \dots, X_n$ be independent with $X_i \in [a_i, b_i]$. For $t > 0$:</p>
+    <div class="math-block">$$\Pr\!\left[\bar X_n - \mathbb{E}\bar X_n \ge t\right] \le \exp\!\left(-\tfrac{2 n^2 t^2}{\sum_i (b_i - a_i)^2}\right).$$</div>
+  </div>
+  <div class="cite">Hoeffding, "Probability Inequalities for Sums of Bounded Random Variables", JASA 1963.</div>
+</div>
+```
+
+### Proof
+
+Rigorous derivation, one logical step per visual line. Multi-slide if it doesn't fit at body size — never shrink (Priority 0). Use `<h2>Proof (continued)</h2>` and one recap line on continuation slides.
+
+```html
+<div class="slide">
+  <h2>Proof — MGF bound</h2><div class="divider"></div>
+  <div class="math-block">$$\Pr[\bar X_n - \mathbb{E}\bar X_n \ge t]
+    = \Pr\!\left[e^{s n (\bar X_n - \mathbb{E}\bar X_n)} \ge e^{snt}\right]
+    \le e^{-snt}\, \mathbb{E}\!\left[e^{s n (\bar X_n - \mathbb{E}\bar X_n)}\right].$$</div>
+  <p>Markov, then independence, then optimize $s > 0$. <em>(next: bound each factor)</em></p>
+</div>
+```
+
+### Intuition
+
+High-level picture. One visual metaphor; speaker narrates the geometry. This is where color and (controlled) build-up pay off.
+
+```html
+<div class="slide">
+  <h2>Why concentration is exponential</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p><strong>Each $X_i$:</strong> small wiggle.</p>
+      <p><strong>Average of $n$:</strong> wiggles cancel.</p>
+      <p><strong>Rate:</strong> exponential, not polynomial.</p>
     </div>
-    <!-- repeat -->
+    <div><!-- HTML+SVG sketch of tail decay --></div>
   </div>
 </div>
 ```
 
-### 2.17 `.section-slide.left`
+### Pairing pattern
 
-Left-aligned variant of `.section-slide`. Reads like a book-chapter opener — "01" in blue, title on the next line. Keep the centered version (default) for dramatic interludes; use `.left` for structural part breaks inside a long talk.
+For results the audience must really understand:
 
-```css
-.section-slide.left {
-  align-items: flex-start;
-  text-align: left;
-  padding: 96px 96px;
-}
-.section-slide.left .section-num {
-  font-size: 1.6rem; font-weight: 600;
-  color: var(--yonsei-blue);
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
-}
-.section-slide.left h1 { font-size: 3rem; margin-bottom: 0; }
-.section-slide.left .divider { margin: 14px 0 18px; }
-.section-slide.left .subtitle { font-size: 1.2rem; color: var(--gray-text); }
+1. **Intuition** (1 slide) — picture, geometry, why we should expect the result.
+2. **Theorem** (1 slide) — rigorous statement.
+3. **Proof** (1–N slides) — rigorous derivation.
+4. **Discussion** (optional) — what's tight, what generalizes.
+
+For results the audience just needs to know exists, theorem-only is fine; cite the proof.
+
+### Build-up for proof intuition (controlled "animation")
+
+Auto-cycling animation is banned for talks (speaker loses pacing — see GOTCHAS). For proof intuition, use **progressive slides** instead: duplicate the slide N times; on slide $k$, color the first $k$ steps with Yonsei Blue (active/established) and the remaining steps with `--gray-text` (upcoming). Speaker advances at their own pace; the audience sees the build-up animation would have given, without the loop.
+
+```html
+<!-- Step k of N for the same idea slide -->
+<div class="slide">
+  <h2>Why Hoeffding works (2 of 4)</h2><div class="divider"></div>
+  <ol class="num">
+    <li style="color:var(--charcoal)">Markov on the moment-generating function</li>
+    <li style="color:var(--yonsei-blue)"><strong>Independence factors the MGF ← here</strong></li>
+    <li style="color:var(--gray-text)">Bound each factor (Hoeffding's lemma)</li>
+    <li style="color:var(--gray-text)">Optimize the free parameter $s$</li>
+  </ol>
+</div>
 ```
 
-Usage:
+Use the math-context color table above. One color = one role across the whole deck.
+
+---
+
+## Recipes
+
+**Title slide**
+```html
+<div class="slide title-slide active">
+  <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill">Talk type</div>
+  <h1>Title</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Subtitle</p>
+  <p>Speaker · Affiliation · Date</p>
+</div>
+```
+
+**Content slide**
+```html
+<div class="slide">
+  <h2>Heading</h2><div class="divider"></div>
+  <p>Phrase with <strong>blue accent</strong> and <em>muted aside</em>.</p>
+  <div class="highlight">Key insight (one max).</div>
+</div>
+```
+
+**Three-pillar / comparison**
+```html
+<div class="grid-3">
+  <div class="card" style="text-align:center;"><h3>①</h3><p>…</p></div>
+  …×3
+</div>
+```
+For short 2-column dichotomies use `.grid-2` with bare `<h3>` + `<p>` (no `.card` wrapper — Priority 3).
+
+**Math slide**
+```html
+<p>Setup with inline $x_t$.</p>
+<div class="math-block">$$\mathcal{L} = \mathbb{E}[-\log p_\theta(x_0)]$$</div>
+```
+Use `$$…$$` for `\begin{cases}` and `\begin{align}`. Inline `$…$\displaystyle$…$` with `nowrap` is fragile — see GOTCHAS.
+
+**Paper-overview slide** (citation as footnote, not card)
+```html
+<div class="cite">Author(s), "Paper Title", Venue Year</div>
+```
+One citation per slide. Don't wrap title in `<em>` (gray-on-gray is mud).
+
+**Section divider (left, numbered)**
 ```html
 <div class="slide section-slide left">
   <div class="section-num">02</div>
@@ -334,471 +302,53 @@ Usage:
   <p class="subtitle">Masking schedules, guided remasking, safety</p>
 </div>
 ```
+`.section-slide` (centered, `.bg-accent`) for dramatic interludes; `.left` for structural part breaks inside a long talk.
 
-Works on white or `.bg-accent` (background flips, accent becomes white).
-
-### 2.18 `.end-slide`
-
-Closing slide — Q&A, Thank You, or similar. Centered, big, on-brand (white background, blue word).
-
-```css
-.end-slide { justify-content: center; align-items: center; text-align: center; }
-.end-slide .big-word {
-  font-size: 5rem; font-weight: 600;
-  color: var(--yonsei-blue);
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-.end-slide .big-word-sub {
-  margin-top: 18px;
-  color: var(--gray-text);
-  font-size: 1.1rem;
-}
-```
-
-Usage:
+**TOC slide**
 ```html
-<div class="slide end-slide">
-  <div class="big-word">Q&amp;A</div>
-  <p class="big-word-sub">Thank you.</p>
-</div>
-```
-
-### 2.19 `.cite` — citation footnote
-
-Bottom-center attribution for papers cited on a slide. Subtle, gray, capped at 60% slide width so it coexists with `.brand-footer` (bottom-left) and `.slide-num` (bottom-right). Use this instead of stuffing a paper-title card into a 2-column layout: the card used to eat half the slide for attribution that belongs in a footnote.
-
-```css
-.cite {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 60%;
-  font-size: 0.85rem;
-  color: var(--gray-text);
-  text-align: center;
-  line-height: 1.35;
-  opacity: 0.8;
-  pointer-events: none;
-  z-index: 90;
-}
-.bg-accent .cite { color: rgba(255,255,255,0.75); }
-```
-
-Markup (drop in once per paper-overview slide):
-```html
-<div class="cite">Author(s), "Paper Title", Venue Year</div>
-```
-
-Conventions:
-- Informal is fine. Example: `Carlini et al., "MIA From First Principles", IEEE S&amp;P 2022`.
-- One citation per slide. If a slide references two papers, either split the slide or pick the primary one and mention the other verbally.
-- Keep the author `.pill` at the top as a recurring section label across multiple slides about the same paper. Add `.cite` only on the paper-overview slide; don't duplicate the citation on every follow-up slide about that paper.
-- Don't wrap the title in `<em>` — `em` is styled gray, not italic, and it dulls already-gray footer text into mud. The title is plain text inside the footnote.
-
----
-
-## 3. Slide engine (JS)
-
-Lives in a single `<script>` at the end of the body. Three responsibilities:
-
-1. **Scale.** Reads viewport, sets `transform: translate(-50%,-50%) scale(min(vw/1280, vh/720))` on `.deck`. Re-runs on resize.
-2. **Navigate.** Keyboard (←/→/↑/↓/Space/PgUp/PgDn/Home/End), touch swipe (>50px threshold), click (right-half = next, left-half = prev; ignores clicks on `<a>` / `<button>`).
-3. **Indicate.** Updates `#slideNum` text and `#progressBar` width.
-
-Do not modify. Copy verbatim into new decks.
-
----
-
-## 4. Print-to-PDF (required)
-
-Every custom HTML deck must include the `@media print` block from `CLAUDE.md §Print-to-PDF support`. Without it, `Cmd+P` prints only the active slide. The block:
-
-- Forces `@page { size: 1280px 720px; margin: 0 }`.
-- Neutralizes the JS scale transform.
-- Makes all slides flow, one per page.
-- Disables animations and hides progress/slide-num UI.
-
-Export recipe: Chrome → `Cmd+P` → Save as PDF → Margins **None** → Background graphics **on** → Save.
-
----
-
-## 5. Usage guidelines
-
-### 5.1 Style priorities (from `CLAUDE.md`)
-
-1. **One idea per slide.** If you need two cards of prose, it's two slides.
-2. **The speaker narrates; the slide is a visual anchor.** Slides carry abstract phrases and key terms, not full explanatory sentences. Drop narrative connectors ("This means…", "In other words…", "It is important to note…"), soft qualifiers ("essentially", "actually", "basically"), and prose that only restates what the speaker will say aloud. Target telegraphic noun phrases over complete sentences. See §7.12.
-3. **Prose emphasis.** `**strong**` = Yonsei Blue accent (important terms, new concepts). `*em*` = muted gray (parenthetical asides). Don't mix.
-4. **Key insight → blockquote** (Marp) or `.highlight` (HTML). Max one per slide.
-5. **Math-heavy slide.** Wrap display math in `.math-block` / `$$…$$`.
-6. **Citations → `.cite` footnote (§2.19).** Don't stuff paper titles into side cards that steal half the slide. One bottom-centered footnote per paper-overview slide.
-
-### 5.2 Do / Don't
-
-| Do | Don't |
-|---|---|
-| Reuse existing classes. | Invent new component classes per deck. |
-| Keep the `<style>` block byte-identical across decks. | Ad-hoc color tweaks in a single deck. |
-| Use `.bg-accent` for section dividers and statement slides. | Use `.bg-accent` for dense content slides — it fights with cards and highlights. |
-| Let the engine handle nav — don't add custom click targets. | Bind click handlers directly on slides. |
-| Pair `h2` with `.divider` on every content slide. | Skip the divider; the slide feels unanchored. |
-| Put title-logo and title-slide together. | Use `.title-logo` on non-title slides. |
-| Leave canonical sizes alone on prose (`p`, `li`, text inside `.highlight` / `.card` / `.cols` / `.math-block` / under a `<table>`). On-slide sub-body text is allowed in two slots only: `<div class="cite">` and `.small` inside a diagram when compression fails (§1.2 Priority 0). | Add `class="small"` / `class="tiny"` to prose, add inline `style="font-size:…"` to a bullet or card body, or use `.small` as a "de-emphasis" signal. That's the pattern Priority 0 exists to kill. |
-| Keep component-internal text (`.pill`, `.diagram-box` native label, token chips, `.code-block`) at its native compact size. | Add author-level `<span class="small">` / `<span class="tiny">` sub-labels inside a diagram by default. Compress the label or let the speaker narrate it; only keep `.small` if compression genuinely breaks the layout. Never redefine `p` / `li` / `h2` / `h3` / `.small` / `.tiny` / `.math-block` in a per-deck `<style>`. |
-| When a slide feels cramped, cut content or split the slide. Use as many slides as you need — there is no budget. | Shrink the type scale to cram in more. The Kangwook reference shots (`reference/kangwook*.png`) show the minimum acceptable size. |
-| Build math-labelled diagrams as HTML (flex/grid + divs) with a thin SVG overlay for arrows only. | Put `$x_i$` inside an SVG `<text>` — KaTeX auto-render skips SVG text and the literal `$x_i$` will show. |
-| Use `$$…$$` (display math) inside a `.math-block` for `\begin{cases}` and other multi-row constructs. | Use `$…$\displaystyle$…$` with `white-space:nowrap` + `overflow-x:auto` to force layout — the cases overflow gets clipped at the right edge. |
-| Prefer static step-labeled diagrams (①②③④ badges) so everything is visible at once. | Ship continuous SMIL / CSS animation for talks — the audience waits through each loop. Keep auto-animation for self-paced web versions only. |
-| Anchor absolute-positioned decorative content to `right` / `top` and leave ≥ 40 px clear in the bottom-left. | Absolute-position floats to `bottom-left`, where the auto-injected `.brand-footer` (Yonsei wordmark) already lives. |
-| Let `.slide` keep its canonical `position: absolute; inset: 0`. Child `position:absolute` elements anchor to it automatically. | Write `style="position:relative"` on a `.slide` to give children a positioning context. It overrides `inset:0`, so the slide no longer fills the deck and `.brand-footer` lands out of place. |
-
-### 5.3 Slide recipes
-
-**Content slide**
-```
-<h2> + <div class="divider"></div>
-<div class="cols"> … prose on left, .card on right … </div>
-(optional) <div class="highlight"> key insight </div>
-```
-
-**Three-pillar slide**
-```
-<h2> + <div class="divider"></div>
-<div class="grid-3">
-  <div class="card" style="text-align:center;">①  <h3>…</h3>  <p>…</p></div>
-  … ×3 …
-</div>
-```
-
-**Comparison slide**
-```
-<h2> + <div class="divider"></div>
-<table>
-  <thead><tr><th>…</th><th>…</th></tr></thead>
-  <tbody>…</tbody>
-</table>
-```
-
-**Math-heavy slide**
-```
-<h2> + .divider
-<p>Setup prose with inline $x_t$.</p>
-<div class="math-block">$$…$$</div>
-<p><strong>Key insight:</strong> …</p>
-```
-
-**Section divider (centered)**
-```
-<div class="slide section-slide bg-accent">
-  <h1>Part N</h1> <div class="divider"></div> <p class="subtitle">…</p>
-</div>
-```
-
-**Section divider (left, numbered — §2.17)**
-```
-<div class="slide section-slide left">
-  <div class="section-num">02</div>
-  <h1>Controllability</h1>
-  <div class="divider"></div>
-  <p class="subtitle">…</p>
-</div>
-```
-
-**Contents / agenda slide (§2.16)**
-```
-<h2>Contents</h2> + .divider
+<h2>Contents</h2><div class="divider"></div>
 <div class="toc-list">
   <div class="toc-item">
     <div class="toc-num">01</div>
     <div class="toc-rule"></div>
-    <div><div class="toc-label">…</div><div class="toc-sub">…</div></div>
+    <div><div class="toc-label">Section name</div><div class="toc-sub">Subtitle</div></div>
   </div>
-  … ×4 …
+  …×4
 </div>
 ```
 
-**Closer slide (§2.18)**
-```
+**Closer**
+```html
 <div class="slide end-slide">
   <div class="big-word">Q&amp;A</div>
   <p class="big-word-sub">Thank you.</p>
 </div>
 ```
 
-**Diagram with math-rendered labels (HTML + SVG-arrows pattern)**
-
-When the diagram needs KaTeX-rendered labels (e.g. `$C_1$`, `$g_i$`, `$M(x_i)$`), build the structural layer in HTML and use SVG only for arrows. The `.fl4-*` classes in `privacy/DP-FL.html` (slide 4) and the `.ldp-*` classes (slide 9) are the reference.
-```
-<div class="diag-wrap">
-  <div class="diag-server">Server · holds $\theta$</div>
-  <svg class="diag-arrows" viewBox="0 0 600 110" preserveAspectRatio="none">
-    <g stroke="#003876" stroke-width="2" fill="none" marker-end="url(#ar)">
-      <path d="…"/> …
-    </g>
-  </svg>
-  <div class="diag-clients">
-    <div class="diag-client">
-      <div class="dot">$C_1$</div>
-      <div class="lbl">① compute $g_1$ from $D_1$</div>
-    </div>
-    …
-  </div>
-</div>
-```
-- The arrow SVG uses `preserveAspectRatio="none"` and a wide viewBox so the arcs stretch with the HTML boxes.
-- Labels ("① compute $g_1$ from $D_1$") are plain HTML — KaTeX auto-render picks them up and turns the `$…$` into math.
-- Component-level font sizes for the boxes should stay in the `1.1rem – 1.35rem` range; don't override canonical `p` / `li` inside the diagram.
+**Diagram with math labels.** Build structure in HTML (flex/grid + divs), use SVG only for arrows. Reference: `.fl4-*` / `.ldp-*` / `.rdm-*` in `privacy/DP-FL.html`. Never put `$…$` inside SVG `<text>` — KaTeX skips it (see GOTCHAS).
 
 ---
 
-## 6. Extension checklist
+## Companion note files
 
-When you think you need a new component, check first:
+When detail is worth recording but doesn't fit on the slide (full-sentence explanations, derivations the proof slide skipped, secondary examples, "FYI" context), put it in `<deck>/<deck>-note.html` — one section per slide, in slide order, headed by the slide's title. Plain HTML so KaTeX `$…$` / `$$…$$` works the same as in the deck. The note file does not use the `.deck` / `.slide` engine; a simple `<article>` per slide is enough.
 
-1. Is it actually a styled variation of `.card`, `.pill`, `.highlight`, or `.diagram-box`? Use an inline `style=` rather than a new class.
-2. Is it a one-off on a single slide? Keep it inline.
-3. Is it something you'll reuse in ≥2 decks? Then add it here first, then to the skeleton, then use it.
+For lectures, the note file is also the natural home for the **expanded proof** when the slide carries the abbreviated version.
 
-New components must document: name, purpose, default + inverted (`.bg-accent`) appearance, an example snippet, and any token dependencies.
+Not a paper draft, not a transcript. The speaker's reading companion.
 
 ---
 
-## 7. Common pitfalls (lessons learned)
+## Extension checklist
 
-These are the mistakes that keep reappearing in per-deck work. `CLAUDE.md` has the short form; this section explains why.
+Before adding a new component:
 
-### 7.1 Fonts "look small" → somebody shadowed the canonical tokens
+1. Is it a styled variation of an existing component? Use inline `style=` (with `var(--…)`, never hardcoded colors).
+2. One-off on a single slide? Keep it inline.
+3. Reused in ≥2 decks? Add it to `reference/deck.css` first, then this doc, then use it.
 
-Symptom: body text / headings on a deck look noticeably smaller than the Kangwook reference (`reference/kangwook*.png`) or smaller than a sibling deck.
-
-Cause: a per-deck `<style>` block redefined `p`, `li`, `h2`, `h3`, `.small`, `.tiny`, `.subtitle`, or `.math-block` `font-size`. Canonical values live in `reference/deck.css` and were tuned for back-of-room readability after the deck's `transform: scale()` is applied.
-
-Fix: delete those overrides. Component-scoped sizes (e.g. `.sr-box p`, `.paper-card .desc`) are fine in the `1.05rem–1.35rem` range, but canonical tokens are off-limits.
-
-### 7.2 Brand footer moves around → a slide opted out of `inset: 0`
-
-Symptom: the "Yonsei University" wordmark drifts vertically or horizontally, or disappears, on specific slides.
-
-Cause: that slide has an inline `style="position:relative"`. `.slide` is canonically `position: absolute; inset: 0`; overriding it to `relative` breaks the fill. Children with `position: absolute` already anchor to the slide (since `absolute` *is* a positioned value) — you don't need to force `relative`.
-
-Fix: remove the `position:relative` override. Anchor any absolutely-positioned decorative content (images, overlays) to `right`/`top` and leave the bottom-left clear for the footer.
-
-### 7.3 "$g_1$" shows as literal text → label is in SVG `<text>`
-
-Symptom: inline math inside a diagram renders as `$g_1$` instead of italic *g* with a subscript.
-
-Cause: the label sits inside an SVG `<text>` element. KaTeX auto-render walks the HTML DOM; it doesn't descend into SVG text nodes.
-
-Fix: move the math-bearing labels to HTML. Use an HTML+CSS layout for the diagram structure (flex/grid, div "boxes", CSS-styled circles) and a thin SVG overlay for arrows only. Reference implementations: `.fl4-*` (slide 4), `.ldp-*` (slide 9), `.rdm-*` (slide 30) in `privacy/DP-FL.html`.
-
-### 7.4 Cases block gets clipped → shorten content or switch to `$$…$$`
-
-Symptom: the right column of `\begin{cases}` (typically "otherwise" / "if …") is cut off at the slide's right edge.
-
-Cause: the math-block uses `$\displaystyle …$` with `white-space:nowrap; overflow-x:auto` to coerce layout, and the rendered width exceeds the container.
-
-Fix: use `$$…$$` (display math) inside a plain `.math-block` — KaTeX will size itself naturally. Shorten the cases labels to math form: `m \in \text{top-}k` instead of `\text{if } \langle v, U_m\rangle \text{ is among the top } k$; `\text{else}` instead of `\text{otherwise}`. If it still overflows, the slide has too much content — cut a bullet.
-
-### 7.5 Animation for live talks is a mistake
-
-Symptom: during a talk, the audience is waiting for the animation to finish before the speaker can make the next point.
-
-Cause: SMIL `animateMotion` / CSS keyframe cycles loop indefinitely and dictate pacing that the speaker doesn't control.
-
-Fix: make the diagram static and label every step with ①②③④ badges placed directly on the relevant elements. The speaker controls pacing by talking through the steps in order. Keep auto-animation for self-paced web versions of the deck.
-
-### 7.6 Parenthesized text renders as italic math → KaTeX delimiter escape bug
-
-Symptom: plain prose with `(...)` or `[...]` renders in italic math font with no inter-letter space. Examples: `(learned or heuristic)` shows as `learnedorheuristic`, `[M]` inside a `.token-mask` shows a slanted italic `M` distinct in height from the upright `is`/`blue` word tokens next to it.
-
-Cause: the KaTeX auto-render `onload` handler defines four delimiter pairs. The latter two are supposed to be LaTeX-style `\(...\)` and `\[...\]`. In the HTML attribute, they must be written **double-escaped** so the JS string parser leaves a literal backslash in place:
-
-```html
-<!-- CORRECT — double backslash -->
-onload="renderMathInElement(document.body,{delimiters:[
-  {left:'$$',right:'$$',display:true},
-  {left:'$', right:'$', display:false},
-  {left:'\\(',right:'\\)',display:false},
-  {left:'\\[',right:'\\]',display:true}
-],throwOnError:false});"
-
-<!-- WRONG — single backslash -->
-{left:'\(',right:'\)',display:false},
-{left:'\[',right:'\]',display:true}
-```
-
-With the wrong form, the JS string parser treats `\(` as an unrecognized escape and silently drops the backslash. KaTeX then sees its left delimiter as a bare `(` (and `)`, `[`, `]`), so any parenthesized or bracketed prose gets rendered as inline math — italic math font, no word spacing, different line metrics from surrounding text.
-
-Fix:
-- Use the double-backslash form in every deck's `onload` attribute. `reference/deck-skeleton.html` has the correct version; `scripts/new-talk.sh` will propagate it for new talks.
-- Audit existing decks: `for f in */*.html; do grep -H "renderMathInElement" "$f" | grep -c "\\\\\\\\(" ; done`. Each deck must show a `\\\\(` occurrence, not `'\\(` (single).
-- After fixing, hard-reload with DevTools "Disable cache" — the handler runs on script onload, not on page DOM-ready, so stale behavior isn't obvious from a casual refresh.
-
-### 7.7 Italic prose collapses spaces → Yonsei has no italic face
-
-Symptom: a word or phrase rendered with `font-style: italic` (via `<i>` or inline `style="font-style:italic"`) reads as a single glued string.
-
-Cause: `reference/colors_and_type.css` registers four Yonsei TTFs, all with `font-style: normal` — there is no italic face. The Noto Sans import only pulls weights 300–700, again without italic. When the browser is asked to render italic it falls back to *synthesized oblique*: it skews the normal glyphs by ~12°. Synthesized oblique inherits the upright metrics, so kerning pairs and side-bearings are wrong, and on tight lines (table rows, card copy) adjacent words visually merge.
-
-Fix:
-- **No italic in prose.** `em` is globally `font-style: normal; color: var(--gray-text)` — that is the intended "muted" look. Use `<strong>` (Yonsei Blue accent) for emphasis instead.
-- **No `<i>`, no inline `font-style: italic`.** If you catch these in a deck, rip them out.
-- **In KaTeX math, English phrases belong in `\text{…}`.** `\text{all positions}` gives real spaces; bare `all positions` in math mode renders each letter in the italic math face with zero inter-letter space. Identifier letters stay italic (correct math typography); the rule only applies to English phrases.
-- **If prose that isn't in math mode still renders italic, suspect §7.6** before blaming the font stack.
-
-### 7.9 Em-dashes break lines awkwardly → use colons, commas, or parens
-
-Symptom: a title, subtitle, bullet, or card reads "X — Y" and the line breaks between the dash and one of the clauses, or the side shorter than the break leaves a single word dangling on the next line.
-
-Cause: at slide font sizes, the em-dash (`—`), en-dash (`–`), and double-hyphen (`--`) each function as a strong break point. The browser treats them as preferred wrap locations, so whichever clause is shorter is disproportionately likely to wrap, and the dash itself frequently ends up at the start or end of its own line.
-
-Fix:
-- Rewrite the connector. A colon works when the dash was introducing a definition or expansion (`"Bidirectional attention: every token attends to every other"`). A comma works when the dash was a soft pause (`"Random masking, so the model sees all orderings"`). A period works when the dash was doing the work of a full stop. Parentheses work when the clause was parenthetical (`"… (a new watermarking channel)"`).
-- Keep dashes only where they are part of a technical glyph: `7–8B`, `fill-in-the-middle`, arrows (`→`, `↔`), `↕ shared weights`.
-- This rule applies to slide prose. Prose in repo docs (`CLAUDE.md`, this file) is not slide-rendered and can keep em-dashes.
-
-Audit: `grep -nE ' — | -- | – ' <deck>.html` should return essentially nothing after this pass.
-
-### 7.10 Dangling single words at the end of a line
-
-Symptom: a bullet reads "…from toy-scale to competitive 7B+ systems in <2 years" and the final "years" or "2 years" wraps alone to its own line. Or an h3 reads "Architectural inductive biases" and "biases" lands on line two by itself.
-
-Cause: the natural wrap point puts the last 1–2 words on a line of their own. Without widow control, the browser doesn't know to pull one more word down to keep the last line readable.
-
-Fix, in order of preference:
-1. **Rely on CSS first.** `deck.css` sets `text-wrap: pretty` on body text and `text-wrap: balance` on headings. The browser rebalances automatically. Preview in Chrome 117+ / Safari 17.4+ (print-to-PDF uses the same engine) — most orphans disappear without further action.
-2. **Remove any em-dash in the line.** An em-dash is the single most common structural cause of an orphan; replacing `"X — Y"` with `"X: Y"` often fixes the orphan on its own.
-3. **Shorten or restructure.** Trim a redundant qualifier, split the sentence, or reword to a shorter noun phrase.
-4. **Glue the final words with `&nbsp;`.** For a bullet ending in "…in <2 years", write `in &lt;2&nbsp;years` so the last two tokens wrap as a unit. Use sparingly — only for technical phrases that must stay together (`"7B+ systems"`, `"<2 years"`, `"≈80% ASR"`).
-5. **Don't use `<br>` as an orphan-shim.** A forced break to hide an orphan is fragile — it creates a different orphan at a different width and prints oddly. (Priority 1 does permit `<br>` at a deliberate internal clause boundary inside one sentence — that's a different use; see §7.16.)
-
-### 7.11 Standalone bundle renders equations as raw `$...$` strings
-
-Symptom: `<deck>.standalone.html` shows literal `$x_i$` text; the authoring source renders fine.
-
-Cause (historical, fixed 2026-04): `scripts/bundle.py` re-emits the KaTeX `onload="renderMathInElement(document.body, {delimiters:[{left:'$$',…}]});"` handler into a small inline script. Its earlier regex `onload=["\']([^"\']+)["\']` treated both quote types as terminators, so the handler was truncated at the first inner `'` and never called.
-
-Fix (in the code): the regex now uses alternation — `onload=(?:"([^"]*)"|'([^']*)')` — and takes whichever group matched. Verify after bundling with `chrome --headless --dump-dom <standalone>.html | grep -c 'class="katex"'` — should be ≥ 1 for any deck with math.
-
-### 7.12 Full-sentence prose on slides → rewrite to abstract phrases
-
-Symptom: bullets and card bodies read like paragraphs from a paper ("The attack achieves high precision, which means that most declarations of membership are correct, suggesting that…"). The slide feels wordy and the speaker ends up re-reading it instead of adding context.
-
-Cause: draft text carried over from a paper or a long-form explanation, never trimmed for a live audience. The audience can read faster than the speaker can talk; full sentences force them to split attention between screen and voice.
-
-Fix:
-- **Drop narrative connectors.** "This means that X" → "X". "In other words, Y" → "Y". "It is important to note that Z" → "Z". "As we will see", "As discussed earlier", "Subsequently" → delete.
-- **Cut soft qualifiers.** "essentially", "actually", "basically", "indeed", "really", "very", "quite", "fairly" add no information at slide pace.
-- **Compress to noun phrases.** "The attack achieves high precision, meaning most positive predictions are correct" → "High precision: most positives correct".
-- **Keep the technical specifics.** Variable names, numbers, dates, author names, and math do not compress — they are the reason the slide exists.
-- **Target ~40–60% word reduction** on prose blocks when rewriting an existing wordy deck. If you have to shrink the font to keep a bullet on one line, you haven't rewritten it yet.
-
-After compression: strip any residual `class="small"` / `class="tiny"` / inline `font-size` overrides from the prose (Priority 0, §1.2). If a single `<p>` still contains `A. B.`, that's a wordiness signal — compress further, don't just split (Priority 1, §7.16).
-
-### 7.13 Paper-title cards steal half the slide → use `.cite` (§2.19)
-
-Symptom: every paper-overview slide has a 2-column layout where the right column is a card with the paper's full title in `<em>"…"</em>`, venue, and author list, taking ~50% of the slide for attribution alone.
-
-Cause: the "paper card" was the only way to put attribution on the slide without cluttering the main content. It worked but was wasteful — attribution is metadata, not content.
-
-Fix: delete the card and replace it with a single `<div class="cite">` footnote at the bottom. The main content expands to full width; the citation lives in a subtle gray line that tracks with the brand footer and slide number. See §2.19.
-
-### 7.14 `<br>` landing after a hyphen orphans the hyphen
-
-Symptom: a `.diagram-box` labeled `ML-as-a-<br>Service` renders as `ML-as-a-` / `Service`; `Neyman-<br>Pearson` renders as `Neyman-` / `Pearson`. The trailing hyphen reads as a broken syllable.
-
-Fix: keep the compound on one line and let the box grow (`Neyman-Pearson`), or rename to a hyphen-free label (`ML-as-a-Service` → `Cloud ML APIs`). Never land `<br>` immediately after `-`, `—`, `–`, `(`, or similar continuation punctuation.
-
-### 7.16 Line breaks and content length — Priority 1
-
-**Goal: minimal slides.** Fewer visual lines, less for the audience to re-read, more room for the speaker to elaborate. Sits just below Priority 0 (font sizes).
-
-**Leave content alone if it already fits.** Two short sentences on one line are fine. Don't split sentences for the sake of splitting — the earlier pattern of "period → new `<p>`" was mechanical and created unnecessary vertical weight. Split only when the browser would wrap anyway, and at a worse place than you can choose.
-
-When prose visibly wraps in preview, act in this order:
-
-1. **Compress first** (§7.12). Drop narrative connectors, cut soft qualifiers, compress to noun phrases, move detail to narration or the per-slide appendix. Most "doesn't fit" problems are "too many words" problems — solve with rewriting, not structural changes.
-2. **If still multi-line after compression**, split at a natural boundary:
-   - a clear sentence end, a colon, or an independent-clause break → split into two adjacent `<p>` tags (identical visual under `margin: 0`, cleaner semantic)
-   - a single sentence with an internal comma-level clause-break → `<br>` at that boundary (rare)
-3. **Glue inseparable phrases with `&nbsp;` reactively** — only when the browser visibly breaks one in preview:
-   - article/adjective + noun (`a&nbsp;dataset`, `large&nbsp;model`)
-   - preposition + short object (`in&nbsp;the&nbsp;model`)
-   - number + unit (`7B&nbsp;parameters`, `≈80%&nbsp;accuracy`)
-   - Hyphenated compounds are covered by §7.14.
-4. **Never break within a phrase.** The browser may do so automatically under `text-wrap: pretty`; if it happens in preview, apply step 3 or rewrite.
-
-**`<br>` policy.** Allowed at a deliberate internal clause boundary (step 2b). Banned as an orphan-shim — for that, see §7.10 (use `&nbsp;` or compression instead).
-
-**Interaction with Priority 0.** Priority 0 forces body size (1.55rem). Some content that fit on one line at `.small` will now wrap. Don't shrink to avoid the wrap — compress, or accept a clean split per step 2.
-
-### 7.17 Overflow — Priority 2
-
-**Symptom.** Text or elements escape the slide's intended drawing area: positioned past the 1280×720 slide bounds (partially or fully invisible at presentation scale), or overlapping the auto-injected `.brand-footer` ("YONSEI UNIVERSITY") at bottom-left.
-
-**Cause.** Almost always wordiness — content drafted as full sentences instead of telegraphic noun phrases (§7.12). Less often, decorative elements anchored to `bottom-left` collide with the footer's reserved space (§7.2).
-
-**Fix, in order:**
-
-1. **Compress** (per §7.12 / Priority 1 step 1). Drop narrative connectors and soft qualifiers; collapse to noun phrases. Most overflow disappears at this step.
-2. **Split the slide.** One idea-heavy slide becomes two. There is no slide budget.
-3. **Move secondary detail to the companion note file** (§7.18). Useful but non-essential content lives there, not on the slide.
-4. **Reposition decorative elements** away from `bottom-left` (anchor to `right` / `top`); leave ~40 px clear in the bottom-left for the brand footer.
-
-**Banned shortcuts.**
-
-- **Don't shrink to fit.** Priority 0 forbids `.small` / `.tiny` / inline `font-size` on prose. Overflow is never a reason to override Priority 0.
-- **Don't compress vertical rhythm** (`margin`, `padding`, `line-height`) on prose to recover space — that's a layout hack that breaks the canonical look.
-- **Don't push content past the footer.** Footer collision is overflow even if the text is technically still inside the slide rectangle.
-
-**Discipline is upstream.** Visually auditing every slide in a browser at presentation scale is impractical, so the only reliable defense is writing short, abstract slides from the first draft. If you're reaching for layout tricks to make text fit, you've drifted from §5.1 rule #2 (speaker narrates; slide is a visual anchor) and §7.12 (compress to noun phrases). Cut content; don't compress design.
-
-**Interaction with Priorities 0 and 1.** Priority 0 forces body size; Priority 1 forbids using line-break tricks to wedge in extra content. Priority 2 closes the loop: if after honoring 0 and 1 the slide still doesn't fit, the answer is *less content* — split, or move detail to the note file. Never cram.
-
-### 7.18 Companion note files for slide-adjacent detail
-
-**The slide is the visual anchor; the note file is the long form.** When you have detail worth recording but too long for a slide — full-sentence explanations, derivations, secondary examples, "FYI" context, extra citations — write it into a sibling note file rather than the slide. Priority 1 (§7.16) and Priority 2 (§7.17) both lean on this file as the home for "move detail to narration / per-slide appendix".
-
-**Naming.** `<deck>/<deck>.html` is the slides; `<deck>/<deck>-note.html` is the notes. Example: `mia/mia1-foundations.html` ↔ `mia/mia1-foundations-note.html`. The note file lives next to its deck.
-
-**Structure.** One section per slide, in slide order, each headed with the slide's `data-screen-label` or `<h2>` title. Plain prose is fine — full sentences, longer explanations, examples. HTML (not Markdown) so KaTeX math via `$…$` / `$$…$$` works the same as in the deck. The note file does not use `.deck` / `.slide`; a simple `<article>` or `<section>` per slide is enough — the engine, scaling, and brand footer don't apply.
-
-**When to write to the note file vs. the slide.** If the audience needs to read it during the talk, it goes on the slide (Priority 0: at body size). If the audience can follow without reading it but it's still useful to record, it goes in the note file. Borderline content should default to the note file — a minimal slide always reads better than a cramped one.
-
-**What it isn't.** Not a paper draft, not a talk transcript, not a tutorial. It's the speaker's reading companion and the reader's after-the-fact reference. Keep it tight.
-
-### 7.19 Empty space — Priority 3
-
-**Symptom.** A slide has a few blocks of content at the top and one line at the bottom, with a hollow gap in the middle. Or two cards in a `.cols` block stretch to twice the height of their content, leaving each card half-empty. Or a slide carries 3 bullets and nothing else.
-
-**Cause.** Three authoring patterns:
-1. **Manual spacers.** `<div class="spacer">`, `<div class="spacer-sm">`, `<div class="spacer-lg">` insert fixed 12 / 20 / 32 px gaps that stack on top of natural element margins. On a slide whose content already spaces itself, the extra gap shows up as a void in the middle.
-2. **`.cols + .card` for sparse content.** `.slide` is `display: flex; flex-direction: column`; `.cols { flex: 1; align-items: stretch }`. So a `.cols` element grabs all remaining vertical space on the slide, and its child cards stretch to match. With 2–3 lines of content per card, the card becomes a tall hollow box — content at the top, empty space below.
-3. **Slide too sparse.** A slide with 3 bullets and nothing else has no business being its own slide.
-
-**Fix, in order:**
-
-1. **Strip `<div class="spacer*">` divs** between content blocks. Trust natural element margins. Keep a spacer only at a genuine collision point — almost never needed on a content slide.
-2. **For 2–3-line dichotomies, drop the `.cols + .card` wrapping.** Use `.grid-2` (no flex stretch) with bare `<h3>` + `<p>`. The columns sit at natural height, and the rest of the slide is naturally blank below.
-3. **For short slides, merge into the adjacent slide or drop.** There is no slide budget *upward* (split when crowded — Priority 2) and none *downward* (combine when sparse).
-
-**Banned shortcuts.**
-
-- **Don't pad with spacers.** That's what causes the middle-gap in the first place.
-- **Don't pad with extra prose** to fill a sparse slide. That writes you back into the trap Priority 0/1 already closed (compress; speaker narrates).
-- **Don't shrink the column width** to fake a "tall card" look. A short card in a narrow column reads worse than a short slide with an honest empty bottom.
-
-**Why a separate priority.** Priorities 0/1/2 cover *crowded* slides; Priority 3 covers *under-filled* slides. Both pathologies stem from treating layout containers as visual scaffolding instead of letting content drive geometry. Empty bottoms are honest; empty middles are layout debt.
+New components must document: name, purpose, default + `.bg-accent` appearance, an example, token dependencies. Candidates worth adding when you've reused the pattern enough to feel friction: `.theorem`, `.proof-step`, `.intuition-callout`. Until then, the recipes above using existing `.card` / `.math-block` / `.highlight` are the canonical form.
 
 ---
 
-## 8. Source files
-
-- **Canonical CSS:** `reference/colors_and_type.css` (font-face + tokens) and `reference/deck.css` (engine + components). Decks link to these; they are not duplicated per deck.
-- **Canonical JS:** `reference/deck.js`.
-- **Fonts:** `reference/fonts/Yonsei{Light,Bold,Body,Logo}.TTF`.
-- **Marp equivalent:** `template.md` — stays in sync with the CSS tokens, but Marp can't do the full component set (no cards, no token chips, no diagram-flow).
-- **Brand assets:** `reference/kor-eng2.png` (Yonsei emblem), `reference/kor-eng2.pdf` (vector).
-- **Build:** `scripts/new-talk.sh <name>` creates a new deck, `scripts/bundle.py <deck.html>` produces the truly-offline `.standalone.html` sibling.
+For pitfalls and lessons learned (italic prose collapse, KaTeX delimiter escape, em-dash orphans, the standalone-bundle bug, etc.), see **`GOTCHAS.md`**.

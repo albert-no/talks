@@ -40,7 +40,7 @@
   <h1>Membership Inference<br>in LLMs</h1>
   <div class="divider"></div>
   <p class="subtitle">From perplexity to InfoRMIA, and the road ahead</p>
-  <p style="font-weight:500;font-size:1.8rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
   <p style="margin-top:6px;">2026</p>
 </div>
 
@@ -173,12 +173,12 @@
       <p style="color:var(--success);">Strong signal.</p>
     </div>
   </div>
-  <p>LLM MIA research focus: <strong>pre-training</strong> (hardest) and <strong>fine-tuning</strong>.</p>
+  <p>Research focus: <strong>pre-training</strong> (hardest) and <strong>fine-tuning</strong>.</p>
 </div>
 
 <!-- SLIDE 153 — Perplexity Baseline -->
 <div class="slide bg-dark">
-  <h2>The Perplexity Baseline</h2>
+  <h2>Perplexity Baseline</h2>
   <div class="divider"></div>
   <p>Simplest LLM MIA: threshold on perplexity (loss).</p>
   <div class="math-block">
@@ -187,8 +187,8 @@
   <p>Attack: $\mathcal{A}(x) = \mathbf{1}[\text{PPL}(x) < \tau]$.</p>
   <p>Low PPL implies member.</p>
   <div class="highlight">
-    <p><strong>Problem:</strong> common text is always low-PPL.</p>
-    <p>Perplexity conflates <strong>memorization</strong> with <strong>fluency</strong>.</p>
+    <p><strong>Problem:</strong> common text always low-PPL.</p>
+    <p>Conflates <strong>memorization</strong> with <strong>fluency</strong>.</p>
   </div>
 </div>
 
@@ -213,14 +213,14 @@
     </div>
   </div>
   <div class="highlight">
-    <p><strong>Core challenge:</strong> separate intrinsic difficulty from memorization.</p>
+    <p><strong>Core challenge:</strong> intrinsic difficulty vs. memorization.</p>
     <p>The <strong>calibration problem</strong>.</p>
   </div>
 </div>
 
 <!-- SLIDE 155 — Calibration Challenge -->
 <div class="slide bg-dark">
-  <h2>Calibration: The Key Challenge</h2>
+  <h2>Calibration Challenge</h2>
   <div class="divider"></div>
   <p>Modern LLM MIA: all <strong>calibration strategies</strong>.</p>
   <table>
@@ -231,7 +231,7 @@
     <tr><td>Context-aware (Chang)</td><td>Variance across contexts</td></tr>
     <tr><td>Token-level (InfoRMIA)</td><td>Informative tokens only</td></tr>
   </table>
-  <p>Each asks: <strong>low PPL from memorization or simplicity?</strong></p>
+  <p>Each: <strong>low PPL from memorization or simplicity?</strong></p>
 </div>
 
 
@@ -247,12 +247,12 @@
   <div class="pill">Mattern et al. 2023</div>
   <h2>Neighbourhood MIA</h2>
   <div class="divider"></div>
-  <p>Compare target vs. synthetic <strong>neighbours</strong> (paraphrases).</p>
+  <p>Target vs. synthetic <strong>neighbours</strong> (paraphrases).</p>
   <div class="highlight" style="padding:20px 24px;">
     <p><strong>Memorized</strong>: PPL(original) $\ll$ PPL(neighbours).</p>
     <p><strong>Easy</strong>: PPL(original) $\approx$ PPL(neighbours).</p>
   </div>
-  <p>Gap <strong>isolates the memorization signal</strong>.</p>
+  <p>Gap <strong>isolates memorization signal</strong>.</p>
 </div>
 
 <!-- SLIDE 157 — Generating Neighbours -->
@@ -260,7 +260,7 @@
   <div class="pill">Mattern et al. 2023</div>
   <h2>Generating Neighbours</h2>
   <div class="divider"></div>
-  <p>Use another LM for <strong>paraphrases</strong> via mask-and-fill.</p>
+  <p>Another LM generates <strong>paraphrases</strong> via mask-and-fill.</p>
   <div class="card" style="padding:20px 24px;">
     <ul class="num">
       <li>Take target text $x$</li>
@@ -269,7 +269,7 @@
       <li>Result: $\tilde{x}^{(k)} = \text{fill}(\text{mask}(x))$</li>
     </ul>
   </div>
-  <p>Preserve <strong>meaning and structure</strong>, change specific words: counterfactual versions.</p>
+  <p>Meaning and structure preserved; surface words vary.</p>
 </div>
 
 <!-- SLIDE 158 — Neighbourhood Score -->
@@ -333,12 +333,11 @@
   <div class="pill">Fu et al. 2023</div>
   <h2>SPV-MIA: Self-Prompt Calibration</h2>
   <div class="divider"></div>
-  <p><strong>Target LLM</strong> generates its own calibration data.</p>
-  <p>No external models.</p>
+  <p><strong>Target LLM</strong> generates its own calibration data. No external models.</p>
   <div class="highlight" style="padding:20px 24px;">
-    <p><strong>Key insight:</strong> if fine-tuned on $x$, prompting "generate like $x$" produces output close to $x$.</p>
+    <p><strong>Key insight:</strong> fine-tuned on $x$ → self-prompt output stays close to $x$.</p>
   </div>
-  <p>Non-members: self-generated text <strong>less similar</strong> to target.</p>
+  <p>Non-members: self-generated output <strong>less similar</strong>.</p>
 </div>
 
 <!-- SLIDE 161 — SPV-MIA Strategies -->
@@ -366,7 +365,7 @@
   <div class="math-block">
     $$\text{Score}(x) = \frac{p_\theta(x)}{p_\theta(\text{self-prompt}(x))}$$
   </div>
-  <p>Self-prompt: personalized reference, no external model.</p>
+  <p>Self-prompt: personalized reference, no external model needed.</p>
 </div>
 
 <!-- SLIDE 162 — SPV-MIA Results -->
@@ -399,8 +398,8 @@
   </div>
   <ul class="arrow">
     <li>"To be or not to be" in Hamlet context: memorized</li>
-    <li>Same phrase in random blog: not memorized</li>
-    <li>Prior MIA ignores context, treats text as isolated</li>
+    <li>Same phrase in random blog: not</li>
+    <li>Prior MIA: text treated in isolation</li>
   </ul>
 </div>
 
@@ -423,7 +422,7 @@
       <p>Loss similar across contexts. <strong>Low variance.</strong></p>
     </div>
   </div>
-  <p>Context sources: document start, topic prompts, random contexts as baseline.</p>
+  <p>Context sources: document start, topic prompts, random baseline.</p>
 </div>
 
 <!-- SLIDE 165 — Context-Aware Results -->
@@ -438,7 +437,7 @@
   </ul>
   <div class="highlight" style="padding:20px 24px;">
     <p><strong>Key implication:</strong> memorization is <strong>text-in-context</strong>, not text alone.</p>
-    <p>Major consequences for deletion and unlearning.</p>
+    <p>Consequences for deletion and unlearning.</p>
   </div>
 </div>
 
@@ -455,11 +454,11 @@
   <div class="pill">Tao &amp; Shokri 2025</div>
   <h2>Token-Level InfoRMIA</h2>
   <div class="divider"></div>
-  <p>Key idea: <strong>not all tokens equally informative</strong> for MIA.</p>
+  <p><strong>Not all tokens equally informative</strong> for MIA.</p>
   <ul class="arrow">
     <li>Common words ("the", "is", "and"): predictable regardless</li>
-    <li>Named entities, numbers, rare phrases: predictable only if <strong>memorized</strong></li>
-    <li>Focus on informative tokens: stronger signal</li>
+    <li>Named entities, numbers, rare phrases: signal only if <strong>memorized</strong></li>
+    <li>Informative tokens: stronger MIA signal</li>
   </ul>
   <div class="cite">Tao &amp; Shokri, "Stronger Membership Inference and Memorization Assessment for LLMs", 2025.</div>
 </div>
@@ -491,7 +490,7 @@
   <h2>InfoRMIA: Formulation</h2>
   <div class="divider"></div>
   <div class="math-block">
-    $$s(x) = \sum_{t \in \mathcal{T}_{\text{info}}} w_t \cdot \left(\log p_\theta(x_t \mid x_{&lt;t}) - \log p_{\text{ref}}(x_t \mid x_{&lt;t})\right)$$
+    $$s(x) = \sum_{t \in \mathcal{T}_{\text{info}}} w_t\,\log\frac{p_\theta(x_t \mid x_{&lt;t})}{p_{\text{ref}}(x_t \mid x_{&lt;t})}$$
   </div>
   <ul class="arrow">
     <li>$\mathcal{T}_{\text{info}}$: <strong>informative tokens</strong> (high reference surprise)</li>
@@ -527,7 +526,7 @@
 <!-- SLIDE 170 — Token Visualization -->
 <div class="slide bg-deep">
   <div class="pill">Tao &amp; Shokri 2025</div>
-  <h2>Token Visualization: What Gets Memorized?</h2>
+  <h2>Token Visualization</h2>
   <div class="divider"></div>
   <p>Tokens colored by <strong>informativeness for MIA</strong>:</p>
   <div class="card" style="padding:20px 24px; line-height:2.2;">
@@ -559,16 +558,23 @@
   <div class="pill">Tao &amp; Shokri 2025</div>
   <h2>Information-Theoretic Foundation</h2>
   <div class="divider"></div>
-  <p>Connection: <strong>mutual information</strong>.</p>
+  <p>Connection to <strong>mutual information</strong>.</p>
   <div class="math-block">
     $$I(z \in D \;;\; x_t \mid x_{&lt;t})$$
   </div>
   <p>MI between membership and token prediction at position $t$.</p>
   <ul class="arrow">
     <li>High-MI tokens contribute most</li>
-    <li>Weighted sum over informative tokens maximizes total MI</li>
+    <li>Weighted sum maximizes total MI</li>
     <li>Formal bound on attack power from token-level MI</li>
   </ul>
+</div>
+
+<!-- SLIDE 171b — InfoRMIA Info Theory (continued) -->
+<div class="slide bg-dark">
+  <div class="pill">Tao &amp; Shokri 2025</div>
+  <h2>Information-Theoretic Foundation (cont.)</h2>
+  <div class="divider"></div>
   <div class="highlight">
     <p>InfoRMIA: token-level analogue of likelihood ratio.</p>
     <p>Locates <strong>where</strong> the signal lives.</p>
@@ -578,7 +584,7 @@
 <!-- SLIDE 172 — InfoRMIA Results -->
 <div class="slide bg-deep">
   <div class="pill">Tao &amp; Shokri 2025</div>
-  <h2>InfoRMIA: State-of-the-Art Results</h2>
+  <h2>InfoRMIA: SOTA Results</h2>
   <div class="divider"></div>
   <table>
     <tr><th>Method</th><th>AUC (WikiMIA)</th><th>TPR@1% FPR</th></tr>
@@ -587,10 +593,18 @@
     <tr><td>RMIA (adapted)</td><td>~0.68</td><td>~7%</td></tr>
     <tr><td><strong>InfoRMIA</strong></td><td><strong>~0.74</strong></td><td><strong>~12%</strong></td></tr>
   </table>
+  <p>Token-level analysis enables <strong>targeted unlearning</strong>.</p>
+</div>
+
+<!-- SLIDE 172b — InfoRMIA Results: Takeaway -->
+<div class="slide bg-deep">
+  <div class="pill">Tao &amp; Shokri 2025</div>
+  <h2>InfoRMIA: Takeaway</h2>
+  <div class="divider"></div>
   <div class="highlight">
     <p>InfoRMIA: <strong>SOTA</strong> on pre-training, the hardest LLM MIA setting.</p>
+    <p>Token weighting isolates memorization signal.</p>
   </div>
-  <p>Token-level analysis enables <strong>targeted unlearning</strong>: which tokens to forget.</p>
 </div>
 
 
@@ -606,35 +620,33 @@
   <div class="pill">2510.05582 — 2025</div>
   <h2>Latest Advances (2025)</h2>
   <div class="divider"></div>
-  <p>Recent work pushes the frontier:</p>
   <ul class="arrow">
     <li><strong>Refined token-level analysis</strong>: better informative-token selection</li>
     <li><strong>Multi-signal fusion</strong>: PPL + neighbourhood + context + token-level</li>
     <li><strong>Scaling analysis</strong>: vulnerability vs. model size</li>
     <li><strong>Benchmark improvements</strong>: rigorous evaluation protocols</li>
   </ul>
-  <p>Rapid development: new methods every few months.</p>
+  <p>New methods every few months.</p>
 </div>
 
 <!-- SLIDE 174 — Calibration Zoo -->
 <div class="slide bg-deep">
-  <h2>The Calibration Zoo</h2>
+  <h2>Calibration Zoo</h2>
   <div class="divider"></div>
   <table>
-    <tr><th>Method</th><th>Calibration</th><th>Cost</th><th>Best For</th></tr>
-    <tr><td>Raw perplexity</td><td>Global threshold</td><td>1 pass</td><td>Baseline</td></tr>
-    <tr><td>Reference model</td><td>Smaller LM</td><td>2 passes</td><td>General</td></tr>
-    <tr><td>Neighbourhood</td><td>Paraphrases</td><td>$K$ gen.</td><td>Pre-training</td></tr>
-    <tr><td>SPV-MIA</td><td>Self-generated text</td><td>$K$ gen.</td><td>Fine-tuning</td></tr>
-    <tr><td>Context-Aware</td><td>Context variance</td><td>$C$ passes</td><td>Long docs</td></tr>
-    <tr><td>InfoRMIA</td><td>Token weighting</td><td>2 passes</td><td>Pre-train (SOTA)</td></tr>
+    <tr><th>Method</th><th>Calibration</th><th>Best For</th></tr>
+    <tr><td>Raw perplexity</td><td>Global threshold</td><td>Baseline</td></tr>
+    <tr><td>Reference model</td><td>Smaller LM</td><td>General</td></tr>
+    <tr><td>Neighbourhood</td><td>Paraphrases</td><td>Pre-training</td></tr>
+    <tr><td>SPV-MIA</td><td>Self-generated text</td><td>Fine-tuning</td></tr>
+    <tr><td>Context-Aware</td><td>Context variance</td><td>Long docs</td></tr>
   </table>
-  <p>Each: <strong>cost</strong> vs. <strong>calibration quality</strong>.</p>
+  <p>InfoRMIA (token weighting, SOTA pre-training) in notes. Each: cost vs. calibration quality.</p>
 </div>
 
 <!-- SLIDE 175 — Fine-tuning vs Pre-training -->
 <div class="slide bg-dark">
-  <h2>Fine-Tuning vs. Pre-Training Detection</h2>
+  <h2>Fine-Tuning vs. Pre-Training</h2>
   <div class="divider"></div>
   <div class="grid-2">
     <div>
@@ -650,8 +662,7 @@
       <p><strong>AUC:</strong> 0.55 to 0.75</p>
     </div>
   </div>
-  <p>Pre-training detection: <strong>open challenge</strong>.</p>
-  <p>Best ~70 to 75% AUC.</p>
+  <p>Pre-training detection: <strong>open challenge</strong>. Best ~70 to 75% AUC.</p>
 </div>
 
 <!-- SLIDE 176 — Benchmarks -->
@@ -661,26 +672,25 @@
   <div class="grid-2">
     <div>
       <h3>WikiMIA</h3>
-      <p>Temporal split: Wikipedia before vs. after cutoff.</p>
+      <p>Temporal split: before vs. after cutoff.</p>
       <p>Clean ground truth, Wikipedia only.</p>
     </div>
     <div>
       <h3>MIMIR</h3>
-      <p>Multi-domain: Wikipedia, books, news, code, papers.</p>
-      <p>More diverse, harder ground truth.</p>
+      <p>Multi-domain: Wikipedia, books, news, code.</p>
+      <p>More diverse; harder ground truth.</p>
     </div>
   </div>
-  <p>Benchmarks enable fair comparison, but <strong>ground truth always approximate</strong>: full training data unknown.</p>
+  <p><strong>Ground truth always approximate</strong>: full training data unknown.</p>
 </div>
 
 <!-- SLIDE 177 — Scale Effects -->
 <div class="slide bg-dark">
-  <h2>Scale Effects on MIA Vulnerability</h2>
+  <h2>Scale and Vulnerability</h2>
   <div class="divider"></div>
-  <p>Model size vs. MIA vulnerability?</p>
   <ul class="arrow">
     <li><strong>Larger generalize better</strong>: smaller gap, less MIA (Yeom)</li>
-    <li><strong>But larger memorize more</strong>: more extractable (Carlini)</li>
+    <li><strong>Larger memorize more</strong>: more extractable (Carlini)</li>
     <li><strong>Net:</strong> lower average, higher worst-case vulnerability</li>
   </ul>
   <div class="highlight">
@@ -698,20 +708,20 @@
 </div>
 <!-- SLIDE 178 — MIA to Extraction -->
 <div class="slide bg-deep">
-  <h2>From MIA to Training Data Extraction</h2>
+  <h2>MIA to Extraction</h2>
   <div class="divider"></div>
   <p>MIA: <strong>precursor</strong> to data extraction.</p>
   <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box">MIA:<br>Is $x$ a member?</div>
+    <div class="diagram-box">MIA: $x$ a member?</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box">Extraction:<br>Generate $x$ from model</div>
+    <div class="diagram-box">Extraction: generate $x$</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box filled">Verify:<br>Is generated $x$<br>from training?</div>
+    <div class="diagram-box filled">Verify: $x$ from training?</div>
   </div>
   <ul class="arrow">
     <li><strong>Carlini et al. (2021):</strong> 600+ verbatim GPT-2 sequences extracted</li>
-    <li>MIA as <strong>verification</strong>: was generated text in training?</li>
-    <li>Attack chain: generate candidates, rank by MIA, extract top</li>
+    <li>MIA as <strong>verification</strong> of generated text</li>
+    <li>Chain: generate candidates, rank by MIA, extract top</li>
   </ul>
 </div>
 
@@ -731,13 +741,12 @@
       <p style="color:var(--accent);">Weaker (MIA), broadly applicable.</p>
     </div>
   </div>
-  <p>Inferable is a <strong>superset</strong> of extractable.</p>
-  <p>Not vice versa.</p>
+  <p>Inferable is a <strong>superset</strong> of extractable (not vice versa).</p>
 </div>
 
 <!-- SLIDE 180 — LLM MIA Pseudocode: Perplexity + Neighbourhood -->
 <div class="slide bg-deep">
-  <h2>Practical LLM MIA: Perplexity and Neighbourhood</h2>
+  <h2>LLM MIA: Perplexity + Neighbourhood</h2>
   <div class="divider"></div>
   <div class="code-block"><span class="cm">// Perplexity Baseline</span>
 <span class="kw">def</span> <span class="fn">ppl_attack</span>(model, text, τ):
@@ -749,12 +758,12 @@
     neighbours ← [<span class="fn">mask_and_fill</span>(ref_model, text) <span class="kw">for</span> _ in <span class="fn">range</span>(K)]
     score ← <span class="fn">log_prob</span>(model, text) - <span class="fn">mean</span>([<span class="fn">log_prob</span>(model, n) <span class="kw">for</span> n in neighbours])
     <span class="kw">return</span> score</div>
-  <p>Baseline vs. shadow-free calibration: a single threshold, then a local neighbourhood.</p>
+  <p>Baseline: single threshold. Neighbourhood: local paraphrase calibration.</p>
 </div>
 
 <!-- SLIDE 180b — LLM MIA Pseudocode: Token-Level InfoRMIA -->
 <div class="slide bg-deep">
-  <h2>Practical LLM MIA: Token-Level InfoRMIA</h2>
+  <h2>LLM MIA: Token-Level InfoRMIA</h2>
   <div class="divider"></div>
   <div class="code-block"><span class="cm">// Token-Level InfoRMIA</span>
 <span class="kw">def</span> <span class="fn">infomia_attack</span>(target, ref, text):
@@ -782,7 +791,7 @@
 <div class="slide bg-dark">
   <h2>LLM Defenses: DP Fine-Tuning</h2>
   <div class="divider"></div>
-  <p>DP-SGD during fine-tuning to limit memorization.</p>
+  <p>DP-SGD during fine-tuning limits memorization.</p>
   <ul class="arrow">
     <li><strong>DP-SGD fine-tuning</strong>: practical (small dataset, few steps)</li>
     <li>Per-example gradient clipping + noise</li>
@@ -791,7 +800,7 @@
   </ul>
   <div class="highlight">
     <p>DP for <strong>pre-training</strong> at LLM scale: open challenge.</p>
-    <p>Tradeoff too severe at trillion-token scale.</p>
+    <p>Tradeoff too severe at trillion-token scale</p>
   </div>
 </div>
 
@@ -799,7 +808,7 @@
 <div class="slide bg-deep">
   <h2>Deduplication &amp; Data Curation</h2>
   <div class="divider"></div>
-  <p>Reduce memorization via <strong>training data quality</strong>.</p>
+  <p>Reduced memorization via <strong>training data quality</strong>.</p>
   <div class="grid-2">
     <div class="card">
       <h3>Deduplication</h3>
@@ -818,7 +827,7 @@
 <div class="slide bg-dark">
   <h2>Machine Unlearning for LLMs</h2>
   <div class="divider"></div>
-  <p>Remove a data point's influence <strong>without full retraining</strong>.</p>
+  <p>Data point's influence removed <strong>without full retraining</strong>.</p>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box">Trained Model</div>
     <span class="diagram-arrow">→</span>
@@ -830,8 +839,8 @@
   </div>
   <ul class="arrow">
     <li>MIA as <strong>verification</strong>: did unlearning work?</li>
-    <li>Current methods often <strong>fail MIA tests</strong>: "forgotten" data still detectable</li>
-    <li>InfoRMIA token-level: <strong>targeted unlearning</strong> (which tokens)</li>
+    <li>Current methods often <strong>fail MIA tests</strong>: "forgotten" data remains detectable</li>
+    <li>InfoRMIA: token-level <strong>targeted unlearning</strong></li>
   </ul>
 </div>
 
@@ -856,7 +865,7 @@
 
 <!-- SLIDE 185 — MIA for Data Governance -->
 <div class="slide bg-dark">
-  <h2>MIA as a Tool for Data Governance</h2>
+  <h2>MIA for Data Governance</h2>
   <div class="divider"></div>
   <ul class="num">
     <li><strong>Opt-out verification:</strong> was my removal honored?</li>
@@ -866,13 +875,13 @@
   </ul>
   <div class="highlight">
     <p>MIA bridges <strong>legal</strong> and <strong>technical verification</strong>.</p>
-    <p>The closest practical test for "did you use my data?"</p>
+    <p>Closest practical test: "did you use my data?"</p>
   </div>
 </div>
 
 <!-- SLIDE 186 — Section 6 Summary -->
 <div class="slide bg-deep">
-  <h2>Section Summary: LLM MIA</h2>
+  <h2>LLM MIA: Summary</h2>
   <div class="divider"></div>
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
@@ -897,7 +906,7 @@
   </div>
   <div class="highlight">
     <p>Core challenge: <strong>calibration</strong>.</p>
-    <p>Each method offers a different strategy.</p>
+    <p>Each method: a different strategy.</p>
   </div>
 </div>
 
@@ -918,29 +927,29 @@
   <h2>Full Timeline: 2008 to 2025</h2>
   <div class="divider"></div>
   <div class="diagram-flow" style="justify-content:center; gap:6px;">
-    <div class="diagram-box" style="min-width:78px;">2008<br>Homer</div>
+    <div class="diagram-box" style="min-width:90px;">2008 Homer</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px;">2017<br>Shokri</div>
+    <div class="diagram-box" style="min-width:90px;">2017 Shokri</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px;">2018<br>Yeom</div>
+    <div class="diagram-box" style="min-width:90px;">2018 Yeom</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px;">2019<br>Salem</div>
+    <div class="diagram-box" style="min-width:90px;">2019 Salem</div>
   </div>
   <div class="diagram-flow" style="justify-content:center; gap:6px;">
-    <div class="diagram-box" style="min-width:78px;">2020<br>Label-Only</div>
+    <div class="diagram-box" style="min-width:90px;">2020 Label-Only</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px;">2022<br>LiRA</div>
+    <div class="diagram-box" style="min-width:90px;">2022 LiRA</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box" style="min-width:78px;">2023<br>RMIA</div>
+    <div class="diagram-box" style="min-width:90px;">2023 RMIA</div>
     <span class="diagram-arrow">→</span>
-    <div class="diagram-box filled" style="min-width:78px;">2025<br>InfoRMIA</div>
+    <div class="diagram-box filled" style="min-width:90px;">2025 InfoRMIA</div>
   </div>
-  <p style="text-align:center;">17 years: genomic attack to token-level LLM inference.</p>
+  <p style="text-align:center;">17 years: genomic attack to token-level inference.</p>
 </div>
 
 <!-- SLIDE 188b — Four Eras -->
 <div class="slide bg-dark">
-  <h2>Four Eras in One Table</h2>
+  <h2>Four Eras</h2>
   <div class="divider"></div>
   <table>
     <tr><th>Era</th><th>Focus</th><th>Key Advance</th></tr>
@@ -955,10 +964,17 @@
 <div class="slide bg-deep">
   <h2>Unified Framework</h2>
   <div class="divider"></div>
-  <p>Every MIA, a special case:</p>
+  <p>Every MIA: a special case of the likelihood ratio.</p>
   <div class="math-block">
     $$\mathcal{A}(z) = \mathbf{1}\left[\frac{p(\text{signal} \mid z \in D)}{p(\text{signal} \mid z \notin D)} > \tau\right]$$
   </div>
+  <p>Methods differ in: choice of <strong>signal</strong> and <strong>calibration</strong>.</p>
+</div>
+
+<!-- SLIDE 189b — Unified Framework: Instances -->
+<div class="slide bg-deep">
+  <h2>Unified Framework: Instances</h2>
+  <div class="divider"></div>
   <table>
     <tr><th>Method</th><th>Signal</th><th>Calibration</th></tr>
     <tr><td>Homer (2008)</td><td>Allele distance</td><td>Population baseline</td></tr>
@@ -972,7 +988,7 @@
 
 <!-- SLIDE 190 — Key Themes -->
 <div class="slide bg-dark">
-  <h2>Key Themes Across the Decade</h2>
+  <h2>Key Themes</h2>
   <div class="divider"></div>
   <div class="grid-2" style="margin-top:8px;">
     <div class="card">
@@ -1001,13 +1017,13 @@
   <div class="divider"></div>
   <p>Pre-training membership: <strong>hardest open problem</strong>.</p>
   <ul class="arrow">
-    <li>Weak signal: <strong>once</strong> among trillions</li>
-    <li>Best: ~70 to 75% AUC (far from perfect)</li>
-    <li>Unknown training data, approximate ground truth</li>
-    <li>Scaling hasn't clearly improved detection</li>
+    <li>Signal: seen <strong>once</strong> among trillions</li>
+    <li>Best: ~70 to 75% AUC</li>
+    <li>Training data unknown; ground truth approximate</li>
+    <li>Scaling has not clearly improved detection</li>
   </ul>
   <div class="highlight">
-    <p><strong>Needs:</strong> better calibration, multi-signal fusion, verified benchmarks.</p>
+    <p><strong>Needs:</strong> calibration, multi-signal fusion, verified benchmarks.</p>
   </div>
 </div>
 
@@ -1019,7 +1035,7 @@
   <ul class="arrow">
     <li>Image-text pairs: <strong>richer signal</strong> than either alone</li>
     <li>Cross-modal leakage: text membership from image behavior?</li>
-    <li>Web-scale image-text training: massive attack surface</li>
+    <li>Web-scale image-text training: massive surface</li>
     <li>Almost entirely <strong>unexplored</strong></li>
   </ul>
 </div>
@@ -1032,7 +1048,7 @@
   <ul class="arrow">
     <li>SPV-MIA: self-generation, step toward reference-free</li>
     <li>Neighbourhood: auxiliary model for paraphrasing</li>
-    <li>True zero-resource MIA: limited to threshold attacks</li>
+    <li>Zero-resource MIA: threshold attacks only</li>
     <li>Info-theoretic bounds on reference-free power: unknown</li>
   </ul>
 </div>
@@ -1045,7 +1061,7 @@
   <div class="grid-2">
     <div class="card">
       <h3>RAG Systems</h3>
-      <p>Retrieved doc: training set or retrieval corpus? MIA must separate the two.</p>
+      <p>Training set or retrieval corpus? MIA must separate the two.</p>
     </div>
     <div class="card">
       <h3>LLM Agents</h3>
@@ -1053,27 +1069,27 @@
       <p>Membership in what?</p>
     </div>
   </div>
-  <p>Training vs. operational data blurs. New threat models needed.</p>
+  <p>Training vs. operational data blurs; new threat models needed.</p>
 </div>
 
 <!-- SLIDE 195 — Connections -->
 <div class="slide bg-deep">
-  <h2>Connections to Related Problems</h2>
+  <h2>Related Connections</h2>
   <div class="divider"></div>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box filled">MIA</div>
     <span class="diagram-arrow">⟷</span>
-    <div class="diagram-box">Machine<br>Unlearning</div>
+    <div class="diagram-box">Machine Unlearning</div>
   </div>
   <div class="diagram-flow" style="justify-content:center;">
     <div class="diagram-box filled">MIA</div>
     <span class="diagram-arrow">⟷</span>
-    <div class="diagram-box">Data<br>Poisoning</div>
+    <div class="diagram-box">Data Poisoning</div>
   </div>
   <ul>
-    <li><strong>MIA ↔ Unlearning:</strong> MIA verifies unlearning.</li>
-    <li><strong>MIA ↔ Poisoning:</strong> dual problems.</li>
-    <li><strong>MIA ↔ Watermarking:</strong> membership vs. origin.</li>
+    <li><strong>MIA ↔ Unlearning:</strong> MIA verifies unlearning</li>
+    <li><strong>MIA ↔ Poisoning:</strong> dual problems</li>
+    <li><strong>MIA ↔ Watermarking:</strong> membership vs. origin</li>
   </ul>
 </div>
 
@@ -1140,27 +1156,39 @@
   </table>
 </div>
 
-<!-- SLIDE 199a — Key Equations: Theory -->
+<!-- SLIDE 199a — Key Equations: Theory (1/2) -->
 <div class="slide bg-deep">
-  <h2>Key Equations: Theory</h2>
+  <h2>Key Equations: Theory (1)</h2>
   <div class="divider"></div>
-  <p><strong>MI Advantage:</strong></p>
+  <p><strong>MI Advantage</strong></p>
   <div class="math-block">$$\text{Adv} = |\Pr[\mathcal{A}=1|b=1] - \Pr[\mathcal{A}=1|b=0]|$$</div>
-  <p><strong>Yeom Bound:</strong></p>
+  <p><strong>Yeom Bound</strong></p>
   <div class="math-block">$$\text{Adv} \leq R_{\text{pop}} - R_{\text{train}}$$</div>
-  <p><strong>DP → MI:</strong></p>
+</div>
+
+<!-- SLIDE 199a2 — Key Equations: Theory (2/2) -->
+<div class="slide bg-deep">
+  <h2>Key Equations: Theory (2)</h2>
+  <div class="divider"></div>
+  <p><strong>DP → MI Bound</strong></p>
   <div class="math-block">$$\text{Adv} \leq e^\varepsilon - 1 + \delta$$</div>
 </div>
 
-<!-- SLIDE 199b — Key Equations: Attacks -->
+<!-- SLIDE 199b — Key Equations: Attacks (1/2) -->
 <div class="slide bg-deep">
-  <h2>Key Equations: Attacks</h2>
+  <h2>Key Equations: Attacks (1)</h2>
   <div class="divider"></div>
-  <p><strong>LiRA:</strong></p>
+  <p><strong>LiRA</strong></p>
   <div class="math-block">$$\Lambda(z) = \frac{\phi(\ell; \mu_{\text{in}}, \sigma_{\text{in}})}{\phi(\ell; \mu_{\text{out}}, \sigma_{\text{out}})}$$</div>
-  <p><strong>Neighbourhood:</strong></p>
+  <p><strong>Neighbourhood</strong></p>
   <div class="math-block">$$s(x) = \log p_\theta(x) - \frac{1}{K}\sum_k \log p_\theta(\tilde{x}^{(k)})$$</div>
-  <p><strong>InfoRMIA:</strong></p>
+</div>
+
+<!-- SLIDE 199b2 — Key Equations: Attacks (2/2) -->
+<div class="slide bg-deep">
+  <h2>Key Equations: Attacks (2)</h2>
+  <div class="divider"></div>
+  <p><strong>InfoRMIA</strong></p>
   <div class="math-block">$$s(x) = \sum_{t} w_t\bigl(\log p_\theta(x_t|x_{&lt;t}) - \log p_{\text{ref}}(x_t|x_{&lt;t})\bigr)$$</div>
 </div>
 
@@ -1174,7 +1202,7 @@
 </div><!-- end deck -->
 
 <!-- Slide number + progress bar (fixed to viewport) -->
-<div class="slide-num" id="slideNum">1 / 62</div>
+<div class="slide-num" id="slideNum">1 / 68</div>
 <div class="progress-bar" id="progressBar" style="width:0.5%;"></div>
 
 <!-- Navigation -->
