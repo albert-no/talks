@@ -10,9 +10,8 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body data-brand-logo="../reference/kor-eng2.png">
 
 <div class="deck" id="deck">
 
@@ -24,68 +23,82 @@
   <div class="pill pill-fill" style="margin-bottom:28px;">Invited Talk</div>
   <h1>Why Diffusion LLMs<br>Behave Differently,<br>and How to Control Them</h1>
   <div class="divider"></div>
-  <p class="subtitle">Recent progress, inductive biases, and new control surfaces</p>
-  <div class="spacer-lg"></div>
-  <p style="font-weight:400; font-size:1.15rem;">Albert No &nbsp;·&nbsp; Yonsei University</p>
-  <p class="small" style="margin-top:6px;">March 2026</p>
+  <p class="subtitle">Inductive biases, failure modes, new control surfaces</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">March 2026</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 2 — Why Now -->
+<!-- SLIDE 2 — Contents -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <h2>Why Now?</h2>
+<div class="slide">
+  <h2>Contents</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <ul>
-        <li><strong>Autoregressive LLMs</strong> dominate, but left-to-right generation is a fundamental constraint</li>
-        <li><strong>Discrete diffusion</strong> models have gone from toy-scale to <strong>competitive 7B+ systems</strong> in under&nbsp;two&nbsp;years</li>
-        <li>New generation paradigm: <strong>new behaviors, new failure modes, new opportunities</strong></li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p><strong>2024 to 2025:</strong> dLLMs crossed from research curiosity to practical alternative</p>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Recent progress</div>
+        <div class="toc-sub">SEDD, RADD, LLaDA, Dream: theory to 7B+ systems</div>
       </div>
     </div>
-    <div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent2);">Timeline</h3>
-        <p class="small"><strong>2023</strong> &nbsp;·&nbsp; MDLM, SEDD (principled training)</p>
-        <p class="small"><strong>2024</strong> &nbsp;·&nbsp; RADD (connection to AR)</p>
-        <p class="small"><strong>2025 Feb</strong> &nbsp;·&nbsp; LLaDA 8B (first competitive dLLM)</p>
-        <p class="small"><strong>2025</strong> &nbsp;·&nbsp; Dream 7B, LLaDA 2.0 (rapid scaling)</p>
+    <div class="toc-item">
+      <div class="toc-num">02</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Robustness: Rainbow Padding</div>
+        <div class="toc-sub">EOS overflow and the fix (ICLR 2026)</div>
       </div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Why it matters</h3>
-        <p class="small">Any-order generation, parallel decoding, bidirectional context: capabilities AR models cannot offer</p>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Safety: A2D</div>
+        <div class="toc-sub">Token-level alignment for any-order generation (ICLR 2026)</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Attribution: dgMARK</div>
+        <div class="toc-sub">Watermarking via unmasking-order steering</div>
+      </div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div>
+      <div class="toc-rule"></div>
+      <div>
+        <div class="toc-label">Understanding + Decoding</div>
+        <div class="toc-sub">Reversal curse, DAPD parallel decoding</div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 3 — Three Questions -->
+<!-- SLIDE 3 — Why Now -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <h2>Three Questions for This Talk</h2>
+<div class="slide">
+  <h2>From Toy to Competitive</h2>
   <div class="divider"></div>
-  <div class="spacer"></div>
-  <div class="grid-3">
-    <div class="card" style="text-align:center;">
-      <div style="font-size:2.2rem; color:var(--blue-light); margin-bottom:12px;">①</div>
-      <h3>Where do dLLMs stand?</h3>
-      <p class="small">Recent milestones that brought discrete diffusion to LLM scale</p>
+  <div class="grid-2">
+    <div>
+      <h3>The constraint</h3>
+      <p>Autoregressive LLMs: left-to-right generation only.</p>
+      <p><strong>Discrete diffusion:</strong> toy-scale to 7B+ in under two&nbsp;years.</p>
+      <div class="highlight">
+        2024 to 2025: dLLMs crossed from curiosity to practical alternative.
+      </div>
     </div>
-    <div class="card" style="text-align:center;">
-      <div style="font-size:2.2rem; color:var(--blue-light); margin-bottom:12px;">②</div>
-      <h3>Why do they behave differently?</h3>
-      <p class="small">Inductive biases from masked training &amp; any-order generation</p>
-    </div>
-    <div class="card" style="text-align:center;">
-      <div style="font-size:2.2rem; color:var(--blue-light); margin-bottom:12px;">③</div>
-      <h3>How can we control them?</h3>
-      <p class="small">Our lab's contributions: robustness, safety, watermarking, decoding</p>
+    <div>
+      <h3>Timeline</h3>
+      <p><strong>2023</strong>: MDLM, SEDD (principled training)</p>
+      <p><strong>2024</strong>: RADD (connection to AR)</p>
+      <p><strong>Feb 2025</strong>: LLaDA 8B (first competitive dLLM)</p>
+      <p><strong>2025</strong>: Dream 7B, LLaDA 2.0 (rapid scaling)</p>
     </div>
   </div>
 </div>
@@ -93,1523 +106,733 @@
 <!-- ════════════════════════════════════════════════════════ -->
 <!-- SLIDE 4 — What are dLLMs? -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <h2>What Are Discrete Diffusion Language Models?</h2>
+<div class="slide">
+  <h2>Masked Diffusion at a Glance</h2>
   <div class="divider"></div>
-  <div class="cols">
+  <p>Start from a <strong>fully masked</strong> sequence; iteratively <strong>unmask</strong> tokens in any order.</p>
+  <div class="math-block">$$x_T = [\texttt{M}]^N \;\xrightarrow{\text{denoise}}\; x_{T-1} \;\xrightarrow{\text{denoise}}\; \cdots \;\xrightarrow{\text{denoise}}\; x_0$$</div>
+  <div class="grid-2" style="margin-top:8px;">
     <div>
-      <p>Instead of generating left-to-right, dLLMs start from a <strong>fully masked</strong> sequence and iteratively <strong>unmask</strong> tokens in <strong>any order</strong>.</p>
-      <div class="spacer"></div>
-      <div class="math-block">$$x_T = [\texttt{M}]^N \;\xrightarrow{\text{denoise}}\; x_{T-1} \;\xrightarrow{\text{denoise}}\; \cdots \;\xrightarrow{\text{denoise}}\; x_0$$</div>
-      <div class="spacer"></div>
-      <ul>
-        <li><strong>Forward:</strong> progressively mask tokens</li>
-        <li><strong>Reverse:</strong> predict masked tokens from visible context</li>
-      </ul>
+      <p><strong>Forward:</strong> progressively mask tokens.</p>
+      <p><strong>Reverse:</strong> predict masked from visible context.</p>
     </div>
-    <div style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
-      <p class="small" style="margin-bottom:4px; text-align:center;">Denoising trajectory example</p>
-      <div style="text-align:center;">
-        <div style="margin-bottom:8px;">
-          <span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span>
-        </div>
-        <div style="color:var(--gray-text); margin-bottom:4px;">↓</div>
-        <div style="margin-bottom:8px;">
-          <span class="token token-mask">[M]</span><span class="token token-gen">is</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-gen">blue</span>
-        </div>
-        <div style="color:var(--gray-text); margin-bottom:4px;">↓</div>
-        <div style="margin-bottom:8px;">
-          <span class="token token-gen">The</span><span class="token token-fixed">is</span><span class="token token-mask">[M]</span><span class="token token-gen">not</span><span class="token token-fixed">blue</span>
-        </div>
-        <div style="color:var(--gray-text); margin-bottom:4px;">↓</div>
-        <div>
-          <span class="token token-fixed">The</span><span class="token token-fixed">is</span><span class="token token-gen">sky</span><span class="token token-fixed">not</span><span class="token token-fixed">blue</span>
-        </div>
+    <div style="text-align:center;">
+      <div style="margin-bottom:8px;">
+        <span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span>
       </div>
-      <p class="tiny" style="text-align:center; margin-top:8px; white-space:nowrap;">Tokens reveal in any order, not just left-to-right</p>
+      <div style="color:var(--gray-text); margin-bottom:4px;">↓</div>
+      <div style="margin-bottom:8px;">
+        <span class="token token-mask">[M]</span><span class="token token-gen">is</span><span class="token token-mask">[M]</span><span class="token token-mask">[M]</span><span class="token token-gen">blue</span>
+      </div>
+      <div style="color:var(--gray-text); margin-bottom:4px;">↓</div>
+      <div>
+        <span class="token token-fixed">The</span><span class="token token-fixed">is</span><span class="token token-gen">sky</span><span class="token token-fixed">not</span><span class="token token-fixed">blue</span>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 5 — AR vs Diffusion -->
+<!-- SLIDE 5 — AR vs. dLLM -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <style>
-    .ar-diff-table td, .ar-diff-table th { padding: 8px 18px; }
-  </style>
-  <h2>Autoregressive vs. Diffusion LLMs</h2>
+<div class="slide">
+  <h2>AR vs. Diffusion LLMs</h2>
   <div class="divider"></div>
-  <table class="ar-diff-table">
+  <table>
     <thead>
       <tr><th></th><th>Autoregressive LLM</th><th>Diffusion LLM</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>Generation order</strong></td><td>Fixed left-to-right</td><td>Any order (learned or heuristic)</td></tr>
-      <tr><td><strong>Architecture</strong></td><td>Causal (decoder-only)</td><td>Bidirectional (encoder-style)</td></tr>
-      <tr><td><strong>Factorization</strong></td><td>$p(x) = \prod_i p(x_i \mid x_{&lt;i})$</td><td>$p(x) = \int p(x_0 \mid x_t)\, q(x_t)\, dt$</td></tr>
-      <tr><td><strong>Context</strong></td><td>Left context only</td><td>Full bidirectional context</td></tr>
-      <tr><td><strong>Parallelism</strong></td><td>Sequential at inference</td><td>Parallel multi-token decoding</td></tr>
-      <tr><td><strong>Training signal</strong></td><td>Next-token prediction</td><td>Mask prediction at any position</td></tr>
+      <tr><td><strong>Order</strong></td><td>Fixed left-to-right</td><td>Any order</td></tr>
+      <tr><td><strong>Architecture</strong></td><td>Causal decoder</td><td>Bidirectional encoder</td></tr>
+      <tr><td><strong>Context</strong></td><td>Left only</td><td>Full bidirectional</td></tr>
+      <tr><td><strong>Parallelism</strong></td><td>Sequential</td><td>Multi-token per step</td></tr>
+      <tr><td><strong>Training signal</strong></td><td>Next-token prediction</td><td>Mask prediction, any position</td></tr>
       <tr><td><strong>Reversal curse</strong></td><td>Strong failure</td><td>Significantly mitigated</td></tr>
     </tbody>
   </table>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 6 — Why Behavior Changes -->
+<!-- SLIDE 6 — Two Inductive Biases -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <h2>Why Do dLLMs Behave Differently?</h2>
+<div class="slide">
+  <h2>Two Key Inductive Biases</h2>
   <div class="divider"></div>
-  <div class="cols">
+  <div class="grid-2">
     <div>
-      <h3>Architectural inductive biases</h3>
-      <ul>
-        <li><strong>Bidirectional attention:</strong> every token sees every other</li>
-        <li><strong>Shared weights</strong> couple the forward and reverse directions</li>
-        <li>No causal mask, so attention is fully bidirectional</li>
-      </ul>
-      <div class="spacer"></div>
-      <h3>Training dynamics</h3>
-      <ul>
-        <li><strong>Random masking</strong> exposes the model to every ordering</li>
-        <li><strong>Gradient alignment</strong> across forward and reverse directions</li>
-        <li>Learns <strong>order-agnostic</strong> internal representations</li>
-      </ul>
+      <h3>Bidirectional attention</h3>
+      <p>Every token sees every other. No causal mask.</p>
+      <p>Shared weights couple forward and reverse directions.</p>
     </div>
     <div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent);">Consequence 1</h3>
-        <p class="small">Flexible generation opens <strong>new control surfaces:</strong> decoding order, step count, masking strategy</p>
-      </div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent);">Consequence 2</h3>
-        <p class="small">Any-order generation enlarges the <strong>attack surface</strong> for safety</p>
-      </div>
-      <div class="card">
-        <h3 style="color:var(--accent);">Consequence 3</h3>
-        <p class="small"><strong>New failure modes:</strong> EOS overflow, unmasking-order sensitivity, inter-token dependencies</p>
-      </div>
+      <h3>Any-order training</h3>
+      <p>Random masking exposes every ordering.</p>
+      <p>Learns <strong>order-agnostic</strong> representations.</p>
     </div>
+  </div>
+  <div class="highlight">
+    New control surfaces: decoding order, step count, masking strategy. New failure modes: EOS overflow, safety gaps, dependency errors.
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 7 — Field Progress: Section -->
+<!-- SLIDE 7 — Part I: Field Progress -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide section-slide bg-accent">
-  <div class="pill" style="border-color:var(--white-40); color:var(--white-80); margin-bottom:20px;">Part I</div>
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
   <h1>Recent Progress in the Field</h1>
-  <div class="divider" style="background:var(--white-50);"></div>
-  <p class="subtitle" style="color:var(--white-70);">From principled training to competitive LLM-scale systems</p>
+  <div class="divider"></div>
+  <p class="subtitle">From principled training to competitive LLM-scale systems</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
 <!-- SLIDE 8 — SEDD -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <h2>SEDD: Score Entropy Discrete Diffusion</h2>
-  <p class="small" style="margin-bottom:4px;">Lou et al., ICML 2024</p>
+<div class="slide">
+  <h2>SEDD: Score Entropy</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Key idea</h3>
-      <p>Introduced <strong>score entropy:</strong> a new loss function for training discrete diffusion models that directly parameterizes the <strong>concrete score</strong> (ratio of transition probabilities).</p>
-      <div class="spacer"></div>
-      <div class="math-block">$$\mathcal{L}_{\text{SE}} = \mathbb{E}_{t,x_0,x_t}\left[\sum_{y \neq x_t} s_\theta(y \mid x_t, t) - \log s_\theta(x_0 \mid x_t, t)\right]$$</div>
-      <div class="spacer"></div>
-      <h3>Why it matters</h3>
-      <ul>
-        <li>Made discrete diffusion <strong>practically competitive</strong> with AR models at moderate scale</li>
-        <li>Principled connection to continuous diffusion score matching</li>
-        <li>Improved perplexity over prior discrete diffusion methods by large margins</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Contributions</h3>
-        <ul class="check">
-          <li>Novel score-entropy training objective for discrete state spaces</li>
-          <li>Concrete score parameterization avoids intractable normalizing constants</li>
-          <li>First discrete diffusion model competitive on language modeling benchmarks</li>
-          <li>Foundation for subsequent scaling efforts</li>
-        </ul>
-      </div>
-    </div>
-  </div>
+  <p>Novel loss for discrete diffusion: directly parameterizes the <strong>concrete score</strong> (ratio of transition probabilities).</p>
+  <div class="math-block">$$\mathcal{L}_{\text{SE}} = \mathbb{E}_{t,x_0,x_t}\!\left[\sum_{y \neq x_t} s_\theta(y \mid x_t, t) - \log s_\theta(x_0 \mid x_t, t)\right]$$</div>
+  <ul>
+    <li>Principled connection to continuous diffusion score matching</li>
+    <li>First discrete diffusion competitive on language modeling</li>
+    <li>Foundation for all subsequent scaling work</li>
+  </ul>
+  <div class="cite">Lou et al., "Discrete Diffusion Modeling by Estimating the Ratios of the Data Distribution", ICML 2024.</div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
 <!-- SLIDE 9 — RADD -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <h2>RADD: Absorbing Diffusion ↔ Any-Order AR</h2>
-  <p class="small" style="margin-bottom:4px;">Ou et al., 2024</p>
+<div class="slide">
+  <h2>RADD: Absorbing Diffusion = Any-Order AR</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Key insight</h3>
-      <p>Reframed <strong>absorbing-state diffusion</strong> through clean-data conditional distributions and showed an equivalence to <strong>any-order autoregressive</strong> modeling.</p>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p><strong>Bridge result:</strong> optimal absorbing-diffusion denoiser = any-order AR model (same conditional family).</p>
-      </div>
-      <div class="spacer"></div>
-      <h3>Practical impact</h3>
-      <ul>
-        <li>Unifies two seemingly different paradigms</li>
-        <li>Justifies using AR-style training tricks for diffusion</li>
-        <li>Clean theoretical foundation for subsequent work</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent2);">Absorbing diffusion</h3>
-        <p class="small">Forward: tokens → [MASK] (absorbing state)</p>
-        <p class="small">Reverse: [MASK] → tokens (denoising)</p>
-      </div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Connection to AR</h3>
-        <p class="small">Any-order AR: $p(x_{\sigma(i)} \mid x_{\sigma(&lt;i)})$ for permutation $\sigma$</p>
-        <div class="spacer-sm"></div>
-        <p class="small">Absorbing diffusion implicitly marginalizes over all possible orderings: same conditional family, different sampling procedure.</p>
-      </div>
-    </div>
+  <p>Clean-data conditionals reveal that absorbing diffusion and any-order autoregressive modeling share the same conditional family.</p>
+  <div class="highlight">
+    <strong>Bridge result:</strong> optimal absorbing-diffusion denoiser = any-order AR model.
   </div>
+  <ul>
+    <li>Unifies two seemingly different paradigms</li>
+    <li>Justifies AR-style training tricks for diffusion</li>
+    <li>Clean theoretical foundation for subsequent scaling</li>
+  </ul>
+  <div class="cite">Ou et al., "Absorption Diffusion Revisited", 2024.</div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
 <!-- SLIDE 10 — LLaDA -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <h2>LLaDA: Diffusion LLMs at Scale</h2>
-  <p class="small" style="margin-bottom:4px;">Nie et al., 2025</p>
+<div class="slide">
+  <h2>LLaDA: Diffusion at 8B Scale</h2>
   <div class="divider"></div>
-  <div class="cols">
+  <p>First diffusion LLM trained at <strong>8B&nbsp;parameter scale</strong> with competitive general-purpose performance.</p>
+  <ul>
+    <li>Masked diffusion objective, large-scale training data</li>
+    <li>Instruction-tuned variant (LLaDA-8B-Instruct)</li>
+    <li>Competitive with AR models on math, code, QA</li>
+  </ul>
+  <div class="highlight">
+    <strong>Favorable scaling laws:</strong> dLLM quality tracks compute.
+  </div>
+  <div class="cite">Nie et al., "LLaDA: Large Language Diffusion with mAsking", 2025.</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 11 — Dream 7B and LLaDA 2.0 -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>Dream 7B and LLaDA 2.0</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
     <div>
-      <h3>Breakthrough</h3>
-      <p>First demonstration that diffusion language models can be trained at <strong>8B parameter scale</strong> with competitive general-purpose performance.</p>
-      <div class="spacer"></div>
-      <ul>
-        <li>Trained on large-scale text data with masked diffusion objective</li>
-        <li>Instruction-tuned variant (LLaDA-8B-Instruct) for chat/reasoning</li>
-        <li>Competitive with AR models of similar scale on diverse benchmarks</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p>LLaDA showed <strong>favorable scaling laws</strong> for dLLMs: quality tracks compute.</p>
-      </div>
+      <h3>Dream 7B (2025)</h3>
+      <p>Open-weight 7B masked diffusion model.</p>
+      <p>Strong reasoning; compatible with standard fine-tuning.</p>
+      <p>Community adoption accelerated research.</p>
     </div>
     <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Results highlights</h3>
-        <ul class="check">
-          <li>Math reasoning: competitive</li>
-          <li>Code generation: competitive</li>
-          <li>General QA: competitive</li>
-          <li>Instruction following: strong</li>
-        </ul>
-        <div class="spacer-sm"></div>
-        <p class="small" style="color:var(--accent);">First dLLM to match AR at the same scale</p>
-      </div>
+      <h3>LLaDA 2.0 (2025)</h3>
+      <p>Improved training recipes and data curation.</p>
+      <p>Better instruction following and reasoning.</p>
+      <p>Narrowing the gap with frontier AR models.</p>
     </div>
+  </div>
+  <div class="highlight">
+    With LLaDA and Dream, dLLMs became a <strong>viable family</strong>, not a curiosity.
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 11 — Dream 7B -->
+<!-- SLIDE 12 — Field Summary Table -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <h2>Dream 7B</h2>
-  <p class="small" style="margin-bottom:4px;">2025</p>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Scaling continues</h3>
-      <p>Dream 7B pushed diffusion LLMs further with a <strong>7B parameter</strong> masked diffusion model showing strong reasoning and generation capabilities.</p>
-      <div class="spacer"></div>
-      <ul>
-        <li>Architecture optimizations for efficient masked diffusion training</li>
-        <li>Instruction-tuned variant: <strong>Dream-v0-Instruct-7B</strong></li>
-        <li>Demonstrated strong performance on reasoning tasks</li>
-        <li>Open-weight release accelerated community research</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p>With LLaDA, Dream established dLLMs as a <strong>viable family</strong>, not a curiosity.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Key features</h3>
-        <ul class="check">
-          <li>7B parameters, masked diffusion</li>
-          <li>Competitive reasoning benchmarks</li>
-          <li>Open weights for community</li>
-          <li>Compatible with standard fine-tuning</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 12 — Dream-Coder -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <h2>Dream-Coder</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Specialized diffusion for code</h3>
-      <p>Applied the diffusion LLM paradigm to <strong>code generation</strong>, leveraging the natural fit between bidirectional context and structured programming.</p>
-      <div class="spacer"></div>
-      <ul>
-        <li>Code has strong <strong>bidirectional dependencies</strong> (types, imports, function signatures)</li>
-        <li>Diffusion's any-order generation naturally handles fill-in-the-middle tasks</li>
-        <li>Competitive with AR code models on generation benchmarks</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Why diffusion for code?</h3>
-        <p class="small">AR models must generate code left-to-right, but programmers don't write code that way. Diffusion models can:</p>
-        <div class="spacer-sm"></div>
-        <ul class="arrow">
-          <li>Fill in function bodies given signatures</li>
-          <li>Complete imports after writing usage</li>
-          <li>Generate code with full bidirectional context</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 13 — LLaDA 2.0 -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <h2>LLaDA 2.0: Next-Generation Scaling</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Continued evolution</h3>
-      <p>LLaDA 2.0 represents the next iteration of large-scale diffusion language model training, incorporating lessons from the first generation.</p>
-      <div class="spacer"></div>
-      <ul>
-        <li>Improved training recipes and data curation</li>
-        <li>Better instruction-following capabilities</li>
-        <li>Enhanced reasoning performance</li>
-        <li>Narrowing the gap with frontier AR models</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Trajectory</h3>
-        <div class="diagram-flow" style="flex-direction:column; align-items:stretch;">
-          <div class="diagram-box" style="text-align:left;">SEDD (2024): principled training</div>
-          <div style="text-align:center; color:var(--gray-text);">↓</div>
-          <div class="diagram-box" style="text-align:left;">RADD (2024): theoretical bridge</div>
-          <div style="text-align:center; color:var(--gray-text);">↓</div>
-          <div class="diagram-box" style="text-align:left;">LLaDA (2025): 8B scale</div>
-          <div style="text-align:center; color:var(--gray-text);">↓</div>
-          <div class="diagram-box" style="text-align:left;">Dream 7B (2025): community adoption</div>
-          <div style="text-align:center; color:var(--gray-text);">↓</div>
-          <div class="diagram-box filled" style="text-align:left;">LLaDA 2.0 (2025): closing the gap</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 14 — Field Summary -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <h2>Field Progress: Summary</h2>
+<div class="slide">
+  <h2>Field Milestones</h2>
   <div class="divider"></div>
   <table>
     <thead>
-      <tr><th>Milestone</th><th>Key Contribution</th><th>Impact</th></tr>
+      <tr><th>Model</th><th>Key contribution</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>SEDD</strong></td><td>Score-entropy training for discrete diffusion</td><td>Made dLLMs practically trainable</td></tr>
-      <tr><td><strong>RADD</strong></td><td>Absorbing diffusion ↔ any-order AR equivalence</td><td>Theoretical unification</td></tr>
-      <tr><td><strong>LLaDA</strong></td><td>8B-scale diffusion LLM</td><td>Proved scaling feasibility</td></tr>
-      <tr><td><strong>Dream 7B</strong></td><td>Open 7B dLLM with instruction tuning</td><td>Community catalyst</td></tr>
-      <tr><td><strong>Dream-Coder</strong></td><td>Diffusion for code generation</td><td>Domain specialization</td></tr>
-      <tr><td><strong>LLaDA 2.0</strong></td><td>Next-generation scaling</td><td>Closing AR gap</td></tr>
+      <tr><td><strong>SEDD</strong></td><td>Score-entropy training for discrete diffusion</td></tr>
+      <tr><td><strong>RADD</strong></td><td>Absorbing diffusion = any-order AR (theory)</td></tr>
+      <tr><td><strong>LLaDA 8B</strong></td><td>Proved scaling feasibility at 8B</td></tr>
+      <tr><td><strong>Dream 7B</strong></td><td>Open 7B dLLM, community catalyst</td></tr>
+      <tr><td><strong>LLaDA 2.0</strong></td><td>Next-generation training, closing AR gap</td></tr>
     </tbody>
   </table>
-  <div class="spacer"></div>
   <div class="highlight">
-    <p><strong>Bottom line:</strong> in roughly 18 months, dLLMs went from interesting but impractical to competitive general-purpose systems at the 7 to 8B scale. The question is no longer "can they work?" but "what can they uniquely do?"</p>
+    18 months: from interesting-but-impractical to competitive 7–8B systems. Question shifts: not "can they work?" but "what can they uniquely do?"
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 15 — What Milestones Tell Us -->
+<!-- SLIDE 13 — Part II: Our Lab's Work -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <h2>What These Milestones Tell Us</h2>
-  <div class="divider"></div>
-  <div class="grid-3">
-    <div class="card">
-      <h3 style="color:var(--accent);">Training works</h3>
-      <p class="small">Score-entropy and masked diffusion objectives scale predictably. No fundamental training barrier.</p>
-    </div>
-    <div class="card">
-      <h3 style="color:var(--accent);">Theory connects</h3>
-      <p class="small">Absorbing diffusion = any-order AR. We can borrow insights across paradigms.</p>
-    </div>
-    <div class="card">
-      <h3 style="color:var(--accent);">Unique capabilities</h3>
-      <p class="small">Bidirectional context, parallel decoding, fill-in-the-middle: things AR can't natively do.</p>
-    </div>
-  </div>
-  <div class="spacer-lg"></div>
-  <h3>But new capabilities bring new challenges:</h3>
-  <div class="spacer-sm"></div>
-  <div class="grid-3">
-    <div class="card" style="border-color:var(--warn);">
-      <p class="small"><strong style="color:var(--warn);">Robustness:</strong> EOS overflow, length sensitivity</p>
-    </div>
-    <div class="card" style="border-color:var(--warn);">
-      <p class="small"><strong style="color:var(--warn);">Safety:</strong> enlarged attack surface from any-order generation</p>
-    </div>
-    <div class="card" style="border-color:var(--warn);">
-      <p class="small"><strong style="color:var(--warn);">Decoding:</strong> inter-token dependencies in parallel generation</p>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 16 — Transition -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide section-slide bg-accent">
-  <div class="pill" style="border-color:var(--white-40); color:var(--white-80); margin-bottom:20px;">Part II</div>
+<div class="slide section-slide left">
+  <div class="section-num">02–05</div>
   <h1>Our Lab's Work:<br>Understanding &amp; Controlling dLLMs</h1>
-  <div class="divider" style="background:var(--white-50);"></div>
-  <p class="subtitle" style="color:var(--white-70);">Robustness · Safety · Attribution · Inductive Biases · Decoding</p>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 17 — Control Surfaces -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <h2>Five Control Surfaces for dLLMs</h2>
   <div class="divider"></div>
-  <p class="subtitle">Our recent work spans five complementary research directions</p>
-  <div class="spacer"></div>
-  <div class="diagram-flow" style="justify-content:center;">
-    <div class="diagram-box filled">Robustness<br><span class="tiny" style="color:var(--white-70);">Rainbow Padding</span></div>
-    <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Safety<br><span class="tiny" style="color:var(--white-70);">A2D</span></div>
-    <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Attribution<br><span class="tiny" style="color:var(--white-70);">dgMARK</span></div>
-    <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Understanding<br><span class="tiny" style="color:var(--white-70);">Reversal Curse</span></div>
-    <div class="diagram-arrow">→</div>
-    <div class="diagram-box filled">Decoding<br><span class="tiny" style="color:var(--white-70);">DAPD</span></div>
-  </div>
-  <div class="spacer-lg"></div>
-  <div class="grid-3" style="grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap:12px;">
-    <div class="card" style="padding:14px 16px; text-align:center;">
-      <p class="tiny" style="color:var(--accent);">ICLR 2026</p>
-      <p class="small"><strong>Rainbow Padding</strong></p>
-    </div>
-    <div class="card" style="padding:14px 16px; text-align:center;">
-      <p class="tiny" style="color:var(--accent);">ICLR 2026</p>
-      <p class="small"><strong>A2D</strong></p>
-    </div>
-    <div class="card" style="padding:14px 16px; text-align:center;">
-      <p class="tiny" style="color:var(--accent);">2025</p>
-      <p class="small"><strong>dgMARK</strong></p>
-    </div>
-    <div class="card" style="padding:14px 16px; text-align:center;">
-      <p class="tiny" style="color:var(--accent);">2025</p>
-      <p class="small"><strong>Reversal Curse</strong></p>
-    </div>
-    <div class="card" style="padding:14px 16px; text-align:center;">
-      <p class="tiny" style="color:var(--accent);">2025</p>
-      <p class="small"><strong>DAPD</strong></p>
-    </div>
-  </div>
+  <p class="subtitle">Robustness · Safety · Attribution · Inductive Biases · Decoding</p>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 18 — Rainbow Padding: Problem -->
+<!-- SLIDE 14 — Five Control Surfaces -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
+<div class="slide">
+  <h2>Five Control Surfaces</h2>
+  <div class="divider"></div>
+  <table>
+    <thead>
+      <tr><th>Surface</th><th>Paper</th><th>Venue</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Robustness</strong></td><td>Rainbow Padding</td><td>ICLR 2026</td></tr>
+      <tr><td><strong>Safety</strong></td><td>A2D</td><td>ICLR 2026</td></tr>
+      <tr><td><strong>Attribution</strong></td><td>dgMARK</td><td>arXiv 2025</td></tr>
+      <tr><td><strong>Understanding</strong></td><td>Reversal Curse</td><td>arXiv 2025</td></tr>
+      <tr><td><strong>Decoding</strong></td><td>DAPD</td><td>arXiv 2025</td></tr>
+    </tbody>
+  </table>
+  <p>Common thread: all exploit <strong>unique properties of the diffusion paradigm</strong> to solve problems that don't arise the same way in AR models.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 15 — Rainbow Padding: Problem -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
   <div class="pill" style="margin-bottom:12px;">Rainbow Padding</div>
   <h2>The EOS Overflow Problem</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Problem</h3>
-      <p>Instruction-tuned dLLMs exhibit a critical failure: as allocated sequence length increases, responses <strong>paradoxically become shorter</strong>.</p>
-      <div class="spacer"></div>
-      <ul>
-        <li>Responses collapse into streams of <span class="token token-eos">&lt;eos&gt;</span> tokens</li>
-        <li>Early termination degrades output quality</li>
-        <li>Severity increases with generation budget</li>
-        <li>Affects math, code, and general tasks</li>
-      </ul>
-      <div class="spacer"></div>
-      <p class="small" style="color:var(--warn);"><strong>Counterintuitive:</strong> giving the model more space to generate actually hurts performance</p>
-    </div>
-    <div>
-      <div class="card">
-        <h3>Expected</h3>
-        <div style="margin:8px 0;">
-          <span class="token token-gen">The</span><span class="token token-gen">answer</span><span class="token token-gen">is</span><span class="token token-gen">42</span><span class="token token-gen">because</span><span class="token token-gen">...</span><span class="token token-eos">eos</span><span class="token token-mask">pad</span><span class="token token-mask">pad</span>
-        </div>
+  <p>Instruction-tuned dLLMs: as allocated sequence length grows, responses <strong>paradoxically shorten</strong>.</p>
+  <ul>
+    <li>Responses collapse into streams of <span class="token token-eos">&lt;eos&gt;</span> tokens</li>
+    <li>Severity increases with generation budget</li>
+    <li>Affects math, code, and general tasks</li>
+  </ul>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card">
+      <h3>Expected</h3>
+      <div style="margin:8px 0;">
+        <span class="token token-gen">The</span><span class="token token-gen">answer</span><span class="token token-gen">is</span><span class="token token-gen">42</span><span class="token token-eos">eos</span><span class="token token-mask">pad</span><span class="token token-mask">pad</span>
       </div>
-      <div class="spacer"></div>
-      <div class="card" style="border-color:var(--warn);">
-        <h3 style="color:var(--warn);">Actual (EOS overflow)</h3>
-        <div style="margin:8px 0;">
-          <span class="token token-gen">The</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span>
-        </div>
-        <p class="tiny" style="margin-top:8px;">Longer allocation → more EOS domination</p>
+    </div>
+    <div class="card" style="border-color:var(--warn);">
+      <h3 style="color:var(--warn);">EOS overflow</h3>
+      <div style="margin:8px 0;">
+        <span class="token token-gen">The</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span>
       </div>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 19 — Rainbow Padding: Root Cause -->
+<!-- SLIDE 16 — Root Cause: Dual Role of EOS -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
+<div class="slide">
   <div class="pill" style="margin-bottom:12px;">Rainbow Padding</div>
   <h2>Root Cause: Dual Role of &lt;eos&gt;</h2>
   <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>The design flaw</h3>
-      <p>Standard instruction-tuning pads variable-length sequences with <span class="token token-eos">&lt;eos&gt;</span>, giving it a <strong>dual role</strong>:</p>
-      <div class="spacer-sm"></div>
-      <ul class="num">
-        <li><strong>Termination signal:</strong> marks end of response</li>
-        <li><strong>Padding token:</strong> fills remaining positions</li>
-      </ul>
-      <div class="spacer"></div>
-      <h3>The cascade</h3>
-      <ul class="arrow">
-        <li>EOS dominates later positions in training data</li>
-        <li>Model learns strong positional bias toward EOS</li>
-        <li>Confidence-based decoding selects EOS early</li>
-        <li>EOS propagates backward through denoising steps</li>
-        <li>Response collapses</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Training data view</h3>
-        <p class="tiny" style="margin-bottom:8px;">Every training example:</p>
-        <div style="margin-bottom:12px;">
-          <span class="token token-fixed">prompt</span>
-          <span class="token token-gen">response tokens</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-        </div>
-        <p class="tiny">→ EOS appears at high frequency in later positions</p>
-        <p class="tiny">→ Model conflates "end of text" with "this position"</p>
-      </div>
-      <div class="spacer"></div>
-      <div class="math-block">
-        $$p(\texttt{eos} \mid \text{position } i) \uparrow \;\text{as}\; i \to N$$
-      </div>
-      <p class="tiny" style="text-align:center;">Positional bias in EOS probability causes premature termination</p>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 20 — Rainbow Padding: Solution -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">Rainbow Padding</div>
-  <h2>Solution: Rainbow Padding</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Core idea</h3>
-      <p>Replace repeated <span class="token token-eos">&lt;eos&gt;</span> padding with a <strong>cycling sequence of distinct pad tokens</strong>, reserving a single &lt;eos&gt; to mark the true end.</p>
-      <div class="spacer"></div>
-      <div class="card">
-        <h3>Before (standard padding)</h3>
-        <div style="margin:8px 0;">
-          <span class="token token-gen">response</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-eos">eos</span>
-        </div>
-      </div>
-      <div class="spacer-sm"></div>
-      <div class="card" style="border-color:var(--success);">
-        <h3 style="color:var(--success);">After (Rainbow Padding)</h3>
-        <div style="margin:8px 0;">
-          <span class="token token-gen">response</span>
-          <span class="token token-eos">eos</span>
-          <span class="token token-pad">pad₁</span>
-          <span class="token token-pad2">pad₂</span>
-          <span class="token token-pad3">pad₃</span>
-          <span class="token token-pad">pad₁</span>
-          <span class="token token-pad2">pad₂</span>
-        </div>
-      </div>
-    </div>
-    <div>
-      <h3>Why it works</h3>
-      <ul class="check">
-        <li><strong>Decouples</strong> termination from padding</li>
-        <li><strong>Distributes</strong> probability mass across distinct tokens</li>
-        <li>No single pad token dominates any position</li>
-        <li>Breaks the EOS feedback loop</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p>As few as <strong>7 distinct pad tokens</strong> resolve the issue</p>
-      </div>
-      <div class="spacer"></div>
-      <h3>Practical deployment</h3>
-      <ul>
-        <li>LoRA fine-tuning for <strong>1 epoch</strong> on minimal data</li>
-        <li>Works on already instruction-tuned models</li>
-        <li>Architecture- and dataset-agnostic</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 21 — Rainbow Padding: Results -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <div class="pill" style="margin-bottom:12px;">Rainbow Padding</div>
-  <h2>Results</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Performance restoration</h3>
-      <table>
-        <thead><tr><th>Benchmark</th><th>Baseline</th><th>+ Rainbow</th></tr></thead>
-        <tbody>
-          <tr><td>MATH</td><td>Degraded</td><td style="color:var(--success);">Restored ↑</td></tr>
-          <tr><td>GSM8K</td><td>Degraded</td><td style="color:var(--success);">Restored ↑</td></tr>
-          <tr><td>HumanEval</td><td>Degraded</td><td style="color:var(--success);">Restored ↑</td></tr>
-          <tr><td>Instruction</td><td>Degraded</td><td style="color:var(--success);">Restored ↑</td></tr>
-        </tbody>
-      </table>
-      <div class="spacer"></div>
-      <p class="small">Restores appropriate response length and accuracy that baseline dLLMs lose at moderate generation budgets</p>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Key properties</h3>
-        <ul class="check">
-          <li>Robust across decoding strategies</li>
-          <li>Architecture-agnostic</li>
-          <li>Dataset-agnostic</li>
-          <li>Lightweight: minimal training overhead</li>
-          <li>Compatible with LLaDA, Dream, and beyond</li>
-        </ul>
-      </div>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p><strong>ICLR 2026</strong> &nbsp;·&nbsp; Kim, Jeon, Kim, Jeung, No (Yonsei)</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 22 — A2D: Problem -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">A2D</div>
-  <h2>Safety Alignment for dLLMs</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>The enlarged attack surface</h3>
-      <p>dLLMs' any-order generation creates a <strong>fundamentally different safety challenge</strong> compared to AR models.</p>
-      <div class="spacer"></div>
-      <ul>
-        <li>Harmful spans can appear at <strong>arbitrary positions</strong></li>
-        <li>Template-based <strong>prefilling attacks</strong> (e.g., DIJA) can bypass response-level refusals</li>
-        <li>Standard AR safety alignment techniques fail</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="card" style="border-color:var(--warn);">
-        <h3 style="color:var(--warn);">DIJA attack success rate</h3>
-        <p style="font-size:1.1rem;"><strong>&gt;80%</strong> on baseline instruction-tuned dLLMs</p>
-        <p class="small">Standard alignment inherited from AR models is insufficient</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Why AR safety methods fail</h3>
-        <p class="small">AR safety relies on the model refusing at the <strong>beginning</strong> of a response. But in dLLMs:</p>
-        <div class="spacer-sm"></div>
-        <ul class="arrow">
-          <li>Tokens can be generated in any order</li>
-          <li>Harmful content can be filled in <strong>after</strong> safe content is placed</li>
-          <li>Prefilling attacks fix partial responses, bypassing initial refusal</li>
-        </ul>
-        <div class="spacer"></div>
-        <p class="small" style="color:var(--warn);">Response-level alignment is not enough; we need <strong>token-level</strong> safety</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 23 — A2D: Method -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <div class="pill" style="margin-bottom:12px;">A2D</div>
-  <h2>A2D: Any-Order, Any-Step Defense</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Core idea</h3>
-      <p>Train dLLMs to emit an <span class="token token-eos">[EOS]</span> refusal signal at <strong>any masked position</strong> whenever harmful content is encountered.</p>
-      <div class="spacer"></div>
-      <div class="math-block">
-        $$\text{A2D}: \; p_\theta(\texttt{[EOS]} \mid x_t, \text{pos}_i) \uparrow \;\text{if harmful}$$
-      </div>
-      <div class="spacer"></div>
-      <ul class="num">
-        <li>Align at <strong>token level</strong>, not response level</li>
-        <li>Train under <strong>randomized masking:</strong> robust to any decoding order</li>
-        <li>Use <strong>[EOS] probability</strong> as real-time safety monitor</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent2);">Training</h3>
-        <p class="small">For harmful prompts, supervise all masked positions to predict [EOS], under various random masking patterns. This ensures robustness regardless of decoding order or step.</p>
-      </div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Inference</h3>
-        <div style="margin:8px 0;">
-          <span class="token token-fixed">harmful prompt...</span>
-          <span class="token token-safe">[EOS]</span>
-          <span class="token token-safe">[EOS]</span>
-          <span class="token token-safe">[EOS]</span>
-        </div>
-        <p class="tiny" style="margin-top:6px;">Model refuses by emitting [EOS] at every position → safe termination</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 24 — A2D: Key Innovations -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">A2D</div>
-  <h2>Key Innovations</h2>
-  <div class="divider"></div>
-  <div class="grid-3">
-    <div class="card">
-      <h3 style="color:var(--accent);">Real-time monitoring</h3>
-      <p class="small">[EOS] probability serves as an <strong>internal safety signal</strong> throughout generation. Threshold at first step enables early rejection.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:1.3rem; text-align:center; color:var(--success); font-weight:600;">19.3× faster<br><span class="small">safe termination</span></p>
-    </div>
-    <div class="card">
-      <h3 style="color:var(--accent);">FITS attack defense</h3>
-      <p class="small">New <strong>fill-in-the-sentence</strong> attack: embed a single masked sentence within a harmful response. A2D blocks such completions effectively.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:1.3rem; text-align:center; color:var(--success); font-weight:600;">~0% ASR<br><span class="small">under FITS</span></p>
-    </div>
-    <div class="card">
-      <h3 style="color:var(--accent);">No over-refusal</h3>
-      <p class="small"><strong>0% false positives</strong> on XSTest: benign prompts crafted to look unsafe are correctly handled.</p>
-      <div class="spacer-sm"></div>
-      <p style="font-size:1.3rem; text-align:center; color:var(--success); font-weight:600;">0% FP<br><span class="small">on XSTest</span></p>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 25 — A2D: Results -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <div class="pill" style="margin-bottom:12px;">A2D</div>
-  <h2>Results: DIJA Attack Neutralized</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <table>
-        <thead><tr><th>Model</th><th>Method</th><th>DIJA ASR ↓</th></tr></thead>
-        <tbody>
-          <tr><td>LLaDA-8B-Inst</td><td>Baseline</td><td style="color:var(--warn);">&gt;80%</td></tr>
-          <tr><td>LLaDA-8B-Inst</td><td>SFT</td><td style="color:var(--warn);">High</td></tr>
-          <tr><td>LLaDA-8B-Inst</td><td>DPO</td><td style="color:var(--warn);">Moderate</td></tr>
-          <tr><td>LLaDA-8B-Inst</td><td><strong>A2D</strong></td><td style="color:var(--success);"><strong>1.3%</strong></td></tr>
-          <tr style="border-top:2px solid var(--white-15);"><td>Dream-v0-Inst-7B</td><td>Baseline</td><td style="color:var(--warn);">&gt;80%</td></tr>
-          <tr><td>Dream-v0-Inst-7B</td><td><strong>A2D</strong></td><td style="color:var(--success);"><strong>0.0%</strong></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Summary</h3>
-        <ul class="check">
-          <li>Lowest average ASR across all tested dLLMs</li>
-          <li>Works on LLaDA, LLaDA-1.5, Dream</li>
-          <li>Early rejection via [EOS] threshold</li>
-          <li>Token-level alignment is key for dLLM safety</li>
-        </ul>
-      </div>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p><strong>ICLR 2026</strong> &nbsp;·&nbsp; Jeung, Yoon, Cho, Jeon, Shin, Hong, No (Yonsei)</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 26 — A2D: Takeaway -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">A2D</div>
-  <h2>A2D: Key Takeaway</h2>
-  <div class="divider"></div>
-  <div style="max-width:800px;">
-    <div class="highlight">
-      <p>dLLMs need <strong>token-level safety alignment</strong> that stays robust at any decoding order and step. Response-level AR-style alignment is insufficient.</p>
-    </div>
-    <div class="spacer-lg"></div>
-    <div class="diagram-flow" style="justify-content:center;">
-      <div class="diagram-box">AR Safety<br><span class="tiny">Response-level refusal</span></div>
-      <div class="diagram-arrow" style="color:var(--warn);">✗→</div>
-      <div class="diagram-box" style="border-color:var(--warn);">dLLM<br><span class="tiny">Any-order bypasses refusal</span></div>
-    </div>
-    <div class="spacer"></div>
-    <div class="diagram-flow" style="justify-content:center;">
-      <div class="diagram-box filled">A2D<br><span class="tiny" style="color:var(--white-70);">Token-level [EOS] alignment</span></div>
-      <div class="diagram-arrow" style="color:var(--success);">✓→</div>
-      <div class="diagram-box" style="border-color:var(--success);">dLLM<br><span class="tiny">Safe at any order/step</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 27 — dgMARK: Problem -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <div class="pill" style="margin-bottom:12px;">dgMARK</div>
-  <h2>Watermarking for Diffusion LLMs</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Motivation</h3>
-      <p>As dLLMs become practical, we need <strong>attribution mechanisms:</strong> ways to determine whether text was generated by a specific model.</p>
-      <div class="spacer"></div>
-      <h3>Challenge</h3>
-      <ul>
-        <li>AR watermarking relies on sequential token generation, so it doesn't apply to dLLMs</li>
-        <li>dLLMs generate tokens in <strong>arbitrary order</strong></li>
-        <li>Need a new watermarking paradigm</li>
-      </ul>
-      <div class="spacer"></div>
-      <h3>Key observation</h3>
-      <div class="highlight">
-        <p>Practical dLLMs are <strong>sensitive to unmasking order:</strong> a <strong>new watermarking channel</strong>.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">AR watermarking</h3>
-        <p class="small">Bias next-token distribution → detectable statistical signature</p>
-        <p class="small" style="color:var(--warn);">✗ Requires sequential generation</p>
-      </div>
-      <div class="spacer"></div>
-      <div class="card" style="border-color:var(--success);">
-        <h3 style="color:var(--success);">dgMARK insight</h3>
-        <p class="small">Steer <strong>unmasking order</strong> → detectable signature without reweighting probabilities</p>
-        <p class="small" style="color:var(--success);">✓ Works with any-order generation</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 28 — dgMARK: Method -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">dgMARK</div>
-  <h2>dgMARK: Decoding-Guided Watermarking</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Method</h3>
-      <ul class="num">
-        <li>Define a <strong>binary hash function</strong> that maps tokens to {0, 1}</li>
-        <li>At each denoising step, rank candidate positions by decoding score (confidence, entropy, or margin)</li>
-        <li><strong>Steer unmasking order</strong> toward positions whose high-reward candidate tokens satisfy a <strong>parity constraint</strong></li>
-        <li>Detect via elevated <strong>parity-matching statistics</strong></li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p><strong>Key property:</strong> dgMARK never reweights probabilities; it only changes <strong>which positions</strong> unmask first.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent2);">Plug-and-play</h3>
-        <p class="small">Compatible with existing decoding strategies:</p>
-        <ul class="check">
-          <li>Confidence-based ordering</li>
-          <li>Entropy-based ordering</li>
-          <li>Margin-based ordering</li>
-          <li>+ One-step lookahead variant</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Detection</h3>
-        <p class="small"><strong>Sliding-window detector</strong> ensures robustness under post-editing:</p>
-        <ul>
-          <li>Insertion</li>
-          <li>Deletion</li>
-          <li>Substitution</li>
-          <li>Paraphrasing</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 29 — dgMARK: Summary -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <div class="pill" style="margin-bottom:12px;">dgMARK</div>
-  <h2>dgMARK: Summary</h2>
-  <div class="divider"></div>
-  <div class="grid-3">
-    <div class="card" style="text-align:center;">
-      <div style="font-size:2rem; margin-bottom:8px;">🔑</div>
-      <h3>Novel channel</h3>
-      <p class="small">Exploits unmasking-order sensitivity unique to dLLMs: a watermarking channel that does not exist in AR models</p>
-    </div>
-    <div class="card" style="text-align:center;">
-      <div style="font-size:2rem; margin-bottom:8px;">🔌</div>
-      <h3>Plug-and-play</h3>
-      <p class="small">No retraining, no probability reweighting: works with any decoding strategy out of the box</p>
-    </div>
-    <div class="card" style="text-align:center;">
-      <div style="font-size:2rem; margin-bottom:8px;">🛡️</div>
-      <h3>Robust detection</h3>
-      <p class="small">Sliding-window statistics withstand insertion, deletion, substitution, and paraphrasing</p>
-    </div>
-  </div>
-  <div class="spacer-lg"></div>
-  <div class="highlight">
-    <p>Hong &amp; No (Yonsei) &nbsp;·&nbsp; arXiv:2601.22985</p>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 30 — Reversal Curse: Problem -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
-  <h2>The Reversal Curse in Language Models</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>The phenomenon</h3>
-      <p>AR models trained on "A is B" <strong>fail catastrophically</strong> on "B is A"; they cannot reverse learned factual associations.</p>
-      <div class="spacer"></div>
-      <div class="card" style="border-color:var(--warn);">
-        <h3 style="color:var(--warn);">Autoregressive models</h3>
-        <p class="small">Train: "Tom Cruise's mother is Mary Lee Pfeiffer"</p>
-        <p class="small" style="color:var(--warn);">Fail: "Mary Lee Pfeiffer's son is ___"</p>
-      </div>
-      <div class="spacer"></div>
-      <div class="card" style="border-color:var(--success);">
-        <h3 style="color:var(--success);">Masked diffusion models</h3>
-        <p class="small">Same training data → <strong>significantly mitigated</strong> reversal curse</p>
-        <p class="small" style="color:var(--success);">Can handle both directions</p>
-      </div>
-    </div>
-    <div>
-      <h3>Common explanation</h3>
-      <div class="card" style="margin-bottom:16px;">
-        <p class="small"><strong>Hypothesis:</strong> "The any-order training objective (random masking) lets the model see both directions during training"</p>
-        <div class="spacer-sm"></div>
-        <p class="small" style="color:var(--warn);"><strong>But wait:</strong> observing "[MASK] is B" during training does <strong>not</strong> necessarily teach the model "B is [MASK]"; these are different conditioning patterns.</p>
-      </div>
-      <div class="highlight">
-        <p><strong>Our question:</strong> if not the objective, what explains the mitigation?</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 31 — Reversal Curse: Key Insight -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
-  <h2>Key Insight: Architecture + Training Dynamics</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Our answer</h3>
-      <p>The mitigation arises from <strong>architectural structure</strong> and its <strong>interaction with training</strong>, not from the objective alone.</p>
-      <div class="spacer"></div>
-      <div class="grid-2" style="gap:16px;">
-        <div class="card">
-          <h3 style="color:var(--accent);">Mechanism 1</h3>
-          <p class="small"><strong>Weight sharing</strong> couples forward and reverse directions</p>
-        </div>
-        <div class="card">
-          <h3 style="color:var(--accent);">Mechanism 2</h3>
-          <p class="small"><strong>Gradient alignment:</strong> forward loss reduces reverse loss</p>
-        </div>
-      </div>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p>Both work through <strong>shared attention weights</strong> in the bidirectional transformer.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Intuition</h3>
-        <p class="small" style="margin-bottom:12px;">In a bidirectional transformer:</p>
-        <div class="diagram-flow" style="flex-direction:column; align-items:stretch;">
-          <div class="diagram-box">Forward: A → B<br><span class="tiny">Attention: A attends to B</span></div>
-          <div style="text-align:center; color:var(--gray-text);">↕ shared weights</div>
-          <div class="diagram-box">Reverse: B → A<br><span class="tiny">Attention: B attends to A</span></div>
-        </div>
-        <div class="spacer-sm"></div>
-        <p class="small">Same $W_Q, W_K, W_V$ weights participate in both directions → learning one direction <strong>implicitly helps</strong> the other.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 32 — Reversal Curse: Theory -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
-  <h2>Theoretical Analysis: Attention Score Correlation</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Setup: one-layer transformer encoder</h3>
-      <p>Analyze how weight sharing in $W_Q, W_K$ couples forward and reverse attention patterns.</p>
-      <div class="spacer"></div>
-      <div class="math-block">
-        $$\alpha_{A \to B} = \text{softmax}(q_A^\top k_B)$$
-        $$\alpha_{B \to A} = \text{softmax}(q_B^\top k_A)$$
-      </div>
-      <div class="spacer"></div>
-      <h3>Result</h3>
-      <div class="highlight">
-        <p>Weight sharing makes forward/reverse attention <strong>positively correlated:</strong> attending in one direction strengthens the other.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Why AR doesn't have this</h3>
-        <p class="small">In causal (decoder-only) transformers:</p>
-        <ul>
-          <li>Causal mask blocks B → A attention</li>
-          <li>Weight sharing cannot couple directions</li>
-          <li>Forward training gives zero reverse signal</li>
-        </ul>
-        <div class="spacer"></div>
-        <p class="small">In bidirectional (encoder) transformers:</p>
-        <ul class="check">
-          <li>No causal mask → both directions active</li>
-          <li>Weight sharing creates coupling</li>
-          <li>Forward training <strong>implicitly</strong> helps reverse</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 33 — Reversal Curse: Gradient Alignment -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
-  <h2>Gradient Alignment</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Second mechanism</h3>
-      <p>Beyond attention coupling, we show that the <strong>gradients</strong> from forward and reverse losses are <strong>aligned</strong>.</p>
-      <div class="spacer"></div>
-      <div class="math-block">
-        $$\nabla_\theta \mathcal{L}_{\text{fwd}} \cdot \nabla_\theta \mathcal{L}_{\text{rev}} > 0$$
-      </div>
-      <div class="spacer"></div>
-      <h3>Implication</h3>
-      <p>A gradient step that reduces the forward loss $\mathcal{L}_{\text{fwd}}$ also tends to reduce the reverse loss $\mathcal{L}_{\text{rev}}$. The model <strong>automatically</strong> improves on reverse queries even though it's only trained on forward data.</p>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Gradient alignment in practice</h3>
-        <p class="small">Measured cosine similarity between forward and reverse gradients across training:</p>
-        <div class="spacer-sm"></div>
-        <ul class="check">
-          <li>Consistently positive across training</li>
-          <li>Stronger in early layers (shared representations)</li>
-          <li>Explains progressive mitigation during training</li>
-        </ul>
-        <div class="spacer"></div>
-        <p class="small" style="color:var(--accent);">This is a structural property of bidirectional transformers, not specific to any particular training objective.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 34 — Reversal Curse: Experiments -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
-  <h2>Experimental Validation</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Controlled experiments</h3>
-      <ul>
-        <li><strong>Toy tasks:</strong> synthetic "A is B" / "B is A" reversal tasks with controlled architecture variations</li>
-        <li><strong>Ablations:</strong> separate effects of objective vs. architecture</li>
-        <li><strong>Large-scale:</strong> validate on full-scale diffusion language models</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Key ablation</h3>
-        <ul>
-          <li>AR obj + causal: <strong style="color:var(--warn);">fails</strong></li>
-          <li>Masked obj + causal: <strong style="color:var(--warn);">still fails</strong></li>
-          <li>AR obj + bidir: <strong style="color:var(--amber);">partial</strong></li>
-          <li>Masked obj + bidir: <strong style="color:var(--success);">mitigated</strong></li>
-        </ul>
-      </div>
-    </div>
-    <div>
-      <div class="highlight" style="margin-bottom:16px;">
-        <p><strong>Conclusion:</strong> both masked objective AND bidirectional architecture are needed; architecture is the critical piece.</p>
-      </div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Large-scale validation</h3>
-        <ul class="check">
-          <li>Confirmed on LLaDA-8B</li>
-          <li>Attention coupling observed in all layers</li>
-          <li>Gradient alignment measured empirically</li>
-          <li>Consistent with theoretical predictions</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 35 — Reversal Curse: Summary -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
-  <h2>Reversal Curse Paper: Summary</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <div class="highlight">
-        <p>Reversal curse mitigation is <strong>not from the objective alone</strong>. It is <strong>architecture plus training dynamics:</strong> weight sharing couples attention, and gradients align.</p>
-      </div>
-      <div class="spacer"></div>
-      <h3>Broader implications</h3>
-      <ul>
-        <li>Bidirectional architectures have <strong>structural advantages</strong> for relational reasoning</li>
-        <li>Understanding inductive biases is key to predicting dLLM behavior</li>
-        <li>Motivates further study of architecture/objective interactions</li>
-      </ul>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Paper at a glance</h3>
-        <p class="small" style="margin-bottom:12px;"><strong>Title:</strong> Understanding the Reversal Curse Mitigation in Masked Diffusion Models through Attention and Training Dynamics</p>
-        <p class="small" style="margin-bottom:8px;"><strong>Authors:</strong> Shin, Kim, Lee, Jeon, No</p>
-        <p class="small"><strong>Key finding:</strong></p>
-        <ul class="num">
-          <li>Weight sharing → attention coupling</li>
-          <li>Attention coupling → gradient alignment</li>
-          <li>Gradient alignment → reversal mitigation</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 36 — DAPD: Problem -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">DAPD</div>
-  <h2>The Parallel Decoding Challenge</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>The promise</h3>
-      <p>dLLMs can unmask <strong>multiple tokens per step</strong>, enabling faster generation than sequential AR decoding.</p>
-      <div class="spacer"></div>
-      <h3>The problem</h3>
-      <p>Each denoising step only provides <strong>token-wise marginal distributions</strong>. Unmasking multiple tokens simultaneously requires accounting for <strong>inter-token dependencies</strong>.</p>
-      <div class="spacer"></div>
-      <div class="card" style="border-color:var(--warn);">
-        <p class="small"><strong>Naive parallel decoding:</strong> unmask tokens independently → ignores dependencies → errors accumulate → quality degrades</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Example</h3>
-        <p class="small">Consider: "The [M] [M] is blue"</p>
-        <div class="spacer-sm"></div>
-        <p class="small">Tokens "big" and "sky" are <strong>strongly dependent</strong>:</p>
-        <p class="small">→ "The big sky is blue" ✓</p>
-        <p class="small">→ "The sky big is blue" ✗</p>
-        <div class="spacer-sm"></div>
-        <p class="small">Unmasking both simultaneously without knowing their dependency can produce incoherent text.</p>
-        <div class="spacer"></div>
-        <p class="small" style="color:var(--accent);">We need to identify which tokens are <strong>weakly dependent</strong> and can safely be decoded in parallel.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 37 — DAPD: Method -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <div class="pill" style="margin-bottom:12px;">DAPD</div>
-  <h2>DAPD: Dependency-Aware Parallel Decoding</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Core idea</h3>
-      <p>Use <strong>self-attention</strong> to induce a <strong>conditional dependency graph</strong> over masked tokens, then parallelize by selecting <strong>independent sets</strong>.</p>
-      <div class="spacer"></div>
-      <ul class="num">
-        <li><strong>Extract</strong> attention weights between masked positions</li>
-        <li><strong>Build</strong> dependency graph: edge = strong interaction</li>
-        <li><strong>Find</strong> independent set: non-adjacent nodes</li>
-        <li><strong>Unmask</strong> independent tokens in parallel</li>
-        <li><strong>Repeat</strong> until all tokens revealed</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p><strong>Training-free:</strong> no auxiliary models, no retraining. Fully plug-and-play.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Dependency graph</h3>
-        <p class="small" style="margin-bottom:8px;">Edges = strong attention between masked tokens</p>
-        <div style="text-align:center; padding:12px 0;">
-          <div style="display:inline-block; position:relative; width:220px; height:160px;">
-            <div style="position:absolute; top:0; left:50%; transform:translateX(-50%);">
-              <span class="token token-mask">[M]₁</span>
-            </div>
-            <div style="position:absolute; top:60px; left:0;">
-              <span class="token token-mask">[M]₂</span>
-            </div>
-            <div style="position:absolute; top:60px; right:0;">
-              <span class="token token-mask">[M]₃</span>
-            </div>
-            <div style="position:absolute; bottom:0; left:50%; transform:translateX(-50%);">
-              <span class="token token-mask">[M]₄</span>
-            </div>
-          </div>
-        </div>
-        <p class="tiny" style="text-align:center;">Connected = dependent (unmask sequentially)<br>Disconnected = independent (unmask in parallel)</p>
-      </div>
-      <div class="spacer"></div>
-      <div class="card">
-        <h3 style="color:var(--accent2);">Why attention works</h3>
-        <p class="small">Self-attention naturally captures token-token interactions. High attention ≈ high conditional dependency.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 38 — DAPD: Algorithm -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <div class="pill" style="margin-bottom:12px;">DAPD</div>
-  <h2>DAPD Algorithm</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <div class="card" style="font-size:1.15rem;">
-        <p style="font-weight:500; margin-bottom:10px; color:var(--accent2);">Algorithm: DAPD</p>
-        <p><strong>Input:</strong> masked $x_t$, model $p_\theta$</p>
-        <p><strong>While</strong> masks remain:</p>
-        <p style="padding-left:18px;">1. $A = \text{Attn}(x_t)$</p>
-        <p style="padding-left:18px;">2. Extract masked-masked submatrix $A_{\mathcal{M}}$</p>
-        <p style="padding-left:18px;">3. Graph $G$: edge if $A_{\mathcal{M}}[i,j] > \tau$</p>
-        <p style="padding-left:18px;">4. Find independent set $\mathcal{I}$</p>
-        <p style="padding-left:18px;">5. Sample tokens on $\mathcal{I}$; unmask</p>
-        <p><strong>Return:</strong> $x_0$</p>
-      </div>
-    </div>
-    <div>
-      <h3>Key properties</h3>
-      <ul class="check">
-        <li><strong>Avoids co-updating</strong> strongly coupled tokens</li>
-        <li><strong>Maximizes parallelism:</strong> independent set is as large as possible</li>
-        <li><strong>Globally distributed</strong> updates, not just local blocks</li>
-        <li><strong>Adaptive:</strong> the graph changes as tokens are revealed</li>
-      </ul>
-      <div class="spacer"></div>
-      <div class="highlight">
-        <p>DAPD exploits the <strong>any-order capability</strong> to select tokens that are truly safe to unmask together.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 39 — DAPD: Results -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <div class="pill" style="margin-bottom:12px;">DAPD</div>
-  <h2>DAPD: Results</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Accuracy vs. steps trade-off</h3>
-      <p>DAPD improves the trade-off between output quality and number of decoding steps on both LLaDA and Dream.</p>
-      <div class="spacer"></div>
-      <table>
-        <thead><tr><th>Method</th><th>Steps ↓</th><th>Quality</th></tr></thead>
-        <tbody>
-          <tr><td>Sequential (1 token/step)</td><td>N</td><td>Best</td></tr>
-          <tr><td>Naive parallel</td><td>Low</td><td style="color:var(--warn);">Degraded</td></tr>
-          <tr><td>Block parallel</td><td>Medium</td><td>Moderate</td></tr>
-          <tr><td><strong>DAPD</strong></td><td><strong>Low</strong></td><td style="color:var(--success);"><strong>Near-sequential</strong></td></tr>
-        </tbody>
-      </table>
-      <div class="spacer"></div>
-      <p class="small" style="color:var(--accent);">Best of both worlds: parallel speed with near-sequential quality</p>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:var(--accent2);">Advantages over baselines</h3>
-        <ul class="check">
-          <li>More <strong>globally distributed</strong> parallel updates</li>
-          <li>Better quality at same step count</li>
-          <li>Fewer steps for same quality</li>
-          <li>No retraining required</li>
-        </ul>
-      </div>
-      <div class="highlight">
-        <p><strong>Kim, Jeon, Jeon, No</strong> (Yonsei) &nbsp;·&nbsp; arXiv:2603.12996</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 40 — Unified View -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide section-slide bg-accent">
-  <div class="pill" style="border-color:var(--white-40); color:var(--white-80); margin-bottom:20px;">Synthesis</div>
-  <h1>Putting It All Together</h1>
-  <div class="divider" style="background:var(--white-50);"></div>
-  <p class="subtitle" style="color:var(--white-70);">A unified picture of dLLM control</p>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 41 — Five Control Surfaces Revisited -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-dark">
-  <h2>Five Complementary Control Surfaces</h2>
-  <div class="divider"></div>
-  <table>
-    <thead>
-      <tr><th>Surface</th><th>Paper</th><th>What it controls</th><th>Key mechanism</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>Robustness</strong></td>
-        <td>Rainbow Padding</td>
-        <td>EOS overflow / early termination</td>
-        <td>Cyclic multi-pad decouples termination from padding</td>
-      </tr>
-      <tr>
-        <td><strong>Safety</strong></td>
-        <td>A2D</td>
-        <td>Harmful content generation</td>
-        <td>Token-level [EOS] alignment under random masking</td>
-      </tr>
-      <tr>
-        <td><strong>Attribution</strong></td>
-        <td>dgMARK</td>
-        <td>Text provenance</td>
-        <td>Parity-guided unmasking order steering</td>
-      </tr>
-      <tr>
-        <td><strong>Understanding</strong></td>
-        <td>Reversal Curse</td>
-        <td>Why dLLMs reason bidirectionally</td>
-        <td>Attention coupling + gradient alignment</td>
-      </tr>
-      <tr>
-        <td><strong>Decoding</strong></td>
-        <td>DAPD</td>
-        <td>Parallel generation quality</td>
-        <td>Attention-based dependency graph + independent sets</td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="spacer"></div>
-  <div class="highlight">
-    <p>Common thread: all five exploit <strong>unique properties of the diffusion paradigm</strong> (any-order generation, bidirectional context, unmasking-order sensitivity) to solve problems that don't arise, or that work differently, in AR models.</p>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 42 — Practical Guidance -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <h2>Practical Guidance for dLLM Practitioners</h2>
-  <div class="divider"></div>
-  <div class="grid-3">
-    <div class="card">
-      <h3 style="color:var(--accent);">Training</h3>
-      <ul>
-        <li>Use <strong>Rainbow Padding</strong> for instruction tuning to prevent EOS overflow</li>
-        <li>Token-level safety alignment (<strong>A2D</strong>) is necessary, not optional</li>
-        <li>Standard AR safety methods are insufficient</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3 style="color:var(--accent);">Decoding</h3>
-      <ul>
-        <li>Use <strong>DAPD</strong> for parallel decoding to respect dependencies</li>
-        <li>Confidence-based decoding needs EOS mitigation</li>
-        <li>Unmasking order matters more than you think</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3 style="color:var(--accent);">Deployment</h3>
-      <ul>
-        <li><strong>dgMARK</strong> enables watermarking without quality loss</li>
-        <li>Monitor [EOS] probability for real-time safety</li>
-        <li>Expect different failure modes than AR and plan accordingly</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 43 — Open Problems -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-deep">
-  <h2>Open Problems &amp; Research Opportunities</h2>
-  <div class="divider"></div>
-  <div class="cols">
-    <div>
-      <h3>Scaling &amp; architecture</h3>
-      <ul>
-        <li>Can dLLMs scale to <strong>70B+</strong> and beyond?</li>
-        <li>Optimal architecture for discrete diffusion at frontier scale</li>
-        <li>Hybrid AR-diffusion architectures</li>
-      </ul>
-      <div class="spacer"></div>
-      <h3>Training</h3>
-      <ul>
-        <li>Better noise schedules for discrete diffusion</li>
-        <li>RLHF / preference learning adapted for dLLMs</li>
-        <li>Multi-modal diffusion language models</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Decoding &amp; inference</h3>
-      <ul>
-        <li>Optimal parallel decoding strategies: theoretical bounds</li>
-        <li>Speculative decoding for dLLMs</li>
-        <li>Hardware-aware decoding optimization</li>
-      </ul>
-      <div class="spacer"></div>
-      <h3>Safety &amp; control</h3>
-      <ul>
-        <li>Red-teaming at scale for dLLM-specific attacks</li>
-        <li>Formal safety guarantees for any-order generation</li>
-        <li>Interpretability of diffusion denoising dynamics</li>
-      </ul>
-      <div class="spacer"></div>
-      <h3>Understanding</h3>
-      <ul>
-        <li>What other inductive biases differ between AR and diffusion?</li>
-        <li>Theoretical analysis of multi-layer attention coupling</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 44 — Key Takeaways -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div class="slide bg-navy">
-  <h2>Key Takeaways</h2>
-  <div class="divider"></div>
-  <div class="spacer-sm"></div>
-  <ul class="num" style="max-width:960px;">
-    <li><strong>dLLMs are real.</strong> SEDD to LLaDA 2.0: theory to competitive 7B+ systems in under two years.</li>
-    <li><strong>They behave differently.</strong> Bidirectional plus masked training yields unique inductive biases, both beneficial and dangerous.</li>
-    <li><strong>New control surfaces.</strong> Robustness, safety, watermarking, and decoding all need dLLM-specific solutions.</li>
-    <li><strong>Architecture matters.</strong> Reversal curse mitigation comes from weight sharing, not the objective.</li>
-    <li><strong>Practical solutions exist.</strong> Rainbow Padding, A2D, dgMARK, DAPD are plug-and-play today.</li>
+  <p>Standard instruction-tuning pads sequences with <span class="token token-eos">&lt;eos&gt;</span>, giving it a <strong>dual role:</strong> termination signal and padding token.</p>
+  <div class="math-block">$$p(\texttt{eos} \mid \text{position } i) \uparrow \;\text{as}\; i \to N$$</div>
+  <ul>
+    <li>EOS dominates later positions in training data</li>
+    <li>Model learns strong positional bias toward EOS</li>
+    <li>Confidence-based decoding selects EOS early</li>
+    <li>EOS propagates backward; response collapses</li>
   </ul>
 </div>
 
 <!-- ════════════════════════════════════════════════════════ -->
-<!-- SLIDE 45 — Thank You / Q&A -->
+<!-- SLIDE 17 — Rainbow Padding: Solution -->
 <!-- ════════════════════════════════════════════════════════ -->
-<div class="slide section-slide bg-accent">
-  <h1>Thank You</h1>
-  <div class="divider" style="background:var(--white-50);"></div>
-  <p class="subtitle" style="color:var(--white-80);">Questions?</p>
-  <div class="spacer-lg"></div>
-  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">Rainbow Padding &nbsp;·&nbsp; ICLR 2026</div>
-    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">A2D &nbsp;·&nbsp; ICLR 2026</div>
-    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">dgMARK &nbsp;·&nbsp; arXiv:2601.22985</div>
-    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">Reversal Curse &nbsp;·&nbsp; arXiv:2602.02133</div>
-    <div class="pill" style="border-color:var(--white-40); color:var(--white-80);">DAPD &nbsp;·&nbsp; arXiv:2603.12996</div>
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">Rainbow Padding</div>
+  <h2>Solution: Cyclic Distinct Pad Tokens</h2>
+  <div class="divider"></div>
+  <p>Replace repeated <span class="token token-eos">&lt;eos&gt;</span> padding with a <strong>cycling sequence of distinct pad tokens</strong>, reserving one &lt;eos&gt; for true termination.</p>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card">
+      <h3>Before</h3>
+      <div style="margin:8px 0;">
+        <span class="token token-gen">response</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span><span class="token token-eos">eos</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--success);">
+      <h3 style="color:var(--success);">After (Rainbow)</h3>
+      <div style="margin:8px 0;">
+        <span class="token token-gen">response</span><span class="token token-eos">eos</span><span class="token token-pad">pad&#x2081;</span><span class="token token-pad2">pad&#x2082;</span><span class="token token-pad3">pad&#x2083;</span>
+      </div>
+    </div>
   </div>
-  <div class="spacer-lg"></div>
-  <p style="font-size:1.1rem; font-weight:400;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <ul>
+    <li>Decouples termination from padding</li>
+    <li>Distributes probability mass; no single token dominates</li>
+  </ul>
+  <div class="highlight">As few as <strong>7 distinct pad tokens</strong> resolve the issue.</div>
 </div>
 
-<!-- ── Slide number + progress bar ── -->
-<div class="slide-num" id="slideNum">1 / 45</div>
-<div class="progress-bar" id="progressBar" style="width:2.2%;"></div>
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 18 — Rainbow Padding: Results -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">Rainbow Padding</div>
+  <h2>Results</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div>
+      <table>
+        <thead><tr><th>Benchmark</th><th>Baseline</th><th>+ Rainbow</th></tr></thead>
+        <tbody>
+          <tr><td>MATH</td><td style="color:var(--warn);">Degraded</td><td style="color:var(--success);">Restored</td></tr>
+          <tr><td>GSM8K</td><td style="color:var(--warn);">Degraded</td><td style="color:var(--success);">Restored</td></tr>
+          <tr><td>HumanEval</td><td style="color:var(--warn);">Degraded</td><td style="color:var(--success);">Restored</td></tr>
+          <tr><td>Instruction</td><td style="color:var(--warn);">Degraded</td><td style="color:var(--success);">Restored</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <ul class="check">
+        <li>Robust across decoding strategies</li>
+        <li>Architecture and dataset agnostic</li>
+        <li>LoRA fine-tuning, 1 epoch, minimal data</li>
+        <li>Works on LLaDA, Dream, and beyond</li>
+      </ul>
+    </div>
+  </div>
+  <div class="cite">Kim, Jeon, Kim, Jeung, No, "Rainbow Padding", ICLR 2026.</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 19 — A2D: The Safety Gap -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">A2D</div>
+  <h2>The Enlarged Safety Attack Surface</h2>
+  <div class="divider"></div>
+  <p>dLLMs' any-order generation: a <strong>fundamentally different safety challenge.</strong></p>
+  <ul>
+    <li>Harmful spans appear at <strong>arbitrary positions</strong></li>
+    <li>Template-based <strong>prefilling attacks</strong> (DIJA) bypass response-level refusals</li>
+    <li>Standard AR safety alignment fails: &gt;80% attack success rate on baseline dLLMs</li>
+  </ul>
+  <div class="highlight">
+    AR safety relies on refusal at the <strong>beginning</strong> of a response. dLLMs generate in any order, so initial refusal can be bypassed.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 20 — A2D: Method -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">A2D</div>
+  <h2>A2D: Any-Order, Any-Step Defense</h2>
+  <div class="divider"></div>
+  <p>Train dLLMs to emit an <span class="token token-eos">[EOS]</span> refusal at <strong>any masked position</strong> when harmful content is encountered.</p>
+  <div class="math-block">$$\text{A2D}: \; p_\theta(\texttt{[EOS]} \mid x_t, \text{pos}_i) \uparrow \;\text{if harmful}$$</div>
+  <ul class="num">
+    <li>Align at <strong>token level</strong>, not response level</li>
+    <li>Train under <strong>randomized masking</strong>: robust to any decoding order</li>
+    <li>Use <strong>[EOS] probability</strong> as real-time safety monitor</li>
+  </ul>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 21 — A2D: Key Innovations -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">A2D</div>
+  <h2>Three Innovations</h2>
+  <div class="divider"></div>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Real-time monitoring</h3>
+      <p>[EOS] probability as internal safety signal. Threshold at first step enables early rejection.</p>
+      <p style="color:var(--success); font-weight:600; text-align:center;">19.3&times; faster termination</p>
+    </div>
+    <div class="card">
+      <h3>FITS attack defense</h3>
+      <p>Fill-in-the-sentence: embed one masked sentence inside a harmful response. A2D blocks it.</p>
+      <p style="color:var(--success); font-weight:600; text-align:center;">~0% attack success</p>
+    </div>
+    <div class="card">
+      <h3>No over-refusal</h3>
+      <p>0% false positives on XSTest. Benign prompts correctly handled.</p>
+      <p style="color:var(--success); font-weight:600; text-align:center;">0% false positive</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 22 — A2D: Results -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">A2D</div>
+  <h2>DIJA Attack Neutralized</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div>
+      <table>
+        <thead><tr><th>Model + Method</th><th>DIJA ASR</th></tr></thead>
+        <tbody>
+          <tr><td>LLaDA-8B-Inst, baseline</td><td style="color:var(--warn);">&gt;80%</td></tr>
+          <tr><td>LLaDA-8B-Inst, SFT</td><td style="color:var(--warn);">High</td></tr>
+          <tr><td>LLaDA-8B-Inst, DPO</td><td style="color:var(--warn);">Moderate</td></tr>
+          <tr><td><strong>LLaDA-8B-Inst, A2D</strong></td><td style="color:var(--success);"><strong>1.3%</strong></td></tr>
+          <tr><td>Dream-v0-Inst-7B, baseline</td><td style="color:var(--warn);">&gt;80%</td></tr>
+          <tr><td><strong>Dream-v0-Inst-7B, A2D</strong></td><td style="color:var(--success);"><strong>0.0%</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <ul class="check">
+        <li>Lowest ASR across all tested dLLMs</li>
+        <li>Works on LLaDA, LLaDA-1.5, Dream</li>
+        <li>Token-level alignment is essential</li>
+      </ul>
+      <div class="highlight">
+        <strong>Key lesson:</strong> response-level AR-style alignment is insufficient for dLLMs.
+      </div>
+    </div>
+  </div>
+  <div class="cite">Jeung, Yoon, Cho, Jeon, Shin, Hong, No, "A2D", ICLR 2026.</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 23 — dgMARK: Problem -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">dgMARK</div>
+  <h2>Watermarking for Diffusion LLMs</h2>
+  <div class="divider"></div>
+  <p>AR watermarking: bias next-token distribution; requires <strong>sequential generation.</strong> Doesn't apply to dLLMs.</p>
+  <p>dLLMs generate tokens in arbitrary order. Need a new paradigm.</p>
+  <div class="highlight">
+    <strong>Key observation:</strong> practical dLLMs are sensitive to unmasking order, opening a new watermarking channel.
+  </div>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card" style="border-color:var(--warn);">
+      <h3>AR watermarking</h3>
+      <p>Bias next-token distribution. Sequential only.</p>
+    </div>
+    <div class="card" style="border-color:var(--success);">
+      <h3>dgMARK</h3>
+      <p>Steer <strong>unmasking order.</strong> Works with any-order generation.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 24 — dgMARK: Method -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">dgMARK</div>
+  <h2>Decoding-Guided Watermarking</h2>
+  <div class="divider"></div>
+  <ul class="num">
+    <li>Define a <strong>binary hash function</strong> mapping tokens to {0, 1}</li>
+    <li>Rank candidate positions by decoding score</li>
+    <li>Steer unmasking toward positions satisfying a <strong>parity constraint</strong></li>
+    <li>Detect via elevated <strong>parity-matching statistics</strong></li>
+  </ul>
+  <div class="highlight">
+    <strong>Never reweights probabilities</strong>: changes only which positions unmask first.
+  </div>
+  <ul class="check">
+    <li>Plug-and-play with any decoding strategy</li>
+    <li>Sliding-window detector: robust to insertion, deletion, substitution, paraphrasing</li>
+  </ul>
+  <div class="cite">Hong, No, "dgMARK", arXiv:2601.22985, 2025.</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 25 — Reversal Curse: Phenomenon -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
+  <h2>The Reversal Curse</h2>
+  <div class="divider"></div>
+  <p>AR models trained on "A is B" <strong>fail catastrophically</strong> on "B is A."</p>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card" style="border-color:var(--warn);">
+      <h3 style="color:var(--warn);">Autoregressive</h3>
+      <p>Trains: "Tom Cruise's mother is Mary Lee Pfeiffer"</p>
+      <p style="color:var(--warn);">Fails: "Mary Lee Pfeiffer's son is ___"</p>
+    </div>
+    <div class="card" style="border-color:var(--success);">
+      <h3 style="color:var(--success);">Masked diffusion</h3>
+      <p>Same data. Reversal curse significantly mitigated.</p>
+    </div>
+  </div>
+  <div class="highlight">
+    <strong>Our question:</strong> if not the training objective alone, what explains the mitigation?
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 26 — Reversal Curse: Mechanism -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
+  <h2>Architecture + Training Dynamics</h2>
+  <div class="divider"></div>
+  <p>Mitigation arises from <strong>architectural structure</strong> and its interaction with training, not the objective alone.</p>
+  <div class="grid-2" style="margin-top:8px;">
+    <div class="card">
+      <h3>Mechanism 1: weight sharing</h3>
+      <p>Shared $W_Q, W_K, W_V$ couple forward and reverse attention patterns.</p>
+      <div class="math-block">$$\alpha_{A \to B} = \text{softmax}(q_A^\top k_B)$$</div>
+    </div>
+    <div class="card">
+      <h3>Mechanism 2: gradient alignment</h3>
+      <p>Forward and reverse gradients align:</p>
+      <div class="math-block">$$\nabla_\theta \mathcal{L}_{\text{fwd}} \cdot \nabla_\theta \mathcal{L}_{\text{rev}} > 0$$</div>
+    </div>
+  </div>
+  <div class="highlight">
+    A gradient step reducing forward loss also reduces reverse loss.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 27 — Reversal Curse: Why AR Doesn't Have This -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">Reversal Curse</div>
+  <h2>Why AR Models Can't Do This</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div>
+      <h3>Causal (AR) transformer</h3>
+      <ul>
+        <li>Causal mask blocks $B \to A$ attention</li>
+        <li>Weight sharing cannot couple directions</li>
+        <li>Forward training gives zero reverse signal</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Bidirectional transformer</h3>
+      <ul class="check">
+        <li>No causal mask: both directions active</li>
+        <li>Weight sharing creates coupling</li>
+        <li>Forward training implicitly helps reverse</li>
+      </ul>
+    </div>
+  </div>
+  <div class="highlight">
+    Both masked objective AND bidirectional architecture are needed; architecture is the critical piece.
+  </div>
+  <div class="cite">Shin, Kim, Lee, Jeon, No, "Reversal Curse in Masked Diffusion Models", arXiv:2602.02133, 2025.</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 28 — DAPD: The Parallel Decoding Challenge -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">DAPD</div>
+  <h2>The Parallel Decoding Challenge</h2>
+  <div class="divider"></div>
+  <p><strong>Promise:</strong> dLLMs can unmask multiple tokens per step, enabling faster generation.</p>
+  <p><strong>Problem:</strong> each step provides only token-wise marginals. Parallel unmasking ignores <strong>inter-token dependencies.</strong></p>
+  <div class="highlight">
+    Naive parallel decoding: unmask tokens independently, ignoring dependencies. Errors accumulate; quality degrades.
+  </div>
+  <p>Example: "The [M] [M] is blue." Tokens "big" and "sky" are strongly dependent. Unmasking both simultaneously can produce incoherent text.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 29 — DAPD: Method -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">DAPD</div>
+  <h2>Dependency-Aware Parallel Decoding</h2>
+  <div class="divider"></div>
+  <p>Use <strong>self-attention</strong> to build a dependency graph; unmask <strong>independent sets</strong> in parallel.</p>
+  <ul class="num">
+    <li>Extract attention weights between masked positions</li>
+    <li>Build dependency graph: edge = strong interaction</li>
+    <li>Find independent set: non-adjacent nodes</li>
+    <li>Unmask independent tokens in parallel; repeat</li>
+  </ul>
+  <div class="highlight">
+    <strong>Training-free:</strong> no auxiliary models, no retraining. Fully plug-and-play.
+  </div>
+  <div class="cite">Kim, Jeon, Jeon, No, "DAPD", arXiv:2603.12996, 2025.</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 30 — DAPD: Results -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="pill" style="margin-bottom:12px;">DAPD</div>
+  <h2>DAPD: Quality vs. Steps Trade-off</h2>
+  <div class="divider"></div>
+  <table>
+    <thead><tr><th>Method</th><th>Steps</th><th>Quality</th></tr></thead>
+    <tbody>
+      <tr><td>Sequential (1 token/step)</td><td>N</td><td>Best</td></tr>
+      <tr><td>Naive parallel</td><td>Low</td><td style="color:var(--warn);">Degraded</td></tr>
+      <tr><td>Block parallel</td><td>Medium</td><td>Moderate</td></tr>
+      <tr><td><strong>DAPD</strong></td><td><strong>Low</strong></td><td style="color:var(--success);"><strong>Near-sequential</strong></td></tr>
+    </tbody>
+  </table>
+  <ul class="check">
+    <li>More globally distributed parallel updates</li>
+    <li>Better quality at same step count</li>
+    <li>Fewer steps for same quality</li>
+  </ul>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 31 — Synthesis -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide section-slide left">
+  <div class="section-num">06</div>
+  <h1>Putting It All Together</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Unified picture of dLLM control</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 32 — Five Control Surfaces Revisited -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>Five Control Surfaces, One Thread</h2>
+  <div class="divider"></div>
+  <table>
+    <thead>
+      <tr><th>Surface</th><th>Mechanism</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Robustness</strong> (Rainbow Padding)</td><td>Cyclic multi-pad decouples termination from padding</td></tr>
+      <tr><td><strong>Safety</strong> (A2D)</td><td>Token-level [EOS] alignment under random masking</td></tr>
+      <tr><td><strong>Attribution</strong> (dgMARK)</td><td>Parity-guided unmasking-order steering</td></tr>
+      <tr><td><strong>Understanding</strong> (Reversal Curse)</td><td>Attention coupling + gradient alignment</td></tr>
+      <tr><td><strong>Decoding</strong> (DAPD)</td><td>Attention dependency graph + independent sets</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">
+    All five exploit <strong>unique diffusion-paradigm properties</strong>: any-order generation, bidirectional context, unmasking-order sensitivity.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 33 — Practical Guidance -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>Practical Guidance</h2>
+  <div class="divider"></div>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Training</h3>
+      <ul>
+        <li>Use <strong>Rainbow Padding</strong> for instruction tuning</li>
+        <li><strong>A2D</strong>: token-level safety is non-optional</li>
+        <li>AR safety methods are insufficient</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Decoding</h3>
+      <ul>
+        <li><strong>DAPD</strong> respects inter-token dependencies</li>
+        <li>Unmasking order matters more than expected</li>
+        <li>Confidence-based decoding needs EOS mitigation</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Deployment</h3>
+      <ul>
+        <li><strong>dgMARK</strong>: watermarking without quality loss</li>
+        <li>Monitor [EOS] probability for real-time safety</li>
+        <li>Expect different failure modes than AR models</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 34 — Open Problems -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>Open Problems</h2>
+  <div class="divider"></div>
+  <div class="grid-2">
+    <div>
+      <h3>Scaling and architecture</h3>
+      <ul>
+        <li>Can dLLMs scale to 70B+ and beyond?</li>
+        <li>Optimal architecture at frontier scale</li>
+        <li>Hybrid AR-diffusion architectures</li>
+      </ul>
+      <h3 style="margin-top:18px;">Training</h3>
+      <ul>
+        <li>Better noise schedules for discrete diffusion</li>
+        <li>RLHF adapted for dLLMs</li>
+        <li>Multi-modal diffusion language models</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Decoding and inference</h3>
+      <ul>
+        <li>Theoretical bounds on parallel decoding</li>
+        <li>Speculative decoding for dLLMs</li>
+        <li>Hardware-aware decoding optimization</li>
+      </ul>
+      <h3 style="margin-top:18px;">Safety and understanding</h3>
+      <ul>
+        <li>Red-teaming at scale for dLLM-specific attacks</li>
+        <li>Formal safety guarantees, any-order generation</li>
+        <li>Multi-layer attention coupling theory</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 35 — Key Takeaways -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>Key Takeaways</h2>
+  <div class="divider"></div>
+  <ul class="num" style="max-width:960px;">
+    <li><strong>dLLMs are real.</strong> SEDD to LLaDA 2.0: theory to competitive 7B+ systems in under two years.</li>
+    <li><strong>Different behavior.</strong> Bidirectional + masked training yields unique inductive biases, both beneficial and dangerous.</li>
+    <li><strong>New control surfaces.</strong> Robustness, safety, watermarking, decoding all need dLLM-specific solutions.</li>
+    <li><strong>Architecture matters.</strong> Reversal curse mitigation comes from weight sharing, not the objective.</li>
+    <li><strong>Solutions exist today.</strong> Rainbow Padding, A2D, dgMARK, DAPD are all plug-and-play.</li>
+  </ul>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- SLIDE 36 — Q&A -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="slide end-slide">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Albert No &nbsp;·&nbsp; Yonsei University</p>
+</div>
 
 </div><!-- end deck -->
 
-<!-- ── Navigation ── -->
-<script src="../reference/deck.js"></script>
+<script defer src="../reference/deck.js"></script>
 </body>
 </html>

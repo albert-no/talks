@@ -11,24 +11,21 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
 <style>
-.tk-blue { color: var(--yonsei-blue); }
-.tk-red  { color: var(--warn); }
-.tk-green{ color: var(--success); }
-.proof {
-  background: linear-gradient(135deg, rgba(0,56,118,0.04) 0%, rgba(0,56,118,0.01) 100%);
+.it-proof {
+  background: rgba(0,56,118,0.04);
   border-left: 4px solid var(--yonsei-blue);
-  padding: 14px 22px 8px;
+  padding: 14px 22px 10px;
   border-radius: 0 8px 8px 0;
   margin: 8px 0;
 }
-.proof-tag {
+.it-proof-tag {
   display: inline-block;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--yonsei-blue);
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 </style>
 </head>
@@ -36,240 +33,237 @@
 
 <div class="deck" id="deck">
 
-<!-- ═══ TITLE ═══ -->
+<!-- SLIDE 1: Title -->
 <div class="slide title-slide active">
   <img class="title-logo" src="../reference/kor-eng2.png" alt="Yonsei University">
   <div class="pill pill-fill" style="margin-bottom:28px;">Diffusion · Lecture 2 of 3</div>
   <h1>Diffusion as a<br>Hierarchical VAE</h1>
   <div class="divider"></div>
   <p class="subtitle">Forward noising, reverse denoising, ELBO decomposition</p>
-  <p style="font-weight:500;font-size:1.8rem;margin-top:32px;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
   <p style="margin-top:6px;">Information Theory · 2026</p>
 </div>
 
-<!-- CONTENTS -->
+<!-- SLIDE 2: Contents -->
 <div class="slide">
   <h2>Contents</h2>
   <div class="divider"></div>
   <div class="toc-list">
     <div class="toc-item">
       <div class="toc-num">01</div><div class="toc-rule"></div>
-      <div><div class="toc-label">Forward (noising) process</div>
+      <div><div class="toc-label">Forward Process</div>
       <div class="toc-sub">Gaussian Markov chain, closed form $q(x_t\mid x_0)$</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">02</div><div class="toc-rule"></div>
-      <div><div class="toc-label">Reverse (denoising) process</div>
-      <div class="toc-sub">Learned Gaussian kernels, sample $x_T\to\cdots\to x_0$</div></div>
+      <div><div class="toc-label">Reverse Process</div>
+      <div class="toc-sub">Learned Gaussian kernels, hierarchical VAE structure</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">03</div><div class="toc-rule"></div>
-      <div><div class="toc-label">ELBO decomposition</div>
-      <div class="toc-sub">$L_0$, $L_T$, $L_t$ &mdash; what each term asks for</div></div>
+      <div><div class="toc-label">ELBO Decomposition</div>
+      <div class="toc-sub">$L_0$, $L_T$, $L_t$: what each term asks for</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">04</div><div class="toc-rule"></div>
-      <div><div class="toc-label">True reverse conditional</div>
+      <div><div class="toc-label">True Reverse Conditional</div>
       <div class="toc-sub">Closed form via completing the square</div></div>
     </div>
   </div>
 </div>
 
 
-<!-- ════════════ PART 01 — Forward ════════════ -->
+<!-- ════ PART 01 ════ -->
 <div class="slide section-slide left">
   <div class="section-num">01</div>
-  <h1>Forward (Noising) Process</h1>
+  <h1>Forward Process</h1>
   <div class="divider"></div>
-  <p class="subtitle">A fixed Markov chain that turns data into Gaussian noise</p>
+  <p class="subtitle">Fixed Markov chain turning data into Gaussian noise</p>
 </div>
 
-<!-- Forward definition -->
+<!-- Forward chain definition -->
 <div class="slide">
-  <h2>The forward chain</h2>
+  <h2>The Forward Chain</h2>
   <div class="divider"></div>
-  <p>Fix a variance schedule $\{\beta_t\}_{t=1}^{T}$ with $0&lt;\beta_t&lt;1$. Define $\alpha_t\coloneqq 1-\beta_t$, $\bar\alpha_t\coloneqq\prod_{s=1}^{t}\alpha_s$.</p>
-  <div class="math-block">$$q(x_{1:T}\mid x_0)\;=\;\prod_{t=1}^{T}q(x_t\mid x_{t-1}),\qquad q(x_t\mid x_{t-1})=\mathcal{N}\bigl(\sqrt{\alpha_t}\,x_{t-1},\;\beta_t I\bigr).$$</div>
-  <p>Each step contracts toward zero by $\sqrt{\alpha_t}$ and adds Gaussian noise of variance $\beta_t$. <strong>Variance-preserving</strong>: if $x_{t-1}$ has unit variance, so does $x_t$.</p>
+  <p>Schedule $\{\beta_t\}_{t=1}^T$, $0<\beta_t<1$. Define $\alpha_t\coloneqq 1-\beta_t$, $\bar\alpha_t\coloneqq\prod_{s=1}^t\alpha_s$.</p>
+  <div class="math-block">$$q(x_t\mid x_{t-1}) = \mathcal{N}\!\bigl(\sqrt{\alpha_t}\,x_{t-1},\;\beta_t I\bigr).$$</div>
+  <p>Each step contracts toward zero, adds $\mathcal{N}(0,\beta_t I)$ noise.</p>
+  <div class="highlight"><strong>Variance-preserving:</strong> unit-variance input stays unit-variance.</div>
 </div>
 
-<!-- Closed form q(x_t | x_0) -->
+<!-- Closed-form q(x_t|x_0) -->
 <div class="slide">
-  <h2>Closed form: $q(x_t\mid x_0)$</h2>
+  <h2>Closed Form: $q(x_t\mid x_0)$</h2>
   <div class="divider"></div>
-  <div class="proof">
-    <div class="proof-tag">Lemma</div>
-    <div class="math-block">$$q(x_t\mid x_0)\;=\;\mathcal{N}\bigl(\sqrt{\bar\alpha_t}\,x_0,\;(1-\bar\alpha_t)\,I\bigr).$$</div>
-    <p><strong>Proof by induction.</strong> True for $t=1$ since $\bar\alpha_1=\alpha_1$. Assume $q(x_{t-1}\mid x_0)=\mathcal{N}(\sqrt{\bar\alpha_{t-1}}x_0,(1-\bar\alpha_{t-1})I)$. Then $x_t=\sqrt{\alpha_t}x_{t-1}+\sqrt{\beta_t}\,\eta$ with $\eta\sim\mathcal{N}(0,I)$ independent. Mean: $\sqrt{\alpha_t}\sqrt{\bar\alpha_{t-1}}x_0=\sqrt{\bar\alpha_t}x_0$. Variance: $\alpha_t(1-\bar\alpha_{t-1})+\beta_t=\alpha_t-\alpha_t\bar\alpha_{t-1}+1-\alpha_t=1-\bar\alpha_t$. $\;\blacksquare$</p>
+  <div class="card">
+    <h3>Lemma.</h3>
+    <div class="math-block">$$q(x_t\mid x_0) = \mathcal{N}\!\bigl(\sqrt{\bar\alpha_t}\,x_0,\;(1-\bar\alpha_t)I\bigr).$$</div>
+  </div>
+  <div class="it-proof">
+    <div class="it-proof-tag">Proof by induction</div>
+    <p>Base: $t=1$, $\bar\alpha_1=\alpha_1$. Inductive step: $x_t=\sqrt{\alpha_t}x_{t-1}+\sqrt{\beta_t}\eta$. Mean: $\sqrt{\alpha_t\bar\alpha_{t-1}}\,x_0=\sqrt{\bar\alpha_t}\,x_0$. Variance: $\alpha_t(1-\bar\alpha_{t-1})+\beta_t=1-\bar\alpha_t$. $\;\blacksquare$</p>
   </div>
 </div>
 
-<!-- Reparameterization x_t -->
+<!-- Master reparameterization -->
 <div class="slide">
-  <h2>The master reparameterization</h2>
+  <h2>Master Reparameterization</h2>
   <div class="divider"></div>
-  <p>Equivalently: for $\varepsilon\sim\mathcal{N}(0,I)$,</p>
-  <div class="math-block">$$x_t\;=\;\sqrt{\bar\alpha_t}\,x_0\;+\;\sqrt{1-\bar\alpha_t}\,\varepsilon.$$</div>
-  <p>Given any $(x_0,t,\varepsilon)$, generate $x_t$ <strong>directly</strong> without simulating the chain. Training never simulates more than one step at a time.</p>
-  <p>As $t\to T$ with $\bar\alpha_T\approx 0$:</p>
-  <div class="math-block">$$x_T\;\approx\;\mathcal{N}(0,I).$$</div>
-  <p>The chain ends in (essentially) standard Gaussian noise &mdash; the prior we will sample from at generation time.</p>
+  <p>For $\varepsilon\sim\mathcal{N}(0,I)$:</p>
+  <div class="math-block">$$x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon.$$</div>
+  <p>Given $(x_0,t,\varepsilon)$: jump to $x_t$ <strong>directly</strong>, no chain simulation.</p>
+  <p>As $t\to T$, $\bar\alpha_T\approx 0$:</p>
+  <div class="math-block">$$x_T \approx \mathcal{N}(0,I).$$</div>
 </div>
 
 
-<!-- ════════════ PART 02 — Reverse ════════════ -->
+<!-- ════ PART 02 ════ -->
 <div class="slide section-slide left">
   <div class="section-num">02</div>
-  <h1>Reverse (Denoising) Process</h1>
+  <h1>Reverse Process</h1>
   <div class="divider"></div>
   <p class="subtitle">Learned Gaussian kernels run the chain backwards</p>
 </div>
 
-<!-- Reverse definition -->
+<!-- Reverse chain -->
 <div class="slide">
-  <h2>The reverse chain</h2>
+  <h2>The Reverse Chain</h2>
   <div class="divider"></div>
-  <p>Generative model:</p>
-  <div class="math-block">$$p_\theta(x_{0:T})\;=\;p(x_T)\,\prod_{t=1}^{T}p_\theta(x_{t-1}\mid x_t),\qquad p(x_T)=\mathcal{N}(0,I).$$</div>
-  <p>Choose Gaussian reverse kernels:</p>
-  <div class="math-block">$$p_\theta(x_{t-1}\mid x_t)=\mathcal{N}\bigl(\mu_\theta(x_t,t),\,\Sigma_t\bigr).$$</div>
-  <p>$\Sigma_t$ is fixed (or separately learned); $\mu_\theta$ is the learned object &mdash; usually a neural network.</p>
-  <p>Generation: sample $x_T\sim\mathcal{N}(0,I)$, then $x_{T-1}\sim p_\theta,\ldots,x_0\sim p_\theta$.</p>
+  <p>Generative model: $p(x_T)=\mathcal{N}(0,I)$, then:</p>
+  <div class="math-block">$$p_\theta(x_{0:T}) = p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}\mid x_t).$$</div>
+  <p>Learned Gaussian kernels:</p>
+  <div class="math-block">$$p_\theta(x_{t-1}\mid x_t) = \mathcal{N}\!\bigl(\mu_\theta(x_t,t),\,\Sigma_t\bigr).$$</div>
+  <p>Generation: sample $x_T$, then run $x_{T-1},\ldots,x_0$ via $p_\theta$.</p>
 </div>
 
-<!-- Diffusion as hierarchical VAE -->
+<!-- Hierarchical VAE structure -->
 <div class="slide">
-  <h2>Hierarchical VAE structure</h2>
+  <h2>Hierarchical VAE Structure</h2>
   <div class="divider"></div>
-  <p>Identify $X_0$ with the data, $(X_1,\ldots,X_T)$ with hierarchical latents. Then</p>
+  <p>Identify $X_0$ as data, $(X_1,\ldots,X_T)$ as hierarchical latents:</p>
   <ul>
-    <li>$q(x_{1:T}\mid x_0)$: the encoder &mdash; <strong>fixed</strong>, not learned.</li>
-    <li>$p_\theta(x_{0:T})$: the decoder &mdash; learned.</li>
-    <li>$p(x_T)=\mathcal{N}(0,I)$: the prior over the deepest latent.</li>
+    <li>$q(x_{1:T}\mid x_0)$: encoder. <strong>Fixed</strong>, not learned.</li>
+    <li>$p_\theta(x_{0:T})$: decoder. Learned.</li>
+    <li>$p(x_T)=\mathcal{N}(0,I)$: prior over deepest latent.</li>
   </ul>
-  <div class="highlight">
-    <p>Diffusion is a hierarchical VAE with a frozen Gaussian-Markov encoder. Posterior collapse is impossible &mdash; the encoder cannot trivialize.</p>
-  </div>
+  <div class="highlight">Frozen Gaussian-Markov encoder: <strong>posterior collapse impossible</strong>.</div>
 </div>
 
 
-<!-- ════════════ PART 03 — ELBO decomposition ════════════ -->
+<!-- ════ PART 03 ════ -->
 <div class="slide section-slide left">
   <div class="section-num">03</div>
   <h1>ELBO Decomposition</h1>
   <div class="divider"></div>
-  <p class="subtitle">$L_0$ + $L_T$ + $\sum L_t$ &mdash; reading off the training signal</p>
+  <p class="subtitle">$L_0$ + $L_T$ + $\sum L_t$: the training signal</p>
 </div>
 
 <!-- ELBO statement -->
 <div class="slide">
-  <h2>The diffusion ELBO</h2>
+  <h2>The Diffusion ELBO</h2>
   <div class="divider"></div>
   <p>From Lecture 1, applied to this hierarchical VAE:</p>
-  <div class="math-block">$$\log p_\theta(x_0)\;\ge\;\mathbb{E}_{q(x_{1:T}\mid x_0)}\!\left[\log p_\theta(x_{0:T})-\log q(x_{1:T}\mid x_0)\right].$$</div>
-  <p>Standard expansion gives</p>
-  <div class="math-block">$$-\log p_\theta(x_0)\;\le\;L_0+L_T+\sum_{t=2}^{T}L_{t-1},$$</div>
-  <p>where each $L$ is interpreted below.</p>
+  <div class="math-block">$$\log p_\theta(x_0) \ge \mathbb{E}_{q(x_{1:T}\mid x_0)}\!\bigl[\log p_\theta(x_{0:T}) - \log q(x_{1:T}\mid x_0)\bigr].$$</div>
+  <p>Expanding gives three types of terms:</p>
+  <div class="math-block">$$-\log p_\theta(x_0) \le L_0 + L_T + \sum_{t=2}^T L_{t-1}.$$</div>
 </div>
 
-<!-- L_0, L_T -->
+<!-- Boundary terms -->
 <div class="slide">
-  <h2>The boundary terms $L_0$ and $L_T$</h2>
+  <h2>Boundary Terms: $L_0$ and $L_T$</h2>
   <div class="divider"></div>
   <div class="grid-2">
-    <div class="card">
-      <h3 style="color:var(--blue-light);">$L_0$ &mdash; final-step reconstruction</h3>
-      <div class="math-block">$$L_0=-\mathbb{E}_{q(x_1\mid x_0)}\!\bigl[\log p_\theta(x_0\mid x_1)\bigr].$$</div>
-      <p>Decoder output likelihood at the cleanest step. Negligible for image-pixel models with discrete output (replaced by a one-step decoder).</p>
+    <div>
+      <h3>$L_0$: final reconstruction</h3>
+      <p>$-\mathbb{E}_{q(x_1\mid x_0)}[\log p_\theta(x_0\mid x_1)]$.</p>
+      <p>Negligible for discrete pixel models.</p>
     </div>
-    <div class="card">
-      <h3 style="color:var(--blue-light);">$L_T$ &mdash; prior-matching</h3>
-      <div class="math-block">$$L_T=D_{\mathrm{KL}}\bigl(q(x_T\mid x_0)\,\Vert\,p(x_T)\bigr).$$</div>
-      <p>Constant w.r.t. $\theta$. Zero asymptotically (with $\bar\alpha_T\to 0$) since both sides become $\mathcal{N}(0,I)$.</p>
+    <div>
+      <h3>$L_T$: prior matching</h3>
+      <p>$D_{\mathrm{KL}}\!\bigl(q(x_T\mid x_0)\Vert p(x_T)\bigr)$.</p>
+      <p>Constant in $\theta$. Vanishes as $\bar\alpha_T\to 0$.</p>
     </div>
   </div>
 </div>
 
-<!-- L_t -->
+<!-- Interior terms -->
 <div class="slide">
-  <h2>The interior terms $L_t$ &mdash; learning signal</h2>
+  <h2>Interior Terms: $L_t$ (Learning Signal)</h2>
   <div class="divider"></div>
   <p>For $t=1,\ldots,T-1$:</p>
-  <div class="math-block">$$L_t=\mathbb{E}_{q(x_t\mid x_0)}\!\bigl[D_{\mathrm{KL}}\bigl(q(x_{t-1}\mid x_t,x_0)\,\Vert\,p_\theta(x_{t-1}\mid x_t)\bigr)\bigr].$$</div>
-  <p>The model's reverse kernel must approximate the <strong>true reverse conditional</strong> $q(x_{t-1}\mid x_t,x_0)$. This is where all the learning happens.</p>
-  <p>Crucial fact: $q(x_{t-1}\mid x_t,x_0)$ is Gaussian with closed form &mdash; we derive it next. Comparing two Gaussians, $L_t$ becomes a clean MSE loss.</p>
+  <div class="math-block">$$L_t = \mathbb{E}_{q(x_t\mid x_0)}\!\bigl[D_{\mathrm{KL}}\bigl(q(x_{t-1}\mid x_t,x_0)\,\Vert\,p_\theta(x_{t-1}\mid x_t)\bigr)\bigr].$$</div>
+  <p>Model must approximate the <strong>true reverse conditional</strong>.</p>
+  <div class="highlight">$q(x_{t-1}\mid x_t,x_0)$ is Gaussian with closed form. Comparing two Gaussians makes $L_t$ an MSE.</div>
 </div>
 
 
-<!-- ════════════ PART 04 — True reverse conditional ════════════ -->
+<!-- ════ PART 04 ════ -->
 <div class="slide section-slide left">
   <div class="section-num">04</div>
-  <h1>The True Reverse Conditional</h1>
+  <h1>True Reverse Conditional</h1>
   <div class="divider"></div>
-  <p class="subtitle">Closed form via completing the square &mdash; the heart of training</p>
+  <p class="subtitle">Closed form via completing the square</p>
 </div>
 
 <!-- Setup -->
 <div class="slide">
-  <h2>Setup &mdash; what we want to compute</h2>
+  <h2>Setup: What We Want</h2>
   <div class="divider"></div>
-  <p>Want: $q(x_{t-1}\mid x_t,x_0)$, i.e.&nbsp;the conditional law of $x_{t-1}$ given both the noisy state $x_t$ and the clean data $x_0$.</p>
-  <p>Bayes:</p>
-  <div class="math-block">$$q(x_{t-1}\mid x_t,x_0)\;\propto\;\underbrace{q(x_t\mid x_{t-1})}_{\text{forward step}}\cdot\underbrace{q(x_{t-1}\mid x_0)}_{\text{closed form}}.$$</div>
-  <p>Both factors are Gaussian in $x_{t-1}$. Their product is Gaussian. Compute the mean and variance.</p>
+  <p>Target: $q(x_{t-1}\mid x_t,x_0)$, the law of $x_{t-1}$ given $x_t$ and $x_0$.</p>
+  <p>By Bayes:</p>
+  <div class="math-block">$$q(x_{t-1}\mid x_t,x_0) \propto \underbrace{q(x_t\mid x_{t-1})}_{\text{forward step}}\cdot\underbrace{q(x_{t-1}\mid x_0)}_{\text{closed form}}.$$</div>
+  <p>Both factors are Gaussian in $x_{t-1}$. Product is Gaussian.</p>
 </div>
 
-<!-- Derivation -->
+<!-- Derivation step 1 -->
 <div class="slide">
-  <h2>Closed form by completing the square</h2>
+  <h2>Completing the Square (1 of 2)</h2>
   <div class="divider"></div>
-  <div class="proof">
-    <div class="proof-tag">Derivation</div>
-    <p>Plug in the two Gaussian densities and collect terms quadratic in $x_{t-1}$:</p>
-    <div class="math-block">$$q(x_{t-1}\mid x_t,x_0)\;\propto\;\exp\!\left(-\tfrac{(x_t-\sqrt{\alpha_t}x_{t-1})^2}{2\beta_t}-\tfrac{(x_{t-1}-\sqrt{\bar\alpha_{t-1}}x_0)^2}{2(1-\bar\alpha_{t-1})}\right).$$</div>
-    <p>Expand and complete the square in $x_{t-1}$. Collect $1/(2\sigma^2)$ coefficient: $\frac{\alpha_t}{\beta_t}+\frac{1}{1-\bar\alpha_{t-1}}=\frac{1-\bar\alpha_t}{\beta_t(1-\bar\alpha_{t-1})}$. So</p>
-    <div class="math-block">$$\widetilde\beta_t\;\coloneqq\;\dfrac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\,\beta_t.$$</div>
+  <div class="it-proof">
+    <div class="it-proof-tag">Derivation</div>
+    <p>Plug in both Gaussians and collect the exponent:</p>
+    <div class="math-block">$$\propto \exp\!\left(-\frac{(x_t-\sqrt{\alpha_t}x_{t-1})^2}{2\beta_t}-\frac{(x_{t-1}-\sqrt{\bar\alpha_{t-1}}x_0)^2}{2(1-\bar\alpha_{t-1})}\right).$$</div>
+    <p>Coefficient of $x_{t-1}^2$: $\dfrac{\alpha_t}{\beta_t}+\dfrac{1}{1-\bar\alpha_{t-1}} = \dfrac{1-\bar\alpha_t}{\beta_t(1-\bar\alpha_{t-1})}$.</p>
   </div>
+  <p>Posterior variance:</p>
+  <div class="math-block">$$\tilde\beta_t \coloneqq \dfrac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\,\beta_t.$$</div>
 </div>
 
-<!-- Mean -->
+<!-- Derivation step 2 -->
 <div class="slide">
-  <h2>Mean of the true reverse conditional</h2>
+  <h2>Completing the Square (2 of 2)</h2>
   <div class="divider"></div>
-  <div class="proof">
-    <div class="proof-tag">Continuing the derivation</div>
-    <p>Collect the linear-in-$x_{t-1}$ coefficient: $\sqrt{\alpha_t}\,x_t/\beta_t+\sqrt{\bar\alpha_{t-1}}x_0/(1-\bar\alpha_{t-1})$. Divide by $1/\widetilde\beta_t$ to get the mean:</p>
-    <div class="math-block">$$\mu_q(x_t,x_0)\;=\;\dfrac{\sqrt{\bar\alpha_{t-1}}\,\beta_t}{1-\bar\alpha_t}\,x_0\;+\;\dfrac{\sqrt{\alpha_t}\,(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}\,x_t.$$</div>
-    <p><strong>Final form:</strong></p>
-    <div class="math-block">$$q(x_{t-1}\mid x_t,x_0)\;=\;\mathcal{N}\bigl(\mu_q(x_t,x_0),\,\widetilde\beta_t I\bigr).\;\blacksquare$$</div>
+  <div class="it-proof">
+    <div class="it-proof-tag">Continuing</div>
+    <p>Collect linear coefficient; divide by $1/\tilde\beta_t$ for posterior mean:</p>
+    <div class="math-block">$$\mu_q(x_t,x_0) = \frac{\sqrt{\bar\alpha_{t-1}}\,\beta_t}{1-\bar\alpha_t}\,x_0 + \frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}\,x_t.$$</div>
+    <p><strong>Closed form:</strong></p>
+    <div class="math-block">$$q(x_{t-1}\mid x_t,x_0) = \mathcal{N}\!\bigl(\mu_q(x_t,x_0),\,\tilde\beta_t I\bigr). \;\blacksquare$$</div>
   </div>
 </div>
 
 <!-- L_t becomes MSE -->
 <div class="slide">
-  <h2>$L_t$ becomes a Gaussian-Gaussian KL = MSE</h2>
+  <h2>$L_t$ Becomes MSE</h2>
   <div class="divider"></div>
-  <p>Both $q(x_{t-1}\mid x_t,x_0)$ and $p_\theta(x_{t-1}\mid x_t)$ are Gaussian with the same fixed variance (by convention, $\Sigma_t=\widetilde\beta_t I$). KL between equal-covariance Gaussians:</p>
-  <div class="math-block">$$D_{\mathrm{KL}}\bigl(\mathcal{N}(\mu_q,\Sigma)\,\Vert\,\mathcal{N}(\mu_\theta,\Sigma)\bigr)\;=\;\dfrac{1}{2}\,(\mu_q-\mu_\theta)^\top\Sigma^{-1}(\mu_q-\mu_\theta).$$</div>
-  <p>For $\Sigma=\widetilde\beta_t I$:</p>
-  <div class="math-block">$$L_t\;\propto\;\mathbb{E}_q\!\left[\,\|\mu_q(x_t,x_0)-\mu_\theta(x_t,t)\|^2\,\right].$$</div>
-  <p>Training reduces to MSE regression of $\mu_\theta(x_t,t)$ onto $\mu_q(x_t,x_0)$.</p>
+  <p>Both $q(x_{t-1}\mid x_t,x_0)$ and $p_\theta(x_{t-1}\mid x_t)$ are Gaussian with equal covariance $\tilde\beta_t I$:</p>
+  <div class="math-block">$$D_{\mathrm{KL}}\!\bigl(\mathcal{N}(\mu_q,\Sigma)\Vert\mathcal{N}(\mu_\theta,\Sigma)\bigr) = \tfrac{1}{2}(\mu_q-\mu_\theta)^\top\Sigma^{-1}(\mu_q-\mu_\theta).$$</div>
+  <div class="highlight">
+    Training objective: $L_t \propto \mathbb{E}_q\!\bigl[\,\|\mu_q(x_t,x_0)-\mu_\theta(x_t,t)\|^2\,\bigr]$.
+  </div>
 </div>
 
-<!-- Pointing forward -->
+<!-- Bridge to Lecture 3 -->
 <div class="slide">
-  <h2>What's left: parameterizing $\mu_\theta$</h2>
+  <h2>Parameterizing $\mu_\theta$</h2>
   <div class="divider"></div>
-  <p>Three equivalent parameterizations of the reverse mean:</p>
+  <p>Three equivalent choices:</p>
   <ul>
-    <li>Predict $x_0$ directly &mdash; train against the clean data.</li>
-    <li>Predict the noise $\varepsilon$ &mdash; the empirical workhorse.</li>
-    <li>Predict the score $\nabla_x\log p_t(x)$ &mdash; the SDE perspective.</li>
+    <li>Predict <strong>$x_0$</strong>: train against clean data</li>
+    <li>Predict <strong>noise $\varepsilon$</strong>: the DDPM default</li>
+    <li>Predict <strong>score $\nabla_x\log p_t(x)$</strong>: the SDE view</li>
   </ul>
-  <p>All three are linked by the master reparameterization $x_t=\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\varepsilon$ and Tweedie's formula.</p>
-  <div class="highlight">
-    <p>Lecture 3 derives all three views, the equivalences between them, and the information-theoretic interpretation of each forward step as a noisy channel.</p>
-  </div>
+  <div class="highlight">Lecture 3 derives all three views and the Tweedie links between them.</div>
 </div>
 
 <!-- Recap -->
@@ -277,25 +271,25 @@
   <h2>Recap of Lecture 2</h2>
   <div class="divider"></div>
   <ul>
-    <li><strong>Forward:</strong> $q(x_t\mid x_{t-1})=\mathcal{N}(\sqrt{\alpha_t}x_{t-1},\beta_t I)$. Closed form $q(x_t\mid x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}x_0,(1-\bar\alpha_t)I)$.</li>
-    <li><strong>Reverse:</strong> $p_\theta(x_{t-1}\mid x_t)=\mathcal{N}(\mu_\theta(x_t,t),\Sigma_t)$. Generative chain runs backward.</li>
-    <li><strong>Hierarchical VAE:</strong> latents $X_1,\ldots,X_T$, fixed encoder $q$, learned decoder $p_\theta$, no posterior collapse.</li>
-    <li><strong>ELBO decomposition:</strong> $-\log p_\theta(x_0)\le L_0+L_T+\sum_{t=2}^{T}L_{t-1}$.</li>
-    <li><strong>True reverse conditional:</strong> Gaussian, closed form via completing the square.</li>
-    <li><strong>$L_t$ becomes MSE</strong> on the reverse-mean prediction.</li>
+    <li><strong>Forward:</strong> $q(x_t\mid x_0)=\mathcal{N}(\sqrt{\bar\alpha_t}x_0,(1-\bar\alpha_t)I)$</li>
+    <li><strong>Reverse:</strong> learned Gaussian kernels $p_\theta(x_{t-1}\mid x_t)$</li>
+    <li><strong>Hierarchical VAE:</strong> fixed encoder, no posterior collapse</li>
+    <li><strong>ELBO:</strong> $-\log p_\theta(x_0)\le L_0+L_T+\sum L_{t-1}$</li>
+    <li><strong>True reverse:</strong> Gaussian, closed form via completing the square</li>
+    <li><strong>$L_t$:</strong> MSE on reverse-mean prediction</li>
   </ul>
 </div>
 
 <!-- Closer -->
 <div class="slide end-slide no-footer">
   <div class="big-word">End of Lecture 2</div>
-  <p class="big-word-sub">Up next &mdash; predicting $x_0$, $\varepsilon$, or the score.</p>
+  <p class="big-word-sub">Up next: predicting $x_0$, $\varepsilon$, or the score.</p>
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
 <div class="slide-num" id="slideNum">1 / 1</div>
 
-</div>
+</div><!-- end deck -->
 
 <script src="../reference/deck.js"></script>
 </body>
