@@ -127,6 +127,7 @@ Never recolor for decoration. Pick once, apply consistently — color carries se
 | `.cite` | 0.85rem | — | — |
 | `.small` | 1.15rem | — | (gated — see Priority 0) |
 | `.tiny` | 0.95rem | — | (banned — see Priority 0) |
+| `.code-block` | 1.25rem | 500 (kw 700, fn 600) | 1.6 |
 
 `text-wrap: balance` on `h1`/`h2`/`h3`/`.subtitle`; `text-wrap: pretty` on `p`/`li`/`.small`/`.tiny`. Don't override.
 
@@ -148,7 +149,7 @@ Every class below is defined in `reference/deck.css`. Reuse — don't invent.
 
 **Backgrounds** — `.bg-light` (subtle gray), `.bg-accent` (Yonsei blue, white text, inverts component defaults; reserve for section dividers and statement slides).
 
-**Building blocks** — `.card`, `.highlight` (max one per slide), `.pill` / `.pill-fill`, `.divider`, `.math-block`, `.diagram-flow` / `.diagram-box`, `.cite`, `.brand-footer` (auto-injected).
+**Building blocks** — `.card`, `.highlight` (max one per slide), `.pill` / `.pill-fill`, `.divider`, `.math-block`, `.code-block` (with `.kw` / `.fn` / `.cm` / `.str` for syntax tokens), `.diagram-flow` / `.diagram-box`, `.cite`, `.brand-footer` (auto-injected).
 
 **Token chips** — `.token-mask` / `-gen` / `-fixed` / `-eos` / `-safe` / `-pad` / `-pad2` / `-pad3`.
 
@@ -286,6 +287,15 @@ For short 2-column dichotomies use `.grid-2` with bare `<h3>` + `<p>` (no `.card
 <div class="math-block">$$\mathcal{L} = \mathbb{E}[-\log p_\theta(x_0)]$$</div>
 ```
 Use `$$…$$` for `\begin{cases}` and `\begin{align}`. Inline `$…$\displaystyle$…$` with `nowrap` is fragile — see GOTCHAS.
+
+**Code / pseudocode block**
+```html
+<div class="code-block"><span class="cm"># Membership inference, simplest form</span>
+<span class="kw">def</span> <span class="fn">attack</span>(model, x, τ):
+    return model.<span class="fn">loss</span>(x) <span class="kw">&lt;</span> τ      <span class="cm"># member if loss is small</span>
+</div>
+```
+Tokens: `.kw` (keyword, blue, 700), `.fn` (function name, accent, 600), `.cm` (comment, gray), `.str` (string, green, 600). Render at 1.25rem / weight 500 — large and thick enough to read from the back row. Pseudocode is fine; full Python listings rarely fit (move to the note file).
 
 **Paper-overview slide** (citation as footnote, not card)
 ```html

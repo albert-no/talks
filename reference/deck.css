@@ -169,6 +169,26 @@ ul.num li::before {
 }
 .bg-accent .math-block { background: rgba(255,255,255,0.1); }
 
+/* ── Code block (§2.20) ── */
+.code-block {
+  background: var(--light);
+  border: 1px solid var(--slate);
+  border-radius: 8px;
+  padding: 18px 24px;
+  margin: 14px 0;
+  font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--charcoal);
+}
+.bg-accent .code-block { background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2); }
+.code-block .kw  { color: var(--yonsei-blue); font-weight: 700; }
+.code-block .fn  { color: var(--accent); font-weight: 600; }
+.code-block .cm  { color: var(--gray-text); }
+.code-block .str { color: var(--success); font-weight: 600; }
+
 /* ── Diagram (§2.11) ── */
 .diagram-flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
 .diagram-box {

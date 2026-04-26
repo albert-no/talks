@@ -10,6 +10,14 @@ Cause: a per-deck `<style>` redefined `p`, `li`, `h2`, `h3`, `.small`, `.tiny`, 
 
 Fix: delete the override. Component-scoped sizes (e.g. `.sr-box p`, `.paper-card .desc`) at `1.05–1.35rem` are fine; canonical tokens are off-limits.
 
+## `.code-block` looks small or thin
+
+Symptom: pseudocode on the slide is hard to read from the back of the room — too small, too light, or comments dissolve into the background.
+
+Cause (historical, fixed 2026-04): early decks defined `.code-block` inline at `font-size: 0.85rem`, default weight, `'Courier New'` (a thin face), and used `#999` for comments (poor contrast on the `--light` background). The class is now canonical in `reference/deck.css` at 1.25rem / weight 500, with `Menlo`/`Consolas` ahead of `Courier New` in the font stack and `var(--gray-text)` for comments.
+
+Fix: do **not** redefine `.code-block` in a deck's inline `<style>` — it's a canonical token. If existing decks still have the old definition, delete it; the canonical version takes over automatically.
+
 ## Brand footer drifts → a slide opted out of `inset: 0`
 
 Symptom: "Yonsei University" wordmark moves or disappears on specific slides.
