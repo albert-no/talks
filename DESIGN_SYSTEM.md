@@ -486,6 +486,30 @@ Not a paper draft, not a transcript. The speaker's reading companion.
 
 ---
 
+## OUTLINE.md (per-folder index)
+
+Every folder carries an `OUTLINE.md`: root navigator, folder overview, leaf subfolder. Leaf files list every deck's section table with `file:line` pointers and every named theorem/lemma/key formula with its line number. They are the canonical map for finding "where does proof X live" without grepping.
+
+### Read-side rule — consult before writing
+
+**Before writing or substantively rewriting any slide content, read the relevant `OUTLINE.md` files.** The cost is a few seconds; the reward is avoiding redefinition, contradiction, or duplication. Two scenarios trigger this:
+
+1. **In-track continuity (same lecture series).** When extending a multi-deck series — e.g., writing `privacy/mia/mia3-theory.html` — open `privacy/mia/OUTLINE.md` and `privacy/OUTLINE.md` first. Confirm what notation, definitions, attacks, theorems, and benchmarks earlier decks already established. Do not redefine $(\varepsilon, \delta)$-DP if `privacy/dp/DP-FL.html` covered it; refer back via a brief "Recall (Lecture X)" instead. Conversely, if a prerequisite has *not* been covered, decide whether to (a) add a one-slide recap, (b) point students to the prior deck, or (c) defer the topic. Skipping this check produces decks that talk past each other.
+
+2. **Cross-folder reuse (same topic, different track).** When writing on a topic that may already live elsewhere — diffusion (`infotheory/diffusion/` vs `privacy/diffusion/` vs `dllm/dllm.html`), DP (`privacy/dp/` vs `privacy/mia/mia1-foundations.html`), MI bounds (`infotheory/mi/` vs anywhere CLIP/InfoNCE comes up) — open the **root `OUTLINE.md` quick-lookup table** and the relevant leaf files in the *other* folder. Decide explicitly: reuse the derivation as-is, adapt to the new framing, link via "see also", or deliberately contradict (with rationale). Do not rederive a theorem in track B that already has a clean statement and proof in track A's notes — link to `<file>:<line>` instead.
+
+When the OUTLINE entries you find are too coarse to answer the question, descend into the cited `<file>:<line>` and confirm. The OUTLINE points; it does not replace reading the deck.
+
+### Write-side rule — keep outlines accurate
+
+**Maintenance rule (non-negotiable):** any slide edit that changes a section boundary, line range, or named theorem location requires the corresponding `OUTLINE.md` line numbers to be updated *in the same change*. Adding a slide → add the entry. Removing a slide → remove it. Renaming a section → rename it everywhere it is cited (leaf, folder, root quick-lookup). Bulk renumbering after a multi-slide insertion is part of the edit, not a follow-up.
+
+If you cannot locate a topic from the OUTLINE files, the OUTLINE files are stale — fix them, don't work around them. Stale outlines are worse than no outlines because they mislead.
+
+When creating a new deck, add a stub entry in the leaf `OUTLINE.md` before writing the deck (file path + topic line). Cross-references to other decks (in the root quick-lookup table) get added when the relevant content is actually present.
+
+---
+
 ## Extension checklist
 
 Before adding a new component:
