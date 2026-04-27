@@ -16,7 +16,14 @@ Canonical rules for slide decks. **Audience**: academic conference talks and mas
 | State a theorem rigorously | Math-heavy → Theorem |
 | Show a proof rigorously | Math-heavy → Proof |
 | Show proof intuition (color, build-up) | Math-heavy → Intuition + Build-up |
+| Bracket a multi-step proof | Math-heavy → Multi-step proof pattern |
+| Stack two related equations | Math-heavy → Stacked equations |
+| Substitute variables back into a result | Math-heavy → Substitution |
+| Label terms in a long equation | Math-heavy → Underbrace labels |
 | Inline / display math | Recipes → Math slide |
+| Add an exercise next to its content | Recipes → Inline exercise |
+| Show an algorithm cleanly | Recipes → Algorithm slide |
+| Visualize a chain / dependency | Recipes → Chain diagram |
 | Cite a paper | Components → `.cite` + Recipes → Paper-overview |
 | Section divider | Recipes → Section divider |
 | Title slide / Closer | Recipes → Title / Closer |
@@ -46,6 +53,10 @@ Important content (audience must read it during the talk) → body size. Non-imp
 **Phrases, not sentences.** Telegraphic noun phrases. Drop narrative connectors ("this means…", "in other words…", "essentially", "actually"). Drop soft qualifiers ("very", "quite", "fairly"). Speaker narrates; the slide is a visual anchor. This applies to `h2` titles too — short and abstract (3–6 words), not action-title sentences.
 
 **Math is not prose.** A theorem statement, definition, or equation in a `.math-block` doesn't count toward the 40-word ceiling. The ceiling exists to keep prose lean — math earns its space.
+
+**One claim per line.** When a paragraph, `<li>`, `.highlight`, or `.card` carries multiple distinct claims joined by periods, split each into its own `<p>` (or convert the run to a `<ul>` if there are 3+ short claims). Two assertions that look like one sentence read as one idea — the audience won't track both. This applies inside `.highlight` / `.card` too: separate `<p>` siblings, not concatenated sentences.
+
+**Math-comma-math — anti-pattern.** Most of the time, starting a clause with math is fine. The specific failure is when the *previous* clause also *ended* in math: "For large $N$, $N\sigma^2$ dominates" — the two glyphs sit on either side of the comma and the eye reads them as one continuous expression ($N, N\sigma^2$). Insert a noun in the second clause ("the second term $N\sigma^2$ dominates") or restructure so the boundary isn't math-comma-math.
 
 When prose visibly wraps:
 
@@ -247,6 +258,85 @@ Auto-cycling animation is banned for talks (speaker loses pacing — see GOTCHAS
 
 Use the math-context color table above. One color = one role across the whole deck.
 
+### Stacked equations belong in one block
+
+Two related equations stacked vertically → single `<div class="math-block">` with `\begin{aligned}`, **not** two adjacent `math-block` divs. Adjacent blocks introduce too much vertical gap; the eye reads them as separate ideas instead of two lines of one chain.
+
+```html
+<!-- yes: tight stacking -->
+<div class="math-block">$$\begin{aligned}
+  X^{(0)} &= X, \\
+  X^{(n)} &= X^{(n-1)} + Z^{(n)}.
+\end{aligned}$$</div>
+
+<!-- no: too much gap, reads as two unrelated equations -->
+<div class="math-block">$$X^{(0)} = X.$$</div>
+<div class="math-block">$$X^{(n)} = X^{(n-1)} + Z^{(n)}.$$</div>
+```
+
+**Exception**: when the second equation is a *key conclusion* deserving its own moment (final result, closing claim), promote it to its own `math-block` so it lands separately from the working math above. The visual gap then becomes signal, not noise.
+
+### Multi-step proof pattern
+
+For derivations that span 4+ logical steps, bracket the sequence. Definitions precede roadmaps; recap is a chained equation, not a re-listed bullet summary.
+
+1. **Setup** — define variables and the problem (one slide).
+2. **Outline** — show the *target* (e.g., the Bayes formula we're about to simplify) in a `math-block`, followed by an `<ol>` of the step labels. This previews the path.
+3. **Step 1 … Step k** — one logical step per slide, body math at body size.
+4. **Recap** — a single `aligned` block showing the unified equation chain, with each step labeled above its relation symbol via `\stackrel{(k)}{=}` or `\stackrel{(k)}{\approx}`. Don't reuse the bulleted outline as a recap — outline previews step *labels*, recap shows the equation *chain*.
+
+```html
+<!-- Recap form -->
+<div class="math-block">$$\begin{aligned}
+  P_{X|Y}(x|y)
+    &= \frac{P_{Y|X}(y|x)\,P_X(x)}{P_Y(y)} \\
+    &\stackrel{(1)}{\approx}\; \tfrac{P_{Y|X}\,[P_X(y) + P'_X(y)(x-y)]}{P_Y(y)} \\
+    &\stackrel{(2)}{\approx}\; P_{Y|X}\!\left[1 + \tfrac{P'_X(y)}{P_X(y)}(x-y)\right] \\
+    &\stackrel{(3)}{\approx}\; \cdots \\
+    &\stackrel{(4)}{=}\; \mathcal{N}(\mu_*, \sigma^2)(x).
+\end{aligned}$$</div>
+```
+
+### Substitution
+
+When applying an abstract result by relabeling variables, show the abstract form first, then the substitution arrow, then the concrete form. Don't jump straight to the substituted form — the reader loses sight of which result you're invoking.
+
+```html
+<p>Step 4 result, with $X = \tilde X^{(n-1)}$ and $Y = \tilde X^{(n)}$:</p>
+<div class="math-block">$$X\,|\,Y \;\sim\; \mathcal{N}(Y + \sigma^2\partial_y \log P_X(Y),\; \sigma^2).$$</div>
+<p>Substitute $X \to \tilde x^{(n-1)}$, $Y \to \tilde x^{(n)}$:</p>
+<div class="math-block">$$\tilde x^{(n-1)} = \tilde x^{(n)} + \sigma^2\,\partial \log P_{X^{(n)}}(\tilde x^{(n)}) + \tilde z^{(n)}.$$</div>
+```
+
+### Underbrace labels
+
+Use `\underbrace{...}_{\text{name}}` to label parts of a long equation in place. **Label the per-term operand, not the whole sum**: a `\sum_n` over labeled terms is more useful than a single label on the whole sum, because the label names the per-step object the reader will reason about later.
+
+```latex
+%% yes: sum is outside, each summand labeled
+\sum_{n=2}^{N} \underbrace{\bigl(-\log\tfrac{p_\theta}{q}\bigr)}_{L_{n-1}}
+
+%% no: wrong abstraction level — `\sum L_{n-1}` is not the natural object
+\underbrace{-\sum_{n=2}^{N} \log\tfrac{p_\theta}{q}}_{\sum L_{n-1}}
+```
+
+### Recall before derive
+
+When deriving B from A, state A first as a self-contained fact (own paragraph + `math-block`), *then* derive B. Don't refer to A in a trailing parenthetical or "where …, known in closed form since $A$" clause — that hides the prerequisite under the consequence and the reader has to re-parse.
+
+```html
+<!-- yes: A first, B derived from it -->
+<p>Conditional forward marginal (closed form):</p>
+<div class="math-block">$$q(X^{(n)}|X^{(0)}) = \mathcal{N}(\sqrt{\bar α_n}\,X^{(0)},\; 1-\bar α_n).$$</div>
+<p>Hence the reverse posterior is also Gaussian:</p>
+<div class="math-block">$$q(X^{(n-1)}|X^{(n)}, X^{(0)}) = \mathcal{N}(\mu_n, \beta_n).$$</div>
+
+<!-- no: prerequisite tucked in a trailing clause -->
+<p>The reverse posterior is Gaussian:</p>
+<div class="math-block">$$q(\cdots) = \mathcal{N}(\mu_n, \beta_n),$$</div>
+<p>where $\mu_n$ uses the conditional score, known in closed form since $q(X^{(n)}|X^{(0)}) = \mathcal{N}(\ldots)$.</p>
+```
+
 ---
 
 ## Recipes
@@ -336,6 +426,53 @@ One citation per slide. Don't wrap title in `<em>` (gray-on-gray is mud).
 ```
 
 **Diagram with math labels.** Build structure in HTML (flex/grid + divs), use SVG only for arrows. Reference: `.fl4-*` / `.ldp-*` / `.rdm-*` in `privacy/DP-FL.html`. Never put `$…$` inside SVG `<text>` — KaTeX skips it (see GOTCHAS).
+
+**Algorithm slide.** A single styled box, centered. Don't pad with a right-column auxiliary diagram — the algorithm is the exhibit. Per-deck define `.<deck>-algo` once if reused (background `--light`, left border 3px `--yonsei-blue`, padding `16px 22px`, radius `0 10px 10px 0`).
+
+```html
+<div class="slide">
+  <h2>Training Algorithm</h2><div class="divider"></div>
+  <div class="d2-algo" style="max-width:880px; margin:36px auto 22px;">
+    <div class="d2-algo-title">DDPM Training — repeat until converged</div>
+    <ol>
+      <li>Sample $X^{(0)} \sim p_{\text{data}}$.</li>
+      <li>Sample $\epsilon \sim \mathcal{N}(0,1)$.</li>
+      <li>Form $X^{(n)} = \sqrt{\bar α_n}\,X^{(0)} + \sqrt{1-\bar α_n}\,\epsilon$.</li>
+      <li>Gradient step on $\|\epsilon - \epsilon_\theta(X^{(n)}, n)\|^2$.</li>
+    </ol>
+  </div>
+  <p style="text-align:center;">Caption (e.g., weighting choice).</p>
+</div>
+```
+
+`max-width` ≈ 880px for compact algorithms, ≈ 1040px when a step carries long math. Caption below, centered. Add a side diagram only if it conveys real new information beyond what's in the algorithm.
+
+**Inline exercise.** Plain `<p><strong>Exercise.</strong> …</p>` placed next to the related content (definition, theorem, formula). Optional `<em>Hint:</em>` clause. **Don't** create a trailing "Check It Yourself" slide; **don't** introduce per-deck `.exercise-list` styling — the standalone exercise slide pattern was retired.
+
+```html
+<div class="math-block">$$f(x) = \tfrac{1}{\pi}\,\tfrac{\gamma}{x^2+\gamma^2}.$$</div>
+<p><strong>Exercise.</strong> Verify $\int_{-\infty}^{\infty} f(x)\,dx = 1$.</p>
+```
+
+If a slide is already at element budget and the exercise would push past the footer, move it to the *sibling slide that introduces the fact the exercise verifies* — not the slide that uses the fact.
+
+**Chain / dependency diagram.** Inline flex row of math glyphs joined by token-colored arrows. Active edge in `--yonsei-blue`, sleeping edges in `--gray-text`. Place adjacent to the claim it supports (e.g. a Markov-chain illustration above the Markov identity). For longer chains use ellipsis nodes (`$\cdots$`) in `--gray-text`.
+
+```html
+<div style="display:flex; justify-content:center; align-items:center; gap:14px; margin:18px 0; font-size:1.55rem;">
+  <span>$X^{(0)}$</span>
+  <span style="color:var(--gray-text);">$\to$</span>
+  <span>$\cdots$</span>
+  <span style="color:var(--gray-text);">$\to$</span>
+  <span>$X^{(n-1)}$</span>
+  <span style="color:var(--yonsei-blue); font-weight:700;">$\to$</span>
+  <span>$X^{(n)}$</span>
+  <span style="color:var(--gray-text);">$\to$</span>
+  <span>$X^{(N)}$</span>
+</div>
+```
+
+For boxed nodes (more visual weight), use `.diagram-flow` + `.diagram-box` instead. For a plain inline chain, the bare flex above is lighter and fits more nodes.
 
 ---
 

@@ -11,24 +11,6 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
 <style>
-.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
-.exercise-list > li {
-  counter-increment: exn;
-  padding: 14px 18px 14px 64px;
-  position: relative;
-  margin-bottom: 12px;
-  background: var(--light);
-  border-left: 3px solid var(--yonsei-blue);
-  border-radius: 0 8px 8px 0;
-}
-.exercise-list > li::before {
-  content: "Q" counter(exn);
-  position: absolute;
-  left: 18px; top: 14px;
-  font-weight: 600;
-  color: var(--yonsei-blue);
-  letter-spacing: -0.02em;
-}
 .d2-algo {
   background: var(--light);
   border: 1px solid var(--slate);
@@ -116,8 +98,12 @@
 <div class="slide">
   <h2>Why Variance Preserving?</h2>
   <div class="divider"></div>
-  <p>VE process: variance $\sigma_0^2 + n\sigma^2 \to \infty$. Terminal distribution depends on data variance.</p>
-  <p>Prefer a <strong>fixed</strong> terminal, ideally $\mathcal{N}(0,1)$: trivial to sample from.</p>
+  <ul>
+    <li>VE process: variance $\sigma_0^2 + n\sigma^2 \to \infty$.</li>
+    <li>Terminal distribution depends on data variance.</li>
+    <li>Prefer a <strong>fixed</strong> terminal, ideally $\mathcal{N}(0,1)$.</li>
+    <li>Trivial to sample from.</li>
+  </ul>
   <div class="highlight">
     <p>Shrink $X^{(n-1)}$ before adding noise: signal decays, noise accumulates to unit variance.</p>
   </div>
@@ -129,8 +115,11 @@
   <div class="divider"></div>
   <p>Fix schedule $\{\beta_n\}_{n=1}^N$ with $0 < \beta_n < 1$:</p>
   <div class="math-block">$$X^{(n)} = \sqrt{1-\beta_n}\,X^{(n-1)} + \sqrt{\beta_n}\,Z^{(n)},\quad Z^{(n)} \sim \mathcal{N}(0,1)\ \text{i.i.d.}$$</div>
-  <p>Equivalently, $X^{(n)}\,|\,X^{(n-1)} \sim \mathcal{N}\!\left(\sqrt{1-\beta_n}\,X^{(n-1)},\; \beta_n\right)$.</p>
-  <p>If $\mathrm{Var}(X^{(n-1)}) = 1$, then $\mathrm{Var}(X^{(n)}) = (1-\beta_n) + \beta_n = 1$.</p>
+  <ul>
+    <li>Equivalently, $X^{(n)}\,|\,X^{(n-1)} \sim \mathcal{N}\!\left(\sqrt{1-\beta_n}\,X^{(n-1)},\; \beta_n\right)$.</li>
+    <li>If $\mathrm{Var}(X^{(n-1)}) = 1$, then $\mathrm{Var}(X^{(n)}) = (1-\beta_n) + \beta_n = 1$.</li>
+  </ul>
+  <p><strong>Exercise.</strong> Verify VP preserves variance and find $\mathrm{Var}(X^{(N)})$ as $N \to \infty$.</p>
 </div>
 
 <!-- SLIDE: One-shot corruption -->
@@ -152,11 +141,13 @@
   <p>Using independence of $X^{(n-1)}$ and $Z^{(n)}$:</p>
   <div class="math-block">$$\begin{aligned}
     M_{X^{(n)}}(t)
-    &= \mathbb{E}\bigl[e^{t\sqrt{1-\beta_n}X^{(n-1)}}\bigr]\,e^{\beta_n t^2/2} \\
-    &= \cdots = \mathbb{E}\bigl[e^{t\sqrt{\bar{\alpha}_n}X^{(0)}}\bigr]\,e^{(1-\bar{\alpha}_n)\,t^2/2}.
+      &= \mathbb{E}\bigl[e^{t\sqrt{1-\beta_n}\,X^{(n-1)}}\bigr]\,e^{\beta_n t^2 / 2} \\
+      &\;\;\vdots \\
+      &= \mathbb{E}\bigl[e^{t\sqrt{\bar{\alpha}_n}\,X^{(0)}}\bigr]\,e^{(1-\bar{\alpha}_n)\,t^2 / 2}.
   \end{aligned}$$</div>
   <div class="highlight">
-    <p>As $\bar{\alpha}_n \to 0$: first factor $\to 1$, second $\to e^{t^2/2}$. Terminal $X^{(N)} \xrightarrow{d} \mathcal{N}(0,1)$, independent of data law.</p>
+    <p>As $\bar{\alpha}_n \to 0$: first factor $\to 1$, second $\to e^{t^2/2}$.</p>
+    <p>Terminal $X^{(N)} \xrightarrow{d} \mathcal{N}(0,1)$, independent of data law.</p>
   </div>
 </div>
 
@@ -202,49 +193,78 @@
   <p class="subtitle">Jensen, Markov identity, three-term decomposition</p>
 </div>
 
-<!-- SLIDE: Notation -->
+<!-- SLIDE: The generative model -->
 <div class="slide">
-  <h2>Notation</h2>
+  <h2>The Generative Model</h2>
   <div class="divider"></div>
-  <p>Write $X^{(i:j)} = (X^{(i)}, \ldots, X^{(j)})$. Forward $q$, learned reverse $p_\theta$:</p>
+  <p>We want to <strong>maximize the marginal</strong> $p_\theta(X^{(0)})$ on data — first we must compute it.</p>
+  <p>Reverse chain ($p(X^{(N)}) = \mathcal{N}(0,1)$, $X^{(i:j)} = (X^{(i)},\ldots,X^{(j)})$):</p>
   <div class="math-block">$$\begin{aligned}
-    q\bigl(X^{(1:N)}\,|\,X^{(0)}\bigr) &= \prod_{n=1}^{N} q\bigl(X^{(n)}\,|\,X^{(n-1)}\bigr), \\
-    p_\theta\bigl(X^{(0:N)}\bigr) &= p\bigl(X^{(N)}\bigr)\prod_{n=1}^{N} p_\theta\bigl(X^{(n-1)}\,|\,X^{(n)}\bigr),\quad p(X^{(N)}) = \mathcal{N}(0,1).
+    p_\theta\bigl(X^{(0:N)}\bigr) &= p\bigl(X^{(N)}\bigr)\prod_{n=1}^{N} p_\theta\bigl(X^{(n-1)}\,|\,X^{(n)}\bigr), \\
+    p_\theta\bigl(X^{(0)}\bigr) &= \int p_\theta\bigl(X^{(0:N)}\bigr)\,dX^{(1:N)}.
   \end{aligned}$$</div>
-  <p>Marginal $p_\theta(X^{(0)})$ is intractable: bound it.</p>
+  <div class="highlight">
+    <p>Marginal: <strong>intractable</strong> integral.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Why maximize the marginal -->
+<div class="slide">
+  <h2>Why Maximize the Marginal?</h2>
+  <div class="divider"></div>
+  <p>MLE on data $\equiv$ closing the KL gap to the data law:</p>
+  <div class="math-block">$$\mathbb{E}_{X^{(0)}\sim q}\bigl[-\log p_\theta(X^{(0)})\bigr] \;=\; D_{\mathrm{KL}}\!\bigl(q(X^{(0)})\,\Vert\,p_\theta(X^{(0)})\bigr) + H(q).$$</div>
+  <p>Entropy $H(q)$ is constant in $\theta$; only the KL term moves.</p>
+  <div class="highlight">
+    <p>Closing the marginal gap = matching the data distribution.</p>
+  </div>
 </div>
 
 <!-- SLIDE: Jensen bound -->
 <div class="slide">
   <h2>Likelihood to VLB</h2>
   <div class="divider"></div>
-  <p>Insert $q(X^{(1:N)}\,|\,X^{(0)})$, apply Jensen:</p>
+  <p>Insert forward joint $q(X^{(1:N)}\,|\,X^{(0)}) = \prod_{n=1}^{N} q(X^{(n)}\,|\,X^{(n-1)})$ in num/denom — the $q$'s cancel — then apply Jensen:</p>
   <div class="math-block">$$\begin{aligned}
     -\log p_\theta\bigl(X^{(0)}\bigr)
-    &= -\log \mathbb{E}_q\!\left[\frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\;\middle|\;X^{(0)}\right] \\
-    &\leq \mathbb{E}_q\!\left[-\log \frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\;\middle|\;X^{(0)}\right].
+      &= -\log \int q\bigl(X^{(1:N)}\,|\,X^{(0)}\bigr)\,\frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\,dX^{(1:N)} \\
+      &= -\log \mathbb{E}_q\!\left[\frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\,\middle|\,X^{(0)}\right] \\
+      &\leq \mathbb{E}_q\!\left[-\log \frac{p_\theta(X^{(0:N)})}{q(X^{(1:N)}\,|\,X^{(0)})}\,\middle|\,X^{(0)}\right].
   \end{aligned}$$</div>
-  <p>Right-hand side: <strong>variational upper bound</strong> on the negative log-likelihood.</p>
 </div>
 
 <!-- SLIDE: Markov identity -->
 <div class="slide">
   <h2>A Markov Rewrite</h2>
   <div class="divider"></div>
-  <p>Expand the ratio into products of conditionals:</p>
-  <div class="math-block">$$\mathbb{E}_q\!\left[-\log p(X^{(N)}) - \sum_{n=1}^{N}\log\frac{p_\theta(X^{(n-1)}\,|\,X^{(n)})}{q(X^{(n)}\,|\,X^{(n-1)})}\right].$$</div>
-  <p><strong>Markov identity</strong> for $n \geq 2$:</p>
+  <p>Forward chain is Markov: $X^{(n)}$ depends only on $X^{(n-1)}$.</p>
+  <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin:18px 0; font-size:1.55rem;">
+    <span>$X^{(0)}$</span>
+    <span style="color:var(--gray-text);">$\to$</span>
+    <span>$X^{(1)}$</span>
+    <span style="color:var(--gray-text);">$\to$</span>
+    <span style="color:var(--gray-text);">$\cdots$</span>
+    <span style="color:var(--gray-text);">$\to$</span>
+    <span>$X^{(n-1)}$</span>
+    <span style="color:var(--yonsei-blue); font-weight:700;">$\to$</span>
+    <span>$X^{(n)}$</span>
+    <span style="color:var(--gray-text);">$\to$</span>
+    <span style="color:var(--gray-text);">$\cdots$</span>
+    <span style="color:var(--gray-text);">$\to$</span>
+    <span>$X^{(N)}$</span>
+  </div>
+  <p>Bayes inside the chain conditional on $X^{(0)}$ ($n \geq 2$):</p>
   <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(n-1)}\bigr)\,q\bigl(X^{(n-1)}\,|\,X^{(0)}\bigr) = q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr)\,q\bigl(X^{(n)}\,|\,X^{(0)}\bigr).$$</div>
+  <p><strong>Exercise.</strong> Prove this identity from the chain rule.</p>
 </div>
 
 <!-- SLIDE: Three-term decomposition -->
 <div class="slide">
   <h2>Three-Term Decomposition</h2>
   <div class="divider"></div>
-  <p>After the Markov rewrite:</p>
-  <div class="math-block">$$\mathbb{E}_q\!\left[-\log\frac{p(X^{(N)})}{q(X^{(N)}\,|\,X^{(0)})} - \sum_{n=2}^{N}\log\frac{p_\theta(X^{(n-1)}\,|\,X^{(n)})}{q(X^{(n-1)}\,|\,X^{(n)},X^{(0)})} - \log p_\theta(X^{(0)}\,|\,X^{(1)})\right].$$</div>
-  <p>Name the three groups:</p>
-  <div class="math-block">$$L_N,\qquad \sum_{n=2}^{N} L_{n-1},\qquad L_0.$$</div>
+  <p>Apply the Markov identity inside the bound:</p>
+  <div class="math-block">$$\mathbb{E}_q\!\left[\underbrace{-\log\frac{p(X^{(N)})}{q(X^{(N)}|X^{(0)})}}_{L_N}\; +\sum_{n=2}^{N}\underbrace{\biggl(-\log\frac{p_\theta(X^{(n-1)}|X^{(n)})}{q(X^{(n-1)}|X^{(n)}, X^{(0)})}\biggr)}_{L_{n-1}}\; \underbrace{-\log p_\theta(X^{(0)}|X^{(1)})}_{L_0}\right].$$</div>
+  <p>Three groups: <strong>prior match</strong> ($L_N$), <strong>reverse-step KL</strong> ($L_{n-1}$, summed), <strong>boundary</strong> ($L_0$).</p>
 </div>
 
 <!-- SLIDE: L_N term -->
@@ -252,9 +272,13 @@
   <h2>$L_N$: Match the Prior</h2>
   <div class="divider"></div>
   <div class="math-block">$$L_N \;=\; \mathbb{E}_{X^{(0)}\sim q}\Bigl[D_{\mathrm{KL}}\!\bigl(q(X^{(N)}\,|\,X^{(0)})\,\Vert\,p(X^{(N)})\bigr)\Bigr].$$</div>
-  <p>Measures proximity of <strong>forward endpoint</strong> to the Gaussian prior. No $\theta$ dependence: constant from the optimizer's view.</p>
+  <ul>
+    <li>Measures proximity of the <strong>forward endpoint</strong> to the Gaussian prior.</li>
+    <li>No $\theta$ dependence: constant from the optimizer's view.</li>
+  </ul>
   <div class="highlight">
-    <p>$L_N \to 0$ by VP schedule design. Ignored during training.</p>
+    <p>$L_N \to 0$ by VP schedule design.</p>
+    <p>Ignored during training.</p>
   </div>
 </div>
 
@@ -263,17 +287,24 @@
   <h2>$L_{n-1}$: Match Each Reverse Step</h2>
   <div class="divider"></div>
   <div class="math-block">$$L_{n-1} \;=\; \mathbb{E}_q\Bigl[D_{\mathrm{KL}}\!\bigl(q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)})\,\Vert\,p_\theta(X^{(n-1)}\,|\,X^{(n)})\bigr)\Bigr].$$</div>
-  <p>Both sides are Gaussian: KL available in closed form.</p>
-  <p>$L_0 = \mathbb{E}_q[-\log p_\theta(X^{(0)}\,|\,X^{(1)})]$: boundary term, negligible, dropped.</p>
+  <ul>
+    <li>Both sides are Gaussian: KL available in closed form.</li>
+    <li>The actual training signal — every reverse step.</li>
+    <li>$L_0 = \mathbb{E}_q[-\log p_\theta(X^{(0)}\,|\,X^{(1)})]$: boundary term, negligible, dropped.</li>
+  </ul>
+  <p><strong>Exercise.</strong> Show $D_{\mathrm{KL}}\!\bigl(\mathcal{N}(\mu_0,\sigma^2 I)\,\Vert\,\mathcal{N}(\mu_1,\sigma^2 I)\bigr) = \tfrac{1}{2\sigma^2}\|\mu_1-\mu_0\|^2$.</p>
 </div>
 
 <!-- SLIDE: q(X^{n-1} | X^n, X^0) is Gaussian -->
 <div class="slide">
   <h2>Target Posterior Is Gaussian</h2>
   <div class="divider"></div>
-  <p>Conditioned on $X^{(0)}$, forward distributions are Gaussian:</p>
+  <p>Conditional forward marginal (closed form, from one-shot rule):</p>
+  <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(0)}\bigr) \;=\; \mathcal{N}\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\; 1-\bar{\alpha}_n\bigr).$$</div>
+  <p>Hence the reverse posterior is also Gaussian:</p>
   <div class="math-block">$$q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr) \;=\; \mathcal{N}\bigl(\mu_n(X^{(n)}, X^{(0)}),\; \beta_n\bigr),$$</div>
-  <p>where $\mu_n$ involves the <strong>conditional score</strong> $\partial_x \log q(X^{(n)}\,|\,X^{(0)})$, known in closed form since $q(X^{(n)}\,|\,X^{(0)}) = \mathcal{N}(\sqrt{\bar{\alpha}_n} X^{(0)}, 1-\bar{\alpha}_n)$.</p>
+  <p>where $\mu_n$ uses the <strong>conditional score</strong> $\partial_x \log q(X^{(n)}\,|\,X^{(0)})$.</p>
+  <p><strong>Exercise.</strong> Derive the posterior. <em>Hint:</em> all factors are Gaussian given $X^{(0)}$.</p>
 </div>
 
 <!-- SLIDE: KL between Gaussians + simplification -->
@@ -313,24 +344,24 @@
 <div class="slide">
   <h2>Training Algorithm</h2>
   <div class="divider"></div>
-  <div class="d2-algo">
-    <div class="d2-algo-title">DDPM Training</div>
+  <div class="d2-algo" style="max-width:880px; margin:36px auto 22px;">
+    <div class="d2-algo-title">DDPM Training — repeat until converged</div>
     <ol>
-      <li>Sample $X^{(0)}$ from data.</li>
+      <li>Sample $X^{(0)} \sim p_{\text{data}}$.</li>
       <li>Sample $n \sim \text{Unif}\{1, \ldots, N\}$.</li>
       <li>Sample $\epsilon \sim \mathcal{N}(0,1)$.</li>
       <li>Form $X^{(n)} = \sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,\epsilon$.</li>
       <li>Gradient step on $\tilde{\lambda}_n\,\bigl\|\epsilon - \epsilon_\theta(X^{(n)}, n)\bigr\|^2$.</li>
     </ol>
   </div>
-  <p>Original DDPM: $\tilde{\lambda}_n = 1$ (unweighted).</p>
+  <p style="text-align:center;">Original DDPM: $\tilde{\lambda}_n = 1$ (unweighted).</p>
 </div>
 
 <!-- SLIDE: Sampling algo -->
 <div class="slide">
   <h2>Sampling Algorithm</h2>
   <div class="divider"></div>
-  <div class="d2-algo">
+  <div class="d2-algo" style="max-width:1040px; margin:36px auto 0;">
     <div class="d2-algo-title">DDPM Sampling</div>
     <ol>
       <li>Sample $X^{(N)} \sim \mathcal{N}(0,1)$.</li>
@@ -340,6 +371,7 @@
           <li>$X^{(n-1)} = \dfrac{1}{\sqrt{1-\beta_n}}\!\left(X^{(n)} - \dfrac{\beta_n}{\sqrt{1-\bar{\alpha}_n}}\,\epsilon_\theta(X^{(n)}, n)\right) + \sqrt{\beta_n}\,Z^{(n)}$.</li>
         </ol>
       </li>
+      <li>Return $X^{(0)}$.</li>
     </ol>
   </div>
 </div>
@@ -351,15 +383,18 @@
   <div class="grid-3">
     <div class="card" style="text-align:center;">
       <h3>Gaussian reverse</h3>
-      <p>Requires small $\beta_n$. Large steps break the approximation.</p>
+      <p>Requires small $\beta_n$.</p>
+      <p>Large steps break the approximation.</p>
     </div>
     <div class="card" style="text-align:center;">
       <h3>Imperfect score</h3>
-      <p>$\epsilon_\theta$: finite capacity, finite data. Errors compound over steps.</p>
+      <p>$\epsilon_\theta$: finite capacity, finite data.</p>
+      <p>Errors compound over steps.</p>
     </div>
     <div class="card" style="text-align:center;">
       <h3>Prior mismatch</h3>
-      <p>$X^{(N)} \to \mathcal{N}(0,1)$ only as $\bar{\alpha}_N \to 0$. Finite-$N$ residual.</p>
+      <p><strong>$X^{(N)} \to \mathcal{N}(0,1)$</strong> requires $\bar{\alpha}_N \to 0$.</p>
+      <p>Finite $N$: residual gap.</p>
     </div>
   </div>
 </div>
@@ -377,18 +412,6 @@
   </ul>
 </div>
 
-<!-- SLIDE: Check it yourself -->
-<div class="slide">
-  <h2>Check It Yourself</h2>
-  <div class="divider"></div>
-  <ol class="exercise-list">
-    <li>Verify VP preserves variance: if $\mathrm{Var}(X^{(n-1)}) = 1$ then $\mathrm{Var}(X^{(n)}) = 1$. What is $\mathrm{Var}(X^{(N)})$ as $N \to \infty$?</li>
-    <li>Prove the Markov identity $q(X^{(n)}\,|\,X^{(n-1)})\,q(X^{(n-1)}\,|\,X^{(0)}) = q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)})\,q(X^{(n)}\,|\,X^{(0)})$.</li>
-    <li>Derive $q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}) = \mathcal{N}(\mu_n, \beta_n)$. <em>Hint</em>: start from $q(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}) \propto q(X^{(n)}\,|\,X^{(n-1)}, X^{(0)})\,q(X^{(n-1)}\,|\,X^{(0)})$; given $X^{(0)}$, every factor is Gaussian.</li>
-    <li>Show $D_{\mathrm{KL}}\!\bigl(\mathcal{N}(\mu_0,\sigma^2 I)\,\Vert\,\mathcal{N}(\mu_1,\sigma^2 I)\bigr) = \tfrac{1}{2\sigma^2}\|\mu_1-\mu_0\|^2$.</li>
-  </ol>
-</div>
-
 <!-- SLIDE: End / bridge -->
 <div class="slide end-slide no-footer">
   <div class="big-word">Next</div>
@@ -396,7 +419,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 22</div>
+<div class="slide-num" id="slideNum">1 / 27</div>
 
 </div><!-- end deck -->
 

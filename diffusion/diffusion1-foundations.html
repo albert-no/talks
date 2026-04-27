@@ -10,26 +10,6 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
-<style>
-.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
-.exercise-list > li {
-  counter-increment: exn;
-  padding: 14px 18px 14px 64px;
-  position: relative;
-  margin-bottom: 12px;
-  background: var(--light);
-  border-left: 3px solid var(--yonsei-blue);
-  border-radius: 0 8px 8px 0;
-}
-.exercise-list > li::before {
-  content: "Q" counter(exn);
-  position: absolute;
-  left: 18px; top: 14px;
-  font-weight: 600;
-  color: var(--yonsei-blue);
-  letter-spacing: -0.02em;
-}
-</style>
 </head>
 <body data-brand-logo="../reference/kor-eng2.png">
 
@@ -119,6 +99,7 @@
   <p><strong>Cauchy</strong> with scale $\gamma &gt; 0$:</p>
   <div class="math-block">$$f(x) = \frac{1}{\pi}\,\frac{\gamma}{x^2+\gamma^2}.$$</div>
   <p>How do we draw $X \sim f$ from this formula alone?</p>
+  <p><strong>Exercise.</strong> Verify $\int_{-\infty}^{\infty} f(x)\,dx = 1$.</p>
 </div>
 
 <!-- SLIDE: Inverse transform sampling -->
@@ -136,8 +117,12 @@
 <div class="slide">
   <h2>High Dimension Breaks This</h2>
   <div class="divider"></div>
-  <p>For $\mathbf{X} = (X_1, \ldots, X_d)$: no scalar CDF to invert. Rejection and MCMC scale poorly with $d$.</p>
-  <p>Most generative models do not learn density. They learn a <strong>transformation</strong> from easy noise to data.</p>
+  <ul>
+    <li>For $\mathbf{X} = (X_1, \ldots, X_d)$: no scalar CDF to invert.</li>
+    <li>Rejection and MCMC scale poorly with $d$.</li>
+    <li>Most generative models do not learn density.</li>
+    <li>They learn a <strong>transformation</strong> from easy noise to data.</li>
+  </ul>
   <div class="highlight">
     <p><strong>Diffusion</strong>: gradually corrupt data into noise, then <strong>reverse</strong> at generation time.</p>
   </div>
@@ -158,7 +143,10 @@
   <h2>The Forward Process</h2>
   <div class="divider"></div>
   <p>$X \in \mathbb{R}$ scalar with unknown density $P_X$. Define:</p>
-  <div class="math-block">$$X^{(n)} = X^{(n-1)} + Z^{(n)},\quad X^{(0)} = X,\quad Z^{(n)} \sim \mathcal{N}(0,\sigma^2)\ \text{i.i.d.}$$</div>
+  <div class="math-block">$$\begin{aligned}
+    X^{(0)} &= X, \\
+    X^{(n)} &= X^{(n-1)} + Z^{(n)},\qquad Z^{(n)} \sim \mathcal{N}(0,\sigma^2)\ \text{i.i.d.}
+  \end{aligned}$$</div>
   <p>Variance grows each step: <strong>variance exploding</strong> (VE).</p>
 </div>
 
@@ -180,8 +168,8 @@
   <div class="divider"></div>
   <p>Let $\mu_0, \sigma_0^2$ be mean and variance of $X^{(0)}$. By linearity:</p>
   <div class="math-block">$$\mathbb{E}[X^{(N)}] = \mu_0,\qquad \mathrm{Var}(X^{(N)}) = \sigma_0^2 + N\sigma^2.$$</div>
-  <p>For large $N$, $N\sigma^2$ dominates:</p>
-  <div class="math-block">$$X^{(N)} \;\approx\; \mathcal{N}(\mu_0,\; \sigma_0^2 + N\sigma^2).$$</div>
+  <p>For large $N$, the second term $N\sigma^2$ dominates. Say:</p>
+  <div class="math-block">$$X^{(N)} \;\sim\; \mathcal{N}(\mu_0,\; \sigma_0^2 + N\sigma^2).$$</div>
   <p><em>(Informal for VE; formal MGF proof in Lecture 2 for VP.)</em></p>
 </div>
 
@@ -191,7 +179,10 @@
   <div class="divider"></div>
   <p>Sampling from $\mathcal{N}(\mu_0, \sigma_0^2 + N\sigma^2)$ is trivial. Call it $\tilde{X}^{(N)}$.</p>
   <p>Want a reverse rule:</p>
-  <div class="math-block">$$\tilde{X}^{(N)} \to \tilde{X}^{(N-1)} \to \cdots \to \tilde{X}^{(0)},\qquad \tilde{X}^{(0)} \stackrel{(d)}{\approx} X.$$</div>
+  <div class="math-block">$$\begin{aligned}
+    &\tilde{X}^{(N)} \to \tilde{X}^{(N-1)} \to \cdots \to \tilde{X}^{(0)}, \\
+    &\tilde{X}^{(0)} \stackrel{(d)}{\approx} X.
+  \end{aligned}$$</div>
   <div class="highlight">
     <p>Need <strong>reverse conditional</strong> $P_{X^{(n-1)}\,|\,X^{(n)}}$ at every step.</p>
   </div>
@@ -207,15 +198,27 @@
   <p class="subtitle">Taylor, complete the square, read off Gaussian</p>
 </div>
 
-<!-- SLIDE: Setup + Bayes -->
+<!-- SLIDE: Setup -->
 <div class="slide">
   <h2>Setup</h2>
   <div class="divider"></div>
   <p>Drop indices: $X = \tilde{X}^{(n-1)}$, $Z = \tilde{Z}^{(n)}$, $Y = \tilde{X}^{(n)}$.</p>
   <div class="math-block">$$Y = X + Z,\qquad Y\,|\,X \sim \mathcal{N}(X, \sigma^2).$$</div>
-  <p>Want $X\,|\,Y$. By Bayes:</p>
+  <p>Want the reverse conditional $X\,|\,Y$.</p>
+</div>
+
+<!-- SLIDE: Proof outline -->
+<div class="slide">
+  <h2>Proof Outline</h2>
+  <div class="divider"></div>
+  <p>Target: simplify the Bayes posterior under $\sigma^2 \ll 1$.</p>
   <div class="math-block">$$P_{X|Y}(x\,|\,y) = \frac{P_{Y|X}(y\,|\,x)\,P_X(x)}{P_Y(y)}.$$</div>
-  <p>Likelihood is Gaussian. Expand $P_X, P_Y$ when $\sigma^2 \ll 1$.</p>
+  <ol>
+    <li><strong>Step 1.</strong> Taylor expand $P_X$ around $y$.</li>
+    <li><strong>Step 2.</strong> Approximate $P_Y(y) \approx P_X(y)$.</li>
+    <li><strong>Step 3.</strong> Substitute back; absorb correction.</li>
+    <li><strong>Step 4.</strong> Complete the square; recover Gaussian.</li>
+  </ol>
 </div>
 
 <!-- SLIDE: Taylor expand P_X -->
@@ -264,6 +267,21 @@
   <div class="math-block">$$P_{X|Y}(x\,|\,y) \approx \tfrac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\tfrac{1}{2\sigma^2}\!\left(x-y-\sigma^2\tfrac{P'_X(y)}{P_X(y)}\right)^{\!2}\right).$$</div>
 </div>
 
+<!-- SLIDE: Proof recap -->
+<div class="slide">
+  <h2>Proof Recap</h2>
+  <div class="divider"></div>
+  <p>Single chain from Bayes to Gaussian:</p>
+  <div class="math-block">$$\begin{aligned}
+    P_{X|Y}(x\,|\,y)
+      &= \frac{P_{Y|X}(y\,|\,x)\,P_X(x)}{P_Y(y)} \\
+      &\stackrel{(1)}{\approx}\; \frac{P_{Y|X}(y\,|\,x)\,\bigl[P_X(y) + P'_X(y)(x-y)\bigr]}{P_Y(y)} \\
+      &\stackrel{(2)}{\approx}\; P_{Y|X}(y\,|\,x)\!\left[1 + \tfrac{P'_X(y)}{P_X(y)}(x-y)\right] \\
+      &\stackrel{(3)}{\approx}\; \tfrac{1}{\sqrt{2\pi\sigma^2}}\,e^{-\frac{(x-y)^2}{2\sigma^2}}\;\exp\!\left(\tfrac{P'_X(y)}{P_X(y)}(x-y)\right) \\
+      &\stackrel{(4)}{=}\; \mathcal{N}\!\left(y + \sigma^2\,\partial_y \log P_X(y),\; \sigma^2\right)(x).
+  \end{aligned}$$</div>
+</div>
+
 <!-- SLIDE: Main result -->
 <div class="slide">
   <h2>Reverse Conditional, Compactly</h2>
@@ -279,28 +297,42 @@
 <div class="slide">
   <h2>Reverse Sampling Rule</h2>
   <div class="divider"></div>
-  <p>At each step, draw:</p>
-  <div class="math-block">$$\tilde{x}^{(n-1)} = \tilde{x}^{(n)} + \sigma^2\,\tfrac{\partial}{\partial \tilde{x}^{(n)}} \log P_{X^{(n)}}\!\bigl(\tilde{x}^{(n)}\bigr) + \tilde{z}^{(n)},\quad \tilde{z}^{(n)} \sim \mathcal{N}(0,\sigma^2).$$</div>
-  <p>Two ingredients:</p>
-  <ul>
-    <li><strong>Score</strong> $\partial_x \log P_{X^{(n)}}(x)$ at every level $n$</li>
-    <li>Fresh Gaussian noise at every step</li>
-  </ul>
+  <p>Step 4 result, with $X = \tilde{X}^{(n-1)}$ and $Y = \tilde{X}^{(n)}$:</p>
+  <div class="math-block">$$X\,|\,Y \;\sim\; \mathcal{N}\!\left(Y + \sigma^2\,\partial_y \log P_X(Y),\; \sigma^2\right).$$</div>
+  <p>Substitute $X \to \tilde{x}^{(n-1)}$, $Y \to \tilde{x}^{(n)}$:</p>
+  <div class="math-block">$$\tilde{x}^{(n-1)} = \tilde{x}^{(n)} + \sigma^2\,\partial \log P_{X^{(n)}}\!\bigl(\tilde{x}^{(n)}\bigr) + \tilde{z}^{(n)},\quad \tilde{z}^{(n)} \sim \mathcal{N}(0,\sigma^2).$$</div>
 </div>
 
-<!-- SLIDE: Two natural questions -->
+<!-- SLIDE: Why not subtract noise -->
 <div class="slide">
-  <h2>Two Natural Questions</h2>
+  <h2>Why Not Subtract Noise?</h2>
+  <div class="divider"></div>
+  <p>Naive: $\tilde{x}^{(n-1)} \stackrel{?}{=} \tilde{x}^{(n)} - \tilde{z}^{(n)}$ with fresh $\tilde{z}^{(n)} \sim \mathcal{N}(0,\sigma^2)$.</p>
+  <p>Gaussian symmetry: $-Z \stackrel{(d)}{=} Z$. Independent noises add variance:</p>
+  <div class="math-block">$$\mathrm{Var}\bigl(\tilde{x}^{(n)} - \tilde{z}^{(n)}\bigr) = \mathrm{Var}\bigl(\tilde{x}^{(n)}\bigr) + \sigma^2.$$</div>
+  <div class="highlight">
+    <p>Variance <strong>grows</strong> — corrupts further, not denoise.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Estimation vs distribution matching -->
+<div class="slide">
+  <h2>Estimation vs Distribution Matching</h2>
   <div class="divider"></div>
   <div class="grid-2">
     <div>
-      <h3>Why not subtract noise?</h3>
-      <p>Gaussian is symmetric: $-Z \stackrel{(d)}{=} Z$. Subtracting corrupts further, not denoise.</p>
+      <h3>Estimation (MMSE)</h3>
+      <p>$\hat{X}(Y) = \mathbb{E}[X\,|\,Y]$ is <strong>deterministic</strong>.</p>
+      <p>Variance shrinks below $\mathrm{Var}(X)$.</p>
     </div>
     <div>
-      <h3>Why not MMSE?</h3>
-      <p>$\hat{X}(Y) = \mathbb{E}[X\,|\,Y]$ is <strong>deterministic</strong>; variance shrinks below $\mathrm{Var}(X)$. Reverse process is <strong>distribution matching</strong>, not denoising.</p>
+      <h3>Distribution matching</h3>
+      <p>Generate $\tilde{X}$ with $\tilde{X} \stackrel{(d)}{=} X$.</p>
+      <p>Need fresh randomness to restore the spread.</p>
     </div>
+  </div>
+  <div class="highlight">
+    <p>Reverse process is <strong>distribution matching</strong>, not denoising.</p>
   </div>
 </div>
 
@@ -312,6 +344,7 @@
   <div class="math-block">$$\hat{X}(Y) = \tfrac{\sigma_x^2}{\sigma_x^2 + \sigma_z^2}\,Y \;\sim\;\mathcal{N}\!\left(0,\,\tfrac{\sigma_x^4}{\sigma_x^2+\sigma_z^2}\right).$$</div>
   <p>Variance too small. Add fresh noise to match:</p>
   <div class="math-block">$$\tilde{X} = \mathbb{E}[X\,|\,Y] + \tilde{Z},\quad \tilde{Z} \sim \mathcal{N}\!\left(0,\,\tfrac{\sigma_x^2\,\sigma_z^2}{\sigma_x^2 + \sigma_z^2}\right) \;\Rightarrow\; \tilde{X}\sim\mathcal{N}(0,\sigma_x^2).$$</div>
+  <p><strong>Exercise.</strong> Show MMSE estimator equals $\mathbb{E}[X\,|\,Y]$. <em>Hint:</em> split via $\mathbb{E}[X\,|\,Y]$.</p>
 </div>
 
 <!-- ====================================================================
@@ -332,19 +365,9 @@
   <div class="math-block">$$s(x;n) = \tfrac{\partial}{\partial x}\log P_{X^{(n)}}(x).$$</div>
   <p>Depends on $n$ since marginal $P_{X^{(n)}}$ changes with noise level.</p>
   <div class="highlight">
-    <p>Exact $s(x;n)$ for all $n$: <em>no neural network needed</em> for the reverse process. Bottleneck is estimating $s$ from data.</p>
+    <p>Exact $s(x;n)$ for all $n$: <em>no neural network needed</em> for the reverse process.</p>
+    <p>Bottleneck: estimating $s$ from data.</p>
   </div>
-</div>
-
-<!-- SLIDE: Learning the denoiser instead -->
-<div class="slide">
-  <h2>Train a Denoiser, Not a Score</h2>
-  <div class="divider"></div>
-  <p>Network $f_\theta(x^{(n)};n)$ reconstructs $x^{(0)}$ from $x^{(n)}$:</p>
-  <div class="math-block">$$\mathcal{L}(\theta) = \mathbb{E}\bigl[\,\|f_\theta(X^{(n)};n) - X^{(0)}\|^2\,\bigr].$$</div>
-  <p>Bayes-optimal squared-loss regressor is the conditional mean:</p>
-  <div class="math-block">$$f_\theta(x^{(n)};n) \;\approx\; \mathbb{E}[X^{(0)}\,|\,X^{(n)}=x^{(n)}].$$</div>
-  <p>Objective never references $P_X$ or the score.</p>
 </div>
 
 <!-- SLIDE: Tweedie's formula -->
@@ -357,7 +380,19 @@
     <div class="math-block">$$\mathbb{E}[X\,|\,Y=y] \;=\; y + \sigma^2\,\tfrac{\partial}{\partial y}\log P_Y(y).$$</div>
   </div>
   <p>Posterior mean of clean $X$ = noisy $y$ + scaled <strong>score of the noisy marginal</strong>.</p>
-  <div class="cite">Robbins, "An empirical Bayes approach to statistics," Berkeley Symp. 1956. Proof sketched in Q3.</div>
+  <p><strong>Exercise.</strong> Derive Tweedie from $P_Y(y) = \int P_X(x)\,P_Z(y-x)\,dx$ and $\partial_y P_Y$.</p>
+  <div class="cite">Robbins, "An empirical Bayes approach to statistics," Berkeley Symp. 1956.</div>
+</div>
+
+<!-- SLIDE: Learning the denoiser instead -->
+<div class="slide">
+  <h2>Train a Denoiser, Not a Score</h2>
+  <div class="divider"></div>
+  <p>Tweedie: posterior mean is the score in disguise. So train the <strong>denoiser</strong>.</p>
+  <p>Network $f_\theta(x^{(n)};n)$ reconstructs $x^{(0)}$ from $x^{(n)}$:</p>
+  <div class="math-block">$$\mathcal{L}(\theta) = \mathbb{E}\bigl[\,\|f_\theta(X^{(n)};n) - X^{(0)}\|^2\,\bigr].$$</div>
+  <p>Bayes-optimal squared-loss regressor is the conditional mean:</p>
+  <div class="math-block">$$f_\theta(x^{(n)};n) \;\approx\; \mathbb{E}[X^{(0)}\,|\,X^{(n)}=x^{(n)}].$$</div>
 </div>
 
 <!-- SLIDE: Denoiser to score -->
@@ -388,17 +423,6 @@
   <p><em>Lecture 2: variance-preserving process and DDPM bound.</em></p>
 </div>
 
-<!-- SLIDE: Check it yourself -->
-<div class="slide">
-  <h2>Check It Yourself</h2>
-  <div class="divider"></div>
-  <ol class="exercise-list">
-    <li><strong>Cauchy</strong> $f(x) = \tfrac{1}{\pi}\tfrac{\gamma}{x^2+\gamma^2}$ integrates to $1$. Verify.</li>
-    <li>Show MMSE estimator equals $\mathbb{E}[X\,|\,Y]$. <em>Hint</em>: split $\hat{X}(Y) - X$ via $\mathbb{E}[X\,|\,Y]$.</li>
-    <li>Derive <strong>Tweedie</strong> from $P_Y(y) = \int P_X(x)\,P_Z(y-x)\,dx$ and $\partial_y P_Y$.</li>
-  </ol>
-</div>
-
 <!-- SLIDE: End / bridge -->
 <div class="slide end-slide no-footer">
   <div class="big-word">Next</div>
@@ -406,7 +430,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 26</div>
+<div class="slide-num" id="slideNum">1 / 32</div>
 
 </div><!-- end deck -->
 

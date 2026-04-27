@@ -186,6 +186,75 @@ Symptom: every paper-overview slide has a 2-column layout with the right column 
 
 Fix: delete the card. Replace with `<div class="cite">Author(s), "Title", Venue Year</div>` at the bottom. Don't wrap the title in `<em>` — `em` is gray, and gray-on-gray reads as mud. Keep the author `.pill` at the top as a recurring section label, but add `.cite` only on the paper-overview slide (not every follow-up).
 
+## Stacked-equation gap → collapse to one `aligned`
+
+Symptom: two adjacent `math-block` divs feel disconnected; the eye reads them as separate ideas instead of two lines of one chain. Inverse symptom: a single equation that should land as a key conclusion gets buried inside an `aligned` block above.
+
+Cause: `math-block` carries its own padding/margin; back-to-back blocks add up. `aligned` keeps lines tight via row-skip spacing, which is what stacked-but-related equations need.
+
+Fix:
+- Two related lines → one `math-block` with `\begin{aligned} … \\ … \end{aligned}`.
+- One key conclusion → its own `math-block` so the visual gap becomes signal.
+- Pattern documented in `DESIGN_SYSTEM.md` → Math-heavy → Stacked equations.
+
+## Aligned line-count budget
+
+Symptom: a slide with two math-blocks plus 2–3 prose lines clips the brand footer.
+
+Cause (rule of thumb): each `aligned` line ≈ 50–60 px rendered; each `math-block` adds ~30 px of padding. A 3-line aligned block ≈ 200 px. Two such blocks + h2/divider/two paragraphs ≈ 720 px before footer reservation, so almost any extra line overflows.
+
+Fix: **at most one 3-line `aligned` block + one one-line `math-block` per content slide**. If two derivation steps both need 3 lines, split the slide. Don't shrink type (Priority 0) and don't squeeze vertical rhythm (Priority 2).
+
+## Footer collision via trailing exercise
+
+Symptom: an inline `<p><strong>Exercise.</strong> …</p>` clips the brand footer, even though the slide previously rendered fine.
+
+Cause: the slide already has 2 math-blocks + 2–3 paragraphs. The exercise paragraph is the straw that breaks the layout.
+
+Fix: move the exercise to the *sibling slide that introduces the fact the exercise verifies*, not the slide that uses the fact. Example: a "matched-variance KL" exercise belongs on the slide where the KL term first appears (`L_{n-1}: Match Each Reverse Step`), not on the next slide that applies it. Pattern documented in `DESIGN_SYSTEM.md` → Recipes → Inline exercise.
+
+## Math-comma-math collision
+
+Symptom: a sentence like "For large $N$, $N\sigma^2$ dominates" reads awkwardly during the talk. Listeners parse it as a single run-on math expression `$N, N\sigma^2$` rather than two clauses.
+
+Cause: **not** "math after a comma" in general — math at the start of a clause is usually fine. The failure is *math-comma-math*: when the previous clause ends in a glyph and the next clause also begins with a glyph, they collide visually across the comma. Two adjacent symbols read as one expression.
+
+Fix: insert a noun in the second clause so the comma sits between text and text:
+- "For large $N$, **the second term** $N\sigma^2$ dominates."
+- Or restructure: "$N\sigma^2$ dominates **for large $N$**." (math no longer flanks the comma).
+
+If the previous clause ended in prose, starting the next clause with math is fine — leave it alone.
+
+## Outline ≠ Recap
+
+Symptom: two near-identical bulleted slides — one before the steps and one after — both listing the same step labels. The recap adds nothing.
+
+Cause: outline and recap serve different jobs. Outline previews step *labels* (a roadmap); recap shows the equation *chain* (the unified result).
+
+Fix: the recap is one `math-block` with `\begin{aligned}` and `\stackrel{(k)}{=}` / `\stackrel{(k)}{\approx}` labels above each relation symbol. The reader sees Bayes flowing through steps 1–4 to the Gaussian. Pattern documented in `DESIGN_SYSTEM.md` → Math-heavy → Multi-step proof pattern.
+
+## Underbrace level mismatch
+
+Symptom: an equation labels `\underbrace{\sum_n -\log\frac{p_\theta}{q}}_{\sum L_{n-1}}` — the underbrace covers the whole sum, the label is `\sum L_{n-1}`. The reader has to mentally undo the sum to see what one term is.
+
+Cause: wrong abstraction level. The natural reasoning object is the per-step `L_{n-1}`, not the whole sum.
+
+Fix: pull the `\sum` outside, label each summand:
+
+```latex
+\sum_{n=2}^{N} \underbrace{\bigl(-\log\tfrac{p_\theta}{q}\bigr)}_{L_{n-1}}
+```
+
+Pattern documented in `DESIGN_SYSTEM.md` → Math-heavy → Underbrace labels.
+
+## Algorithm slides drift → start centered, no side diagram
+
+Symptom: an algorithm slide ends up as a 2-column layout with the algorithm on the left and a hand-drawn flow diagram on the right. The diagram repeats what's in the algorithm and gets cut on the next iteration.
+
+Cause: the algorithm box is short, the slide feels empty, and the natural reflex is to fill the right side.
+
+Fix: default to a single styled box, centered with `max-width: 880–1040px; margin: 32–36px auto`. Empty space below is fine (Priority 3 only forbids middle voids). Add a right-column visual *only* if it conveys real new information beyond what's in the algorithm. Pattern documented in `DESIGN_SYSTEM.md` → Recipes → Algorithm slide.
+
 ## Stale `data-screen-label`
 
 Symptom: the on-screen slide label says "Slide 7 — Forward process" but the deck has rearranged and slide 7 is now something else.
