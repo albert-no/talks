@@ -70,24 +70,81 @@
 <div class="slide">
   <h2>Statement</h2><div class="divider"></div>
   <p>$X\sim\mathcal{N}(0,\sigma^2)$, squared error.</p>
-  <div class="math-block">$$R(D) \;=\; \begin{cases}\tfrac12\log\dfrac{\sigma^2}{D}, & 0<D\le\sigma^2,\\[2mm] 0, & D\ge\sigma^2.\end{cases}$$</div>
+  <div class="math-block">$$R(D) \;=\; \begin{cases}\tfrac12\log\dfrac{\sigma^2}{D}, & 0&lt;D\le\sigma^2,\\[2mm] 0, & D\ge\sigma^2.\end{cases}$$</div>
   <p>Below the variance: bits per coordinate scale logarithmically with the SNR $\sigma^2/D$.</p>
 </div>
 
 <div class="slide">
   <h2>Achievability — Backward Gaussian Channel</h2><div class="divider"></div>
-  <p>For $0<D<\sigma^2$, take independent</p>
+  <p>Test channel for $0&lt;D&lt;\sigma^2$, independent components:</p>
   <div class="math-block">$$\widehat X\sim\mathcal{N}(0,\sigma^2-D),\qquad Z\sim\mathcal{N}(0,D),\qquad X = \widehat X + Z.$$</div>
-  <p>Marginal: $X\sim\mathcal{N}(0,\sigma^2)$. Distortion: $\mathbb{E}[(X-\widehat X)^2] = D$.</p>
-  <p>Mutual information ($Z\perp\widehat X$, so $h(X\mid\widehat X) = h(Z)$):</p>
+  <p><strong>Marginal:</strong> $X\sim\mathcal{N}(0,\sigma^2)$.</p>
+  <p><strong>Distortion:</strong> $\mathbb{E}[(X-\widehat X)^2] = D$.</p>
+  <p><strong>Mutual information</strong> via $Z\perp\widehat X$, so $h(X\mid\widehat X) = h(Z)$:</p>
   <div class="math-block">$$I(X;\widehat X) \;=\; h(X) - h(Z) \;=\; \tfrac12\log\dfrac{\sigma^2}{D}.$$</div>
 </div>
 
 <div class="slide">
+  <h2>Achievability — Shell-Cover Picture</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p><strong>Outer shell:</strong> source $X^n$, radius $\sqrt{n\sigma^2}$.</p>
+      <p><strong>Inner shell:</strong> codebook $\widehat X^n(m) \sim \mathcal{N}(0,\sigma^2{-}D)$,</p>
+      <p>radius $\sqrt{n(\sigma^2{-}D)}$.</p>
+      <p><strong>Cover:</strong> some $m$ within $\sqrt{nD}$ of $X^n$.</p>
+      <div class="math-block">$$X^n \approx \widehat X^n(m) + Z^n,\; Z^n\sim\mathcal{N}(0, D\,I).$$</div>
+      <p>Backward test channel realized geometrically.</p>
+    </div>
+    <div style="position:relative;">
+      <svg viewBox="0 0 320 280" width="100%" style="background:var(--light);border-radius:8px;display:block;">
+        <defs>
+          <marker id="shell-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#003876"/>
+          </marker>
+        </defs>
+        <circle cx="160" cy="140" r="120" stroke="#003876" stroke-width="2.5" fill="none"/>
+        <circle cx="160" cy="140" r="86" stroke="#003876" stroke-width="1.5" fill="none" stroke-dasharray="4 4"/>
+        <!-- distortion ball around the chosen codeword -->
+        <circle cx="135" cy="62" r="30" stroke="#003876" stroke-width="1.4" fill="#003876" fill-opacity="0.10" stroke-dasharray="3 3"/>
+        <g fill="#d94040">
+          <circle cx="160" cy="54" r="3.5"/>
+          <circle cx="220" cy="78" r="3.5"/>
+          <circle cx="244" cy="138" r="3.5"/>
+          <circle cx="222" cy="200" r="3.5"/>
+          <circle cx="170" cy="225" r="3.5"/>
+          <circle cx="105" cy="218" r="3.5"/>
+          <circle cx="76" cy="160" r="3.5"/>
+          <circle cx="86" cy="98" r="3.5"/>
+          <circle cx="135" cy="62" r="4.5"/>
+          <circle cx="200" cy="60" r="3.5"/>
+          <circle cx="240" cy="105" r="3.5"/>
+          <circle cx="240" cy="172" r="3.5"/>
+          <circle cx="195" cy="217" r="3.5"/>
+          <circle cx="130" cy="222" r="3.5"/>
+          <circle cx="82" cy="190" r="3.5"/>
+          <circle cx="80" cy="125" r="3.5"/>
+        </g>
+        <!-- arrow from chosen codeword to source X^n -->
+        <line x1="135" y1="62" x2="125" y2="32" stroke="#003876" stroke-width="1.8" marker-end="url(#shell-arrow)"/>
+        <!-- source X^n: blue square -->
+        <rect x="119" y="22" width="11" height="11" fill="#003876" stroke="#003876" stroke-width="1"/>
+      </svg>
+      <span style="position:absolute; left:73%; top:6%; font-size:1.05rem; line-height:1; font-weight:600; color:var(--yonsei-blue);">$\sqrt{n\sigma^2}$</span>
+      <span style="position:absolute; left:60%; top:36%; font-size:1rem; line-height:1; font-weight:600; color:var(--yonsei-blue);">$\sqrt{n(\sigma^2 {-} D)}$</span>
+      <span style="position:absolute; left:33%; top:2%; font-size:1rem; line-height:1; font-weight:700; color:var(--yonsei-blue);">$X^n$</span>
+      <span style="position:absolute; left:52%; top:18%; font-size:0.95rem; line-height:1; font-weight:600; color:var(--yonsei-blue);">$\sqrt{nD}$</span>
+      <span style="position:absolute; left:5%; top:90%; font-size:1rem; line-height:1; font-weight:600; color:var(--warn);">codebook $\widehat X^n(m)$</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
   <h2>Forward Form — Linear Shrinkage</h2><div class="divider"></div>
-  <p>Same joint $P_{X,\widehat X}$, conditioned on $X$:</p>
+  <p>Same joint $P_{X,\widehat X}$, now conditioned on $X$:</p>
   <div class="math-block">$$\widehat X\mid X = x \;\sim\; \mathcal{N}\!\left(\dfrac{\sigma^2 - D}{\sigma^2}\,x,\;\dfrac{D(\sigma^2 - D)}{\sigma^2}\right).$$</div>
-  <p>Optimal reconstruction is a <strong>shrunken</strong> version of the source. A lossy description cannot reproduce all of the source energy.</p>
+  <p><strong>Shrinkage factor:</strong> $(\sigma^2 - D)/\sigma^2 &lt; 1$.</p>
+  <p><strong>Reconstruction:</strong> shrunken copy of the source.</p>
+  <p><strong>Energy gap:</strong> lossy code cannot keep all source energy.</p>
 </div>
 
 <div class="slide">
@@ -99,29 +156,74 @@
 </div>
 
 <div class="slide">
-  <h2>Geometric Picture</h2><div class="divider"></div>
+  <h2>Converse — Sphere Cover</h2><div class="divider"></div>
   <div class="cols">
     <div>
-      <p>Typical $X^n$ sits on a shell of radius $\sqrt{n\sigma^2}$. Distortion ball of radius $\sqrt{nD}$.</p>
-      <div class="math-block">$$\dfrac{\text{shell volume}}{\text{ball volume}} \;\approx\; \!\left(\dfrac{\sigma^2}{D}\right)^{n/2}.$$</div>
-      <p>Log per coordinate: $\tfrac12\log(\sigma^2/D)$. Matches Shannon.</p>
+      <p>Typical shell: radius $\sqrt{n\sigma^2}$.</p>
+      <p>Each codeword: ball of radius $\sqrt{nD}$.</p>
+      <p>Cover the shell with $M$ balls:</p>
+      <div class="math-block" style="margin: 10px auto;">$$\begin{aligned}
+        M &\;\gtrsim\; \!\left(\dfrac{\sigma^2}{D}\right)^{n/2}, \\[1mm]
+        R = \tfrac{1}{n}\log M &\;\ge\; \tfrac12\log\dfrac{\sigma^2}{D}.
+      \end{aligned}$$</div>
+      <p>Bits <strong>per coordinate</strong>, not per block.</p>
     </div>
-    <div>
-      <svg viewBox="0 0 320 280" width="100%" style="background:var(--light);border-radius:8px;">
-        <circle cx="160" cy="140" r="110" stroke="#003876" stroke-width="2.5" fill="none"/>
-        <text x="240" y="60" font-size="13" fill="#003876">radius √(nσ²)</text>
-        <g fill="#003876" fill-opacity="0.25" stroke="#003876">
-          <circle cx="160" cy="30" r="18"/>
-          <circle cx="245" cy="80" r="18"/>
-          <circle cx="265" cy="170" r="18"/>
-          <circle cx="200" cy="240" r="18"/>
-          <circle cx="120" cy="245" r="18"/>
-          <circle cx="58" cy="200" r="18"/>
-          <circle cx="50" cy="105" r="18"/>
-          <circle cx="105" cy="40" r="18"/>
+    <div style="position:relative;">
+      <svg viewBox="0 0 320 280" width="100%" style="background:var(--light);border-radius:8px;display:block;">
+        <circle cx="160" cy="140" r="120" stroke="#003876" stroke-width="2.5" fill="none"/>
+        <g fill="#003876" fill-opacity="0.16" stroke="#003876" stroke-width="1.1">
+          <circle cx="160" cy="38" r="20"/>
+          <circle cx="118" cy="46" r="22"/>
+          <circle cx="200" cy="48" r="21"/>
+          <circle cx="238" cy="74" r="20"/>
+          <circle cx="74" cy="76" r="22"/>
+          <circle cx="262" cy="118" r="22"/>
+          <circle cx="50" cy="120" r="20"/>
+          <circle cx="158" cy="92" r="22"/>
+          <circle cx="106" cy="108" r="20"/>
+          <circle cx="216" cy="112" r="21"/>
+          <circle cx="270" cy="160" r="20"/>
+          <circle cx="46" cy="166" r="22"/>
+          <circle cx="116" cy="156" r="20"/>
+          <circle cx="200" cy="158" r="22"/>
+          <circle cx="160" cy="186" r="20"/>
+          <circle cx="252" cy="200" r="22"/>
+          <circle cx="64" cy="206" r="20"/>
+          <circle cx="108" cy="216" r="21"/>
+          <circle cx="208" cy="222" r="22"/>
+          <circle cx="156" cy="240" r="20"/>
+          <circle cx="244" cy="240" r="18"/>
+          <circle cx="90" cy="248" r="18"/>
+          <circle cx="186" cy="252" r="18"/>
         </g>
-        <text x="20" y="270" font-size="13" fill="#003876">balls of radius √(nD)</text>
+        <g fill="#d94040">
+          <circle cx="160" cy="38" r="2.4"/>
+          <circle cx="118" cy="46" r="2.4"/>
+          <circle cx="200" cy="48" r="2.4"/>
+          <circle cx="238" cy="74" r="2.4"/>
+          <circle cx="74" cy="76" r="2.4"/>
+          <circle cx="262" cy="118" r="2.4"/>
+          <circle cx="50" cy="120" r="2.4"/>
+          <circle cx="158" cy="92" r="2.4"/>
+          <circle cx="106" cy="108" r="2.4"/>
+          <circle cx="216" cy="112" r="2.4"/>
+          <circle cx="270" cy="160" r="2.4"/>
+          <circle cx="46" cy="166" r="2.4"/>
+          <circle cx="116" cy="156" r="2.4"/>
+          <circle cx="200" cy="158" r="2.4"/>
+          <circle cx="160" cy="186" r="2.4"/>
+          <circle cx="252" cy="200" r="2.4"/>
+          <circle cx="64" cy="206" r="2.4"/>
+          <circle cx="108" cy="216" r="2.4"/>
+          <circle cx="208" cy="222" r="2.4"/>
+          <circle cx="156" cy="240" r="2.4"/>
+          <circle cx="244" cy="240" r="2.4"/>
+          <circle cx="90" cy="248" r="2.4"/>
+          <circle cx="186" cy="252" r="2.4"/>
+        </g>
       </svg>
+      <span style="position:absolute; left:73%; top:6%; font-size:1.05rem; line-height:1; font-weight:600; color:var(--yonsei-blue);">$\sqrt{n\sigma^2}$</span>
+      <span style="position:absolute; left:5%; top:90%; font-size:1rem; line-height:1; font-weight:600; color:var(--yonsei-blue);">balls of radius $\sqrt{nD}$</span>
     </div>
   </div>
 </div>
@@ -146,17 +248,21 @@
 
 <div class="slide">
   <h2>Proof — Maximize Entropy of the Error</h2><div class="divider"></div>
-  <p>Let $E = X - \widehat X$ with $\mathbb{E}|E|^2\le D$:</p>
+  <p><strong>Error vector</strong> $E = X - \widehat X$, second-moment budget $\mathbb{E}\|E\|^2 = \sum_i \mathbb{E}(X_i - \widehat X_i)^2 \le d\,D$.</p>
+  <p><strong>Mutual-information chain.</strong></p>
   <div class="math-block">$$I(X;\widehat X) \;=\; h(X) - h(E\mid\widehat X) \;\ge\; h(X) - h(E).$$</div>
-  <p>Gaussian maximizes entropy at fixed variance: $h(E)\le\tfrac12\log(2\pi e D)$. Substituting gives the bound.</p>
-  <p>Vector case via AM&ndash;GM on covariance eigenvalues.</p>
+  <p><strong>Max-entropy bound.</strong> Gaussian wins at fixed variance.</p>
+  <div class="math-block">$$h(E) \;\le\; \tfrac{d}{2}\log(2\pi e D) \;\Longrightarrow\; R \ge h(X) - \tfrac{d}{2}\log(2\pi e D).$$</div>
+  <p>Vector case: AM&ndash;GM on covariance eigenvalues.</p>
 </div>
 
 <div class="slide">
   <h2>Gaussian Hits the Bound — Hardest Source</h2><div class="divider"></div>
-  <p>For $X\sim\mathcal{N}(0,\sigma^2)$: $h(X) = \tfrac12\log(2\pi e\sigma^2)$, so SLB gives $\tfrac12\log(\sigma^2/D)$ — exactly $R(D)$.</p>
-  <div class="highlight">Gaussian has the largest entropy at fixed variance. Non-Gaussian sources have <strong>structure</strong> and compress at lower rate.</div>
-  <p>Practical consequence: a code designed for Gaussians is a universal MSE compressor for variance-bounded sources.</p>
+  <p><strong>Plug in</strong> $X\sim\mathcal{N}(0,\sigma^2)$: $h(X) = \tfrac12\log(2\pi e\sigma^2)$.</p>
+  <div class="math-block">$$R_X(D) \;\ge\; \tfrac12\log(2\pi e\sigma^2) - \tfrac12\log(2\pi e D) \;=\; \tfrac12\log\dfrac{\sigma^2}{D}.$$</div>
+  <p><strong>SLB tight</strong> at the Gaussian.</p>
+  <p><strong>Non-Gaussian sources:</strong> extra structure, lower rate.</p>
+  <div class="highlight">Code designed for Gaussian: <strong>universal MSE</strong> compressor at fixed variance.</div>
 </div>
 
 
@@ -170,28 +276,54 @@
 
 <div class="slide">
   <h2>Setup and Statement</h2><div class="divider"></div>
-  <p>$X\sim\mathrm{Lap}(\lambda)$, density $f_X(x)=\tfrac\lambda 2 e^{-\lambda|x|}$, $\mathbb{E}|X|=1/\lambda$. Distortion $|x-\hat x|$.</p>
-  <div class="math-block">$$R(D) \;=\; \begin{cases}-\log(\lambda D), & 0<D\le 1/\lambda,\\ 0, & D\ge 1/\lambda.\end{cases}$$</div>
-  <p>Central for neural-network pruning: pretrained NN weights look approximately Laplacian.</p>
+  <div class="cols">
+    <div>
+      <p>$X\sim\mathrm{Lap}(\lambda)$, $f_X(x)=\tfrac\lambda 2 e^{-\lambda|x|}$.</p>
+      <p>$\mathbb{E}|X|=1/\lambda$. Distortion $|x-\hat x|$.</p>
+      <div class="math-block">$$R(D) = \begin{cases}-\log(\lambda D), & 0&lt;D\le 1/\lambda,\\ 0, & D\ge 1/\lambda.\end{cases}$$</div>
+      <p>Pretrained <strong>NN weights</strong>: approximately Laplacian.</p>
+    </div>
+    <div style="position:relative;">
+      <p style="margin: 0 0 4px 0; font-weight:600; color:var(--yonsei-blue);">Optimal reproduction $P^*_{\widehat X}$</p>
+      <svg viewBox="0 0 220 130" width="100%" style="max-width:240px; background:var(--light); border-radius:8px; display:block;">
+        <!-- axis -->
+        <line x1="14" y1="100" x2="206" y2="100" stroke="#1a1a1a" stroke-width="1"/>
+        <!-- Laplacian envelope: smooth two-sided exponential -->
+        <path d="M 14 99 Q 70 96, 100 78 Q 108 68, 110 60 Q 112 68, 120 78 Q 150 96, 206 99"
+              stroke="#003876" stroke-width="2" fill="#003876" fill-opacity="0.10"/>
+        <!-- delta-function arrow at x=0 -->
+        <line x1="110" y1="100" x2="110" y2="20" stroke="#003876" stroke-width="2.5"/>
+        <polygon points="110,12 105,24 115,24" fill="#003876"/>
+        <!-- tick at zero -->
+        <line x1="110" y1="100" x2="110" y2="105" stroke="#1a1a1a" stroke-width="1"/>
+      </svg>
+      <span style="position:absolute; left:50%; top:18%; font-size:0.9rem; font-weight:600; color:var(--yonsei-blue);">$\lambda^2 D^2$</span>
+      <span style="position:absolute; left:62%; top:55%; font-size:0.9rem; font-weight:600; color:var(--yonsei-blue);">$\mathrm{Lap}(\lambda)$ tail</span>
+      <span style="position:absolute; left:48%; top:82%; font-size:0.85rem; color:var(--gray-text);">$\hat x = 0$</span>
+      <p style="margin: 8px 0 0 0;">Atom at $0$ + Laplacian tail.</p>
+    </div>
+  </div>
 </div>
 
 <div class="slide">
   <h2>Converse — Auxiliary Density Trick</h2><div class="divider"></div>
-  <p>Define $q_{X\mid\widehat X}(x\mid\hat x) = \tfrac{1}{2D}\exp(-|x-\hat x|/D)$ (Laplacian centered at $\hat x$).</p>
-  <p>Since $D_{\mathrm{KL}}(p_{X\mid\widehat X}\,\Vert\,q_{X\mid\widehat X})\ge 0$:</p>
+  <p>Auxiliary $q_{X\mid\widehat X}(x\mid\hat x) = \tfrac{1}{2D}\exp(-|x-\hat x|/D)$, Laplacian centered at $\hat x$.</p>
+  <p>$D_{\mathrm{KL}}(p_{X\mid\widehat X}\,\Vert\,q_{X\mid\widehat X})\ge 0$ gives</p>
   <div class="math-block">$$I(X;\widehat X) \;\ge\; \mathbb{E}\log\dfrac{q_{X\mid\widehat X}(X\mid\widehat X)}{p_X(X)} \;=\; -\log(\lambda D) - \tfrac{\mathbb{E}|X-\widehat X|}{D} + \lambda\,\mathbb{E}|X|.$$</div>
-  <p>$\mathbb{E}|X|=1/\lambda$ and $\mathbb{E}|X-\widehat X|\le D$: last two terms sum to $\ge 0$. Hence $R(D)\ge -\log(\lambda D)$.</p>
+  <p>$\mathbb{E}|X|=1/\lambda$ and $\mathbb{E}|X-\widehat X|\le D$: last two terms $\ge 0$.</p>
+  <p><strong>Conclusion:</strong> $R(D)\ge -\log(\lambda D)$.</p>
 </div>
 
 <div class="slide">
-  <h2>Achievability — Sparse Mixture</h2><div class="divider"></div>
-  <p>Let $X = V + N$ with independent</p>
-  <div class="math-block">$$N\sim\mathrm{Lap}(1/D), \qquad V \;=\; \lambda^2 D^2\,\delta_0 \;+\; (1-\lambda^2 D^2)\,\mathrm{Lap}(\lambda).$$</div>
-  <p>$V$ is a <strong>mixture</strong>: probability $\lambda^2 D^2$ of being exactly zero. Set $\widehat X = V$:</p>
-  <div class="math-block">$$\mathbb{E}|X-\widehat X| \;=\; \mathbb{E}|N| \;=\; D.$$</div>
-  <div class="highlight">At the rate&ndash;distortion limit, a positive fraction of reconstructed coordinates are <strong>exactly zero</strong>.</div>
+  <h2>Achievability — Sparse Mixture (Backward Channel)</h2><div class="divider"></div>
+  <p>Backward Laplacian channel: independent</p>
+  <div class="math-block">$$N\sim\mathrm{Lap}(1/D), \qquad V \;=\; \lambda^2 D^2\,\delta_0 \;+\; (1-\lambda^2 D^2)\,\mathrm{Lap}(\lambda),\qquad X = V + N.$$</div>
+  <p><strong>Atom at zero</strong> in $V$ with mass $\lambda^2 D^2$. Set $\widehat X = V$.</p>
+  <p><strong>Distortion:</strong> $\mathbb{E}|X-\widehat X| = \mathbb{E}|N| = D$.</p>
+  <p><strong>Mutual information:</strong> $I(X;\widehat X) = -\log(\lambda D)$.</p>
+  <div class="highlight">Optimal Laplacian reproduction has a <strong>Dirac atom at zero</strong>.</div>
+  <div class="cite">Isik, No, Weissman, "An Information-Theoretic Justification for Model Pruning", AISTATS 2022 (arXiv:2102.08329).</div>
 </div>
-
 
 <!-- ════ PART 04 ════ -->
 <div class="slide section-slide left">
@@ -219,8 +351,30 @@
 </div>
 
 <div class="slide">
+  <h2>Trained Weights Are Laplacian-Like</h2><div class="divider"></div>
+  <p>Empirical histogram of pretrained weights:</p>
+  <ul>
+    <li><strong>Peaked at zero</strong>, heavy two-sided tails.</li>
+    <li>Matches $\tfrac{\lambda}{2}e^{-\lambda|w|}$ within layer.</li>
+    <li>Few large weights, many near-zero.</li>
+  </ul>
+  <p>Source model for compression: $W \sim \mathrm{Lap}(\lambda)$ per layer (after normalization).</p>
+  <div class="highlight">Heavy-tailed, sparse-friendly &mdash; not Gaussian.</div>
+  <div class="cite">Isik, No, Weissman, "An Information-Theoretic Justification for Model Pruning", AISTATS 2022 (arXiv:2102.08329).</div>
+</div>
+
+<div class="slide">
+  <h2>Optimal Laplacian Code Is a Sparsifier</h2><div class="divider"></div>
+  <p>Optimal reproduction $P^*_{\widehat W}$ at rate $R = -\log(\lambda D)$:</p>
+  <div class="math-block">$$P^*_{\widehat W} \;=\; \underbrace{\lambda^2 D^2}_{\text{atom mass}}\;\delta_0 \;+\; (1-\lambda^2 D^2)\,\mathrm{Lap}(\lambda).$$</div>
+  <p><strong>Most reproductions land exactly at zero.</strong></p>
+  <p>An information-theoretically optimal compressor of $\mathrm{Lap}(\lambda)$ weights <strong>is a sparsifier</strong> &mdash; pruning emerges, not imposed.</p>
+  <div class="cite">Isik, No, Weissman, "An Information-Theoretic Justification for Model Pruning", AISTATS 2022 (arXiv:2102.08329).</div>
+</div>
+
+<div class="slide">
   <h2>Pruning Is Optimal</h2><div class="divider"></div>
-  <p>Empirically, normalized pretrained weights look approximately Laplacian. Combine:</p>
+  <p>Three pieces from this lecture:</p>
   <ul>
     <li>Output distortion $\le$ normalized $\ell_1$ weight distortion.</li>
     <li>Weights $\approx$ Laplacian.</li>
@@ -240,22 +394,35 @@
 
 <div class="slide">
   <h2>Extremes Are Almost Predictable</h2><div class="divider"></div>
-  <p>$Y_1,\ldots,Y_n\stackrel{\mathrm{iid}}{\sim}\mathrm{Exp}(\lambda)$. Then $M_n = \max_i Y_i = \tfrac{\log n}{\lambda} + O_p(1)$ (Gumbel limit).</p>
-  <p>Gaussian rule of thumb: $\max_i X_i \approx \sigma\sqrt{2\log n} + O_p(1)$.</p>
-  <div class="highlight">The <strong>value</strong> of an extreme is predictable from $n$ alone. Only its <strong>index</strong> needs to be sent.</div>
+  <p><strong>Exponential maxima.</strong> $Y_1,\ldots,Y_n\stackrel{\mathrm{iid}}{\sim}\mathrm{Exp}(\lambda)$:</p>
+  <div class="math-block">$$M_n \;=\; \max_i Y_i \;=\; \tfrac{\log n}{\lambda} + O_p(1) \quad\text{(Gumbel limit).}$$</div>
+  <p><strong>Gaussian rule of thumb.</strong></p>
+  <div class="math-block">$$\max_i X_i \;\approx\; \sigma\sqrt{2\log n} + O_p(1).$$</div>
+  <div class="highlight"><strong>Value:</strong> predictable from $n$ alone. <strong>Index:</strong> the only thing to send.</div>
 </div>
 
 <div class="slide">
   <h2>CROM: Send the Index, Reconstruct the Spike</h2><div class="divider"></div>
-  <p>$X^n\sim\mathcal{N}(0,I_n)$. Encoder sends $m=\arg\max_i X_i$. Rate $\log n / n \to 0$.</p>
-  <p>Decoder reconstructs:</p>
+  <p><strong>Source:</strong> $X^n\sim\mathcal{N}(0,I_n)$.</p>
+  <p><strong>Encoder:</strong> $m=\arg\max_i X_i$. Rate $\log n / n \to 0$.</p>
+  <p><strong>Decoder reconstruction:</strong></p>
   <div class="math-block">$$\widehat X_i \;=\; \begin{cases}\alpha_n, & i = m,\\ -\alpha_n/(n-1), & i\ne m,\end{cases}\qquad \alpha_n\approx\sqrt{2\log n}.$$</div>
-  <p>Distortion drop matches the Gaussian R(D) slope at the origin: $\;D_G'(0) = -2\sigma^2$ vs CROM $-2$.</p>
+  <p><strong>Distortion slope</strong> matches Gaussian $R(D)$ at origin: $D_G'(0) = -2\sigma^2$ vs CROM $-2$.</p>
+</div>
+
+<div class="slide">
+  <h2>Random Rotations Gaussianize</h2><div class="divider"></div>
+  <p>For Haar-random orthogonal $A\in\mathrm{O}(d)$ and any deterministic $v\in\mathbb{R}^d$:</p>
+  <div class="math-block">$$Av \;\sim\; \mathrm{Unif}\bigl(\|v\|\cdot S^{d-1}\bigr).$$</div>
+  <p>Each coordinate, $d\to\infty$:</p>
+  <div class="math-block">$$(Av)_j \;\xrightarrow{d}\; \mathcal{N}\!\left(0,\;\tfrac{\|v\|^2}{d}\right).$$</div>
+  <p>Sparse, peaked, heavy-tailed &mdash; <strong>any</strong> source becomes Gaussian per coordinate after one rotation.</p>
+  <div class="highlight"><strong>Incoherence step</strong>: makes per-coordinate / extremes-based encoding effective.</div>
 </div>
 
 <div class="slide">
   <h2>Iterate with Random Rotations</h2><div class="divider"></div>
-  <p>After one sparse subtraction, residual is no longer i.i.d. Gaussian. Multiply by a random orthogonal $A_{t+1}$ to <strong>Gaussianize</strong>; repeat.</p>
+  <p>After one sparse subtraction, the residual is correlated and non-Gaussian. Apply a fresh Haar rotation each round to restore Gaussian marginals.</p>
   <ol class="num">
     <li>Find indices $m^{(t)}$ of the $k_n$ largest residual coordinates.</li>
     <li>Encode the index set ($\log\binom{n}{k_n}$ nats).</li>

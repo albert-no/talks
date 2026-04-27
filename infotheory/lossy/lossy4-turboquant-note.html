@@ -26,7 +26,99 @@
 <p class="meta">Companion to <code>lossy4-turboquant.html</code>. Worked details for the proofs.</p>
 
 <section>
-  <h2>Where the slice argument comes from in Lemma 1</h2>
+  <h2>KV cache &mdash; what and why</h2>
+  <p>A decoder-only transformer with $L$ layers and $H$ heads, attention dimension $d$, processes a sequence one token at a time. Each layer computes Queries, Keys, and Values. At decode step $t$, the new query $q_t$ attends to <strong>all past keys</strong> $k_1, \ldots, k_t$ via the softmax</p>
+  <div class="deriv">
+    \[
+    \alpha_{t, s} \;=\; \frac{\exp(\langle q_t, k_s\rangle / \sqrt d)}{\sum_{s'\le t}\exp(\langle q_t, k_{s'}\rangle / \sqrt d)}, \qquad o_t = \sum_{s\le t}\alpha_{t, s}\,v_s.
+    \]
+  </div>
+  <p>Since the past $\{k_s, v_s\}$ never change, they are <em>cached</em>. The cache size at sequence length $T$ is $2 \cdot L \cdot H \cdot d \cdot T$ scalars, linear in $T$. At $T = 128\text{K}$ and FP16, the cache for a 70B-class model can exceed $50$ GB &mdash; far beyond a single GPU's HBM. Compressing the cache is the difference between context length $T = 8\text{K}$ and $T = 1\text{M}$.</p>
+  <p>The compression must be: (a) <strong>online</strong> &mdash; the decoder processes one token at a time and cannot revisit, so each $k_s, v_s$ must be quantized when it first appears; (b) <strong>data-oblivious</strong> &mdash; the codebook cannot depend on the user's prompt or the model's runtime distribution, so calibration-based quantization (e.g., per-channel statistics) is awkward; (c) <strong>attention-preserving</strong> &mdash; the softmax cares about inner products $\langle q_t, k_s\rangle$, not about $\|k_s - \widetilde k_s\|^2$ per se. TURBOQUANT is the rate&ndash;distortion-optimal answer to all three constraints simultaneously.</p>
+</section>
+
+<section>
+  <h2>Why a random rotation Gaussianizes any fixed unit vector</h2>
+  <p>Let $u \in \mathbb{R}^d$ be a fixed unit-norm vector ($\|u\| = 1$) and let $R$ be a Haar-uniform random orthogonal matrix. The claim is that $R u$ is uniformly distributed on $S^{d-1}$, and hence each coordinate $(R u)_j$ has the marginal of one coordinate of a uniform spherical point, which converges to $\mathcal{N}(0, 1/d)$ as $d \to \infty$.</p>
+  <p><strong>Step 1 &mdash; rotational invariance.</strong> The Haar measure on the orthogonal group $O(d)$ is left- and right-invariant: for any fixed $Q \in O(d)$, $R$ and $Q R$ have the same law. So $R u$ and $Q R u$ also have the same law for every $Q$. Choose $Q$ to send $u$ to any other unit vector $u'$: $Q R u$ has the law of $R u'$, but also of $R u$. Hence the law of $R u$ does not depend on $u$ (as long as $\|u\| = 1$).</p>
+  <p><strong>Step 2 &mdash; uniform on the sphere.</strong> Pick any $u_0 \in S^{d-1}$. The law of $R u_0$ is invariant under $O(d)$ acting on $S^{d-1}$ (as we just showed). The unique $O(d)$-invariant probability measure on $S^{d-1}$ is the uniform (surface-area) measure. Therefore $R u_0 \sim \mathrm{Unif}(S^{d-1})$, and by Step 1 the same holds for any $u$ with $\|u\| = 1$.</p>
+  <p><strong>Step 3 &mdash; coordinate marginal.</strong> By Lemma 1, each coordinate has density $f_d(t) \propto (1 - t^2)^{(d-3)/2}$. Substituting $t = u/\sqrt d$ and using $(1 - u^2/d)^{(d-3)/2} \to e^{-u^2/2}$ together with Stirling's expansion of the normalization gives</p>
+  <div class="deriv">
+    \[
+    \sqrt{d}\,(R u)_j \;\Rightarrow\; \mathcal{N}(0, 1), \qquad d \to \infty.
+    \]
+  </div>
+  <p>This is the same "high-dimensional sphere is approximately Gaussian" identity that underlies Poincar&eacute;'s lemma: a uniform spherical point with radius $\sqrt d$ has nearly i.i.d. standard-Gaussian coordinates. Equivalently, a $d$-dim Gaussian projected onto $S^{d-1}$ via $\mathbf g/\|\mathbf g\|$ is exactly uniform; for large $d$ the normalization $\|\mathbf g\| \approx \sqrt d$ is concentrated, so $\mathbf g/\sqrt d$ is also approximately spherical.</p>
+  <p>Practical consequence for TURBOQUANT: regardless of the input vector $x$, after the rotation each coordinate of $\Pi x$ has the <em>same</em> density $f_d \approx \mathcal{N}(0, 1/d)$. The codebook can be designed once, offline, and applied to every input.</p>
+</section>
+
+<section>
+  <h2>Why the exponent is $4^{-b}$ &mdash; Gaussian distortion&ndash;rate</h2>
+  <p>Shannon's theorem for a memoryless Gaussian source $X \sim \mathcal{N}(0, \sigma^2)$ under squared-error distortion gives the rate&ndash;distortion function</p>
+  <div class="deriv">
+    \[
+    R(D) \;=\; \tfrac{1}{2}\log_2(\sigma^2/D), \qquad D(R) \;=\; \sigma^2 \cdot 2^{-2 R}.
+    \]
+  </div>
+  <p>At rate $R = b$ bits per sample, $D = \sigma^2 \cdot 4^{-b}$. After the random rotation, every coordinate of $\Pi x$ has variance $1/d$, so the per-coordinate Gaussian R(D) target is $D = (1/d) \cdot 4^{-b}$, summing over $d$ coordinates to a total of $4^{-b}$. That is exactly the exponent TURBOQUANT achieves (up to a constant $\sqrt 3\pi/2$ from Panter&ndash;Dite, since Lloyd&ndash;Max scalar quantization is high-resolution-optimal but not Shannon-optimal).</p>
+  <p><strong>Bias of practical lossy quantizers.</strong> Even when the squared-error distortion is small, the reconstruction $\widetilde X$ is not in general an unbiased copy of $X$. The cleanest example is the 1-bit quantizer $\widetilde X = a \cdot \operatorname{sign}(X)$ with $X \sim \mathcal{N}(0, \sigma^2)$. The MSE-optimal scaling is $a^\star = \mathbb{E}|X| = \sigma\sqrt{2/\pi}$, so the reconstruction has expected magnitude</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}|\widetilde X| \;=\; a^\star \;=\; \sigma\sqrt{2/\pi} \;\approx\; 0.798\,\sigma \;<\; \sigma.
+    \]
+  </div>
+  <p>The reconstruction is shorter than the input on average. For squared-error this is fine &mdash; minimizing $\mathbb{E}(X - \widetilde X)^2$ is what we asked for. But for downstream uses that depend on inner products, e.g., $\mathbb{E}\langle y, \widetilde X\rangle$ for a fixed test direction $y$, the shortened magnitude shows up as a multiplicative bias on every projection. This is precisely why MSE TURBOQUANT, which optimally minimizes $\mathbb{E}\|x - \widetilde x\|^2$, is <em>biased</em> for inner products and needs the QJL second stage.</p>
+</section>
+
+<section>
+  <h2>Lemma 1 &mdash; full proof (sphere-coordinate concentration)</h2>
+  <p>Let $Y \sim \mathrm{Unif}(S^{d-1})$. We compute the density of $Y_1$ by the slice/co-area construction.</p>
+  <p><strong>Surface-area slice.</strong> The unit sphere has surface area $A_d = 2\pi^{d/2}/\Gamma(d/2)$. Fix $t \in (-1, 1)$ and consider the set $\{y \in S^{d-1} : y_1 = t\}$: it is a $(d-2)$-sphere of radius $\sqrt{1 - t^2}$, with $(d-2)$-dimensional volume $A_{d-1} \cdot (1 - t^2)^{(d-2)/2}$.</p>
+  <p><strong>Co-area Jacobian.</strong> Parameterize a point $y \in S^{d-1}$ near the slice by $(t, \omega)$ where $\omega$ is the $(d-2)$-spherical coordinate within the slice. The Jacobian of the projection $y \mapsto y_1$ contributes a factor $(1 - t^2)^{-1/2}$ (because a unit increment along the meridian advances $y_1$ by $\sqrt{1 - t^2}$). Combining the slice volume and the Jacobian:</p>
+  <div class="deriv">
+    \[
+    f_d(t) \;\propto\; (1 - t^2)^{(d-2)/2} \cdot (1 - t^2)^{-1/2} \;=\; (1 - t^2)^{(d-3)/2}.
+    \]
+  </div>
+  <p><strong>Normalization.</strong> $\int_{-1}^{1}(1 - t^2)^{(d-3)/2}\,dt = B(\tfrac12, \tfrac{d-1}{2}) = \frac{\sqrt\pi\,\Gamma((d-1)/2)}{\Gamma(d/2)}$. Hence the closed form on the slide.</p>
+  <p><strong>Concentration via Gaussian limit.</strong> Let $u = t \sqrt d$. Then</p>
+  <div class="deriv">
+    \[
+    (1 - t^2)^{(d-3)/2} \;=\; \Bigl(1 - \tfrac{u^2}{d}\Bigr)^{(d-3)/2} \;\xrightarrow{d \to \infty}\; e^{-u^2/2}.
+    \]
+  </div>
+  <p>Stirling on the Beta normalization yields the leading constant $\sqrt{d/(2\pi)}$, which is exactly the standard-Gaussian density at $u$. So $\sqrt d \cdot Y_j \Rightarrow \mathcal{N}(0, 1)$, and equivalently $Y_j \approx \mathcal{N}(0, 1/d)$ at the level of marginals. The convergence is in fact in <em>total variation</em> because the densities converge pointwise on a common dominating measure (Scheff&eacute;'s lemma).</p>
+  <p><strong>Concentration corollary.</strong> By a standard subgaussian tail bound on the limit, for every $\varepsilon > 0$,</p>
+  <div class="deriv">
+    \[
+    \Pr[|Y_j| \ge \varepsilon] \;\le\; 2 \exp\!\bigl(-\tfrac{d \varepsilon^2}{2}(1 - o(1))\bigr).
+    \]
+  </div>
+  <p>This is the form used to bound coordinate magnitude in worst-case scalar-quantization analyses.</p>
+</section>
+
+<section>
+  <h2>Lloyd&ndash;Max applied to $f_d$ &mdash; explicit derivation</h2>
+  <p>Lloyd&ndash;Max picks a partition $\{R_1, \ldots, R_K\}$ of $[-1, 1]$ and codepoints $\{c_1, \ldots, c_K\}$ minimizing</p>
+  <div class="deriv">
+    \[
+    C(f_d, K) \;=\; \sum_{i=1}^{K} \int_{R_i} (t - c_i)^2 f_d(t)\,dt.
+    \]
+  </div>
+  <p><strong>Step 1 &mdash; alternating updates (Lecture 1).</strong> The two necessary conditions are</p>
+  <div class="deriv">
+    \[
+    c_i^\star = \frac{\int_{R_i} t f_d(t)\,dt}{\int_{R_i} f_d(t)\,dt}, \qquad R_i^\star = \Bigl\{t : |t - c_i| \le |t - c_j|\;\forall j\Bigr\}.
+    \]
+  </div>
+  <p>Iterating these yields a fixed point. For unimodal symmetric $f_d$, the fixed point is unique modulo permutation.</p>
+  <p><strong>Step 2 &mdash; high-resolution limit.</strong> As $K \to \infty$, the optimal Lloyd&ndash;Max design has cell width $\Delta(t) \propto f_d(t)^{-1/3}$ (Bennett's formula). Substituting into $C$ gives the Panter&ndash;Dite expression. So Lloyd&ndash;Max-on-$f_d$ <em>achieves</em> the Panter&ndash;Dite bound asymptotically.</p>
+  <p><strong>Step 3 &mdash; sample-free codebook.</strong> Because $f_d$ is fixed and known (independent of any data), Lloyd&ndash;Max can be run <em>offline</em> once for each $(d, K)$ pair; the codebook is then shipped with the quantizer. No calibration data is required at deployment.</p>
+  <p><strong>Step 4 &mdash; orthogonal invariance.</strong> $\|x - \widetilde x\|^2 = \|\Pi^\top \widetilde y - \Pi^\top y \cdot \mathbf{1}\|^2 \cdot \text{(rotational identity)} = \|y - \widetilde y\|^2 = \sum_j (y_j - \widetilde y_j)^2$. Each $y_j \sim f_d$ marginally, so $\mathbb{E}\|x - \widetilde x\|^2 = d \cdot C(f_d, b)$ exactly. The cross-terms vanish only on average; the per-instance bound is the high-probability concentration of the sum.</p>
+</section>
+
+<section>
+  <h2>Where the slice argument comes from in Lemma 1 (alternative angle)</h2>
   <p>The unit sphere $S^{d-1}\subset\mathbb{R}^d$ has surface area $A_d=\frac{2\pi^{d/2}}{\Gamma(d/2)}$. To compute the marginal density of $Y_1$ when $Y\sim\mathrm{Unif}(S^{d-1})$, condition on $Y_1=t$: the remaining coordinates $(Y_2,\ldots,Y_d)$ lie on a $(d-2)$-sphere of radius $\sqrt{1-t^2}$, with surface area $A_{d-1}\cdot(1-t^2)^{(d-2)/2}$.</p>
   <p>The probability measure is uniform with respect to surface area, but the marginal density is the integral of that surface area along the $t$-direction. The Jacobian of the slice contributes one extra power of $\sqrt{1-t^2}$, giving $f_d(t)\propto(1-t^2)^{(d-3)/2}$.</p>
   <p>Normalize with the Beta integral: $\int_{-1}^{1}(1-t^2)^{(d-3)/2}dt=B(\tfrac12,\tfrac{d-1}{2})$. Combine to get the closed form on the slide.</p>
@@ -72,6 +164,75 @@
     <li>So $\mathbb{E}[s\operatorname{sign}(s^\top u)]=\sqrt{2/\pi}\,u$.</li>
   </ol>
   <p>This is the same identity that gave us $\alpha=2/\pi$ in the bias derivation: $d$ copies of "$\sqrt{2/\pi}$" multiplied through gives the shrinkage factor.</p>
+</section>
+
+<section>
+  <h2>QJL lemma &mdash; full proof of unbiasedness and variance</h2>
+  <p>Let $S \in \mathbb{R}^{d \times d}$ have i.i.d. $\mathcal{N}(0, 1)$ entries, $u \in S^{d-1}$ fixed, and define</p>
+  <div class="deriv">
+    \[
+    Q_{\mathrm{qjl}}(u) = \operatorname{sign}(S u) \in \{-1, +1\}^d, \qquad \widehat u = Q_{\mathrm{qjl}}^{-1}(z) = \tfrac{\sqrt{\pi/2}}{d} \cdot S^\top z.
+    \]
+  </div>
+  <p>Let $z = Q_{\mathrm{qjl}}(u)$ so $z_i = \operatorname{sign}(s_i^\top u)$ for $s_i$ the $i$-th row of $S$.</p>
+
+  <p><strong>Unbiasedness for any test direction $y$.</strong> Compute</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}_S \langle y, \widehat u\rangle
+    \;=\; \tfrac{\sqrt{\pi/2}}{d} \cdot \mathbb{E}_S \langle y, S^\top z\rangle
+    \;=\; \tfrac{\sqrt{\pi/2}}{d} \cdot \mathbb{E}_S \sum_{i=1}^d z_i (s_i^\top y).
+    \]
+  </div>
+  <p>Each summand is $\mathbb{E}\bigl[s_i^\top y \cdot \operatorname{sign}(s_i^\top u)\bigr]$. Since $s_i \sim \mathcal{N}(0, I_d)$, by the Gaussian identity $\mathbb{E}[s_i \cdot \operatorname{sign}(s_i^\top u)] = \sqrt{2/\pi}\,u$, so taking inner product with $y$:</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}\bigl[(s_i^\top y) \cdot \operatorname{sign}(s_i^\top u)\bigr] \;=\; \sqrt{2/\pi}\,\langle y, u\rangle.
+    \]
+  </div>
+  <p>Summing over $i$ gives $d \cdot \sqrt{2/\pi}\,\langle y, u\rangle$, and the $\tfrac{\sqrt{\pi/2}}{d}$ factor cancels:</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}_S \langle y, \widehat u\rangle \;=\; \langle y, u\rangle.
+    \]
+  </div>
+
+  <p><strong>Variance bound.</strong> Write $\langle y, \widehat u\rangle = \tfrac{\sqrt{\pi/2}}{d} \sum_i T_i$ with $T_i = (s_i^\top y) \cdot \operatorname{sign}(s_i^\top u)$. The $T_i$'s are i.i.d. because the rows $s_i$ are i.i.d.</p>
+  <p>Bound the second moment of one $T_i$. Cauchy&ndash;Schwarz $\Rightarrow$ $T_i^2 = (s_i^\top y)^2 \cdot 1 \le (s_i^\top y)^2$, so $\mathbb{E}T_i^2 \le \mathbb{E}(s_i^\top y)^2 = \|y\|^2$. Hence</p>
+  <div class="deriv">
+    \[
+    \operatorname{Var}_S \langle y, \widehat u\rangle
+    \;=\; \tfrac{\pi/2}{d^2} \cdot d \cdot \operatorname{Var}(T_1)
+    \;\le\; \tfrac{\pi/2}{d^2} \cdot d \cdot \|y\|^2
+    \;=\; \tfrac{\pi}{2d}\|y\|^2.
+    \]
+  </div>
+  <p>So QJL is unbiased with variance $O(\|y\|^2 / d)$ &mdash; a $1/d$ improvement over a single bit per dimension because the $d$ independent measurements average down.</p>
+
+  <p><strong>Why the variance is genuinely $1/d$.</strong> The factor $1/d$ comes from the $d$ rows of $S$ providing $d$ independent measurements of $\langle y, u\rangle$. Replacing $S$ with an $m \times d$ matrix ($m < d$) gives variance $\tfrac{\pi}{2m}\|y\|^2$, the natural bias&ndash;variance trade-off in sketch dimension.</p>
+</section>
+
+<section>
+  <h2>Inner-product TURBOQUANT &mdash; the two-stage decomposition</h2>
+  <p>The MSE-optimal quantizer $\widetilde x_{\mathrm{mse}}$ is biased for $\langle y, x\rangle$: by the geometric-shrinkage identity, $\mathbb{E}\langle y, \widetilde x_{\mathrm{mse}}\rangle = \alpha \cdot \langle y, x\rangle$ with $\alpha = 2/\pi$ at $b = 1$. Naively rescaling by $1/\alpha$ would unbias the estimator but explode the variance.</p>
+  <p><strong>Decomposition.</strong> Write $x = \widetilde x_{\mathrm{mse}} + r$ where $r = x - \widetilde x_{\mathrm{mse}}$. Then for any $y$:</p>
+  <div class="deriv">
+    \[
+    \langle y, x\rangle \;=\; \underbrace{\langle y, \widetilde x_{\mathrm{mse}}\rangle}_{\text{deterministic, biased}} \;+\; \underbrace{\langle y, r\rangle}_{\text{small, unbiased target}}.
+    \]
+  </div>
+  <p>The first term is computed exactly from the MSE codebook. The second is estimated unbiasedly using QJL on the residual $r$ with $1$ bit per coordinate.</p>
+  <p><strong>Bit budget.</strong> Total $b$ bits/coordinate split as $(b - 1)$ for MSE and $1$ for QJL.</p>
+  <p><strong>Bias.</strong> $\mathbb{E}_S \widehat r = r$ exactly (QJL unbiased), so the combined estimator $\widehat{\langle y, x\rangle} = \langle y, \widetilde x_{\mathrm{mse}}\rangle + \widehat{\langle y, r\rangle}$ satisfies $\mathbb{E}_S \widehat{\langle y, x\rangle} = \langle y, x\rangle$ &mdash; deterministically unbiased.</p>
+  <p><strong>Variance.</strong> The QJL bound gives $\operatorname{Var}_S \widehat{\langle y, r\rangle} \le \tfrac{\pi}{2d}\|y\|^2 \cdot \|r\|^2 / 1$ &mdash; <em>but</em> the right-hand-side scales with $\|r\|^2$, not with $1$. Substituting the MSE TURBOQUANT bound $\|r\|^2 \le \tfrac{\sqrt 3 \pi}{2} \cdot 4^{-(b-1)}$:</p>
+  <div class="deriv">
+    \[
+    \operatorname{Var}_S \widehat{\langle y, r\rangle} \;\le\; \tfrac{\pi}{2 d} \cdot \tfrac{\sqrt 3 \pi}{2} \cdot 4^{-(b-1)} \cdot \|y\|^2
+    \;=\; \tfrac{\sqrt 3 \pi^2 \|y\|^2}{d} \cdot 4^{-b},
+    \]
+  </div>
+  <p>which is the bound on the slide. The two-stage method wins by $1/d$ over single-stage QJL because the MSE stage shrinks the residual norm, and QJL's variance scales <em>multiplicatively</em> with that norm.</p>
+  <p><strong>Why the order matters.</strong> Reverse the order &mdash; sketch first, then MSE-quantize the residual &mdash; and the second stage cannot exploit a shrunken residual, because QJL's residual is not norm-shrunken. The MSE-first split is the only one that compounds the savings.</p>
 </section>
 
 <section>

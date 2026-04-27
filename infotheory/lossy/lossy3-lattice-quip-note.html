@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Lossy 3 — Lattice Codes and QUIP# · Notes</title>
+<title>Lossy 3 — Lattice Codes, QUIP, QUIP# · Notes</title>
 <link rel="stylesheet" href="../../reference/colors_and_type.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
@@ -22,57 +22,177 @@
 </head>
 <body>
 
-<h1>Lossy 3 · Lattice Codes and QUIP\# &mdash; Notes</h1>
-<p class="meta">Companion to <code>lossy3-lattice-quip.html</code>.</p>
+<h1>Lossy 3 · Lattice Codes, QUIP, QUIP\# &mdash; Notes</h1>
+<p class="meta">Companion to <code>lossy3-lattice-quip.html</code>. Detail and rigor that does not fit on the slides.</p>
 
 <section>
-  <h2>Where the storage / search numbers come from</h2>
-  <p>For dimension $d=8$ and rate $R=4$ bits/coordinate, the codebook has $2^{32}\approx 4.29\times 10^9$ entries, each a vector of $8$ floats. At 4&nbsp;bytes each, that is $\approx 137$ GB just to hold the codebook. Search through it for $10^{10}$ weights: $10^{10}\cdot 4.29\times 10^9$ inner products, far beyond what is achievable with any finite compute budget.</p>
-  <p>Even at $d=4,R=2$ (8&nbsp;billion weights, $K=256$ codepoints): codebook fits in cache, but per-vector search of 256 candidates over $10^{10}/4=2.5\times 10^9$ blocks is borderline. The point is not the precise crossover; it is that scaling $d$ to where the rate-distortion gain matters destroys feasibility.</p>
+  <h2>What a real quantizer must do &mdash; numbers</h2>
+  <p>For dimension $d=8$ and rate $R=4$ bits/coordinate, an unstructured codebook has $2^{32}\approx 4.29\times 10^9$ entries, each a vector of $8$ floats. At 4&nbsp;bytes each, that is $\approx 137$ GB just to hold the codebook &mdash; before you do any inference at all. Searching it for $10^{10}$ weights would cost $10^{10}\cdot 4.29\times 10^9 \approx 4\times 10^{19}$ inner products.</p>
+  <p>Even at the modest $d=4, R=2$ regime ($K=256$ codepoints, fits in cache), per-vector search of 256 candidates over $10^{10}/4=2.5\times 10^9$ blocks is borderline. The point is not the precise crossover but that scaling $d$ to where the Shannon rate-distortion gain matters destroys feasibility under any constant-factor change to GPUs.</p>
+  <p>This is why "structured codebook" is non-negotiable for LLMs: not because it is theoretically prettier, but because storage and search both scale as $2^{dR}$ and one cannot run them per layer per token.</p>
 </section>
 
 <section>
-  <h2>What does $E_8$ buy you in practice?</h2>
-  <p>$E_8$ is the lattice of vectors in $\mathbb{R}^8$ whose coordinates are either all integers or all half-integers, and whose coordinate sum is even. It has 240 nearest neighbors (vs. 16 for $\mathbb{Z}^8$), giving denser sphere packing and rounder Voronoi cells.</p>
-  <p>Numerically, $G(E_8)\approx 0.0717$ vs. $G(\mathbb{Z}^8)=1/12\approx 0.0833$. The MSE improvement at fixed rate is the ratio: $\approx 14\%$ lower distortion for free, just by switching the lattice.</p>
-  <p>QUIP\# uses $E_8$ specifically because of this gain: at 8 bits per block (i.e. $R\approx 1$ per coordinate, since $\log_2 256 = 8$), scalar quantization (or $\mathbb{Z}^8$) leaves measurable LLM perplexity on the table that $E_8$ recovers.</p>
+  <h2>Linear (uniform) quantization &mdash; what it buys algorithmically</h2>
+  <p>The simplest possible quantizer is $\mathbb{Z}^d$ with step $\Delta$: $\hat x_i = \Delta \cdot \mathrm{round}(x_i / \Delta)$. Coordinate-independent, no list to store, no search.</p>
+  <ul>
+    <li><strong>$\mathcal{O}(d)$ encode</strong> &mdash; a few additions and a floor per coordinate.</li>
+    <li><strong>Zero codebook RAM</strong> &mdash; only the rule (the step $\Delta$) is stored.</li>
+    <li><strong>Embarrassingly parallel</strong> &mdash; each coordinate is independent, perfect for GPU lanes.</li>
+    <li><strong>MSE penalty</strong> &mdash; $G(\mathbb{Z}^d) = 1/12$ at every $d$, vs. the sphere bound $1/(2\pi e) \approx 0.0585$. Penalty is at most a factor $\frac{1/12}{1/(2\pi e)} = \pi e/6 \approx 1.42$, i.e. $\le 1.53$ dB across all $d$.</li>
+  </ul>
+  <p>So scalar uniform quantization gives up at most ~1.5 dB to <em>any</em> structured codebook. For very high $d$, $E_8$ and Leech close most of that gap. The lesson: the algorithmic cost reduction (search $\to$ rounding) is enormous; the MSE cost is small. This is the actual reason structured codebooks dominate practice.</p>
+</section>
+
+<section>
+  <h2>Lattice as additive subgroup &mdash; consequences</h2>
+  <p>$\Lambda = B\mathbb{Z}^d$ is closed under addition: $\lambda + \lambda' \in \Lambda$, $-\lambda \in \Lambda$. Two structural consequences feed everything else.</p>
+  <ol>
+    <li><strong>Translation symmetry of Voronoi cells.</strong> $\mathcal{V}(\lambda) = \mathcal{V}(0) + \lambda$. So all Voronoi regions are translates of one fundamental cell &mdash; one shape, repeated.</li>
+    <li><strong>Quantization noise distribution.</strong> If $X$ is uniform on $\mathbb{R}^d$, then $X - Q_\Lambda(X)$ is uniform on $\mathcal{V}(0)$, independent of which cell $X$ sat in. Encoded over $\Lambda$, the error is data-independent in distribution.</li>
+  </ol>
+  <p>Both properties fail for unstructured VQ: each codepoint has a different cell shape, and the error distribution depends on the cell.</p>
+</section>
+
+<section>
+  <h2>Packing gain &mdash; why $G(\Lambda)$ is the right normalization</h2>
+  <p>Let $V = |\mathcal{V}|$ be the cell volume and $E = \int_\mathcal{V}\|x\|^2 dx / V$ the mean squared distance from the centroid. Both scale: if you replace $\Lambda$ by $\alpha\Lambda$, then $V \to \alpha^d V$ and $E \to \alpha^2 E$. So</p>
+  <div class="deriv">
+    $G(\Lambda) = \dfrac{E}{V^{2/d}} = \dfrac{1}{V^{1+2/d}}\int_\mathcal{V}\|x\|^2 dx$
+  </div>
+  <p>is scale-invariant. It depends only on the <em>shape</em> of the cell, not its volume. At fixed rate $R$ (= fixed cell volume), MSE is proportional to $G(\Lambda)$. So $G$ <em>is</em> the dimensionless figure of merit.</p>
+  <p>Lower bound (Zador): for any $d$, $G(\Lambda) \ge \frac{\Gamma(1+2/d)}{(d+2)\pi}\cdot\frac{1}{V_d^{2/d}}$ where $V_d$ is the volume of the unit ball in $\mathbb{R}^d$. As $d\to\infty$, this approaches $1/(2\pi e)$ &mdash; the same bound that the rate-distortion function attains.</p>
+</section>
+
+<section>
+  <h2>Why $E_8$ is optimal in 8D</h2>
+  <p>$E_8$ is the lattice of vectors in $\mathbb{R}^8$ whose coordinates are either all integers or all half-integers, and whose coordinate sum is even.</p>
+  <div class="deriv">
+    $E_8 = \bigl(\mathbb{Z}^8 \cup (\mathbb{Z}^8 + \tfrac12 \mathbf{1})\bigr) \cap \{x : \mathbf{1}^\top x \in 2\mathbb{Z}\}.$
+  </div>
+  <p>It has 240 minimum-norm vectors (the "kissing number" in 8D), vs. 16 for $\mathbb{Z}^8$. Densely packed sphere centers $\Rightarrow$ rounder Voronoi cells.</p>
+  <p>Numerically, $G(E_8) \approx 0.0717$ vs. $G(\mathbb{Z}^8) = 1/12 \approx 0.0833$ &mdash; about 14% lower MSE at the same rate, by switching the lattice with no other change to the algorithm.</p>
+  <p>Viazovska (2017, Fields Medal) proved that $E_8$ achieves the densest sphere packing in 8D. This bounds how much further any 8D lattice can reduce MSE: $E_8$ is essentially as good as it gets at $d=8$.</p>
+  <p>QUIP\# uses $E_8$ specifically because at $\sim 2$ bits per weight (i.e. $\log_2 256 = 8$ bits per 8-block, $R \approx 1$ per coordinate), the gap between scalar quantization and $E_8$ is measurable in LLM perplexity, and $E_8$ recovers it.</p>
 </section>
 
 <section>
   <h2>Fast rounding for $E_8$ &mdash; the algorithm</h2>
   <ol>
-    <li><strong>Round to $\mathbb{Z}^8$:</strong> $\mathbf{n}_1=\lfloor x+\tfrac12\rfloor$ component-wise.</li>
-    <li><strong>Fix parity:</strong> if $\sum n_{1,i}$ is odd, find the index $i^\star$ with the largest absolute rounding error $|x_{i^\star}-(n_{1,i^\star}-\operatorname{sgn}(\cdot))|$ and flip its rounding direction. Result: $\mathbf{n}_1\in D_8$.</li>
-    <li><strong>Try the half-integer translate:</strong> $\mathbf{n}_2$ obtained by repeating steps 1–2 on $x-(\tfrac12,\ldots,\tfrac12)$ and adding back $(\tfrac12,\ldots,\tfrac12)$.</li>
-    <li><strong>Pick whichever is closer to $x$.</strong></li>
+    <li><strong>Round to $\mathbb{Z}^8$:</strong> $\mathbf{n}_1 = \lfloor x + \tfrac12\rfloor$ component-wise.</li>
+    <li><strong>Fix parity:</strong> if $\sum n_{1,i}$ is odd, find the index $i^\star$ with the largest absolute rounding error, and flip its rounding direction. Result: $\mathbf{n}_1 \in D_8$ (even-sum integer lattice).</li>
+    <li><strong>Try the half-integer translate:</strong> repeat steps 1&ndash;2 on $x - (\tfrac12,\ldots,\tfrac12)$, then add back $(\tfrac12,\ldots,\tfrac12)$, giving $\mathbf{n}_2$.</li>
+    <li><strong>Pick the closer of $\mathbf{n}_1, \mathbf{n}_2$ to $x$.</strong></li>
   </ol>
-  <p>Total work: $\mathcal{O}(d)$ rounding plus $\mathcal{O}(d)$ comparisons. No codebook lookup at all.</p>
+  <p>Total work: $\mathcal{O}(d)$ rounds plus $\mathcal{O}(d)$ comparisons. <em>No codebook lookup at all.</em> Compare with naive search over $|E_8 \cap \mathcal{B}(r)|$ candidates.</p>
 </section>
 
 <section>
-  <h2>Why Hadamard, specifically</h2>
-  <p>A Hadamard matrix $H_d$ has entries in $\{-1,+1\}$ and $H_d H_d^\top = d I$, so $\frac{1}{\sqrt d}H_d$ is orthogonal. The multiplication is structured: $H_d x$ can be computed in $\mathcal{O}(d\log d)$ time via the fast Walsh&ndash;Hadamard transform, far cheaper than a generic dense rotation $\mathcal{O}(d^2)$.</p>
-  <p>QUIP\# uses <em>randomized</em> Hadamard transforms: $\mathbf{U}=H_d D_U/\sqrt{d}$ where $D_U$ is a diagonal of independent $\pm 1$ random signs. The randomization is what makes the central-limit argument apply to <em>every</em> weight matrix, regardless of its structure. Without the diagonal, $H_d \mathbf{W}$ would have predictable failure modes for adversarial $\mathbf{W}$.</p>
+  <h2>The QUIP proxy loss &mdash; why this is the right objective</h2>
+  <p>For a linear layer $y = Wx$, replacing $W$ by $\widehat W$ produces output error $\|(W-\widehat W)x\|^2$. Averaging over a calibration distribution of activations $x$:</p>
+  <div class="deriv">
+    $\ell(\widehat W) = \mathbb{E}_x\bigl\|(\widehat W - W)x\bigr\|^2 = \mathrm{tr}\bigl((\widehat W - W) H (\widehat W - W)^\top\bigr),$
+    <br>
+    $H = \mathbb{E}_x[xx^\top].$
+  </div>
+  <p>This is per-layer, decouples across rows, and makes quantization tractable for LLMs (Nagel et al. 2020). $H$ is positive semi-definite; high curvature in some direction $v$ means errors along $v$ matter more &mdash; the quantizer should round those directions more carefully.</p>
+  <p>Crucially, $\ell(\widehat W)$ is invariant under conjugation by orthogonal $V$: $\mathrm{tr}((U W V^\top)(V H V^\top)(V W^\top U^\top)) = \mathrm{tr}(U W H W^\top U^\top) = \mathrm{tr}(W H W^\top)$. So we can rotate freely without changing the proxy.</p>
+</section>
+
+<section>
+  <h2>Incoherence definition, formally</h2>
+  <p>(Chee et al. 2023, Defn. 1.) A symmetric PSD matrix $H \in \mathbb{R}^{n\times n}$ is $\mu$-incoherent if its eigendecomposition $H = Q\Lambda Q^\top$ has</p>
+  <div class="deriv">
+    $\max_{i,j}|Q_{ij}| = \max_{i,j}|e_i^\top Q e_j| \;\le\; \mu/\sqrt n.$
+  </div>
+  <p>A matrix $W \in \mathbb{R}^{m\times n}$ is $\mu$-incoherent if $\max_{i,j}|W_{ij}| \le \mu \|W\|_F / \sqrt{mn}$.</p>
+  <p>"Most" $n\times n$ orthogonal matrices are $\mathcal{O}(\sqrt{\log n})$-incoherent: a random orthogonal column has entries with squared magnitudes concentrating around their mean $1/n$, so $|Q_{ij}|$ is $\widetilde{\mathcal{O}}(1/\sqrt n)$.</p>
+  <p>Operationally: incoherent = no entry much larger than the typical scale. The maximum-to-typical ratio is bounded. So a single $\Delta$ can quantize all entries to similar relative error &mdash; no outlier wastes the dynamic range.</p>
+</section>
+
+<section>
+  <h2>QUIP&apos;s rotation &mdash; why Kronecker</h2>
+  <p>Conjugating by a uniformly random orthogonal $V \in \mathbb{R}^{n\times n}$ would give the cleanest incoherence guarantee but cost $\Theta(n^2)$ per multiply &mdash; same order as the linear layer, doubling inference cost.</p>
+  <p>Solution: factor $n = pq$ with $p \approx q \approx \sqrt n$, draw $V_1$ uniform on $\mathbb{R}^{p\times p}$ orthogonals and $V_2$ uniform on $\mathbb{R}^{q\times q}$, set $V = V_1 \otimes V_2$. Multiplying $V x$ reshapes $x$ to $p\times q$, applies $V_1$ on the left and $V_2^\top$ on the right: $\Theta(n(p+q)) = \Theta(n\sqrt n)$.</p>
+  <p>Lemma 5: with $k=2$ factors, $V H V^\top$ is $\mu_H$-incoherent with $\mu_H = \mathcal{O}(\log^2(n/\delta))$ w.p. $\ge 1-\delta$. Polylog dependence is nearly as good as the unstructured case.</p>
+</section>
+
+<section>
+  <h2>LDLQ &mdash; precise statement</h2>
+  <p>After incoherence processing, QUIP rounds <em>per coordinate</em> but with feedback. For $k=1, \ldots, n$:</p>
+  <div class="deriv">
+    $\widehat W_k = Q\bigl(W_k + (W_{1:k-1} - \widehat W_{1:k-1}) a_k\bigr),$
+  </div>
+  <p>where $W_k$ is the $k$-th column, $a_k \in \mathbb{R}^{k-1}$, and $Q$ is element-wise nearest or stochastic rounding. Equivalently $\widehat W = Q(W + (W - \widehat W) U)$ with $U$ strictly upper triangular.</p>
+  <p>Optimal choice: take $U = \bar U$ from the LDL factorization of $H$:</p>
+  <div class="deriv">
+    $H = (\bar U + I) D (\bar U + I)^\top.$
+  </div>
+  <p>(Chee et al. Theorem 1.) LDLQ is worst-case and average-case optimal among linear-feedback rounding methods. Worst-case loss equals $\frac{m}{4}\mathrm{tr}(D)$; nearest/stochastic baselines pay $\frac{m}{c}\mathrm{tr}(H)$ where $c\in\{12,6\}$.</p>
+  <p>Combined with Lemma 2 (incoherence implies $\mathrm{tr}(D) \le \frac{\mu^2}{n}\mathrm{tr}(H^{1/2})^2$): under $\mu$-incoherence, LDLQ improves over baselines by a factor $\mu^2 k/n$ where $k$ is the effective rank of $H$. This is what gives QUIP its 2-bit guarantees.</p>
+  <p>Note the rounding is per-coordinate; it is the <em>order</em> and <em>feedback</em> across coordinates that couples them, not a vector quantizer. Vector quantization is the QUIP\# extension.</p>
+</section>
+
+<section>
+  <h2>Equivalence to OPTQ/GPTQ</h2>
+  <p>Theorem 6 of QUIP: OPTQ (a.k.a. GPTQ; Frantar et al. 2023) is the same procedure as LDLQ. OPTQ&apos;s description is iterative-with-error-correction; LDLQ&apos;s is matrix-algebraic. They produce identical outputs.</p>
+  <p>Practical consequence: QUIP&apos;s implementation needs one Cholesky decomposition of $H$ and no inverse. OPTQ does an inverse plus two Choleskys. Same answer, less work.</p>
+  <p>This is also the first theoretical analysis of OPTQ &mdash; the QUIP framework retroactively explains why OPTQ works.</p>
+</section>
+
+<section>
+  <h2>QUIP\# step 1: Randomized Hadamard Transform</h2>
+  <p>A Hadamard matrix $H_n$ has entries in $\{-1, +1\}$ and $H_n H_n^\top = n I_n$. So $\frac{1}{\sqrt n} H_n$ is orthogonal. Multiplying $H_n x$ via the Fast Walsh&ndash;Hadamard Transform takes $\Theta(n \log n)$ operations &mdash; entirely additions, no float multiplies.</p>
+  <p>Randomized version: let $S \in \mathbb{R}^{n\times n}$ be a diagonal of independent uniform $\pm 1$ signs. The Randomized Hadamard Transform is $V = \frac{1}{\sqrt n} H_n S$. The $S$ is essential: without it, $H_n W$ has predictable failure modes for adversarial $W$ (e.g. $W$ aligned with a Hadamard column would not become incoherent). The random signs guarantee the CLT applies to <em>every</em> $W$.</p>
+  <p>QUIP\# Lemma 3.1: with $S_U \sim \mathrm{Unif}\{\pm 1\}^m$ and $S_V \sim \mathrm{Unif}\{\pm 1\}^n$ diagonals, set $\widetilde W = (\frac{1}{\sqrt m} H_m S_U) W (\frac{1}{\sqrt n} H_n S_V)^\top$, $\widetilde H = (\frac{1}{\sqrt n} H_n S_V) H (\frac{1}{\sqrt n} H_n S_V)^\top$. Then for any $\delta > 0$,</p>
+  <div class="deriv">
+    $\mu_H = 2\sqrt{\log(2n^2/\delta)}, \qquad \mu_W = 2\sqrt{\log(4mn/\delta)}.$
+  </div>
+  <p>Compare QUIP&apos;s 2-factor Kronecker: $\mu_W^{\mathrm{Kron}} = A^2 \log^2(4Cmn/\delta)$. RHT has <em>square-root-log</em> dependence, vs. $\log^2$ for Kronecker. Strictly tighter.</p>
 </section>
 
 <section>
   <h2>The CLT argument made precise</h2>
-  <p>After randomized Hadamard rotation, each entry of $\widetilde{\mathbf{W}}=\mathbf{U}\mathbf{W}\mathbf{V}^\top$ is a weighted sum of all $mn$ entries of $\mathbf{W}$ with random $\pm 1/\sqrt{mn}$ coefficients (up to constants). The Berry&ndash;Esseen theorem gives a quantitative CLT: the marginal CDF of $\widetilde{W}_{ij}$ deviates from the Gaussian CDF by $\mathcal{O}(\rho/\sigma^3\sqrt{N})$ where $\rho$ is the third absolute moment and $N$ is the effective sample size.</p>
-  <p>For LLM weight matrices with millions of entries, this deviation is small. The <em>maximum</em> entry of $\widetilde{\mathbf{W}}$ is also tightly controlled &mdash; this is the "incoherence" property: no entry is much larger than the typical scale, so the lattice can quantize everything at the same $\Delta$.</p>
+  <p>After RHT, each entry of $\widetilde W = (H_m S_U / \sqrt m) W (H_n S_V/\sqrt n)^\top$ is</p>
+  <div class="deriv">
+    $\widetilde W_{ij} = \dfrac{1}{\sqrt{mn}} \sum_{k,\ell} (H_m)_{ik} S_{U,k} W_{k\ell} (H_n)_{j\ell} S_{V,\ell}.$
+  </div>
+  <p>The signs $S_{U,k} S_{V,\ell}$ are independent $\pm 1$. Conditional on $W$, $\widetilde W_{ij}$ is a weighted sum of $mn$ independent random signs with weights $W_{k\ell}/\sqrt{mn}$. Variance: $\frac{1}{mn}\sum_{k,\ell} W_{k\ell}^2 = \|W\|_F^2 / (mn)$.</p>
+  <p>Berry&ndash;Esseen: the marginal CDF of $\widetilde W_{ij}$ deviates from the Gaussian with the same variance by $\mathcal{O}(\rho/(\sigma^3 \sqrt N))$ where $\rho$ is the third absolute moment of the summands and $N = mn$. For LLM matrices with $mn \gtrsim 10^6$, this is small.</p>
+  <p>Maximum-entry control (the actual incoherence statement) is a union bound: $\Pr[\max_{i,j} |\widetilde W_{ij}| > t] \le mn \cdot \Pr[|\widetilde W_{1,1}| > t]$, and the per-entry tail is sub-Gaussian by Hoeffding (sum of $\pm 1$). Choose $t = \mu \|W\|_F / \sqrt{mn}$ with $\mu = 2\sqrt{\log(4mn/\delta)}$; the union bound gives $\delta$.</p>
 </section>
 
 <section>
-  <h2>What entropy coding adds on top</h2>
-  <p>After lattice quantization, integer indices $\mathbf{n}_b$ are not uniformly distributed: they concentrate near the origin (because the data is concentrated). Entropy coding compresses these indices to roughly the Shannon entropy of the index distribution, which can be substantially less than $\log_2|\mathcal{C}_{\text{lattice}}|$.</p>
-  <p>This is where the "rate&ndash;distortion limit" actually closes: lattice rounding handles the geometric matching, entropy coding handles the rest. Together they approach the Shannon bound up to small lattice-shaping losses.</p>
+  <h2>QUIP\# step 2: BlockLDLQ + $E_8$</h2>
+  <p>RHT-rotated weights are roughly Gaussian and ball-shaped. Per-coordinate rounding (LDLQ) packs them into a hypercube &mdash; mismatch.</p>
+  <p>BlockLDLQ extends LDLQ to vector quantization. Pick block size $g$ dividing $n$. Decompose $H = L^\top D L$ where $L$ is unit block-lower-triangular ($g\times g$ blocks; diagonal blocks all $I$, blocks above diagonal all $0$) and $D$ is block-diagonal. Set $U = L^\top - I$. Round in $g$-column blocks:</p>
+  <div class="deriv">
+    $\widehat W_k = Q_{E_8}\bigl(W_k + (W_{1:k-g} - \widehat W_{1:k-g})A_k\bigr).$
+  </div>
+  <p>Theorem 4.1: if $H$ is $\mu$-incoherent and $Q$ is a vector quantizer with $\mathbb{E}[(Q(x)-x)(Q(x)-x)^\top] \preceq \sigma^2 I$ for any $x \in \mathbb{R}^g$, then</p>
+  <div class="deriv">
+    $\mathbb{E}\,\mathrm{tr}\bigl((\widehat W - W)H(\widehat W - W)^\top\bigr) \le \dfrac{g m \mu^2}{n}\sigma^2 \mathrm{tr}(H^{1/2})^2.$
+  </div>
+  <p>Same $\mathrm{tr}(H) \to \mathrm{tr}(H^{1/2})^2 / n$ improvement that QUIP gets in the scalar case, now for VQ.</p>
 </section>
 
 <section>
-  <h2>Practical caveats not covered on the slides</h2>
+  <h2>The E8P codebook &mdash; how 2 bits fit in 1 KiB</h2>
+  <p>QUIP\#&apos;s 2-bit codebook for blocks of 8 has $2^{16}$ entries, but stores only $2^8$. The trick uses $E_8$&apos;s symmetry.</p>
+  <p>$E_8 = \widehat D_8 \cup (\widehat D_8 + \frac12)$ where $\widehat D_8 = \{x \in \mathbb{Z}^8 + \frac12 : \mathbf{1}^\top x \in 2\mathbb{Z}\}$ is the half-integer even-parity sublattice. Each entry of $\widehat D_8$ factors as $|s| \odot \sigma$ where $|s| \in |\widehat D_8|$ (absolute values) and $\sigma$ is a sign vector of correct parity.</p>
+  <p>Storage: 8 bits to index into 256 absolute-value entries, 7 bits of explicit sign flips (the 8th sign is determined by parity), 1 bit to choose $\widehat D_8$ vs. $\widehat D_8 + \frac12$. Total: 16 bits = 2 bits/weight, 256-entry table = 1 KiB. Fits in L1 even after 32&times; bank-conflict duplication on a GPU.</p>
+  <p>Decode: lookup, sign-flip, optional half-shift. A handful of ALU ops per 8-block.</p>
+</section>
+
+<section>
+  <h2>Practical caveats not on the slides</h2>
   <ul>
-    <li><strong>Calibration data:</strong> the QUIP\# pipeline uses a small calibration dataset to compute Hessian-aware error bounds (the GPTQ-style proxy). This refines which weights to round in which direction. The lattice rule alone is not the end of the story.</li>
-    <li><strong>Per-channel scales:</strong> different output channels have different weight magnitudes. QUIP\# scales each channel before incoherence processing.</li>
-    <li><strong>Activation quantization:</strong> the slide discussion only covers weight quantization. Activation quantization (KV cache, post-rotation activations) is the topic of Lecture 4 and a separate strand of the literature.</li>
+    <li><strong>Calibration data.</strong> The proxy $H = \mathbb{E}_x[xx^\top]$ requires a small calibration set of activations. Quality depends on how representative this set is; QUIP/QUIP\# typically use a few hundred sequences.</li>
+    <li><strong>Per-channel scales.</strong> Different output channels have different weight magnitudes. QUIP&apos;s Algorithm 1 line 4 diagonally rescales $W$ and $H$ before incoherence processing, trading off the spectrum.</li>
+    <li><strong>Higher bitrates.</strong> $E_8$ alone is good at $\sim 2$ bits/weight ($K = 256$). For 3 or 4 bits, QUIP\# uses Residual Vector Quantization (RVQ): quantize, then quantize the residual, repeat. Stays inside $E_8$&apos;s structure at every step.</li>
+    <li><strong>Fine-tuning.</strong> QUIP\# adds an inter-layer fine-tuning pass after quantization, recovering some perplexity. This is QAT-lite, much cheaper than full QAT, and is on top of (not instead of) the lattice quantization.</li>
+    <li><strong>Activation quantization.</strong> The deck and these notes cover only weight quantization. Activation quantization (post-rotation activations, KV cache) is the topic of Lecture 4 (TURBOQUANT) and a separate strand of the literature.</li>
+    <li><strong>Dimensions not power of 2.</strong> Hadamard matrices need $n$ a power of 2 (in general). QUIP\# factors $n = pq$ with $p$ the largest power-of-2 factor, then uses $V = H_p \otimes H_q$ &mdash; a hybrid Hadamard&ndash;Kronecker scheme. RFFT (random FFT with random complex phase) is the fallback when no Hadamard factorization is available.</li>
   </ul>
 </section>
 

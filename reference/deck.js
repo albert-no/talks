@@ -50,7 +50,12 @@
   for (let i = 0; i < total; i++) {
     if (slides[i].classList.contains('active')) { current = i; break; }
   }
-  const slideNum = document.getElementById('slideNum');
+  /* Move slide-num out of the transformed .deck so it stays at the
+     true viewport bottom-right (and never gets clipped by slide overflow). */
+  let slideNum = document.getElementById('slideNum');
+  if (slideNum && slideNum.parentNode !== document.body) {
+    document.body.appendChild(slideNum);
+  }
   const progressBar = document.getElementById('progressBar');
 
   function updateIndicators() {

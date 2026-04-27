@@ -10,6 +10,41 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.l4-algo {
+  background: var(--light);
+  border: 1px solid var(--slate);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 22px;
+}
+.l4-algo-title {
+  font-weight: 600;
+  color: var(--yonsei-blue);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.l4-algo ol { padding-left: 24px; margin: 0; }
+.l4-algo li { margin-bottom: 6px; line-height: 1.5; }
+.l4-kv-flow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 22px 0 8px;
+  font-size: 1.45rem;
+}
+.l4-kv-flow .node {
+  background: var(--light);
+  border: 1px solid var(--slate);
+  border-left: 3px solid var(--yonsei-blue);
+  border-radius: 0 8px 8px 0;
+  padding: 8px 14px;
+  font-weight: 500;
+}
+.l4-kv-flow .arr { color: var(--gray-text); font-size: 1.55rem; }
+</style>
 </head>
 <body data-brand-logo="../../reference/kor-eng2.png">
 
@@ -65,6 +100,34 @@
 </div>
 
 
+<!-- KV CACHE — MOTIVATION -->
+<div class="slide">
+  <h2>What Is the KV Cache?</h2><div class="divider"></div>
+  <p>Transformer attention $\Rightarrow$ each layer stores past Keys and Values per token.</p>
+  <p>At decode, every new query attends to <strong>all past</strong> $K, V$. Reuse, don't recompute.</p>
+  <div class="l4-kv-flow">
+    <span class="node">Tokens $1{:}t$</span>
+    <span class="arr">$\to$</span>
+    <span class="node">Cache $\{K_s, V_s\}_{s\le t}$</span>
+    <span class="arr">$\to$</span>
+    <span class="node">Decode $t{+}1$</span>
+  </div>
+  <p>Memory grows <strong>linearly</strong> in sequence length, per layer, per head.</p>
+</div>
+
+<div class="slide">
+  <h2>Why Compress the KV Cache?</h2><div class="divider"></div>
+  <p>Long context $32\text{K}, 128\text{K}, 1\text{M}$ tokens $\Rightarrow$ KV dominates GPU memory.</p>
+  <p>Cheap, online, data-oblivious compression buys context length.</p>
+  <ul>
+    <li><strong>Online:</strong> quantize each $K, V$ as it arrives.</li>
+    <li><strong>Data-oblivious:</strong> no per-model calibration.</li>
+    <li><strong>Lossy:</strong> exact recovery unnecessary &mdash; attention only needs inner products.</li>
+  </ul>
+  <div class="highlight">Lossy quantization is the natural lever. TURBOQUANT is the principled answer.</div>
+</div>
+
+
 <!-- ════ PART 01 ════ -->
 <div class="slide section-slide left">
   <div class="section-num">01</div>
@@ -75,27 +138,33 @@
 
 <div class="slide">
   <h2>Why Scalar Quantization Fails</h2><div class="divider"></div>
-  <p>Scalar quantization rounds each coordinate independently — assumes uniform spread.</p>
-  <p>In practice (KV caches, embeddings), a few outlier coordinates dominate energy. Low-bit scalar quantization wastes resolution on outliers.</p>
-  <div class="highlight">Random rotation spreads energy: every coordinate gets the same predictable distribution, with typical magnitude $\sim 1/\sqrt{d}$.</div>
+  <ul>
+    <li>Round each coordinate independently.</li>
+    <li>Implicit assumption: <strong>energy spread evenly</strong>.</li>
+    <li>Reality (KV, embeddings): a few outliers dominate.</li>
+    <li>Low-bit SQ burns resolution on outliers.</li>
+  </ul>
+  <div class="highlight">Random rotation flattens energy &mdash; every coordinate $\sim 1/\sqrt{d}$, same law.</div>
 </div>
 
 <div class="slide">
   <h2>Random Rotation Creates a Known Law</h2><div class="divider"></div>
-  <p>Let $\Pi\in\mathbb{R}^{d\times d}$ be Haar-uniform orthogonal. For any fixed $x\in S^{d-1}$:</p>
-  <div class="math-block">$$Y \;=\; \Pi x \;\sim\; \mathrm{Unif}(S^{d-1}).$$</div>
-  <div class="highlight">Output law depends only on $\|x\| = 1$, not on the direction. The algorithm doesn't need to know the input distribution.</div>
+  <p>Haar-uniform $\Pi \in \mathbb{R}^{d\times d}$. Any fixed $x \in S^{d-1}$:</p>
+  <div class="math-block">$$Y \;=\; \Pi x \;\sim\; \mathrm{Unif}(S^{d-1}), \qquad \sqrt{d}\,Y_j \;\Rightarrow\; \mathcal{N}(0, 1).$$</div>
+  <p><strong>Why Gaussian-like.</strong> $\Pi$ Haar $\Rightarrow$ $\Pi x$ uniform on the sphere.</p>
+  <p>Marginal of one coordinate $=$ classical sphere&ndash;Gaussian duality (Poincar&eacute;'s lemma).</p>
+  <div class="highlight">Law depends only on $\|x\| = 1$. Algorithm is data-oblivious.</div>
 </div>
 
 <div class="slide">
-  <h2>Lemma — Coordinate of a Sphere Point</h2><div class="divider"></div>
+  <h2>Lemma &mdash; Coordinate of a Sphere Point</h2><div class="divider"></div>
   <div class="card">
     <h3>Lemma 1.</h3>
-    <p>$Y\sim\mathrm{Unif}(S^{d-1})$. Each coordinate $Y_j$ has density</p>
-    <div class="math-block">$$f_d(t) \;=\; \dfrac{\Gamma(d/2)}{\sqrt\pi\,\Gamma((d-1)/2)}\,(1-t^2)^{(d-3)/2}, \quad -1\le t\le 1.$$</div>
-    <p>For large $d$: $\;\sqrt{d}\,Y_j\Rightarrow\mathcal{N}(0,1)$.</p>
+    <p>$Y \sim \mathrm{Unif}(S^{d-1})$. Marginal density of each $Y_j$:</p>
+    <div class="math-block">$$f_d(t) \;=\; \dfrac{\Gamma(d/2)}{\sqrt{\pi}\,\Gamma((d-1)/2)}\,(1 - t^2)^{(d-3)/2}, \quad t \in [-1, 1].$$</div>
+    <p>Large $d$: $\;\sqrt{d}\,Y_j \;\Rightarrow\; \mathcal{N}(0, 1)$.</p>
   </div>
-  <p>Slice argument: surface area at $Y_1=t$ is $\propto(1-t^2)^{(d-3)/2}$. With $t = u/\sqrt{d}$, $(1-t^2)^{(d-3)/2}\approx e^{-u^2/2}$.</p>
+  <p><em>(Slice argument; Gaussian limit derived in the note file.)</em></p>
 </div>
 
 <div class="slide">
@@ -108,11 +177,13 @@
     </div>
     <div class="card">
       <h3 style="color:var(--blue-light);">Inner-product distortion</h3>
-      <div class="math-block">$$D_{\mathrm{prod}} = \mathbb{E}|\langle y,x\rangle - \langle y,\widetilde x\rangle|^2.$$</div>
+      <div class="math-block">$$D_{\mathrm{prod}} = \mathbb{E}|\langle y, x\rangle - \langle y, \widetilde x\rangle|^2.$$</div>
       <p>Attention, NN search. Want <strong>unbiased</strong>.</p>
     </div>
   </div>
-  <p>The MSE-optimal quantizer is <strong>biased</strong> for inner products — we'll fix it in Part 5.</p>
+  <p><strong>Where $4^{-b}$ comes from.</strong> Gaussian R(D): $D(R) = \sigma^2 \cdot 2^{-2R}$.</p>
+  <p>At $R = b$ bits/sample: $\;D \propto 4^{-b}$. Each rotated coordinate $\sim \mathcal{N}(0, 1/d) \Rightarrow$ Gaussian rate is the right benchmark.</p>
+  <p><strong>Bias warning.</strong> $1$-bit reconstruction has magnitude $\sigma \sqrt{2/\pi} < \sigma$ &mdash; shrinks projections. Fixed in Part 5.</p>
 </div>
 
 
@@ -126,39 +197,40 @@
 
 <div class="slide">
   <h2>Algorithm: TURBOQUANT$_{\mathrm{mse}}$</h2><div class="divider"></div>
-  <p>Public state: rotation $\Pi$, scalar codebook $\{c_1,\ldots,c_K\}$ for density $f_d$, $K=2^b$.</p>
-<div class="code-block"><span class="kw">encode</span>(x):
-    y = Π·x
-    <span class="kw">for</span> j = 1..d:
-        idx[j] = argmin<span style="font-size:0.85em">i</span> |y[j] − c<span style="font-size:0.85em">i</span>|
-    <span class="kw">return</span> idx       <span class="cm"># d·b bits</span>
-
-<span class="kw">decode</span>(idx):
-    <span class="kw">for</span> j = 1..d:
-        ỹ[j] = c[idx[j]]
-    <span class="kw">return</span> Π<span style="font-size:0.85em">T</span>·ỹ</div>
-  <p>Codebook offline (Lloyd&ndash;Max on $f_d$). No data-dependent training.</p>
+  <p style="text-align:center;">Public state: rotation $\Pi$, scalar codebook $\{c_1, \ldots, c_K\}$ for $f_d$, $K = 2^b$.</p>
+  <div class="l4-algo" style="max-width:980px; margin:24px auto 14px;">
+    <div class="l4-algo-title">TURBOQUANT$_{\mathrm{mse}}$</div>
+    <ol>
+      <li><strong>Encode$(x)$:</strong> rotate $y = \Pi \cdot x$.</li>
+      <li>For each $j$: $\mathrm{idx}[j] = \arg\min_i |y_j - c_i|$.</li>
+      <li>Return $\mathrm{idx}$ &nbsp; $\bigl(d \cdot b$ bits$\bigr)$.</li>
+      <li><strong>Decode$(\mathrm{idx})$:</strong> $\widetilde y_j = c_{\mathrm{idx}[j]}$, then $\widetilde x = \Pi^\top \widetilde y$.</li>
+    </ol>
+  </div>
+  <p style="text-align:center;">Codebook offline via Lloyd&ndash;Max on $f_d$. No data-dependent training.</p>
 </div>
 
 <div class="slide">
   <h2>One-Bit Anchor: $1 - 2/\pi$</h2><div class="divider"></div>
-  <p>For $Y\sim\mathcal{N}(0,1/d)$ and sign quantizer $\widehat Y = a\,\operatorname{sign}(Y)$:</p>
-  <div class="math-block">$$\mathbb{E}[(Y - a\operatorname{sign}Y)^2] = \mathbb{E}Y^2 - 2a\,\mathbb{E}|Y| + a^2, \qquad a^\star = \mathbb{E}|Y| = \sqrt{\tfrac{2}{\pi d}}.$$</div>
-  <p>At the optimum: $\mathbb{E}[(Y-a^\star\operatorname{sign}Y)^2] = \tfrac{1}{d}(1 - \tfrac{2}{\pi})$.</p>
-  <div class="math-block">$$\text{total MSE at } b=1 \;=\; 1 - \tfrac{2}{\pi} \;\approx\; 0.363.$$</div>
+  <p>For $Y \sim \mathcal{N}(0, 1/d)$ and sign quantizer $\widehat Y = a \cdot \operatorname{sign}(Y)$:</p>
+  <div class="math-block">$$\mathbb{E}[(Y - a \cdot \operatorname{sign} Y)^2] = \mathbb{E} Y^2 - 2 a \cdot \mathbb{E}|Y| + a^2, \qquad a^\star = \mathbb{E}|Y| = \sqrt{\tfrac{2}{\pi d}}.$$</div>
+  <p>At the optimum: $\mathbb{E}[(Y - a^\star \cdot \operatorname{sign} Y)^2] = \tfrac{1}{d}(1 - \tfrac{2}{\pi})$.</p>
+  <div class="math-block">$$\text{total MSE at } b = 1 \;=\; 1 - \tfrac{2}{\pi} \;\approx\; 0.363.$$</div>
 </div>
 
 <div class="slide">
   <h2>Theorem and Proof Outline</h2><div class="divider"></div>
   <div class="card">
     <h3>Theorem (TURBOQUANT$_{\mathrm{mse}}$).</h3>
-    <p>Every unit $x\in S^{d-1}$:</p>
-    <div class="math-block">$$\mathbb{E}\|x - \widetilde x\|^2 \;\le\; \tfrac{\sqrt 3\,\pi}{2}\cdot 4^{-b} \;\approx\; 2.72\cdot 4^{-b}.$$</div>
+    <p>Every unit $x \in S^{d-1}$:</p>
+    <div class="math-block" style="margin-bottom: 8px;">$$\mathbb{E}\|x - \widetilde x\|^2 \;\le\; \tfrac{\sqrt{3}\,\pi}{2} \cdot 4^{-b} \;\approx\; 2.72 \cdot 4^{-b}.$$</div>
   </div>
-  <p><strong>Step 1.</strong> Orthogonal invariance: $\|x-\widetilde x\|^2 = \|Y-\widetilde Y\|^2 = d\cdot C(f_d, b)$, sum of $d$ scalar costs.</p>
-  <p><strong>Step 2.</strong> Panter&ndash;Dite high-resolution bound:</p>
-  <div class="math-block">$$C(f, b) \;\le\; \tfrac{1}{12}\Bigl(\!\int f^{1/3}\Bigr)^{\!3}\,4^{-b}.$$</div>
-  <p>Evaluate the integral on $f_d$: $\bigl(\!\int f_d^{1/3}\bigr)^3 = 6\sqrt 3\,\pi/d$, giving the constant $\sqrt 3\pi/2$.</p>
+  <p><strong>Step 1.</strong> Orthogonal invariance: $\|x - \widetilde x\|^2 = \|Y - \widetilde Y\|^2 = d \cdot C(f_d, b)$.</p>
+  <p><strong>Step 2.</strong> Panter&ndash;Dite, evaluated on $f_d$:</p>
+  <div class="math-block">$$\begin{aligned}
+    C(f, b) &\;\le\; \tfrac{1}{12}\Bigl(\!\int f^{1/3}\Bigr)^{\!3} \cdot 4^{-b}, \\
+    \Bigl(\!\int f_d^{1/3}\Bigr)^{\!3} &\;=\; \tfrac{6\sqrt{3}\,\pi}{d} \;\;\Rightarrow\;\; \text{constant } \tfrac{\sqrt{3}\,\pi}{2}.
+  \end{aligned}$$</div>
 </div>
 
 
@@ -172,19 +244,19 @@
 
 <div class="slide">
   <h2>Sphere SLB</h2><div class="divider"></div>
-  <p>Vector SLB at distortion $D$ and bit budget $B$:</p>
-  <div class="math-block">$$D \;\ge\; \dfrac{d}{2\pi e}\cdot 2^{2(h(X) - B)/d}.$$</div>
-  <p>For $X\sim\mathrm{Unif}(S^{d-1})$, $h(X) = \log_2 A_d$ with surface area $A_d$. Stirling gives $A_d^{2/d}\to 2\pi e/d$, so:</p>
-  <div class="math-block">$$D(B) \;\ge\; 2^{-2B/d}.$$</div>
-  <p>For $B = bd$: $\;D \ge 4^{-b}$ on average over $\mathrm{Unif}(S^{d-1})$.</p>
+  <p><strong>Why this slide.</strong> Upper bound says we <em>can</em> hit $4^{-b}$.</p>
+  <p>We need a matching lower bound to know <strong>no algorithm beats it</strong> &mdash; SLB on the sphere distribution gives that benchmark.</p>
+  <div class="math-block">$$D \;\ge\; \dfrac{d}{2\pi e} \cdot 2^{2(h(X) - B)/d}.$$</div>
+  <p>For $X \sim \mathrm{Unif}(S^{d-1})$: $h(X) = \log_2 A_d$, Stirling $\Rightarrow A_d^{2/d} \to 2\pi e / d$.</p>
+  <p>So $D(B) \ge 2^{-2B/d}$. At $B = b d$: $\;D \ge 4^{-b}$ on the sphere.</p>
 </div>
 
 <div class="slide">
   <h2>Yao + Constant Gap</h2><div class="divider"></div>
-  <p>Yao: worst-input expected cost of any randomized algorithm $\ge$ best deterministic algorithm's expected cost on the worst input distribution.</p>
-  <p>Apply with $\mathrm{Unif}(S^{d-1})$: every randomized $bd$-bit quantizer has some input $x$ with $\mathbb{E}\|x-\widehat x\|^2\ge 4^{-b}$.</p>
-  <div class="math-block">$$4^{-b} \;\le\; D_{\mathrm{mse}}^\star(b) \;\le\; D_{\mathrm{mse}}(Q_{\mathrm{mse}}) \;\le\; \tfrac{\sqrt 3\,\pi}{2}\cdot 4^{-b}.$$</div>
-  <div class="highlight">Constant gap. <strong>Exponent $4^{-b}$ is optimal</strong>.</div>
+  <p><strong>Yao's principle.</strong> Worst-input randomized cost $\ge$ best deterministic cost on hardest input distribution.</p>
+  <p>Apply with $\mathrm{Unif}(S^{d-1})$: some $x$ forces $\mathbb{E}\|x - \widehat x\|^2 \ge 4^{-b}$ for every $bd$-bit quantizer.</p>
+  <div class="math-block">$$4^{-b} \;\le\; D_{\mathrm{mse}}^\star(b) \;\le\; \tfrac{\sqrt{3}\,\pi}{2} \cdot 4^{-b}.$$</div>
+  <div class="highlight">Constant gap $\Rightarrow$ exponent $4^{-b}$ is <strong>optimal</strong>.</div>
 </div>
 
 
@@ -198,17 +270,19 @@
 
 <div class="slide">
   <h2>One-Bit MSE Shrinks Projections</h2><div class="divider"></div>
-  <p>Sign quantizer $\widetilde Y_j = a\,\operatorname{sign}(Y_j)$, $a=\sqrt{2/(\pi d)}$. By rotational symmetry $\mathbb{E}[\widetilde x\mid x]=\alpha x$.</p>
-  <div class="math-block">$$\alpha = \mathbb{E}\langle x,\widetilde x\rangle = d\,a\,\mathbb{E}|Y_1| = d\cdot\dfrac{2}{\pi d} = \dfrac{2}{\pi}.$$</div>
-  <p>Therefore $\mathbb{E}\langle y,\widetilde x\rangle = \tfrac{2}{\pi}\langle y,x\rangle$ — biased low.</p>
+  <p>Sign quantizer $\widetilde Y_j = a \cdot \operatorname{sign}(Y_j)$, $a = \sqrt{2/(\pi d)}$.</p>
+  <p>Rotational symmetry $\Rightarrow \mathbb{E}[\widetilde x \mid x] = \alpha \cdot x$.</p>
+  <div class="math-block">$$\alpha \;=\; \mathbb{E}\langle x, \widetilde x\rangle \;=\; d \cdot a \cdot \mathbb{E}|Y_1| \;=\; d \cdot \dfrac{2}{\pi d} \;=\; \dfrac{2}{\pi}.$$</div>
+  <p>Hence $\mathbb{E}\langle y, \widetilde x\rangle = \tfrac{2}{\pi} \cdot \langle y, x\rangle$ &mdash; biased low.</p>
 </div>
 
 <div class="slide">
-  <h2>Geometric Reason — Shrunken Norm</h2><div class="divider"></div>
-  <p>One-bit reconstruction has constant magnitude in every rotated coordinate. Squared norm:</p>
-  <div class="math-block">$$\|\widetilde Y\|^2 \;=\; d\,a^2 \;=\; \dfrac{2}{\pi}.$$</div>
-  <p>So $\|\widetilde x\| = \sqrt{2/\pi} < 1$ — a good representative of its sign cell, but its projection on every direction is multiplicatively shrunk.</p>
-  <div class="highlight">Need an unbiased estimator. Enter QJL.</div>
+  <h2>Geometric Reason &mdash; Shrunken Norm</h2><div class="divider"></div>
+  <p>One-bit reconstruction has constant magnitude per rotated coordinate. Squared norm:</p>
+  <div class="math-block">$$\|\widetilde Y\|^2 \;=\; d \cdot a^2 \;=\; \dfrac{2}{\pi}.$$</div>
+  <p>So $\|\widetilde x\| = \sqrt{2/\pi} < 1$.</p>
+  <p>Good representative of its sign cell, but every projection multiplicatively shrunk.</p>
+  <div class="highlight">Need an unbiased estimator &mdash; enter QJL.</div>
 </div>
 
 
@@ -222,8 +296,8 @@
 
 <div class="slide">
   <h2>QJL Definition</h2><div class="divider"></div>
-  <p>Let $S\in\mathbb{R}^{d\times d}$ have iid $\mathcal{N}(0,1)$ entries. For $u\in S^{d-1}$:</p>
-  <div class="math-block">$$Q_{\mathrm{qjl}}(u) \;=\; \operatorname{sign}(Su) \;\in\; \{-1,+1\}^d, \qquad Q_{\mathrm{qjl}}^{-1}(z) \;=\; \dfrac{\sqrt{\pi/2}}{d}\,S^\top z.$$</div>
+  <p>Let $S \in \mathbb{R}^{d\times d}$ have i.i.d. $\mathcal{N}(0, 1)$ entries. For $u \in S^{d-1}$:</p>
+  <div class="math-block">$$Q_{\mathrm{qjl}}(u) \;=\; \operatorname{sign}(S u) \;\in\; \{-1, +1\}^d, \qquad Q_{\mathrm{qjl}}^{-1}(z) \;=\; \dfrac{\sqrt{\pi/2}}{d} \cdot S^\top z.$$</div>
   <p>One bit per coordinate. Unbiased estimator of $u$.</p>
 </div>
 
@@ -239,27 +313,28 @@
 
 <div class="slide">
   <h2>Two-Stage Decomposition</h2><div class="divider"></div>
-  <p>Write $x = \widetilde x_{\mathrm{mse}} + r$ where $\widetilde x_{\mathrm{mse}}$ is MSE-quantized:</p>
+  <p>Split $x = \widetilde x_{\mathrm{mse}} + r$, with $\widetilde x_{\mathrm{mse}}$ MSE-quantized:</p>
   <div class="math-block">$$\langle y, x\rangle \;=\; \langle y, \widetilde x_{\mathrm{mse}}\rangle \;+\; \langle y, r\rangle.$$</div>
-  <p>First term: from the MSE-quantized vector. Second: estimate by QJL on the residual $r$.</p>
-  <div class="highlight">QJL variance scales with $\|r\|^2$. The MSE stage makes $\|r\|$ small, so QJL is accurate precisely when MSE worked.</div>
+  <p><strong>First term.</strong> Read from the MSE-quantized vector.</p>
+  <p><strong>Second term.</strong> QJL on residual $r$.</p>
+  <div class="highlight">QJL variance scales with $\|r\|^2$. MSE stage shrinks $\|r\|$ &mdash; QJL accurate when MSE works.</div>
 </div>
 
 <div class="slide">
   <h2>Algorithm and Theorem</h2><div class="divider"></div>
-<div class="code-block"><span class="kw">encode</span>(x, b):
-    idx = TQ_mse(x, b−1)        <span class="cm"># (b−1)·d bits</span>
-    r = x − TQ_mse_inv(idx);  γ = ‖r‖
-    q = sign(S·r) in {−1,+1}^d   <span class="cm"># d bits</span>
-    <span class="kw">return</span> (idx, q, γ)
-
-<span class="kw">decode</span>(idx, q, γ):
-    <span class="kw">return</span> TQ_mse_inv(idx) + γ·(√(π/2)/d)·S<span style="font-size:0.85em">T</span>·q</div>
+  <div class="l4-algo" style="max-width:1040px; margin:18px auto 14px;">
+    <div class="l4-algo-title">TURBOQUANT$_{\mathrm{prod}}$</div>
+    <ol>
+      <li><strong>Encode$(x, b)$:</strong> $\mathrm{idx} = \mathrm{TQ}_{\mathrm{mse}}(x, b{-}1)$ &nbsp; $\bigl((b{-}1) \cdot d$ bits$\bigr)$.</li>
+      <li>$r = x - \mathrm{TQ}_{\mathrm{mse}}^{-1}(\mathrm{idx})$, &nbsp; $\gamma = \|r\|$.</li>
+      <li>$q = \operatorname{sign}(S \cdot r) \in \{-1, +1\}^d$ &nbsp; $\bigl(d$ bits$\bigr)$. Return $(\mathrm{idx}, q, \gamma)$.</li>
+      <li><strong>Decode:</strong> $\widetilde x = \mathrm{TQ}_{\mathrm{mse}}^{-1}(\mathrm{idx}) + \gamma \cdot \tfrac{\sqrt{\pi/2}}{d} \cdot S^\top q$.</li>
+    </ol>
+  </div>
   <div class="card">
     <h3>Theorem (TURBOQUANT$_{\mathrm{prod}}$).</h3>
-    <div class="math-block">$$\mathbb{E}\langle y,\widetilde x\rangle = \langle y,x\rangle,\qquad D_{\mathrm{prod}} \;\le\; \dfrac{\sqrt 3\,\pi^2\,\|y\|^2}{d}\cdot 4^{-b}.$$</div>
+    <div class="math-block">$$\mathbb{E}\langle y, \widetilde x\rangle = \langle y, x\rangle, \qquad D_{\mathrm{prod}} \;\le\; \dfrac{\sqrt{3}\,\pi^2\,\|y\|^2}{d} \cdot 4^{-b}.$$</div>
   </div>
-  <p>Inner-product errors decay $d$ times faster than MSE errors.</p>
 </div>
 
 

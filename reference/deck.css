@@ -218,9 +218,11 @@ th { font-weight: 700; color: var(--yonsei-blue); font-size: 1.2rem; text-transf
   z-index: 100;
 }
 .slide-num {
-  position: absolute; bottom: 14px; right: 28px;
-  font-size: 0.75rem; color: #bbb;
-  font-weight: 400; z-index: 100;
+  position: fixed; bottom: 12px; right: 22px;
+  font-size: 1.2rem; color: var(--charcoal);
+  letter-spacing: 0.04em;
+  font-weight: 700; z-index: 9999;
+  pointer-events: none;
 }
 
 /* ── Title slide (§2.2) ── */

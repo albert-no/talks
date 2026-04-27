@@ -13,11 +13,57 @@
 <style>
 .l1-bitstr {
   font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
-  font-size: 1.1rem;
-  letter-spacing: 0.04em;
+  font-size: 1.45rem;
+  letter-spacing: 0.06em;
   font-weight: 600;
   color: var(--charcoal);
 }
+.l1-cb-table {
+  margin: 4px auto;
+  border-collapse: collapse;
+  line-height: 1.2;
+  width: auto;
+}
+.l1-cb-table th, .l1-cb-table td {
+  padding: 1px 14px;
+  text-align: center;
+}
+.l1-cb-table th {
+  border-bottom: 1px solid var(--slate);
+  font-weight: 700;
+  color: var(--charcoal);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.4rem;
+}
+.l1-cb-table td { border-bottom: none; }
+.l1-cb-table td.l1-cb-m { color: var(--gray-text); }
+.l1-cb-table td.l1-cb-bits {
+  font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.l1-cb-table tr.l1-cb-best td { background: rgba(46,139,87,0.10); }
+.l1-cb-cols { display: flex; gap: 36px; justify-content: center; }
+.l1-cb-cols > .l1-cb-table { margin: 0; }
+.l1-contingency {
+  margin: 6px auto;
+  border-collapse: collapse;
+}
+.l1-contingency th, .l1-contingency td {
+  padding: 6px 18px;
+  text-align: center;
+  border: 1px solid var(--slate);
+}
+.l1-contingency th {
+  background: var(--light);
+  font-weight: 700;
+  color: var(--charcoal);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.5rem;
+}
+.l1-contingency td { font-size: 1.7rem; font-weight: 600; }
 </style>
 </head>
 <body data-brand-logo="../../reference/kor-eng2.png">
@@ -57,12 +103,7 @@
     <div class="toc-item">
       <div class="toc-num">04</div><div class="toc-rule"></div>
       <div><div class="toc-label">Shannon's theorem</div>
-      <div class="toc-sub">Random coding, joint typicality, converse</div></div>
-    </div>
-    <div class="toc-item">
-      <div class="toc-num">05</div><div class="toc-rule"></div>
-      <div><div class="toc-label">Binary toy: $n=24$</div>
-      <div class="toc-sub">Bit strings and the threshold rate</div></div>
+      <div class="toc-sub">Converse, binary toy, random coding</div></div>
     </div>
   </div>
 </div>
@@ -119,9 +160,10 @@
   <h2>Achievable Region and $R(D)$</h2><div class="divider"></div>
   <div class="cols">
     <div>
-      <p>$(R,D)$ achievable: for every $\varepsilon>0$, $\exists$ $(n,R+\varepsilon)$ code with $\mathbb{E}\,d^{(n)}\le D+\varepsilon$ for large $n$.</p>
-      <div class="math-block">$$R(D) \;=\; \inf\{R : (R,D)\text{ achievable}\}.$$</div>
-      <p>Non-increasing, convex, continuous on $(D_{\min}, D_{\max})$.</p>
+      <p>$(R,D)$ <strong>achievable</strong>: for every $\varepsilon > 0$ and large $n$, there exists an $(n, R+\varepsilon)$ code with</p>
+      <div class="math-block">$$\mathbb{E}\bigl[d^{(n)}(X^n,\, g(f(X^n)))\bigr] \;\le\; D + \varepsilon.$$</div>
+      <div class="math-block">$$R(D) \;=\; \inf\bigl\{R : (R,D)\text{ achievable}\bigr\}.$$</div>
+      <p>Non-increasing &middot; convex &middot; continuous.</p>
     </div>
     <div>
       <svg viewBox="0 0 320 280" width="100%" style="background:var(--light);border-radius:8px;">
@@ -149,17 +191,28 @@
 
 <div class="slide">
   <h2>Toy: $X\sim\mathcal{N}(\mu,\sigma^2)$</h2><div class="divider"></div>
-  <p>Squared error. Send $R$ bits per symbol; pick partition + reconstruction levels.</p>
-  <p>Three cases: $R=0$ (no bits), $R=1$ (one threshold), $R=2$ (Lloyd&ndash;Max).</p>
-  <div class="highlight">$R=0$: send nothing. Decoder outputs a constant $c$. Optimal $c$?</div>
+  <ul>
+    <li>Squared error: $d(x,\hat x) = (x-\hat x)^2$</li>
+    <li>Send $R$ bits per symbol &middot; pick partition + reconstruction levels</li>
+  </ul>
+  <div class="math-block" style="margin: 8px 0; padding: 10px 18px;">$$\begin{aligned}
+    R = 0 \;&: \;\text{no bits — output a constant} \\
+    R = 1 \;&: \;\text{one threshold, two cells} \\
+    R = 2 \;&: \;\text{Lloyd–Max (4 cells)}
+  \end{aligned}$$</div>
+  <div class="highlight" style="margin-top: 10px;">$R=0$: send nothing. Optimal constant $c$?</div>
 </div>
 
 <div class="slide">
-  <h2>$R=0$: $c^\star = \mu$, $D(0)=\sigma^2$</h2><div class="divider"></div>
+  <h2>$R=0$: $c^\star = \mu$, distortion $= \sigma^2$</h2><div class="divider"></div>
   <p>Add and subtract $\mu$:</p>
-  <div class="math-block">$$\mathbb{E}[(X-c)^2] \;=\; \sigma^2 + \underbrace{2(\mu-c)\,\mathbb{E}[X-\mu]}_{=\,0} + (\mu-c)^2.$$</div>
-  <p>So $\mathbb{E}[(X-c)^2] = \sigma^2 + (\mu-c)^2 \ge \sigma^2$, with equality iff $c=\mu$.</p>
-  <p>Same argument generalizes: <strong>conditional mean minimizes squared error inside any cell</strong>.</p>
+  <div class="math-block">$$\begin{aligned}
+    \mathbb{E}[(X-c)^2]
+      &= \sigma^2 + \underbrace{2(\mu-c)\,\mathbb{E}[X-\mu]}_{=\,0} + (\mu-c)^2 \\
+      &= \sigma^2 + (\mu-c)^2 \\
+      &\ge \sigma^2 \qquad\text{(equality iff } c=\mu\text{).}
+  \end{aligned}$$</div>
+  <p>Best constant achieves variance $\sigma^2$ &middot; <strong>conditional mean minimizes squared error inside any cell</strong>.</p>
 </div>
 
 <div class="slide">
@@ -167,14 +220,14 @@
   <p>Symmetry: threshold at $\mu$. Reps are conditional means of the half-lines.</p>
   <p>Standardize $X = \mu + \sigma Z$, $Z\sim\mathcal{N}(0,1)$. Half-Gaussian mean:</p>
   <div class="math-block">$$\mathbb{E}[Z\mid Z>0] \;=\; \dfrac{1/\sqrt{2\pi}}{1/2} \;=\; \sqrt{\tfrac{2}{\pi}}.$$</div>
-  <p>By symmetry $\mathbb{E}[Z^2\mid Z>0]=1$, so the cell variance is $1 - 2/\pi$:</p>
-  <div class="math-block">$$D(1) \;=\; \sigma^2\bigl(1 - \tfrac{2}{\pi}\bigr) \;\approx\; 0.363\,\sigma^2.$$</div>
+  <p>By symmetry $\mathbb{E}[Z^2\mid Z>0]=1$, so the cell variance is $1 - 2/\pi$. Scalar quantizer achieves:</p>
+  <div class="math-block">$$\mathbb{E}\bigl[(X-\widehat X)^2\bigr] \;=\; \sigma^2\bigl(1 - \tfrac{2}{\pi}\bigr) \;\approx\; 0.363\,\sigma^2.$$</div>
 </div>
 
 <div class="slide">
   <h2>$R=2$: Lloyd&ndash;Max Coupling</h2><div class="divider"></div>
   <p>Naive thresholds at $\mu\pm\sigma$? Not optimal.</p>
-  <div class="highlight">Coupled fixed point: best rep is the cell's <strong>conditional mean</strong>; best threshold is the <strong>midpoint</strong> of adjacent reps.</div>
+  <div class="highlight">Coupled fixed point: best rep is the cell's <strong>conditional mean</strong>;<br>best threshold is the <strong>midpoint</strong> of adjacent reps.</div>
   <div class="grid-2">
     <div class="card">
       <h3 style="color:var(--blue-light);">① Centroid</h3>
@@ -188,10 +241,220 @@
 </div>
 
 <div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Initial</strong> &middot; arbitrary $\tau$ and $\hat x$ (deliberately bad).</p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="205.71" y1="50" x2="205.71" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="594.29" y1="50" x2="594.29" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="108.57" cy="140" r="7"/>
+        <circle cx="302.86" cy="140" r="7"/>
+        <circle cx="497.14" cy="140" r="7"/>
+        <circle cx="691.43" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:25.71%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:74.29%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:13.57%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:37.86%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:62.14%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:86.43%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-2.0,\; 0,\; 2.0)$ &nbsp;&middot;&nbsp; $\hat x = (-3.0,\; -1.0,\; 1.0,\; 3.0)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.34$</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Step ① — update $\hat x$</strong> &middot; $\hat x_i \leftarrow \mathbb{E}[X \mid \tau_i \le X &lt; \tau_{i+1}]$. <em>$\tau$ unchanged.</em></p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="205.71" y1="50" x2="205.71" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="594.29" y1="50" x2="594.29" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="169.77" cy="140" r="7"/>
+        <circle cx="330.06" cy="140" r="7"/>
+        <circle cx="469.93" cy="140" r="7"/>
+        <circle cx="630.21" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:25.71%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:74.29%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:21.22%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:41.26%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:58.74%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:78.78%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-2.0,\; 0,\; 2.0)$ &nbsp;&middot;&nbsp; $\hat x = (-2.37,\; -0.72,\; 0.72,\; 2.37)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.244$</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Step ② — update $\tau$</strong> &middot; $\tau_{i+1} \leftarrow \tfrac{1}{2}(\hat x_i + \hat x_{i+1})$. <em>$\hat x$ unchanged.</em></p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="249.43" y1="50" x2="249.43" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="550.57" y1="50" x2="550.57" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="169.77" cy="140" r="7"/>
+        <circle cx="330.06" cy="140" r="7"/>
+        <circle cx="469.93" cy="140" r="7"/>
+        <circle cx="630.21" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:31.18%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:68.82%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:21.22%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:41.26%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:58.74%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:78.78%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-1.55,\; 0,\; 1.55)$ &nbsp;&middot;&nbsp; $\hat x = (-2.37,\; -0.72,\; 0.72,\; 2.37)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.195$</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Step ① (iter 2) — update $\hat x$</strong> &middot; new conditional means under the tightened cells. <em>$\tau$ unchanged.</em></p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="249.43" y1="50" x2="249.43" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="550.57" y1="50" x2="550.57" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="207.66" cy="140" r="7"/>
+        <circle cx="338.80" cy="140" r="7"/>
+        <circle cx="461.20" cy="140" r="7"/>
+        <circle cx="592.34" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:31.18%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:68.82%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:25.96%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:42.35%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:57.65%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:74.04%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-1.55,\; 0,\; 1.55)$ &nbsp;&middot;&nbsp; $\hat x = (-1.98,\; -0.63,\; 0.63,\; 1.98)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.171$</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Step ② (iter 2) — update $\tau$</strong> &middot; midpoints of the new $\hat x$ pairs. <em>$\hat x$ unchanged.</em></p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="272.75" y1="50" x2="272.75" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="527.25" y1="50" x2="527.25" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="207.66" cy="140" r="7"/>
+        <circle cx="338.80" cy="140" r="7"/>
+        <circle cx="461.20" cy="140" r="7"/>
+        <circle cx="592.34" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:34.09%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:65.91%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:25.96%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:42.35%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:57.65%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:74.04%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-1.31,\; 0,\; 1.31)$ &nbsp;&middot;&nbsp; $\hat x = (-1.98,\; -0.63,\; 0.63,\; 1.98)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.149$</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Step ① (iter 3) — update $\hat x$</strong> &middot; reps move inward toward the new midpoints. <em>$\tau$ unchanged.</em></p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="272.75" y1="50" x2="272.75" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="527.25" y1="50" x2="527.25" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="227.14" cy="140" r="7"/>
+        <circle cx="344.63" cy="140" r="7"/>
+        <circle cx="455.37" cy="140" r="7"/>
+        <circle cx="572.86" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:34.09%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:65.91%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:28.39%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:43.08%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:56.92%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:71.61%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-1.31,\; 0,\; 1.31)$ &nbsp;&middot;&nbsp; $\hat x = (-1.78,\; -0.57,\; 0.57,\; 1.78)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.138$</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
+  <p><strong>Converged</strong> &middot; many more alternations &middot; $\tau, \hat x$ stop moving.</p>
+  <div style="position:relative;">
+    <svg viewBox="0 0 800 220" width="100%" style="background:var(--light); border-radius:8px; display:block;">
+      <polyline points="60,139.7 108.57,138.57 157.14,134.31 205.71,122.45 254.29,97.91 302.86,61.35 351.43,25.57 400,10.3 448.57,25.57 497.14,61.35 545.71,97.91 594.29,122.45 642.86,134.31 691.43,138.57 740,139.7" fill="none" stroke="#aaa" stroke-width="1.8"/>
+      <line x1="60" y1="140" x2="740" y2="140" stroke="#1a1a1a" stroke-width="1.2"/>
+      <g stroke="#d94040" stroke-width="2.5" stroke-dasharray="5,3">
+        <line x1="304.79" y1="50" x2="304.79" y2="140"/>
+        <line x1="400"    y1="50" x2="400"    y2="140"/>
+        <line x1="495.19" y1="50" x2="495.19" y2="140"/>
+      </g>
+      <g fill="#003876">
+        <circle cx="253.30" cy="140" r="7"/>
+        <circle cx="356.28" cy="140" r="7"/>
+        <circle cx="443.70" cy="140" r="7"/>
+        <circle cx="546.69" cy="140" r="7"/>
+      </g>
+    </svg>
+    <span style="position:absolute; left:38.10%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_1$</span>
+    <span style="position:absolute; left:50%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_2$</span>
+    <span style="position:absolute; left:61.90%; top:13.64%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--warn); font-weight:600;">$\tau_3$</span>
+    <span style="position:absolute; left:31.66%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_1$</span>
+    <span style="position:absolute; left:44.54%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_2$</span>
+    <span style="position:absolute; left:55.46%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_3$</span>
+    <span style="position:absolute; left:68.34%; top:81.82%; transform:translate(-50%,-50%); font-size:0.95rem; line-height:1; color:var(--yonsei-blue); font-weight:600;">$\hat x_4$</span>
+  </div>
+  <div class="math-block">$\tau = (-0.98,\; 0,\; 0.98)$ &nbsp;&middot;&nbsp; $\hat x = (-1.51,\; -0.45,\; 0.45,\; 1.51)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.118$</strong></div>
+</div>
+
+<div class="slide">
   <h2>Lloyd&ndash;Max Converges Monotonically</h2><div class="divider"></div>
   <p>Total distortion $D(\tau,\hat x) = \sum_i \int_{\tau_i}^{\tau_{i+1}} (x-\hat x_i)^2 p(x)\,dx$.</p>
-  <p><strong>Step ① decreases $D$ at fixed $\tau$:</strong> each integral is minimized over $\hat x_i$ by the conditional mean.</p>
-  <p><strong>Step ② decreases $D$ at fixed $\hat x$:</strong> the integrand at each $x$ is the smaller of $(x-\hat x_i)^2$ and $(x-\hat x_{i+1})^2$; the minimum switches at the midpoint.</p>
+  <p><strong>Step ①</strong> at fixed $\tau$: conditional mean minimizes each cell.</p>
+  <p><strong>Step ②</strong> at fixed $\hat x$: nearest-rep partition, switching at the midpoint.</p>
   <div class="math-block">$$D_0 \ge D_1 \ge D_2 \ge \cdots \ge 0 \;\Longrightarrow\; D_t \text{ converges.}$$</div>
 </div>
 
@@ -216,41 +479,148 @@
   <h2>Round Cells Beat Rectangles</h2><div class="divider"></div>
   <div class="grid-2">
     <div>
-      <h3 style="text-align:center;">Scalar (2D)</h3>
-      <svg viewBox="0 0 300 260" width="100%" style="background:var(--light);border-radius:8px;">
-        <rect x="40" y="40" width="220" height="200" stroke="#003876" stroke-width="2" fill="none"/>
-        <line x1="95" y1="40" x2="95" y2="240" stroke="#888"/>
-        <line x1="150" y1="40" x2="150" y2="240" stroke="#888"/>
-        <line x1="205" y1="40" x2="205" y2="240" stroke="#888"/>
-        <line x1="40" y1="90" x2="260" y2="90" stroke="#888"/>
-        <line x1="40" y1="140" x2="260" y2="140" stroke="#888"/>
-        <line x1="40" y1="190" x2="260" y2="190" stroke="#888"/>
-        <text x="40" y="32" font-size="13" fill="#d94040">corners overshoot</text>
-      </svg>
+      <h3 style="text-align:center;">Scalar product</h3>
+      <div style="position:relative;">
+        <svg viewBox="0 0 300 260" width="100%" style="background:var(--light);border-radius:8px;display:block;">
+          <rect x="60" y="40" width="200" height="180" stroke="#003876" stroke-width="2" fill="none"/>
+          <line x1="110" y1="40" x2="110" y2="220" stroke="#888" stroke-width="1"/>
+          <line x1="160" y1="40" x2="160" y2="220" stroke="#888" stroke-width="1"/>
+          <line x1="210" y1="40" x2="210" y2="220" stroke="#888" stroke-width="1"/>
+          <line x1="60" y1="85" x2="260" y2="85" stroke="#888" stroke-width="1"/>
+          <line x1="60" y1="130" x2="260" y2="130" stroke="#888" stroke-width="1"/>
+          <line x1="60" y1="175" x2="260" y2="175" stroke="#888" stroke-width="1"/>
+          <g fill="#d94040">
+            <circle cx="85"  cy="62.5"  r="3"/>
+            <circle cx="135" cy="62.5"  r="3"/>
+            <circle cx="185" cy="62.5"  r="3"/>
+            <circle cx="235" cy="62.5"  r="3"/>
+            <circle cx="85"  cy="107.5" r="3"/>
+            <circle cx="135" cy="107.5" r="3"/>
+            <circle cx="185" cy="107.5" r="3"/>
+            <circle cx="235" cy="107.5" r="3"/>
+            <circle cx="85"  cy="152.5" r="3"/>
+            <circle cx="135" cy="152.5" r="3"/>
+            <circle cx="185" cy="152.5" r="3"/>
+            <circle cx="235" cy="152.5" r="3"/>
+            <circle cx="85"  cy="197.5" r="3"/>
+            <circle cx="135" cy="197.5" r="3"/>
+            <circle cx="185" cy="197.5" r="3"/>
+            <circle cx="235" cy="197.5" r="3"/>
+          </g>
+        </svg>
+        <span style="position:absolute; left:36.67%; top:91%; transform:translate(-50%,-50%); font-size:1.1rem; line-height:1; font-weight:600;">$\tau_1$</span>
+        <span style="position:absolute; left:53.33%; top:91%; transform:translate(-50%,-50%); font-size:1.1rem; line-height:1; font-weight:600;">$\tau_2$</span>
+        <span style="position:absolute; left:70%; top:91%; transform:translate(-50%,-50%); font-size:1.1rem; line-height:1; font-weight:600;">$\tau_3$</span>
+        <span style="position:absolute; left:92%; top:87%; font-size:1.4rem; line-height:1; font-weight:700;">$X_1$</span>
+        <span style="position:absolute; left:17%; top:34%; transform:translate(-100%,-50%); font-size:1.1rem; line-height:1; font-weight:600;">$\tau_3$</span>
+        <span style="position:absolute; left:17%; top:51.5%; transform:translate(-100%,-50%); font-size:1.1rem; line-height:1; font-weight:600;">$\tau_2$</span>
+        <span style="position:absolute; left:17%; top:69%; transform:translate(-100%,-50%); font-size:1.1rem; line-height:1; font-weight:600;">$\tau_1$</span>
+        <span style="position:absolute; left:17%; top:13%; transform:translate(-100%,-50%); font-size:1.4rem; line-height:1; font-weight:700;">$X_2$</span>
+      </div>
     </div>
     <div>
-      <h3 style="text-align:center;">Vector (hex)</h3>
-      <svg viewBox="0 0 300 260" width="100%" style="background:var(--light);border-radius:8px;">
-        <rect x="40" y="40" width="220" height="200" stroke="#003876" stroke-width="2" fill="none"/>
-        <g stroke="#888" fill="none">
-          <polygon points="150,70 185,90 185,130 150,150 115,130 115,90"/>
-          <polygon points="80,90 115,110 115,150 80,170 45,150 45,110"/>
-          <polygon points="220,90 255,110 255,150 220,170 185,150 185,110"/>
-          <polygon points="150,130 185,150 185,190 150,210 115,190 115,150"/>
-          <polygon points="80,150 115,170 115,210 80,230 45,210 45,170"/>
-          <polygon points="220,150 255,170 255,210 220,230 185,210 185,170"/>
-        </g>
-        <text x="40" y="32" font-size="13" fill="#2e8b57">round cell, smaller MSE</text>
-      </svg>
+      <h3 style="text-align:center;">Vector hex</h3>
+      <div style="position:relative;">
+        <svg viewBox="0 0 300 260" width="100%" style="background:var(--light);border-radius:8px;display:block;">
+          <rect x="60" y="40" width="200" height="180" stroke="#003876" stroke-width="2" fill="none"/>
+          <g stroke="#003876" stroke-width="1.2" fill="none" stroke-linejoin="round">
+            <polygon points="83.8,40 102.85,51 102.85,73 83.8,84 64.75,73 64.75,51"/>
+            <polygon points="121.9,40 140.95,51 140.95,73 121.9,84 102.85,73 102.85,51"/>
+            <polygon points="160,40 179.05,51 179.05,73 160,84 140.95,73 140.95,51"/>
+            <polygon points="198.1,40 217.15,51 217.15,73 198.1,84 179.05,73 179.05,51"/>
+            <polygon points="236.2,40 255.25,51 255.25,73 236.2,84 217.15,73 217.15,51"/>
+            <polygon points="102.85,73 121.9,84 121.9,106 102.85,117 83.8,106 83.8,84"/>
+            <polygon points="140.95,73 160,84 160,106 140.95,117 121.9,106 121.9,84"/>
+            <polygon points="179.05,73 198.1,84 198.1,106 179.05,117 160,106 160,84"/>
+            <polygon points="217.15,73 236.2,84 236.2,106 217.15,117 198.1,106 198.1,84"/>
+            <polygon points="83.8,106 102.85,117 102.85,139 83.8,150 64.75,139 64.75,117"/>
+            <polygon points="121.9,106 140.95,117 140.95,139 121.9,150 102.85,139 102.85,117"/>
+            <polygon points="160,106 179.05,117 179.05,139 160,150 140.95,139 140.95,117"/>
+            <polygon points="198.1,106 217.15,117 217.15,139 198.1,150 179.05,139 179.05,117"/>
+            <polygon points="236.2,106 255.25,117 255.25,139 236.2,150 217.15,139 217.15,117"/>
+            <polygon points="102.85,139 121.9,150 121.9,172 102.85,183 83.8,172 83.8,150"/>
+            <polygon points="140.95,139 160,150 160,172 140.95,183 121.9,172 121.9,150"/>
+            <polygon points="179.05,139 198.1,150 198.1,172 179.05,183 160,172 160,150"/>
+            <polygon points="217.15,139 236.2,150 236.2,172 217.15,183 198.1,172 198.1,150"/>
+            <polygon points="83.8,172 102.85,183 102.85,205 83.8,216 64.75,205 64.75,183"/>
+            <polygon points="121.9,172 140.95,183 140.95,205 121.9,216 102.85,205 102.85,183"/>
+            <polygon points="160,172 179.05,183 179.05,205 160,216 140.95,205 140.95,183"/>
+            <polygon points="198.1,172 217.15,183 217.15,205 198.1,216 179.05,205 179.05,183"/>
+            <polygon points="236.2,172 255.25,183 255.25,205 236.2,216 217.15,205 217.15,183"/>
+          </g>
+          <g fill="#d94040">
+            <circle cx="83.8"   cy="62"  r="3"/>
+            <circle cx="121.9"  cy="62"  r="3"/>
+            <circle cx="160"    cy="62"  r="3"/>
+            <circle cx="198.1"  cy="62"  r="3"/>
+            <circle cx="236.2"  cy="62"  r="3"/>
+            <circle cx="102.85" cy="95"  r="3"/>
+            <circle cx="140.95" cy="95"  r="3"/>
+            <circle cx="179.05" cy="95"  r="3"/>
+            <circle cx="217.15" cy="95"  r="3"/>
+            <circle cx="83.8"   cy="128" r="3"/>
+            <circle cx="121.9"  cy="128" r="3"/>
+            <circle cx="160"    cy="128" r="3"/>
+            <circle cx="198.1"  cy="128" r="3"/>
+            <circle cx="236.2"  cy="128" r="3"/>
+            <circle cx="102.85" cy="161" r="3"/>
+            <circle cx="140.95" cy="161" r="3"/>
+            <circle cx="179.05" cy="161" r="3"/>
+            <circle cx="217.15" cy="161" r="3"/>
+            <circle cx="83.8"   cy="194" r="3"/>
+            <circle cx="121.9"  cy="194" r="3"/>
+            <circle cx="160"    cy="194" r="3"/>
+            <circle cx="198.1"  cy="194" r="3"/>
+            <circle cx="236.2"  cy="194" r="3"/>
+          </g>
+        </svg>
+        <span style="position:absolute; left:92%; top:87%; font-size:1.4rem; line-height:1; font-weight:700;">$X_1$</span>
+        <span style="position:absolute; left:17%; top:13%; transform:translate(-100%,-50%); font-size:1.4rem; line-height:1; font-weight:700;">$X_2$</span>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="slide">
-  <h2>Why Round Wins: Typical-Shell Concentration</h2><div class="divider"></div>
-  <p>Cell second moment under uniform mass: $M(\mathcal{C}) = \frac{1}{|\mathcal{C}|}\int_\mathcal{C}\|x-c\|^2 dx$.</p>
-  <p>At fixed area, the disk minimizes $M$. Square: 8% worse; rectangle: much worse.</p>
-  <div class="highlight">High dimension: mass concentrates on a thin shell of radius $\sqrt{n\sigma^2}$. Spherical cells cover the shell efficiently; cubic cells waste budget on empty corners.</div>
+  <h2>Sphere-Like Cells Win</h2><div class="divider"></div>
+  <p>Worst-case distortion $\sim$ corner-to-center distance &middot; fix the cell's area.</p>
+  <div class="grid-2" style="margin-top:8px;">
+    <div>
+      <h3 style="text-align:center;">Square</h3>
+      <div style="position:relative;">
+        <svg viewBox="0 0 300 240" width="100%" style="background:var(--light);border-radius:8px;display:block;">
+          <rect x="80" y="50" width="140" height="140" stroke="#003876" stroke-width="2" fill="#003876" fill-opacity="0.06"/>
+          <line x1="150" y1="120" x2="220" y2="50" stroke="#d94040" stroke-width="2.2" marker-end="url(#sq-arrow)"/>
+          <defs>
+            <marker id="sq-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#d94040"/>
+            </marker>
+          </defs>
+          <circle cx="150" cy="120" r="4" fill="#d94040"/>
+        </svg>
+        <span style="position:absolute; left:60%; top:30%; font-size:1.15rem; font-weight:600; color:var(--warn);">$r_{\mathrm{sq}}$</span>
+      </div>
+      <p style="text-align:center; margin-top:6px;">$r_{\mathrm{sq}} = \tfrac{a}{\sqrt{2}} \approx 0.71\,a$</p>
+    </div>
+    <div>
+      <h3 style="text-align:center;">Hexagon</h3>
+      <div style="position:relative;">
+        <svg viewBox="0 0 300 240" width="100%" style="background:var(--light);border-radius:8px;display:block;">
+          <polygon points="150,33.85 225.21,77.42 225.21,164.58 150,208.15 74.79,164.58 74.79,77.42" stroke="#003876" stroke-width="2" fill="#003876" fill-opacity="0.06"/>
+          <line x1="150" y1="121" x2="225.21" y2="77.42" stroke="#d94040" stroke-width="2.2" marker-end="url(#hx-arrow)"/>
+          <defs>
+            <marker id="hx-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#d94040"/>
+            </marker>
+          </defs>
+          <circle cx="150" cy="121" r="4" fill="#d94040"/>
+        </svg>
+        <span style="position:absolute; left:62%; top:33%; font-size:1.15rem; font-weight:600; color:var(--warn);">$r_{\mathrm{hex}}$</span>
+      </div>
+      <p style="text-align:center; margin-top:6px;">$r_{\mathrm{hex}} \approx 0.62\,a$ &middot; same area</p>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:8px;">High-$d$ typical shell at $\sqrt{n\sigma^2}$ &middot; round cells cover it; cubes waste corners.</div>
 </div>
 
 
@@ -259,7 +629,7 @@
   <div class="section-num">04</div>
   <h1>Shannon's Theorem</h1>
   <div class="divider"></div>
-  <p class="subtitle">$R(D) = \inf I(X;\widehat X)$ subject to $\mathbb{E}\,d\le D$</p>
+  <p class="subtitle">$R(D) = \inf I(X;\widehat X)$ &middot; converse, binary toy, achievability</p>
 </div>
 
 <div class="slide">
@@ -275,87 +645,226 @@
 
 <div class="slide">
   <h2>Why Mutual Information Appears</h2><div class="divider"></div>
-  <p>Index $M = f(X^n)$ takes at most $2^{nR}$ values. Reconstruction $\widehat X^n = g(M)$ is a deterministic function of $M$.</p>
+  <p>Encoder + decoder = noisy channel from $X^n$ to $\widehat X^n$.</p>
+  <div style="display:flex; justify-content:center; align-items:center; gap:18px; margin:14px 0; font-size:1.7rem;">
+    <span>$X^n$</span>
+    <span style="color:var(--yonsei-blue); font-weight:700;">$\xrightarrow{\;f\;}$</span>
+    <span>$M$</span>
+    <span style="color:var(--yonsei-blue); font-weight:700;">$\xrightarrow{\;g\;}$</span>
+    <span>$\widehat X^n$</span>
+  </div>
+  <p>Markov chain &middot; $M\in\{1,\ldots,2^{nR}\}$ &middot; $\widehat X^n = g(M)$</p>
   <div class="math-block">$$nR \;\ge\; H(M) \;\ge\; I(X^n; M) \;\ge\; I(X^n; \widehat X^n).$$</div>
-  <div class="highlight">Smallest information $\widehat X$ must carry about $X$ at distortion $\le D$ is exactly $\inf I(X;\widehat X)$.</div>
+  <div class="highlight">
+    <p><strong>Rate</strong> = bandwidth of the $X\to\widehat X$ channel.</p>
+    <p>Minimum bandwidth at distortion $\le D$: $\;\inf I(X;\widehat X)$.</p>
+  </div>
 </div>
 
 <div class="slide">
-  <h2>Achievability — Random Codebook</h2><div class="divider"></div>
-  <p>Fix $P_{\widehat X\mid X}$ with $\mathbb{E}\,d \le D-\delta$ and $I(X;\widehat X)=I$. Marginal $P_{\widehat X}$.</p>
-  <p>Generate $M = 2^{nR}$ codewords i.i.d. from $P_{\widehat X}^{\otimes n}$.</p>
-  <p><strong>Encoder:</strong> find any $m$ with $(X^n, \widehat X^n(m)) \in T_\varepsilon^{(n)}$. Send $m$.</p>
-  <p><strong>Decoder:</strong> output $\widehat X^n(m)$.</p>
-</div>
-
-<div class="slide">
-  <h2>Achievability — Joint AEP and Encoder Error</h2><div class="divider"></div>
-  <p>Joint AEP: each random codeword is jointly typical with $x^n$ with probability $\ge 2^{-n(I+3\varepsilon)}$.</p>
-  <p>Codewords independent, so:</p>
-  <div class="math-block">$$\Pr[\text{no match}\mid X^n] \;\le\; \bigl(1 - 2^{-n(I+3\varepsilon)}\bigr)^M \;\le\; \exp\!\bigl(-2^{n(R-I-3\varepsilon)}\bigr).$$</div>
-  <p>For $R > I+3\varepsilon$: doubly-exponentially small. On the match event, joint typicality forces $\frac{1}{n}\sum d \le \mathbb{E}\,d + \varepsilon$.</p>
-  <div class="highlight">Every $R > R^{(I)}(D)$ is achievable.</div>
-</div>
-
-<div class="slide">
-  <h2>Converse — Three Steps</h2><div class="divider"></div>
-  <p>Assume $(R,D)$ achievable; let $E^n = X^n - \widehat X^n$.</p>
+  <h2>Converse — Outline</h2><div class="divider"></div>
+  <p>Assume $(R,D)$ achievable. Goal: $\;R \ge R^{(I)}(D)$.</p>
   <ol>
-    <li>Rate dominates info: $nR \ge H(M) \ge I(X^n;\widehat X^n)$.</li>
-    <li>Memoryless source: $I(X^n;\widehat X^n) \ge \sum_i I(X_i;\widehat X_i)$ (chain rule + conditioning reduces entropy).</li>
-    <li>Definition + convexity: $\sum_i I(X_i;\widehat X_i) \ge n\,R^{(I)}\bigl(\tfrac{1}{n}\sum_i D_i\bigr) \ge n\,R^{(I)}(D)$.</li>
+    <li><strong>Rate dominates information:</strong> &nbsp;$nR \ge I(X^n;\widehat X^n)$</li>
+    <li><strong>Single-letterize:</strong> &nbsp;$I(X^n;\widehat X^n) \ge \sum_i I(X_i;\widehat X_i)$</li>
+    <li><strong>Convexity + non-increasing:</strong> &nbsp;$\sum_i I(X_i;\widehat X_i) \ge n\,R^{(I)}(D)$</li>
   </ol>
-  <div class="math-block">$$\Longrightarrow\; R \ge R^{(I)}(D).$$</div>
-</div>
-
-
-<!-- ════ PART 05 ════ -->
-<div class="slide section-slide left">
-  <div class="section-num">05</div>
-  <h1>Binary Toy: $n=24,\ D=1/4$</h1>
-  <div class="divider"></div>
-  <p class="subtitle">Bit strings, Hamming balls, the threshold rate</p>
+  <div class="math-block">$$nR \;\ge\; I(X^n;\widehat X^n) \;\ge\; \sum_i I(X_i;\widehat X_i) \;\ge\; n\,R^{(I)}(D).$$</div>
+  <div class="highlight">Each step lower-bounds the previous.</div>
 </div>
 
 <div class="slide">
-  <h2>Bernoulli Source, Hamming Distortion</h2><div class="divider"></div>
-  <p>$X_i \stackrel{\mathrm{iid}}{\sim} \mathrm{Bern}(1/2)$, $d_H(x,\hat x) = \mathbb{1}\{x\ne\hat x\}$. Test channel:</p>
-  <div class="math-block">$$X = \widehat X \oplus Z, \qquad \widehat X\sim\mathrm{Bern}(1/2),\; Z\sim\mathrm{Bern}(D),\; \widehat X\perp Z.$$</div>
-  <p>Then $\Pr[X\ne\widehat X] = D$. Compute mutual information:</p>
-  <div class="math-block">$$I(X;\widehat X) \;=\; H(X) - H(X\mid\widehat X) \;=\; 1 - H_b(D).$$</div>
-  <p>The matching converse (Lecture exercise) gives $R(D) = 1 - H_b(D)$ for $0\le D\le 1/2$.</p>
+  <h2>Step 1 — Rate Dominates Information</h2><div class="divider"></div>
+  <p>Index $M = f(X^n) \in \{1,\ldots,2^{nR}\}$ &middot; $\widehat X^n = g(M)$ deterministic.</p>
+  <div class="math-block">$$\begin{aligned}
+    nR &\;\ge\; H(M) &&\text{(uniform bound on log range)} \\
+       &\;\ge\; I(X^n; M) &&\text{(}H \ge I\text{)} \\
+       &\;\ge\; I(X^n; \widehat X^n) &&\text{(DPI: }\widehat X^n = g(M)\text{)}
+  \end{aligned}$$</div>
+  <div class="highlight"><strong>$nR \;\ge\; I(X^n; \widehat X^n)$.</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Step 2 — Single-Letterize</h2><div class="divider"></div>
+  <p><strong>Memoryless source</strong> $\Rightarrow H(X^n) = \sum_i H(X_i)$. <strong>Conditioning</strong> reduces entropy.</p>
+  <div class="math-block">$$\begin{aligned}
+    I(X^n; \widehat X^n) &= H(X^n) - H(X^n \mid \widehat X^n) \\
+                         &= \sum_i H(X_i) - \sum_i H(X_i \mid X_{&lt;i}, \widehat X^n) \\
+                         &\ge \sum_i H(X_i) - \sum_i H(X_i \mid \widehat X_i) \\
+                         &= \sum_i I(X_i; \widehat X_i).
+  \end{aligned}$$</div>
+</div>
+
+<div class="slide">
+  <h2>Step 3 — Convexity</h2><div class="divider"></div>
+  <p>Per-coordinate distortion $D_i = \mathbb{E}[d(X_i, \widehat X_i)]$ &middot; achievable $\Rightarrow$ $\tfrac{1}{n}\sum_i D_i \le D$.</p>
+  <p>By definition: $\;I(X_i; \widehat X_i) \;\ge\; R^{(I)}(D_i).$</p>
+  <div class="math-block">$$\begin{aligned}
+    \tfrac{1}{n}\sum_i I(X_i; \widehat X_i)
+      &\;\ge\; \tfrac{1}{n}\sum_i R^{(I)}(D_i) \\
+      &\;\ge\; R^{(I)}\!\Bigl(\tfrac{1}{n}\sum_i D_i\Bigr) &&\text{(convex)} \\
+      &\;\ge\; R^{(I)}(D) &&\text{(non-increasing)}
+  \end{aligned}$$</div>
+</div>
+
+<div class="slide">
+  <h2>Converse — Summary</h2><div class="divider"></div>
+  <div class="math-block" style="margin:10px 0; padding:10px 18px;">$$\begin{aligned}
+    nR &\;\stackrel{(1)}{\ge}\; I(X^n; \widehat X^n) \\
+       &\;\stackrel{(2)}{\ge}\; \sum_i I(X_i; \widehat X_i) \\
+       &\;\stackrel{(3)}{\ge}\; n\,R^{(I)}\!\Bigl(\tfrac{1}{n}\sum_i D_i\Bigr) \\
+       &\;\stackrel{(3)}{\ge}\; n\,R^{(I)}(D)
+  \end{aligned}$$</div>
+  <div class="highlight" style="margin-top:10px; padding:10px 16px;"><strong>$R \;\ge\; R^{(I)}(D).$</strong></div>
+</div>
+
+<!-- Binary toy as worked example BEFORE formal achievability -->
+<div class="slide">
+  <h2>Binary Toy — Setup</h2><div class="divider"></div>
+  <p>$X_i \stackrel{\mathrm{iid}}{\sim} \mathrm{Bern}(1/2)$, &nbsp; $d_H(x,\hat x) = \mathbb{1}\{x\ne\hat x\}$.</p>
+  <p>Block length $n=24$, &nbsp; target distortion $D=1/4$, &nbsp; so $nD = 6$ flips.</p>
+  <div class="highlight">Find a codeword within $6$ Hamming flips of $X^n$.</div>
+</div>
+
+<div class="slide">
+  <h2>Binary $R(D)$ and the Test Channel</h2><div class="divider"></div>
+  <p>Rate&ndash;distortion function:</p>
+  <div class="math-block">$$R(D) \;=\; 1 - H_b(D), \qquad 0\le D\le 1/2.$$</div>
+  <p>Achieving joint distribution $P_{X,\widehat X}$: backward channel</p>
+  <div class="math-block">$$X = \widehat X \oplus Z, \quad \widehat X\sim\mathrm{Bern}(1/2),\; Z\sim\mathrm{Bern}(D),\; \widehat X\perp Z.$$</div>
+  <p>$\Pr[X\ne\widehat X] = D$ &nbsp;&middot;&nbsp; $I(X;\widehat X) = H(X) - H(X\mid\widehat X) = 1 - H_b(D)$.</p>
 </div>
 
 <div class="slide">
   <h2>One Source, Many Candidates</h2><div class="divider"></div>
   <p>Source draw, $n=24$:</p>
   <div class="math-block">$X^n = $&nbsp;<span class="l1-bitstr">101000100001100010000100</span></div>
-  <p>Goal: find a codeword within $nD = 6$ Hamming flips.</p>
-  <p>A random Bernoulli$(1/2)^{24}$ codeword typically differs in $\approx 12$ positions. Far from the ball.</p>
-  <p>Generate many candidates; eventually one lands inside.</p>
+  <p>A random $\mathrm{Bern}(1/2)^{24}$ candidate typically differs in $\approx 12$ positions.</p>
+  <p>Generate $M = 2^{nR}$ candidates; one eventually lands inside the $6$-flip ball.</p>
 </div>
 
 <div class="slide">
-  <h2>A Match Found</h2><div class="divider"></div>
-  <p>In a codebook of $64 = 2^{6}$ candidates (rate $R\approx 0.25$):</p>
-  <table>
-    <thead><tr><th>$m$</th><th>candidate $\widehat X^n$</th><th>$d_H$</th></tr></thead>
-    <tbody>
-      <tr><td>14</td><td><span class="l1-bitstr">101010101000100111000000</span></td><td><strong style="color:var(--success);">6</strong></td></tr>
-    </tbody>
-  </table>
-  <p>Error pattern $X^n\oplus\widehat X^n(14)$:</p>
-  <div class="math-block"><span class="l1-bitstr">000010001001000101000100</span></div>
-  <p>Six ones: empirical crossover $1/4$. Selected pair behaves as if drawn through the test channel at $D=1/4$.</p>
+  <h2>Codebook of $16 = 2^{4}$ Candidates</h2><div class="divider"></div>
+  <p style="margin-bottom:2px;">Source: $X^n = $&nbsp;<span class="l1-bitstr">101000100001100010000100</span></p>
+  <p style="margin-top:2px;">Rate $R = 4/24 \approx 0.167$ &middot; bits in red differ from $X^n$.</p>
+  <div class="l1-cb-cols">
+    <table class="l1-cb-table">
+      <thead><tr><th>$m$</th><th>$\widehat X^n(m)$</th><th>$d_H$</th></tr></thead>
+      <tbody>
+        <tr><td class="l1-cb-m">1</td><td class="l1-cb-bits">1<span style="color:var(--warn);">10111</span>1<span style="color:var(--warn);">11</span>001<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>0100<span style="color:var(--warn);">11011</span></td><td>14</td></tr>
+        <tr><td class="l1-cb-m">2</td><td class="l1-cb-bits">101<span style="color:var(--warn);">11</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">01</span>00<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">011</span></td><td>12</td></tr>
+        <tr><td class="l1-cb-m">3</td><td class="l1-cb-bits"><span style="color:var(--warn);">01</span>10<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">110</span>1000<span style="color:var(--warn);">011</span>00<span style="color:var(--warn);">0</span>00</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">4</td><td class="l1-cb-bits"><span style="color:var(--warn);">01</span>100<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">111</span>01<span style="color:var(--warn);">011</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>0010<span style="color:var(--warn);">1</span></td><td>12</td></tr>
+        <tr><td class="l1-cb-m">5</td><td class="l1-cb-bits">10<span style="color:var(--warn);">0</span>000<span style="color:var(--warn);">0</span>00001<span style="color:var(--warn);">01</span>00<span style="color:var(--warn);">0</span>000<span style="color:var(--warn);">10</span>00</td><td>7</td></tr>
+        <tr><td class="l1-cb-m">6</td><td class="l1-cb-bits">1010001<span style="color:var(--warn);">11</span>001<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">11</span>00<span style="color:var(--warn);">0</span>00</td><td>7</td></tr>
+        <tr><td class="l1-cb-m">7</td><td class="l1-cb-bits">1<span style="color:var(--warn);">101</span>001<span style="color:var(--warn);">1111</span>1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>010<span style="color:var(--warn);">1</span>001<span style="color:var(--warn);">11</span></td><td>12</td></tr>
+        <tr><td class="l1-cb-m">8</td><td class="l1-cb-bits">101<span style="color:var(--warn);">11</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>00<span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">11</span>01<span style="color:var(--warn);">1</span>00<span style="color:var(--warn);">101</span>0</td><td>11</td></tr>
+      </tbody>
+    </table>
+    <table class="l1-cb-table">
+      <thead><tr><th>$m$</th><th>$\widehat X^n(m)$</th><th>$d_H$</th></tr></thead>
+      <tbody>
+        <tr><td class="l1-cb-m">9</td><td class="l1-cb-bits">1<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">00</span>0<span style="color:var(--warn);">11</span>10000<span style="color:var(--warn);">0</span>00</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">10</td><td class="l1-cb-bits"><span style="color:var(--warn);">01</span>100<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">110</span>10<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">01</span>000<span style="color:var(--warn);">011</span></td><td>12</td></tr>
+        <tr><td class="l1-cb-m">11</td><td class="l1-cb-bits">101<span style="color:var(--warn);">1110</span>0<span style="color:var(--warn);">11</span>0<span style="color:var(--warn);">00111</span>10<span style="color:var(--warn);">1</span>00100</td><td>12</td></tr>
+        <tr><td class="l1-cb-m">12</td><td class="l1-cb-bits">1<span style="color:var(--warn);">1</span>10<span style="color:var(--warn);">1</span>0100<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">111</span>100<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0</td><td>10</td></tr>
+        <tr><td class="l1-cb-m">13</td><td class="l1-cb-bits">101<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">00</span>000100<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0</td><td>8</td></tr>
+        <tr class="l1-cb-best"><td class="l1-cb-m"><strong>14</strong></td><td class="l1-cb-bits">1010<span style="color:var(--warn);">1</span>010<span style="color:var(--warn);">1</span>00<span style="color:var(--warn);">0</span>100<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">1</span>000<span style="color:var(--warn);">0</span>00</td><td><strong style="color:var(--success);">6 ✓</strong></td></tr>
+        <tr><td class="l1-cb-m">15</td><td class="l1-cb-bits">1<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">101111</span>110001<span style="color:var(--warn);">11</span>0010<span style="color:var(--warn);">1</span></td><td>10</td></tr>
+        <tr><td class="l1-cb-m">16</td><td class="l1-cb-bits">1<span style="color:var(--warn);">10</span>000<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">1</span>01100<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">1</span>00010<span style="color:var(--warn);">1</span></td><td>7</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Empirical Joint Matches the Test Channel</h2><div class="divider"></div>
+  <p>Pair $\widehat X^n(14)$ with $X^n$ &middot; counts (left) vs ideal $n\,P_{X,\widehat X}$ at $D=1/4$ (right):</p>
+  <div class="cols" style="gap:36px; align-items:flex-start;">
+    <div>
+      <p style="text-align:center; margin:0 0 4px 0;"><strong>Empirical count</strong></p>
+      <table class="l1-contingency">
+        <thead>
+          <tr><th></th><th>$\hat x_i = 0$</th><th>$\hat x_i = 1$</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>$x_i = 0$</th><td>$13$</td><td>$4$</td></tr>
+          <tr><th>$x_i = 1$</th><td>$2$</td><td>$5$</td></tr>
+        </tbody>
+      </table>
+      <p style="text-align:center; margin:4px 0 0 0;">fractions $\tfrac{13}{24},\tfrac{4}{24},\tfrac{2}{24},\tfrac{5}{24}$</p>
+    </div>
+    <div>
+      <p style="text-align:center; margin:0 0 4px 0;"><strong>Ideal $P_{X,\widehat X}$</strong></p>
+      <table class="l1-contingency">
+        <thead>
+          <tr><th></th><th>$\hat x_i = 0$</th><th>$\hat x_i = 1$</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>$x_i = 0$</th><td>$\tfrac{3}{8}$</td><td>$\tfrac{1}{8}$</td></tr>
+          <tr><th>$x_i = 1$</th><td>$\tfrac{1}{8}$</td><td>$\tfrac{3}{8}$</td></tr>
+        </tbody>
+      </table>
+      <p style="text-align:center; margin:4px 0 0 0;">$(1{-}D)/2,\,D/2,\,D/2,\,(1{-}D)/2$</p>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:6px;">Empirical $\approx$ ideal &middot; <strong>joint typicality</strong> &middot; the basis of random-coding achievability.</div>
+</div>
+
+<div class="slide">
+  <h2>Ball Volume = Typical-Set Size</h2><div class="divider"></div>
+  <p>Hamming ball $B(0, nD) = \{z\in\{0,1\}^n : \text{wt}(z) \le nD\}$.</p>
+  <p>Each $z$ encodes an <strong>error pattern</strong> &middot; fraction of ones $\le D$.</p>
+  <p>Under $\mathrm{Bern}(D)$, the typical pattern has exactly $\approx nD$ ones.</p>
+  <div class="math-block">$$|T_\varepsilon^{(n)}(\mathrm{Bern}(D))| \;\doteq\; 2^{n H_b(D)} \quad\text{(AEP).}$$</div>
+  <div class="highlight">Ball volume $\;\asymp\;$ size of the strongly-typical set under the error law.</div>
 </div>
 
 <div class="slide">
   <h2>Threshold Rate from Ball Volume</h2><div class="divider"></div>
-  <p>Hamming ball volume bound: $|B(0,nD)| \le 2^{nH_b(D)}$ for $D\le 1/2$ (sum of binomial pmf weights).</p>
-  <p>A random codeword falls in $B(X^n, nD)$ with probability:</p>
+  <p>Hence $|B(0, nD)| \le 2^{n H_b(D)}$ &middot; a random codeword lands in $B(X^n, nD)$ with prob.</p>
   <div class="math-block">$$\dfrac{|B(0,nD)|}{2^n} \;\le\; 2^{-n(1 - H_b(D))}.$$</div>
-  <p>$M = 2^{nR}$ candidates contain a match w.h.p. iff $R > 1 - H_b(D) = R(D)$.</p>
-  <div class="highlight">For $D=1/4$: $R(D) \approx 0.189$ bits/symbol. The 64-codeword run is well past threshold.</div>
+  <p>$M = 2^{nR}$ candidates &middot; expected hits $= M \cdot 2^{-n(1-H_b(D))}$.</p>
+  <p>Match w.h.p. iff $R > 1 - H_b(D) = R(D)$.</p>
+  <div class="highlight">$D=1/4$: $R(D) \approx 0.189$ &middot; $M=16$ ($R\approx 0.167$) just under &middot; $M=32$ above.</div>
+</div>
+
+<div class="slide">
+  <h2>From Binary Toy to General Recipe</h2><div class="divider"></div>
+  <p><strong>Binary case:</strong></p>
+  <ul>
+    <li>Drew codewords $\widehat X^n(m) \stackrel{\mathrm{iid}}{\sim} \mathrm{Bern}(1/2)^n$.</li>
+    <li>Found a candidate $\widehat X^n(14)$ within $nD$ Hamming flips of $X^n$.</li>
+    <li>Empirical joint $(X^n, \widehat X^n(14))$ matched the test-channel $P_{X,\widehat X}$ at $D=1/4$.</li>
+  </ul>
+  <div class="highlight">Three ingredients: <strong>codeword law</strong>, <strong>match criterion</strong>, <strong>typicality.</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Generalization: the Optimal Test Channel</h2><div class="divider"></div>
+  <p>For any source $P_X$ and target $D$, identify the optimizer:</p>
+  <div class="math-block">$$P^\star_{X,\widehat X} \;=\; \arg\inf\!\bigl\{ I(X;\widehat X) : \mathbb{E}\,d(X,\widehat X) \le D \bigr\}.$$</div>
+  <p>Draw codewords iid from the marginal $P^\star_{\widehat X}$ &middot; pick any $m$ with $(X^n, \widehat X^n(m))$ jointly typical.</p>
+  <p>$M = 2^{nR}$ codewords with $R > I(X;\widehat X^\star)$ &middot; one match w.h.p.</p>
+  <div class="highlight"><strong>Open question:</strong> how to find $P^\star_{X,\widehat X}$ for a given source. <em>Lecture 2: Gaussian, Laplacian.</em></div>
+</div>
+
+<div class="slide">
+  <h2>Achievability — Random Codebook</h2><div class="divider"></div>
+  <p>Formal recipe for any source.</p>
+  <p><strong>Test channel</strong> $P_{\widehat X\mid X}$:&nbsp; $\mathbb{E}[d(X,\widehat X)] \le D-\delta$, &nbsp;$I(X;\widehat X) = I$.</p>
+  <p><strong>Codebook</strong> $\{\widehat X^n(m)\}_{m=1}^{2^{nR}}$ drawn iid from $P_{\widehat X}^{\otimes n}$.</p>
+  <p><strong>Encoder:</strong>&nbsp; send any $m$ with $(X^n, \widehat X^n(m)) \in T_\varepsilon^{(n)}$.</p>
+  <p><strong>Decoder:</strong>&nbsp; output $\widehat X^n(m)$.</p>
+</div>
+
+<div class="slide">
+  <h2>Achievability — Joint AEP</h2><div class="divider"></div>
+  <p><strong>Joint AEP:</strong>&nbsp; per codeword, $\Pr[(X^n, \widehat X^n(m))\in T_\varepsilon^{(n)}] \ge 2^{-n(I+3\varepsilon)}$. Codewords iid:</p>
+  <div class="math-block">$$\Pr[\text{no match}\mid X^n] \;\le\; \bigl(1 - 2^{-n(I+3\varepsilon)}\bigr)^{2^{nR}} \;\le\; \exp\!\bigl(-2^{n(R-I-3\varepsilon)}\bigr).$$</div>
+  <p>$R > I + 3\varepsilon$: encoder error doubly-exponentially small.</p>
+  <p><strong>On the match event:</strong>&nbsp; $\tfrac{1}{n}\sum d \le \mathbb{E}\,d + \varepsilon \le D - \delta + \varepsilon$.</p>
+  <div class="highlight">Every $R > R^{(I)}(D)$ achievable.</div>
 </div>
 
 
@@ -364,7 +873,7 @@
   <h2>Recap</h2><div class="divider"></div>
   <ul>
     <li><strong>R&ndash;D problem:</strong> trade rate for fidelity under fixed $d$.</li>
-    <li><strong>Scalar:</strong> $D(1) = \sigma^2(1 - 2/\pi)$; Lloyd&ndash;Max alternates conditional mean and midpoint.</li>
+    <li><strong>Scalar:</strong> 1-bit quantizer gives $\sigma^2(1 - 2/\pi)$; Lloyd&ndash;Max alternates conditional mean and midpoint.</li>
     <li><strong>Vector wins:</strong> round cells cover the typical shell.</li>
     <li><strong>Shannon:</strong> $R(D) = \inf I(X;\widehat X)$ s.t. $\mathbb{E}\,d \le D$.</li>
     <li><strong>Achievability:</strong> random codebook + joint typicality.</li>
@@ -383,6 +892,6 @@
 
 </div><!-- end deck -->
 
-<script defer src="../../reference/deck.js"></script>
+<script src="../../reference/deck.js"></script>
 </body>
 </html>
