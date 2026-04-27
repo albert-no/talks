@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion 3 — Parameterizations and Tweedie</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Diffusion · Lecture 3 of 3</div>
+  <h1>Predict $x_0$,<br>Noise, or Score</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Tweedie ties the three together</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Master identity</div>
+      <div class="toc-sub">$x_t = \sqrt{\bar\alpha_t}x_0 + \sqrt{1-\bar\alpha_t}\varepsilon$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Three parameterizations</div>
+      <div class="toc-sub">Pros, cons, and how the loss conditions</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Tweedie's bridge</div>
+      <div class="toc-sub">Posterior mean = score, rescaled</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Channel view</div>
+      <div class="toc-sub">Forward as noise channel, reverse as decoding</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Master Identity</h1>
+  <div class="divider"></div>
+  <p class="subtitle">One linear relation drives every parameterization</p>
+</div>
+
+<div class="slide">
+  <h2>Three Variables, Two Free</h2><div class="divider"></div>
+  <p>From Lecture 2:</p>
+  <div class="math-block">$$x_t \;=\; \sqrt{\bar\alpha_t}\,x_0 \;+\; \sqrt{1-\bar\alpha_t}\,\varepsilon, \qquad \varepsilon\sim\mathcal{N}(0,I).$$</div>
+  <p>Knowing any two of $(x_t, x_0, \varepsilon)$ recovers the third:</p>
+  <div class="math-block">$$x_0 \;=\; \frac{x_t - \sqrt{1-\bar\alpha_t}\,\varepsilon}{\sqrt{\bar\alpha_t}}, \qquad \varepsilon \;=\; \frac{x_t - \sqrt{\bar\alpha_t}\,x_0}{\sqrt{1-\bar\alpha_t}}.$$</div>
+  <div class="highlight">Predicting $x_0$ and predicting $\varepsilon$ are the same network up to a $t$-dependent affine map.</div>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Three Parameterizations</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Same optimum, different conditioning</p>
+</div>
+
+<div class="slide">
+  <h2>Predict $x_0$</h2><div class="divider"></div>
+  <p>Train $x_{0,\theta}(x_t,t)$ against the clean target:</p>
+  <div class="math-block">$$\mathcal{L}_{x_0} \;=\; \mathbb{E}_{(x_0,t,\varepsilon)}\!\bigl[\,\|x_0 - x_{0,\theta}(x_t,t)\|^2\,\bigr].$$</div>
+  <p>Bayes-optimal predictor: $x_{0,\theta}^\star(x_t,t) = \mathbb{E}[X_0\mid X_t = x_t]$ — the posterior mean.</p>
+  <div class="highlight">Pro: interpretable target. Con: very noisy regression at large $t$ (input nearly noise, target clean).</div>
+</div>
+
+<div class="slide">
+  <h2>Predict Noise $\varepsilon$</h2><div class="divider"></div>
+  <p>Train $\varepsilon_\theta(x_t,t)$ against the noise that generated $x_t$:</p>
+  <div class="math-block">$$\mathcal{L}_\varepsilon \;=\; \mathbb{E}_{(x_0,t,\varepsilon)}\!\bigl[\,\|\varepsilon - \varepsilon_\theta(x_t,t)\|^2\,\bigr].$$</div>
+  <p>Equivalent to $\mathcal{L}_{x_0}$ up to a $t$-dependent rescaling.</p>
+  <div class="highlight">Unit-variance target at every $t$. Well-conditioned gradients across noise levels: the DDPM default.</div>
+  <div class="cite">Ho, Jain, Abbeel, "Denoising Diffusion Probabilistic Models", NeurIPS 2020.</div>
+</div>
+
+<div class="slide">
+  <h2>Predict the Score</h2><div class="divider"></div>
+  <p>Marginal at noise level $t$: $p_t(x) = q(x_t = x)$. Score:</p>
+  <div class="math-block">$$\nabla_x\log p_t(x).$$</div>
+  <p>Train $s_\theta(x_t, t) \approx \nabla_{x_t}\log p_t(x_t)$.</p>
+  <div class="highlight">Score determines the reverse-time SDE drift. Bridge to $\varepsilon_\theta$: Tweedie.</div>
+  <div class="cite">Song, Ermon, "Generative Modeling by Estimating Gradients of the Data Distribution", NeurIPS 2019.</div>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Tweedie's Bridge</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Posterior mean of clean data = rescaled score</p>
+</div>
+
+<div class="slide">
+  <h2>Tweedie's Formula</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Robbins, 1956 / Tweedie).</h3>
+    <p>$X_t = \sqrt{\bar\alpha_t}X_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon$:</p>
+    <div class="math-block">$$\mathbb{E}[X_0\mid X_t=x_t] \;=\; \frac{1}{\sqrt{\bar\alpha_t}}\bigl(x_t + (1-\bar\alpha_t)\,\nabla_{x_t}\log p_t(x_t)\bigr).$$</div>
+  </div>
+  <p>Posterior mean of clean $X_0$ = noisy $x_t$ + score correction, all rescaled.</p>
+  <div class="cite">Robbins, "An Empirical Bayes Approach to Statistics", Berkeley Symp. 1956.</div>
+</div>
+
+<div class="slide">
+  <h2>Proof — Differentiate the Marginal</h2><div class="divider"></div>
+  <p>Marginal as a Gaussian mixture in $X_0$:</p>
+  <div class="math-block">$$p_t(x_t) \;=\; \int p_0(x_0)\,\mathcal{N}\!\bigl(x_t;\,\sqrt{\bar\alpha_t}x_0,\,(1-\bar\alpha_t)I\bigr)\,dx_0.$$</div>
+  <p>Differentiate $\log p_t$. Inside the integral, the Gaussian score in $x_t$ is:</p>
+  <div class="math-block">$$-\,\dfrac{x_t - \sqrt{\bar\alpha_t}\,x_0}{1-\bar\alpha_t}.$$</div>
+  <p>Pulling the differentiation through gives an expectation over the posterior:</p>
+  <div class="math-block">$$\nabla_{x_t}\log p_t(x_t) \;=\; -\,\dfrac{x_t - \sqrt{\bar\alpha_t}\,\mathbb{E}[X_0\mid x_t]}{1-\bar\alpha_t}.$$</div>
+  <p>Solve for $\mathbb{E}[X_0\mid x_t]$ to recover the formula.</p>
+</div>
+
+<div class="slide">
+  <h2>Three Names, One Object</h2><div class="divider"></div>
+  <p>Combine Tweedie with the master identity:</p>
+  <div class="math-block">$$\mathbb{E}[\varepsilon\mid x_t] \;=\; \dfrac{x_t - \sqrt{\bar\alpha_t}\,\mathbb{E}[X_0\mid x_t]}{\sqrt{1-\bar\alpha_t}} \;=\; -\sqrt{1-\bar\alpha_t}\,\nabla_{x_t}\log p_t(x_t).$$</div>
+  <div class="highlight">Optimal $x_0$-predictor, $\varepsilon$-predictor, and score are <strong>three rescalings of the same function</strong>.</div>
+  <p>Pick the one that conditions the loss best at your noise level.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Channel View</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Forward as noise channel, reverse as decoding</p>
+</div>
+
+<div class="slide">
+  <h2>Each Step Is an Additive Gaussian Channel</h2><div class="divider"></div>
+  <div class="math-block">$$X_t \;=\; \sqrt{\alpha_t}\,X_{t-1} + \sqrt{\beta_t}\,\eta_t, \qquad \eta_t\sim\mathcal{N}(0,I).$$</div>
+  <p>Data-processing inequality:</p>
+  <div class="math-block">$$I(X_0;X_T) \;\le\; \cdots \;\le\; I(X_0;X_1) \;\le\; H(X_0).$$</div>
+  <p>As $\bar\alpha_T\to 0$, $I(X_0;X_T)\to 0$. Information is fully erased.</p>
+</div>
+
+<div class="slide">
+  <h2>Reverse = Approximate Decoding</h2><div class="divider"></div>
+  <p>The optimal decoder for the step $X_{t-1}\to X_t$ is the true posterior $p(x_{t-1}\mid x_t)$.</p>
+  <p>The learned $p_\theta(x_{t-1}\mid x_t)$ is an approximation. Per-step KL gap accumulates over $T$ steps as ELBO slack.</p>
+  <div class="highlight">Diffusion training is <strong>universal channel decoding</strong> at $T$ noise levels with shared parameters.</div>
+</div>
+
+<div class="slide">
+  <h2>Successive Refinement Analogy</h2><div class="divider"></div>
+  <p>Rate–distortion successive refinement: nested codebooks describe a source at decreasing distortion.</p>
+  <p>Diffusion matches this structure layer by layer:</p>
+  <ul>
+    <li>$X_T$: coarsest description (pure noise).</li>
+    <li>$X_{T-1}, \ldots, X_1$: progressively finer.</li>
+    <li>$X_0$: finest reconstruction.</li>
+  </ul>
+  <p>Shared $\theta$ across $t$ amortizes one network across all refinement levels.</p>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Master identity:</strong> $x_t = \sqrt{\bar\alpha_t}x_0 + \sqrt{1-\bar\alpha_t}\varepsilon$.</li>
+    <li><strong>Three parameterizations:</strong> $x_0$, $\varepsilon$, score; same optimum.</li>
+    <li><strong>Tweedie:</strong> ties posterior mean to the score by an affine rescaling.</li>
+    <li><strong>$\varepsilon$-prediction:</strong> unit-variance target, well-conditioned, DDPM default.</li>
+    <li><strong>Channel view:</strong> forward = noisy channel; reverse = decoding; chain = successive refinement.</li>
+  </ul>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Module 2</div>
+  <p class="big-word-sub">Up next: mutual information estimation.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI Estimation 1 — Variational Bounds</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">MI Estimation · Lecture 1 of 2</div>
+  <h1>Variational Lower Bounds<br>on Mutual Information</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Barber&ndash;Agakov, Donsker&ndash;Varadhan, NWJ</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Setup</div>
+      <div class="toc-sub">MI as KL; samples-only; density-ratio framing</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Barber&ndash;Agakov</div>
+      <div class="toc-sub">Conditional model, reduces to MLE</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Donsker&ndash;Varadhan</div>
+      <div class="toc-sub">Dual KL representation, MINE</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">NWJ</div>
+      <div class="toc-sub">Linear surrogate, better variance</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Tradeoffs</div>
+      <div class="toc-sub">High-MI variance barrier</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Setup</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Density ratios from samples alone</p>
+</div>
+
+<div class="slide">
+  <h2>MI as a KL Divergence</h2><div class="divider"></div>
+  <div class="math-block">$$I(X;Y) \;=\; D_{\mathrm{KL}}\!\bigl(p_{X,Y}\,\Vert\,p_X p_Y\bigr) \;=\; \mathbb{E}\!\left[\log\dfrac{p(X,Y)}{p(X)p(Y)}\right].$$</div>
+  <p>Three uses across modern ML:</p>
+  <ul>
+    <li><strong>Representation learning:</strong> maximize $I(T;Y)$.</li>
+    <li><strong>Contrastive learning:</strong> maximize $I(T_1;T_2)$ across views.</li>
+    <li><strong>Information bottleneck:</strong> minimize $I(T;X)$ at fixed fidelity.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Samples-Only Setting</h2><div class="divider"></div>
+  <p>Given iid pairs $(x_i, y_i)\sim p_{X,Y}$. Shuffling indices gives pairs from $p_X p_Y$.</p>
+  <div class="math-block">$$P = p_{X,Y}\quad\text{(joint)},\qquad Q = p_X p_Y\quad\text{(product)}.$$</div>
+  <div class="highlight">Estimate $I(X;Y) = D_{\mathrm{KL}}(P\,\Vert\,Q)$ from samples of both — no density estimation.</div>
+</div>
+
+<div class="slide">
+  <h2>Density-Ratio Framing</h2><div class="divider"></div>
+  <p>Define</p>
+  <div class="math-block">$$r(x,y) \;=\; \dfrac{p(x,y)}{p(x)p(y)}, \qquad I(X;Y) \;=\; \mathbb{E}_{p_{X,Y}}[\log r(X,Y)].$$</div>
+  <p>If $r$ were known, MI is one expectation under $p_{X,Y}$. Strategy: train a critic $T_\theta\approx\log r$ by maximizing a variational lower bound.</p>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Barber&ndash;Agakov</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Variational lower bound via a conditional model $q(x\mid y)$</p>
+</div>
+
+<div class="slide">
+  <h2>BA Bound</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Barber &amp; Agakov, 2003).</h3>
+    <p>For any conditional density $q(x\mid y)$:</p>
+    <div class="math-block">$$I(X;Y) \;\ge\; H(X) + \mathbb{E}_{p(x,y)}[\log q(x\mid y)] \;=:\; I_{\mathrm{BA}}(q).$$</div>
+    <p>Tight when $q(x\mid y) = p(x\mid y)$.</p>
+  </div>
+  <div class="cite">Barber &amp; Agakov, "The IM Algorithm: A Variational Approach to Information Maximization", NeurIPS 2003.</div>
+</div>
+
+<div class="slide">
+  <h2>Proof — Add and Subtract $\log q$</h2><div class="divider"></div>
+  <p>$I(X;Y) = H(X) - H(X\mid Y)$ and $H(X\mid Y) = -\mathbb{E}\log p(x\mid y)$. Insert $\log q$:</p>
+  <div class="math-block">$$H(X\mid Y) \;=\; -\mathbb{E}\log q(x\mid y) - \mathbb{E}_{p(y)}D_{\mathrm{KL}}\!\bigl(p(\cdot\mid y)\,\Vert\,q(\cdot\mid y)\bigr).$$</div>
+  <p>Substitute back; KL non-negativity gives the bound. Gap is $\mathbb{E}_{p(y)}D_{\mathrm{KL}}(\cdot\Vert q)$, vanishing iff $q = p(\cdot\mid y)$.</p>
+</div>
+
+<div class="slide">
+  <h2>BA in Practice — Reduces to MLE</h2><div class="divider"></div>
+  <p>$H(X)$ is constant in $q$:</p>
+  <div class="math-block">$$\max_q I_{\mathrm{BA}}(q) \;=\; H(X) + \max_q\mathbb{E}_{p(x,y)}[\log q_\theta(x\mid y)].$$</div>
+  <div class="grid-2">
+    <div>
+      <h3>Train representations</h3>
+      <p>Maximize the conditional log-likelihood. No MI machinery needed.</p>
+    </div>
+    <div>
+      <h3>Report MI numbers</h3>
+      <p>Need $H(X)$ — typically unknown. BA is not a plug-in estimator.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Donsker&ndash;Varadhan</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Dual KL representation, basis of MINE</p>
+</div>
+
+<div class="slide">
+  <h2>DV Representation</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Donsker &amp; Varadhan, 1983).</h3>
+    <div class="math-block">$$D_{\mathrm{KL}}(P\,\Vert\,Q) \;=\; \sup_T\;\bigl\{\mathbb{E}_P[T] - \log\mathbb{E}_Q[e^T]\bigr\}.$$</div>
+    <p>Sup over measurable $T$ with finite expectations.</p>
+  </div>
+  <p>Apply with $P = p_{X,Y}$, $Q = p_X p_Y$ to get a lower bound on MI.</p>
+</div>
+
+<div class="slide">
+  <h2>DV Bound on MI</h2><div class="divider"></div>
+  <div class="math-block">$$I(X;Y) \;\ge\; \mathbb{E}_{P}[T] - \log\mathbb{E}_{Q}[e^T] \;=:\; I_{\mathrm{DV}}(T).$$</div>
+  <p>Tight at $T^\star(x,y) = \log r(x,y) + c$ for any constant $c$.</p>
+  <div class="highlight">Optimal critic <strong>is</strong> the log-density-ratio. Tightest possible bound when fully optimized.</div>
+</div>
+
+<div class="slide">
+  <h2>Proof — Tilt $Q$ by $e^T$</h2><div class="divider"></div>
+  <p>Define $G$ via $\frac{dG}{dQ} = \frac{e^T}{\mathbb{E}_Q[e^T]}$. Compute:</p>
+  <div class="math-block">$$D_{\mathrm{KL}}(P\,\Vert\,G) \;=\; D_{\mathrm{KL}}(P\,\Vert\,Q) - \mathbb{E}_P[T] + \log\mathbb{E}_Q[e^T] \;\ge\; 0.$$</div>
+  <p>Rearrange. Equality iff $P = G$, i.e. $T = \log(dP/dQ) + c$.</p>
+</div>
+
+<div class="slide">
+  <h2>MINE — Neural DV Estimator</h2><div class="divider"></div>
+  <p>Parameterize $T_\theta(x,y)$ by a neural network. Use minibatches:</p>
+  <ul>
+    <li><strong>Positives:</strong> $(x_i, y_i)\sim p_{X,Y}$.</li>
+    <li><strong>Negatives:</strong> shuffled pairs $(x_i, y_j)$, $j\ne i$.</li>
+  </ul>
+  <p>Gradient-ascend $I_{\mathrm{DV}}(T_\theta)$ on $\theta$.</p>
+  <div class="highlight"><strong>Catch:</strong> $\log\mathbb{E}_Q[e^T]$ is dominated by the largest $T$ value. Variance grows <strong>exponentially</strong> in MI.</div>
+  <div class="cite">Belghazi et al., "MINE: Mutual Information Neural Estimation", ICML 2018.</div>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>NWJ</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Replace the log-partition with a linear surrogate</p>
+</div>
+
+<div class="slide">
+  <h2>From DV to NWJ</h2><div class="divider"></div>
+  <p>For $u>0$: $\log u \le u - 1$. Apply with $u = \mathbb{E}_Q[e^T]$:</p>
+  <div class="math-block">$$\log\mathbb{E}_Q[e^T] \;\le\; \mathbb{E}_Q[e^T] - 1.$$</div>
+  <p>Substitute and reparameterize $T \to T+1$:</p>
+  <div class="card">
+    <h3>Theorem (Nguyen, Wainwright, Jordan, 2010).</h3>
+    <div class="math-block">$$I(X;Y) \;\ge\; \mathbb{E}_P[T] - \mathbb{E}_Q[e^{T-1}] \;=:\; I_{\mathrm{NWJ}}(T).$$</div>
+    <p>Tight at $T^\star = \log r + 1$.</p>
+  </div>
+  <div class="cite">Nguyen, Wainwright, Jordan, "Estimating Divergence Functionals and the Likelihood Ratio", IEEE Trans. IT 2010.</div>
+</div>
+
+<div class="slide">
+  <h2>NWJ vs. DV — Variance Trade</h2><div class="divider"></div>
+  <div class="grid-2">
+    <div>
+      <h3>DV</h3>
+      <p>Log-partition is volatile: one large $T$ dominates. Variance $\sim e^I/N$.</p>
+    </div>
+    <div>
+      <h3>NWJ</h3>
+      <p>Replaces $\log\mathbb{E}[e^T]$ with $\mathbb{E}[e^{T-1}]$. Stable, but generally <strong>looser</strong> at finite-batch optima.</p>
+    </div>
+  </div>
+  <div class="highlight">Same optimal critic, different finite-sample behavior.</div>
+</div>
+
+
+<!-- ════ PART 05 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">05</div>
+  <h1>Tradeoffs</h1>
+  <div class="divider"></div>
+  <p class="subtitle">High MI is fundamentally hard</p>
+</div>
+
+<div class="slide">
+  <h2>The High-MI Barrier</h2><div class="divider"></div>
+  <p>For strongly dependent pairs, $\log r$ has a long right tail. McAllester &amp; Stratos (2020):</p>
+  <div class="math-block">$$\operatorname{Var}\!\bigl[\widehat{\log\mathbb{E}_Q[e^T]}\bigr] \;\sim\; \dfrac{e^{I(X;Y)}}{N}.$$</div>
+  <p>To estimate $I = 10$ nats: need $N\sim e^{10}\approx 22{,}000$ samples for variance control alone.</p>
+  <div class="highlight">No sample-efficient estimator of high MI. Information-theoretic barrier, not a software bug.</div>
+</div>
+
+<div class="slide">
+  <h2>Three Bounds Side by Side</h2><div class="divider"></div>
+  <table>
+    <thead><tr><th>Bound</th><th>Optimum</th><th>Trade</th></tr></thead>
+    <tbody>
+      <tr><td>BA</td><td>$q = p(\cdot\mid y)$</td><td>Reduces to MLE; needs $H(X)$</td></tr>
+      <tr><td>DV</td><td>$T = \log r + c$</td><td>Tightest; variance $\sim e^I/N$</td></tr>
+      <tr><td>NWJ</td><td>$T = \log r + 1$</td><td>Stable; looser at fixed critic class</td></tr>
+    </tbody>
+  </table>
+  <p>All three share the same optimal critic; differ in finite-sample behavior.</p>
+</div>
+
+<div class="slide">
+  <h2>Choosing Your Bound</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Optimization only:</strong> BA. Reduces to MLE.</li>
+    <li><strong>Stable contrastive objective:</strong> InfoNCE (next lecture). Bounded by $\log K$.</li>
+    <li><strong>Tight numerical estimate</strong> at low/moderate MI: NWJ or DV with care.</li>
+    <li><strong>High MI ($I\gg 1$ nat):</strong> no estimator is reliable; report an interval.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Setup:</strong> samples from $P = p_{X,Y}$ and $Q = p_X p_Y$.</li>
+    <li><strong>BA:</strong> $I\ge H(X) + \mathbb{E}\log q(x\mid y)$ — MLE in disguise.</li>
+    <li><strong>DV:</strong> $I\ge \mathbb{E}_P[T] - \log\mathbb{E}_Q[e^T]$ — tight, MINE-class variance.</li>
+    <li><strong>NWJ:</strong> $I\ge \mathbb{E}_P[T] - \mathbb{E}_Q[e^{T-1}]$ — stable, slightly looser.</li>
+    <li><strong>Barrier:</strong> variance $\sim e^I/N$. Reliable only at low-to-moderate MI.</li>
+  </ul>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Lecture 1</div>
+  <p class="big-word-sub">Up next: InfoNCE and CLIP.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

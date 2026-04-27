@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lossy Compression 3 — Lattice Codes and QUIP#</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lossy Compression · Lecture 3 of 4</div>
+  <h1>Lattice Codes and QUIP#:<br>Structured Codebooks for LLMs</h1>
+  <div class="divider"></div>
+  <p class="subtitle">From the complexity wall of VQ to incoherence processing</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Why structure</div>
+      <div class="toc-sub">Unstructured VQ doesn't scale</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Lattice codes</div>
+      <div class="toc-sub">Voronoi regularity, packing gain, fast rounding</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Finite codebook</div>
+      <div class="toc-sub">Base lattice, scaling, shaping</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">QUIP#</div>
+      <div class="toc-sub">Incoherence processing for LLM weights</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Why Structure</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Shannon says go to high $d$. Cost says you can't.</p>
+</div>
+
+<div class="slide">
+  <h2>Standard VQ Recap</h2><div class="divider"></div>
+  <p>Group $d$ scalars into $\mathbf{w}\in\mathbb{R}^d$; map to nearest of $K=2^{dR}$ centroids.</p>
+  <div class="math-block">$$\mathcal{C} = \{\mathbf{c}_1,\ldots,\mathbf{c}_K\}\subset\mathbb{R}^d.$$</div>
+  <p>Larger $d$ buys rounder cells, lower distortion at fixed rate. So why not take $d$ very large?</p>
+</div>
+
+<div class="slide">
+  <h2>The Complexity Wall</h2><div class="divider"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Storage</h3>
+      <p>$d\cdot K = d\cdot 2^{dR}$ floats.</p>
+      <p>$d=8$, $R=4$: $\approx 34$ billion floats.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Search</h3>
+      <p>$\mathcal{O}(d\cdot 2^{dR})$ per nearest-neighbor query.</p>
+      <p>$10^{10}$ LLM weights $\times$ that: infeasible.</p>
+    </div>
+  </div>
+  <div class="highlight">Direct VQ is theoretically optimal but operationally dead at LLM scale.</div>
+</div>
+
+<div class="slide">
+  <h2>What We Need</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Implicit codebook:</strong> described by a rule, not a list.</li>
+    <li><strong>Fast nearest-neighbor:</strong> $\mathcal{O}(d)$ per query via algebra.</li>
+    <li><strong>Match to data:</strong> LLM weights are spiky; the lattice is rigid.</li>
+  </ul>
+  <div class="highlight">Lattice + rotation buys all three.</div>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Lattice Codes</h1>
+  <div class="divider"></div>
+  <p class="subtitle">A regular grid: uniform Voronoi cells, algebraic rounding</p>
+</div>
+
+<div class="slide">
+  <h2>Definition</h2><div class="divider"></div>
+  <p>Lattice $\Lambda\subset\mathbb{R}^d$: integer combinations of basis vectors.</p>
+  <div class="math-block">$$\Lambda \;=\; B\mathbb{Z}^d, \qquad B = [\,b_1\,|\,b_2\,|\,\cdots\,|\,b_d\,].$$</div>
+  <p>Voronoi region $\mathcal{V}(\lambda) = \{x : \|x-\lambda\|\le\|x-\lambda'\|\;\forall\lambda'\in\Lambda\}$.</p>
+  <div class="highlight">By translation symmetry, all Voronoi regions are <strong>congruent</strong> — one cell shape, repeated.</div>
+</div>
+
+<div class="slide">
+  <h2>Packing Gain — Regularity Buys Distortion</h2><div class="divider"></div>
+  <p>Normalized second moment of $\Lambda$:</p>
+  <div class="math-block">$$G(\Lambda) \;=\; \dfrac{1}{V^{1+2/d}}\int_\mathcal{V}\|x\|^2\,dx, \qquad V = |\mathcal{V}|.$$</div>
+  <ul>
+    <li>$\mathbb{Z}^d$: $G = 1/12$, any $d$. Worst of practical interest.</li>
+    <li>$E_8$: $G \approx 0.0717$ (8-D). 14% better than $\mathbb{Z}^8$.</li>
+    <li>Leech ($d=24$): $G \approx 0.0658$. Near the sphere bound.</li>
+    <li>Sphere bound: $G\to 1/(2\pi e)\approx 0.0585$.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Fast Rounding — $\mathcal{O}(d)$ via Algebra</h2><div class="divider"></div>
+  <p>$\mathbb{Z}^d$: nearest point is $\lfloor x + \tfrac12\rfloor$ coordinate-wise.</p>
+  <p>$D_d$ (even-sum integer lattice): round each coordinate; if sum odd, flip the worst-rounded coord.</p>
+  <p>$E_8$: combine $D_8$ rounding with a half-integer translate; pick the closer.</p>
+  <div class="highlight">Codebook size $2^{dR}$ in principle; search $\mathcal{O}(d)$ via the algebraic structure.</div>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Finite Codebook</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Base lattice $\Lambda$, scaling $\Delta$, spherical shaping</p>
+</div>
+
+<div class="slide">
+  <h2>Three Components</h2><div class="divider"></div>
+  <ol class="num">
+    <li><strong>Base lattice</strong> $\Lambda$ (e.g., $E_8$). Implicit: stored as basis $B$.</li>
+    <li><strong>Scaling</strong> $\Delta$: $\Lambda_\Delta = \Delta\cdot\Lambda$. Distortion variance $\propto\Delta^2 G(\Lambda)$.</li>
+    <li><strong>Shaping</strong>: intersect with a region $\mathcal{S}$. For Gaussian-like data, $\mathcal{S}$ is a $d$-ball.</li>
+  </ol>
+  <div class="math-block">$$\mathcal{C}_{\text{lattice}} \;=\; \Lambda_\Delta \cap \mathcal{S}(r).$$</div>
+</div>
+
+<div class="slide">
+  <h2>Why a Sphere — Match the Typical Set</h2><div class="divider"></div>
+  <p>For $X\sim\mathcal{N}(0, I_d)$, $\|X\|^2\sim\chi^2_d$ has mean $d$, std $\sqrt{2d}$:</p>
+  <div class="math-block">$$\Pr\bigl[\,|\|X\|^2 - d|\ge\varepsilon d\,\bigr] \;\le\; 2 e^{-\Omega(\varepsilon^2 d)}.$$</div>
+  <p>Mass concentrates on a thin shell of radius $\sqrt{d}$. A spherical $\mathcal{S}$ of radius $\sqrt{d} + O(1)$ contains nearly all of the probability with no wasted codepoints.</p>
+  <p>Cubic shaping $[-A,A]^d$ wastes a $(d^{-1/2})^d$ fraction near the typical sphere — catastrophic in high $d$.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>QUIP#: Lattice for LLM Weights</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Quantization with incoherence processing (Tseng et al. 2024)</p>
+</div>
+
+<div class="slide">
+  <h2>Source–Channel Mismatch</h2><div class="divider"></div>
+  <p>Lattice cells are uniform and isotropic. LLM weights are not: a few outliers dominate; the typical set is heavy-tailed and skewed.</p>
+  <p>Drop a spherical $\mathcal{C}_{\text{lattice}}$ on raw weights: most of the codebook is empty; most data sits far from the nearest lattice point.</p>
+  <div class="highlight">Two options: bend the lattice to the weights (kills fast rounding) or bend the weights to the lattice. QUIP# does the latter.</div>
+</div>
+
+<div class="slide">
+  <h2>Step 1: Hadamard Rotation</h2><div class="divider"></div>
+  <p>Pick orthogonal $\mathbf{U}\in\mathbb{R}^{m\times m}$, $\mathbf{V}\in\mathbb{R}^{n\times n}$ — random Hadamard transforms, $\mathcal{O}(d\log d)$.</p>
+  <div class="math-block">$$\widetilde{\mathbf{W}} \;=\; \mathbf{U}\,\mathbf{W}\,\mathbf{V}^\top.$$</div>
+  <p>Orthogonality preserves Frobenius norm, so $\widetilde{\mathbf{W}}$ encodes the same model.</p>
+  <p>Each entry of $\widetilde{\mathbf{W}}$ is a sum of many sign-flipped products $\Rightarrow$ CLT $\Rightarrow$ marginally Gaussian:</p>
+  <div class="math-block">$$\widetilde W_{ij}\;\approx\;\mathcal{N}\!\bigl(0,\tfrac{1}{mn}\|\mathbf{W}\|_F^2\bigr).$$</div>
+</div>
+
+<div class="slide">
+  <h2>Step 2: Lattice Quantize and Code</h2><div class="divider"></div>
+  <p>Block the entries of $\widetilde{\mathbf{W}}$ into $d$-vectors (e.g. $E_8$, $d=8$). Lattice round:</p>
+  <div class="math-block">$$\widehat{\mathbf{W}} \;=\; Q_{\Lambda_\Delta}(\widetilde{\mathbf{W}}).$$</div>
+  <p>Store integer indices $\mathbf{n}_b$ per block. Indices concentrate near the origin (spherically symmetric data) — entropy-code them.</p>
+  <p>At inference, undo the rotation: $\mathbf{W}_q = \mathbf{U}^\top\widehat{\mathbf{W}}\mathbf{V}$.</p>
+</div>
+
+<div class="slide">
+  <h2>The Two-Faced Effective Codebook</h2><div class="divider"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">To the data</h3>
+      <p>Pseudo-random scattering contoured to the LLM weight distribution. Behaves like the Shannon-optimal random Gaussian codebook.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">To the hardware</h3>
+      <p>Underneath, a rigid grid $\Lambda$. <strong>Zero codebook storage</strong>; <strong>$\mathcal{O}(d)$</strong> rounding per block.</p>
+    </div>
+  </div>
+  <div class="highlight">QUIP# harvests the rate&ndash;distortion benefits of Shannon's theory without paying its exponential cost.</div>
+  <div class="cite">Tseng et al., "QuIP#: Even Better LLM Quantization with Hadamard Incoherence and Lattice Codebooks", ICML 2024.</div>
+</div>
+
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Complexity wall:</strong> unstructured VQ needs $2^{dR}$ codewords. Dead at LLM scale.</li>
+    <li><strong>Lattices:</strong> congruent Voronoi cells, near-spherical for $E_8$, Leech; rounding $\mathcal{O}(d)$.</li>
+    <li><strong>Shaping:</strong> base lattice + scaling + spherical $\mathcal{S}$, all rule-based.</li>
+    <li><strong>QUIP#:</strong> Hadamard rotation Gaussianizes weights; lattice quantize the rotated tensor; entropy code indices.</li>
+    <li><strong>Effective codebook:</strong> pseudo-random in the original space, rigid in the rotated space.</li>
+  </ul>
+</div>
+
+<div class="slide end-slide">
+  <div class="big-word">End of Lecture 3</div>
+  <p class="big-word-sub">Up next: TURBOQUANT, online VQ via random rotations.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script defer src="../../reference/deck.js"></script>
+</body>
+</html>

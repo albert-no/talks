@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI Estimation 2 — InfoNCE and CLIP</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.mi2-simmat {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  width: 220px;
+  margin: 0 auto;
+}
+.mi2-simmat .cell {
+  aspect-ratio: 1;
+  background: var(--slate);
+  border-radius: 3px;
+}
+.mi2-simmat .cell.diag { background: var(--yonsei-blue); }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">MI Estimation · Lecture 2 of 2</div>
+  <h1>InfoNCE and CLIP:<br>Contrastive Learning</h1>
+  <div class="divider"></div>
+  <p class="subtitle">A scalable MI lower bound, applied at web scale</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">InfoNCE</div>
+      <div class="toc-sub">$K$-class softmax bounded by $\log K$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">CLIP architecture</div>
+      <div class="toc-sub">Two encoders, separable critic, symmetric loss</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Zero-shot classification</div>
+      <div class="toc-sub">Reusing the contrastive head</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Practice</div>
+      <div class="toc-sub">Bias, variance, batch size</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>InfoNCE</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Noise-contrastive bound on mutual information</p>
+</div>
+
+<div class="slide">
+  <h2>Setup — One Positive, $K-1$ Negatives</h2><div class="divider"></div>
+  <p>Sample $(x,y)\sim p_{X,Y}$ and $K-1$ negatives $\{y_k^-\}\stackrel{\mathrm{iid}}{\sim}p_Y$, independent of $x$.</p>
+  <p>Critic $f(x,y)$. Loss:</p>
+  <div class="math-block">$$\mathcal{L}_{\mathrm{InfoNCE}}(f) \;=\; -\mathbb{E}\log\dfrac{e^{f(x,y)}}{e^{f(x,y)} + \sum_{k=1}^{K-1}e^{f(x,y_k^-)}}.$$</div>
+  <div class="highlight">A $K$-class softmax cross-entropy: classify the true $y$ among $K$ candidates.</div>
+</div>
+
+<div class="slide">
+  <h2>InfoNCE Bound</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (van den Oord et al., 2018).</h3>
+    <p>For any critic $f$:</p>
+    <div class="math-block">$$I(X;Y) \;\ge\; \log K - \mathcal{L}_{\mathrm{InfoNCE}}(f).$$</div>
+    <p>Since $\mathcal{L}_{\mathrm{InfoNCE}}\ge 0$, the bound is $\le \log K$.</p>
+  </div>
+  <p>To estimate $I=10$ nats: need $K\ge e^{10}\approx 22{,}000$ negatives. CLIP uses $K=32{,}768$.</p>
+  <div class="cite">van den Oord, Li, Vinyals, "Representation Learning with Contrastive Predictive Coding", arXiv 2018.</div>
+</div>
+
+<div class="slide">
+  <h2>Proof Sketch</h2><div class="divider"></div>
+  <p>Optimal critic: $f^\star(x,y) = \log r(x,y) + c(x)$. Substitute:</p>
+  <div class="math-block">$$\mathcal{L}_{\mathrm{InfoNCE}}(f^\star) \;=\; -\mathbb{E}\log\dfrac{r(x,y)}{r(x,y) + \sum_{k=1}^{K-1}r(x,y_k^-)}.$$</div>
+  <p>Note $\mathbb{E}_{p(y_k^-)}[r(x,y_k^-)] = 1$. Apply Jensen on the convex $-\log$:</p>
+  <div class="math-block">$$\mathcal{L}_{\mathrm{InfoNCE}}(f^\star) \;\ge\; \log K - I(X;Y) + o(1).$$</div>
+  <p>Rearranging yields $I(X;Y) \ge \log K - \mathcal{L}_{\mathrm{InfoNCE}}(f^\star)$. The bound holds for any $f$ since $f^\star$ minimizes the loss.</p>
+</div>
+
+<div class="slide">
+  <h2>Optimal Critic = Log-Density-Ratio</h2><div class="divider"></div>
+  <p>The infimum is attained at any $f^\star$ with</p>
+  <div class="math-block">$$f^\star(x,y) \;=\; \log r(x,y) + c(x) \;=\; \log\dfrac{p(y\mid x)}{p(y)} + c(x).$$</div>
+  <ul>
+    <li>Same log-density-ratio as DV's optimal critic.</li>
+    <li>$\mathrm{softmax}(f^\star)$ approximates the conditional $p(y\mid x)$.</li>
+    <li>Bound is biased low by at least $\max(0, I-\log K)$ at high MI.</li>
+  </ul>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>CLIP Architecture</h1>
+  <div class="divider"></div>
+  <p class="subtitle">InfoNCE deployed at web scale</p>
+</div>
+
+<div class="slide">
+  <h2>Two Encoders, One Embedding Space</h2><div class="divider"></div>
+  <p>Trained jointly on 400M image&ndash;text pairs:</p>
+  <div class="diagram-flow">
+    <div class="diagram-box">Image $x$</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box">$g_\mu$</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box filled">$g_\mu(x)\in\mathbb{R}^d$</div>
+  </div>
+  <div class="diagram-flow">
+    <div class="diagram-box">Text $y$</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box">$h_\phi$</div>
+    <span class="diagram-arrow">→</span>
+    <div class="diagram-box filled">$h_\phi(y)\in\mathbb{R}^d$</div>
+  </div>
+  <div class="cite">Radford et al., "Learning Transferable Visual Models From Natural Language Supervision", ICML 2021.</div>
+</div>
+
+<div class="slide">
+  <h2>Separable Critic and Symmetric Loss</h2><div class="divider"></div>
+  <p>Cosine similarity, scaled by learned temperature $\tau$:</p>
+  <div class="math-block">$$f_{\mu,\phi}(x,y) \;=\; \tfrac{1}{\tau}\,g_\mu(x)^\top h_\phi(y),\qquad \|g_\mu(x)\| = \|h_\phi(y)\| = 1.$$</div>
+  <p>Minibatch of $N$ pairs. Similarity matrix $S_{ij} = f(x_i, y_j)$. Symmetric loss:</p>
+  <div class="math-block">$$\mathcal{L}_{\mathrm{CLIP}} \;=\; \tfrac{1}{2}\bigl(\mathcal{L}_{x\to y} + \mathcal{L}_{y\to x}\bigr).$$</div>
+  <p>Each direction is one InfoNCE pass over the batch.</p>
+</div>
+
+<div class="slide">
+  <h2>$N\times N$ Similarity Matrix</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p><strong>Diagonal:</strong> true pairs, should rank highest in their row and column.</p>
+      <p><strong>Off-diagonal:</strong> contrastive negatives — random shufflings within the batch.</p>
+      <p>$N$ row + $N$ column classifications, optimized simultaneously by one matrix multiply.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+      <div class="mi2-simmat">
+        <div class="cell diag"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell diag"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell"></div><div class="cell diag"></div><div class="cell"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell diag"></div><div class="cell"></div>
+        <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell diag"></div>
+      </div>
+      <p style="text-align:center;">image $i$ vs. text $j$</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Zero-Shot Classification</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Reusing the contrastive head, no task-specific training</p>
+</div>
+
+<div class="slide">
+  <h2>CLIP as a Classifier</h2><div class="divider"></div>
+  <p>$K$-way classification with labels $\{c_1,\ldots,c_K\}$:</p>
+  <ol class="num">
+    <li>Build prompts: $y_k = $ "A photo of a $\{c_k\}$.".</li>
+    <li>Embed prompts: $h_k = h_\phi(y_k)$.</li>
+    <li>Embed test image: $g = g_\mu(x)$.</li>
+    <li>Predict $\hat c = \arg\max_k\; g^\top h_k$.</li>
+  </ol>
+  <p>No retraining. Classifier built from text alone.</p>
+</div>
+
+<div class="slide">
+  <h2>Why It Works — InfoNCE Approximates MAP</h2><div class="divider"></div>
+  <p>InfoNCE training drives $g^\top h \approx \log r(x,y) + c(x)$. For a class label:</p>
+  <div class="math-block">$$g_\mu(x)^\top h_\phi(y_k) \;\approx\; \log\dfrac{p(y_k\mid x)}{p(y_k)} + \text{const}.$$</div>
+  <p>$\arg\max_k$ approximates the MAP class, modulo the marginal $p(y_k)$.</p>
+  <div class="highlight">Near-optimal Bayes classifier when label priors are roughly uniform across prompts.</div>
+</div>
+
+<div class="slide">
+  <h2>Prompt Engineering Matters</h2><div class="divider"></div>
+  <table>
+    <thead><tr><th>Prompt style</th><th>ImageNet top-1</th></tr></thead>
+    <tbody>
+      <tr><td>Single word ("dog")</td><td>~60%</td></tr>
+      <tr><td>"A photo of a {label}."</td><td>~68%</td></tr>
+      <tr><td>Ensemble of 80 templates</td><td>~76%</td></tr>
+    </tbody>
+  </table>
+  <p>Comparison: ResNet-50 supervised on ImageNet $\approx$ 76% top-1.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Practice</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Bias, variance, batch size</p>
+</div>
+
+<div class="slide">
+  <h2>Four Bounds Side by Side</h2><div class="divider"></div>
+  <table>
+    <thead><tr><th>Bound</th><th>Trade</th></tr></thead>
+    <tbody>
+      <tr><td>BA</td><td>Tight if $q$ is good; needs $H(X)$ for MI numbers</td></tr>
+      <tr><td>DV</td><td>Tight; variance $\sim e^I/N$ (explodes at high MI)</td></tr>
+      <tr><td>NWJ</td><td>Looser than DV; variance polynomial in $I$</td></tr>
+      <tr><td><strong>InfoNCE</strong></td><td>Ceiling $\log K$; very stable variance</td></tr>
+    </tbody>
+  </table>
+  <p>InfoNCE wins on training stability; DV and NWJ on tight numerical estimation.</p>
+</div>
+
+<div class="slide">
+  <h2>Why Batch Size Matters</h2><div class="divider"></div>
+  <p>Bound caps at $\log K$. To recover $I$ nats, need $K\ge e^I$.</p>
+  <ul>
+    <li><strong>SimCLR:</strong> $K\sim 4{,}096$, accelerator memory.</li>
+    <li><strong>MoCo:</strong> queue of $K\sim 65{,}000$ past negatives, decoupled from batch.</li>
+    <li><strong>CLIP:</strong> $K = 32{,}768$ at full scale.</li>
+  </ul>
+  <div class="highlight">Tightness gain saturates once $\log K\gg I$. Compute cost grows $\mathcal{O}(K)$.</div>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>InfoNCE:</strong> $K$-way softmax. Bound $I\ge \log K - \mathcal{L}$.</li>
+    <li><strong>Optimal critic:</strong> $f^\star = \log r + c$, same as DV.</li>
+    <li><strong>$\log K$ ceiling:</strong> biased low at high MI; variance very stable.</li>
+    <li><strong>CLIP:</strong> separable critic, symmetric loss, $N\times N$ similarity matrix.</li>
+    <li><strong>Zero-shot:</strong> text encoder defines classifier; matches supervised ResNet-50.</li>
+    <li><strong>Practice:</strong> InfoNCE for training; NWJ for tight estimation; BA for likelihoods.</li>
+  </ul>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">End of Module</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lossy Compression 2 — Gaussian and Laplacian Sources</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lossy Compression · Lecture 2 of 4</div>
+  <h1>Gaussian, Laplacian,<br>and the Shannon Lower Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Closed-form $R(D)$, sparsity, neural-network pruning</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Gaussian $R(D)$</div>
+      <div class="toc-sub">$\tfrac12\log(\sigma^2/D)$ both ways</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Shannon lower bound</div>
+      <div class="toc-sub">Gaussian is the worst case</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Laplacian $R(D)$</div>
+      <div class="toc-sub">Atom at zero in the optimal reproduction</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Pruning</div>
+      <div class="toc-sub">Why optimal NN compression is sparse</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Extremes and CROM</div>
+      <div class="toc-sub">Rateless lossy compression by indices of extremes</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Gaussian $R(D)$</h1>
+  <div class="divider"></div>
+  <p class="subtitle">$\tfrac12\log(\sigma^2/D)$, achievability and converse</p>
+</div>
+
+<div class="slide">
+  <h2>Statement</h2><div class="divider"></div>
+  <p>$X\sim\mathcal{N}(0,\sigma^2)$, squared error.</p>
+  <div class="math-block">$$R(D) \;=\; \begin{cases}\tfrac12\log\dfrac{\sigma^2}{D}, & 0<D\le\sigma^2,\\[2mm] 0, & D\ge\sigma^2.\end{cases}$$</div>
+  <p>Below the variance: bits per coordinate scale logarithmically with the SNR $\sigma^2/D$.</p>
+</div>
+
+<div class="slide">
+  <h2>Achievability — Backward Gaussian Channel</h2><div class="divider"></div>
+  <p>For $0<D<\sigma^2$, take independent</p>
+  <div class="math-block">$$\widehat X\sim\mathcal{N}(0,\sigma^2-D),\qquad Z\sim\mathcal{N}(0,D),\qquad X = \widehat X + Z.$$</div>
+  <p>Marginal: $X\sim\mathcal{N}(0,\sigma^2)$. Distortion: $\mathbb{E}[(X-\widehat X)^2] = D$.</p>
+  <p>Mutual information ($Z\perp\widehat X$, so $h(X\mid\widehat X) = h(Z)$):</p>
+  <div class="math-block">$$I(X;\widehat X) \;=\; h(X) - h(Z) \;=\; \tfrac12\log\dfrac{\sigma^2}{D}.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Forward Form — Linear Shrinkage</h2><div class="divider"></div>
+  <p>Same joint $P_{X,\widehat X}$, conditioned on $X$:</p>
+  <div class="math-block">$$\widehat X\mid X = x \;\sim\; \mathcal{N}\!\left(\dfrac{\sigma^2 - D}{\sigma^2}\,x,\;\dfrac{D(\sigma^2 - D)}{\sigma^2}\right).$$</div>
+  <p>Optimal reconstruction is a <strong>shrunken</strong> version of the source. A lossy description cannot reproduce all of the source energy.</p>
+</div>
+
+<div class="slide">
+  <h2>Converse — Gaussian Maximizes Entropy</h2><div class="divider"></div>
+  <p>Let $E^n = X^n - \widehat X^n$. Standard chain:</p>
+  <div class="math-block">$$nR \;\ge\; I(X^n;\widehat X^n) \;=\; h(X^n) - h(X^n\mid\widehat X^n) \;\ge\; h(X^n) - h(E^n).$$</div>
+  <p>Among $\mathbb{R}^n$ vectors with $\mathbb{E}\|E^n\|^2\le nD$, the isotropic Gaussian $\mathcal{N}(0,DI)$ maximizes $h$:</p>
+  <div class="math-block">$$h(E^n) \le \tfrac{n}{2}\log(2\pi e D), \quad h(X^n) = \tfrac{n}{2}\log(2\pi e\sigma^2) \;\Longrightarrow\; R \ge \tfrac12\log\dfrac{\sigma^2}{D}.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Geometric Picture</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Typical $X^n$ sits on a shell of radius $\sqrt{n\sigma^2}$. Distortion ball of radius $\sqrt{nD}$.</p>
+      <div class="math-block">$$\dfrac{\text{shell volume}}{\text{ball volume}} \;\approx\; \!\left(\dfrac{\sigma^2}{D}\right)^{n/2}.$$</div>
+      <p>Log per coordinate: $\tfrac12\log(\sigma^2/D)$. Matches Shannon.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 280" width="100%" style="background:var(--light);border-radius:8px;">
+        <circle cx="160" cy="140" r="110" stroke="#003876" stroke-width="2.5" fill="none"/>
+        <text x="240" y="60" font-size="13" fill="#003876">radius √(nσ²)</text>
+        <g fill="#003876" fill-opacity="0.25" stroke="#003876">
+          <circle cx="160" cy="30" r="18"/>
+          <circle cx="245" cy="80" r="18"/>
+          <circle cx="265" cy="170" r="18"/>
+          <circle cx="200" cy="240" r="18"/>
+          <circle cx="120" cy="245" r="18"/>
+          <circle cx="58" cy="200" r="18"/>
+          <circle cx="50" cy="105" r="18"/>
+          <circle cx="105" cy="40" r="18"/>
+        </g>
+        <text x="20" y="270" font-size="13" fill="#003876">balls of radius √(nD)</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Shannon Lower Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Gaussian is the hardest source at fixed variance</p>
+</div>
+
+<div class="slide">
+  <h2>Statement (Squared Error)</h2><div class="divider"></div>
+  <p>For real $X$ with differential entropy $h(X)$:</p>
+  <div class="math-block">$$R_X(D) \;\ge\; h(X) - \tfrac{1}{2}\log(2\pi e D).$$</div>
+  <p>Vector $X\in\mathbb{R}^d$ at per-coordinate distortion $D$:</p>
+  <div class="math-block">$$R_X(D) \;\ge\; h(X) - \tfrac{d}{2}\log(2\pi e D).$$</div>
+  <p>Same flavor as the Gaussian converse, applied to <em>any</em> source.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof — Maximize Entropy of the Error</h2><div class="divider"></div>
+  <p>Let $E = X - \widehat X$ with $\mathbb{E}|E|^2\le D$:</p>
+  <div class="math-block">$$I(X;\widehat X) \;=\; h(X) - h(E\mid\widehat X) \;\ge\; h(X) - h(E).$$</div>
+  <p>Gaussian maximizes entropy at fixed variance: $h(E)\le\tfrac12\log(2\pi e D)$. Substituting gives the bound.</p>
+  <p>Vector case via AM&ndash;GM on covariance eigenvalues.</p>
+</div>
+
+<div class="slide">
+  <h2>Gaussian Hits the Bound — Hardest Source</h2><div class="divider"></div>
+  <p>For $X\sim\mathcal{N}(0,\sigma^2)$: $h(X) = \tfrac12\log(2\pi e\sigma^2)$, so SLB gives $\tfrac12\log(\sigma^2/D)$ — exactly $R(D)$.</p>
+  <div class="highlight">Gaussian has the largest entropy at fixed variance. Non-Gaussian sources have <strong>structure</strong> and compress at lower rate.</div>
+  <p>Practical consequence: a code designed for Gaussians is a universal MSE compressor for variance-bounded sources.</p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Laplacian $R(D)$</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Atom at zero in the optimal reproduction</p>
+</div>
+
+<div class="slide">
+  <h2>Setup and Statement</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Lap}(\lambda)$, density $f_X(x)=\tfrac\lambda 2 e^{-\lambda|x|}$, $\mathbb{E}|X|=1/\lambda$. Distortion $|x-\hat x|$.</p>
+  <div class="math-block">$$R(D) \;=\; \begin{cases}-\log(\lambda D), & 0<D\le 1/\lambda,\\ 0, & D\ge 1/\lambda.\end{cases}$$</div>
+  <p>Central for neural-network pruning: pretrained NN weights look approximately Laplacian.</p>
+</div>
+
+<div class="slide">
+  <h2>Converse — Auxiliary Density Trick</h2><div class="divider"></div>
+  <p>Define $q_{X\mid\widehat X}(x\mid\hat x) = \tfrac{1}{2D}\exp(-|x-\hat x|/D)$ (Laplacian centered at $\hat x$).</p>
+  <p>Since $D_{\mathrm{KL}}(p_{X\mid\widehat X}\,\Vert\,q_{X\mid\widehat X})\ge 0$:</p>
+  <div class="math-block">$$I(X;\widehat X) \;\ge\; \mathbb{E}\log\dfrac{q_{X\mid\widehat X}(X\mid\widehat X)}{p_X(X)} \;=\; -\log(\lambda D) - \tfrac{\mathbb{E}|X-\widehat X|}{D} + \lambda\,\mathbb{E}|X|.$$</div>
+  <p>$\mathbb{E}|X|=1/\lambda$ and $\mathbb{E}|X-\widehat X|\le D$: last two terms sum to $\ge 0$. Hence $R(D)\ge -\log(\lambda D)$.</p>
+</div>
+
+<div class="slide">
+  <h2>Achievability — Sparse Mixture</h2><div class="divider"></div>
+  <p>Let $X = V + N$ with independent</p>
+  <div class="math-block">$$N\sim\mathrm{Lap}(1/D), \qquad V \;=\; \lambda^2 D^2\,\delta_0 \;+\; (1-\lambda^2 D^2)\,\mathrm{Lap}(\lambda).$$</div>
+  <p>$V$ is a <strong>mixture</strong>: probability $\lambda^2 D^2$ of being exactly zero. Set $\widehat X = V$:</p>
+  <div class="math-block">$$\mathbb{E}|X-\widehat X| \;=\; \mathbb{E}|N| \;=\; D.$$</div>
+  <div class="highlight">At the rate&ndash;distortion limit, a positive fraction of reconstructed coordinates are <strong>exactly zero</strong>.</div>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Pruning From Rate&ndash;Distortion</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Why optimal NN compression is naturally sparse</p>
+</div>
+
+<div class="slide">
+  <h2>Network and Compressed Weights</h2><div class="divider"></div>
+  <p>$d$-layer net with 1-Lipschitz $\sigma$, $\sigma(0)=0$:</p>
+  <div class="math-block">$$f(x;w) \;=\; W^{(d)}\sigma\!\bigl(W^{(d-1)}\sigma(\cdots\sigma(W^{(1)}x))\bigr).$$</div>
+  <p>Compress $W^{(\ell)}\to\widehat W^{(\ell)}$ with $\|\widehat W^{(\ell)}\|_1\le\|W^{(\ell)}\|_1$.</p>
+  <p>Question: how does <strong>weight distortion</strong> bound <strong>output distortion</strong>?</p>
+</div>
+
+<div class="slide">
+  <h2>Weight Distortion Bounds Output Distortion</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (layer-wise telescoping).</h3>
+    <div class="math-block">$$\sup_{\|x\|_1\le 1}\!\|f(x;w)-f(x;\widehat w)\|_1 \;\le\; \!\Bigl(\prod_k\|W^{(k)}\|_1\Bigr)\sum_{\ell}\dfrac{\|W^{(\ell)}-\widehat W^{(\ell)}\|_1}{\|W^{(\ell)}\|_1}.$$</div>
+  </div>
+  <p>Per layer, this reduces to a normalized $\ell_1$ distortion: the Laplacian $R(D)$ problem from Part 03.</p>
+</div>
+
+<div class="slide">
+  <h2>Pruning Is Optimal</h2><div class="divider"></div>
+  <p>Empirically, normalized pretrained weights look approximately Laplacian. Combine:</p>
+  <ul>
+    <li>Output distortion $\le$ normalized $\ell_1$ weight distortion.</li>
+    <li>Weights $\approx$ Laplacian.</li>
+    <li>Optimal Laplacian reproduction has a Dirac atom at zero.</li>
+  </ul>
+  <div class="highlight">Pruning is not a heuristic: it is part of the rate&ndash;distortion <strong>optimum</strong> for Laplacian-like weights.</div>
+</div>
+
+
+<!-- ════ PART 05 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">05</div>
+  <h1>Extreme-Value Theory and CROM</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Rateless lossy compression by communicating extremes</p>
+</div>
+
+<div class="slide">
+  <h2>Extremes Are Almost Predictable</h2><div class="divider"></div>
+  <p>$Y_1,\ldots,Y_n\stackrel{\mathrm{iid}}{\sim}\mathrm{Exp}(\lambda)$. Then $M_n = \max_i Y_i = \tfrac{\log n}{\lambda} + O_p(1)$ (Gumbel limit).</p>
+  <p>Gaussian rule of thumb: $\max_i X_i \approx \sigma\sqrt{2\log n} + O_p(1)$.</p>
+  <div class="highlight">The <strong>value</strong> of an extreme is predictable from $n$ alone. Only its <strong>index</strong> needs to be sent.</div>
+</div>
+
+<div class="slide">
+  <h2>CROM: Send the Index, Reconstruct the Spike</h2><div class="divider"></div>
+  <p>$X^n\sim\mathcal{N}(0,I_n)$. Encoder sends $m=\arg\max_i X_i$. Rate $\log n / n \to 0$.</p>
+  <p>Decoder reconstructs:</p>
+  <div class="math-block">$$\widehat X_i \;=\; \begin{cases}\alpha_n, & i = m,\\ -\alpha_n/(n-1), & i\ne m,\end{cases}\qquad \alpha_n\approx\sqrt{2\log n}.$$</div>
+  <p>Distortion drop matches the Gaussian R(D) slope at the origin: $\;D_G'(0) = -2\sigma^2$ vs CROM $-2$.</p>
+</div>
+
+<div class="slide">
+  <h2>Iterate with Random Rotations</h2><div class="divider"></div>
+  <p>After one sparse subtraction, residual is no longer i.i.d. Gaussian. Multiply by a random orthogonal $A_{t+1}$ to <strong>Gaussianize</strong>; repeat.</p>
+  <ol class="num">
+    <li>Find indices $m^{(t)}$ of the $k_n$ largest residual coordinates.</li>
+    <li>Encode the index set ($\log\binom{n}{k_n}$ nats).</li>
+    <li>Subtract sparse $\alpha_t U^{(t)}$ on $m^{(t)}$.</li>
+    <li>Rotate: $X^{(t+1)} = A_{t+1}\bigl(X^{(t)} - \alpha_t U^{(t)}\bigr)$.</li>
+  </ol>
+  <div class="highlight"><strong>Rateless:</strong> decoder can stop after any prefix; every prefix lies near $D_G(R)=\sigma^2 e^{-2R}$.</div>
+</div>
+
+
+<!-- RECAP -->
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Gaussian:</strong> $R(D) = \tfrac12\log(\sigma^2/D)$ via backward channel and entropy converse.</li>
+    <li><strong>SLB:</strong> $R_X(D)\ge h(X) - \tfrac{d}{2}\log(2\pi e D)$ for any source.</li>
+    <li><strong>Gaussian = worst case</strong> at fixed variance.</li>
+    <li><strong>Laplacian:</strong> $R(D) = -\log(\lambda D)$. Optimal reproduction has an atom at zero.</li>
+    <li><strong>Pruning:</strong> Laplacian-like weights + $\ell_1$ distortion $\Rightarrow$ sparsity is information-theoretically optimal.</li>
+    <li><strong>CROM:</strong> sparse-extreme communication after rotation matches the Gaussian D&ndash;R curve.</li>
+  </ul>
+</div>
+
+<div class="slide end-slide">
+  <div class="big-word">End of Lecture 2</div>
+  <p class="big-word-sub">Up next: lattice codes and QUIP#.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script defer src="../../reference/deck.js"></script>
+</body>
+</html>

@@ -72,8 +72,9 @@ def lint_one(path: Path, defined_classes: set[str]) -> int:
     warnings: list[str] = []
 
     is_standalone = path.name.endswith(".standalone.html")
+    is_note = path.name.endswith("-note.html")
 
-    if not is_standalone:
+    if not is_standalone and not is_note:
         # Expect canonical <link>/<script> refs.
         required = [
             (r'href="[^"]*colors_and_type\.css"',  "colors_and_type.css link"),
@@ -118,13 +119,16 @@ def lint_one(path: Path, defined_classes: set[str]) -> int:
 
 def discover() -> list[Path]:
     paths: list[Path] = [ROOT / "reference" / "deck-skeleton.html"]
+    skip_dirs = {"reference", "scripts", "design", "notes", "figs"}
     for sub in sorted(ROOT.iterdir()):
         if not sub.is_dir() or sub.name.startswith((".", "_")):
             continue
-        if sub.name in {"reference", "scripts", "design"}:
+        if sub.name in skip_dirs:
             continue
-        for html in sorted(sub.glob("*.html")):
+        for html in sorted(sub.rglob("*.html")):
             if html.name.endswith(".standalone.html"):
+                continue
+            if any(part in skip_dirs for part in html.relative_to(sub).parts[:-1]):
                 continue
             paths.append(html)
     return [p for p in paths if p.exists()]

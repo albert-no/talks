@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lossy Compression 4 — TURBOQUANT</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lossy Compression · Lecture 4 of 4</div>
+  <h1>TURBOQUANT:<br>Online VQ via Random Rotations</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Rotate, scalar-quantize, sketch the residual</p>
+  <p style="font-weight:500;">Albert No &nbsp;·&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory · 2026</p>
+  <div class="cite">Daliri, Musco, Sinha, Sherman, "TurboQuant: Online Vector Quantization with Optimal Distortion", arXiv:2504.19874 (2025).</div>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Setup and rotation idea</div>
+      <div class="toc-sub">Sphere coordinate density, two distortions</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">MSE TURBOQUANT</div>
+      <div class="toc-sub">Lloyd&ndash;Max on $f_d$, $4^{-b}$ exponent</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Lower bound</div>
+      <div class="toc-sub">Sphere SLB and Yao's minimax</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Inner-product bias</div>
+      <div class="toc-sub">MSE quantizer shrinks projections by $2/\pi$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">05</div><div class="toc-rule"></div>
+      <div><div class="toc-label">QJL and IP TURBOQUANT</div>
+      <div class="toc-sub">One-bit unbiased sketch, two-stage estimator</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">06</div><div class="toc-rule"></div>
+      <div><div class="toc-label">KV cache</div>
+      <div class="toc-sub">Online, data-oblivious quantization</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Setup and the Rotation Idea</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Rotation alone produces a known coordinate distribution</p>
+</div>
+
+<div class="slide">
+  <h2>Why Scalar Quantization Fails</h2><div class="divider"></div>
+  <p>Scalar quantization rounds each coordinate independently — assumes uniform spread.</p>
+  <p>In practice (KV caches, embeddings), a few outlier coordinates dominate energy. Low-bit scalar quantization wastes resolution on outliers.</p>
+  <div class="highlight">Random rotation spreads energy: every coordinate gets the same predictable distribution, with typical magnitude $\sim 1/\sqrt{d}$.</div>
+</div>
+
+<div class="slide">
+  <h2>Random Rotation Creates a Known Law</h2><div class="divider"></div>
+  <p>Let $\Pi\in\mathbb{R}^{d\times d}$ be Haar-uniform orthogonal. For any fixed $x\in S^{d-1}$:</p>
+  <div class="math-block">$$Y \;=\; \Pi x \;\sim\; \mathrm{Unif}(S^{d-1}).$$</div>
+  <div class="highlight">Output law depends only on $\|x\| = 1$, not on the direction. The algorithm doesn't need to know the input distribution.</div>
+</div>
+
+<div class="slide">
+  <h2>Lemma — Coordinate of a Sphere Point</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma 1.</h3>
+    <p>$Y\sim\mathrm{Unif}(S^{d-1})$. Each coordinate $Y_j$ has density</p>
+    <div class="math-block">$$f_d(t) \;=\; \dfrac{\Gamma(d/2)}{\sqrt\pi\,\Gamma((d-1)/2)}\,(1-t^2)^{(d-3)/2}, \quad -1\le t\le 1.$$</div>
+    <p>For large $d$: $\;\sqrt{d}\,Y_j\Rightarrow\mathcal{N}(0,1)$.</p>
+  </div>
+  <p>Slice argument: surface area at $Y_1=t$ is $\propto(1-t^2)^{(d-3)/2}$. With $t = u/\sqrt{d}$, $(1-t^2)^{(d-3)/2}\approx e^{-u^2/2}$.</p>
+</div>
+
+<div class="slide">
+  <h2>Two Distortions</h2><div class="divider"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color:var(--blue-light);">MSE distortion</h3>
+      <div class="math-block">$$D_{\mathrm{mse}} = \mathbb{E}\|x - \widetilde x\|_2^2.$$</div>
+      <p>Reconstruction quality. Target $\sim 4^{-b}$.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-light);">Inner-product distortion</h3>
+      <div class="math-block">$$D_{\mathrm{prod}} = \mathbb{E}|\langle y,x\rangle - \langle y,\widetilde x\rangle|^2.$$</div>
+      <p>Attention, NN search. Want <strong>unbiased</strong>.</p>
+    </div>
+  </div>
+  <p>The MSE-optimal quantizer is <strong>biased</strong> for inner products — we'll fix it in Part 5.</p>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>MSE TURBOQUANT</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Algorithm, anchor, theorem via Panter&ndash;Dite</p>
+</div>
+
+<div class="slide">
+  <h2>Algorithm: TURBOQUANT$_{\mathrm{mse}}$</h2><div class="divider"></div>
+  <p>Public state: rotation $\Pi$, scalar codebook $\{c_1,\ldots,c_K\}$ for density $f_d$, $K=2^b$.</p>
+<div class="code-block"><span class="kw">encode</span>(x):
+    y = Π·x
+    <span class="kw">for</span> j = 1..d:
+        idx[j] = argmin<span style="font-size:0.85em">i</span> |y[j] − c<span style="font-size:0.85em">i</span>|
+    <span class="kw">return</span> idx       <span class="cm"># d·b bits</span>
+
+<span class="kw">decode</span>(idx):
+    <span class="kw">for</span> j = 1..d:
+        ỹ[j] = c[idx[j]]
+    <span class="kw">return</span> Π<span style="font-size:0.85em">T</span>·ỹ</div>
+  <p>Codebook offline (Lloyd&ndash;Max on $f_d$). No data-dependent training.</p>
+</div>
+
+<div class="slide">
+  <h2>One-Bit Anchor: $1 - 2/\pi$</h2><div class="divider"></div>
+  <p>For $Y\sim\mathcal{N}(0,1/d)$ and sign quantizer $\widehat Y = a\,\operatorname{sign}(Y)$:</p>
+  <div class="math-block">$$\mathbb{E}[(Y - a\operatorname{sign}Y)^2] = \mathbb{E}Y^2 - 2a\,\mathbb{E}|Y| + a^2, \qquad a^\star = \mathbb{E}|Y| = \sqrt{\tfrac{2}{\pi d}}.$$</div>
+  <p>At the optimum: $\mathbb{E}[(Y-a^\star\operatorname{sign}Y)^2] = \tfrac{1}{d}(1 - \tfrac{2}{\pi})$.</p>
+  <div class="math-block">$$\text{total MSE at } b=1 \;=\; 1 - \tfrac{2}{\pi} \;\approx\; 0.363.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Theorem and Proof Outline</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (TURBOQUANT$_{\mathrm{mse}}$).</h3>
+    <p>Every unit $x\in S^{d-1}$:</p>
+    <div class="math-block">$$\mathbb{E}\|x - \widetilde x\|^2 \;\le\; \tfrac{\sqrt 3\,\pi}{2}\cdot 4^{-b} \;\approx\; 2.72\cdot 4^{-b}.$$</div>
+  </div>
+  <p><strong>Step 1.</strong> Orthogonal invariance: $\|x-\widetilde x\|^2 = \|Y-\widetilde Y\|^2 = d\cdot C(f_d, b)$, sum of $d$ scalar costs.</p>
+  <p><strong>Step 2.</strong> Panter&ndash;Dite high-resolution bound:</p>
+  <div class="math-block">$$C(f, b) \;\le\; \tfrac{1}{12}\Bigl(\!\int f^{1/3}\Bigr)^{\!3}\,4^{-b}.$$</div>
+  <p>Evaluate the integral on $f_d$: $\bigl(\!\int f_d^{1/3}\bigr)^3 = 6\sqrt 3\,\pi/d$, giving the constant $\sqrt 3\pi/2$.</p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Lower Bound</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Sphere SLB + Yao $\;\Rightarrow\;$ exponent $4^{-b}$ unbeatable</p>
+</div>
+
+<div class="slide">
+  <h2>Sphere SLB</h2><div class="divider"></div>
+  <p>Vector SLB at distortion $D$ and bit budget $B$:</p>
+  <div class="math-block">$$D \;\ge\; \dfrac{d}{2\pi e}\cdot 2^{2(h(X) - B)/d}.$$</div>
+  <p>For $X\sim\mathrm{Unif}(S^{d-1})$, $h(X) = \log_2 A_d$ with surface area $A_d$. Stirling gives $A_d^{2/d}\to 2\pi e/d$, so:</p>
+  <div class="math-block">$$D(B) \;\ge\; 2^{-2B/d}.$$</div>
+  <p>For $B = bd$: $\;D \ge 4^{-b}$ on average over $\mathrm{Unif}(S^{d-1})$.</p>
+</div>
+
+<div class="slide">
+  <h2>Yao + Constant Gap</h2><div class="divider"></div>
+  <p>Yao: worst-input expected cost of any randomized algorithm $\ge$ best deterministic algorithm's expected cost on the worst input distribution.</p>
+  <p>Apply with $\mathrm{Unif}(S^{d-1})$: every randomized $bd$-bit quantizer has some input $x$ with $\mathbb{E}\|x-\widehat x\|^2\ge 4^{-b}$.</p>
+  <div class="math-block">$$4^{-b} \;\le\; D_{\mathrm{mse}}^\star(b) \;\le\; D_{\mathrm{mse}}(Q_{\mathrm{mse}}) \;\le\; \tfrac{\sqrt 3\,\pi}{2}\cdot 4^{-b}.$$</div>
+  <div class="highlight">Constant gap. <strong>Exponent $4^{-b}$ is optimal</strong>.</div>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Inner-Product Bias</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Good MSE doesn't imply good linear-functional preservation</p>
+</div>
+
+<div class="slide">
+  <h2>One-Bit MSE Shrinks Projections</h2><div class="divider"></div>
+  <p>Sign quantizer $\widetilde Y_j = a\,\operatorname{sign}(Y_j)$, $a=\sqrt{2/(\pi d)}$. By rotational symmetry $\mathbb{E}[\widetilde x\mid x]=\alpha x$.</p>
+  <div class="math-block">$$\alpha = \mathbb{E}\langle x,\widetilde x\rangle = d\,a\,\mathbb{E}|Y_1| = d\cdot\dfrac{2}{\pi d} = \dfrac{2}{\pi}.$$</div>
+  <p>Therefore $\mathbb{E}\langle y,\widetilde x\rangle = \tfrac{2}{\pi}\langle y,x\rangle$ — biased low.</p>
+</div>
+
+<div class="slide">
+  <h2>Geometric Reason — Shrunken Norm</h2><div class="divider"></div>
+  <p>One-bit reconstruction has constant magnitude in every rotated coordinate. Squared norm:</p>
+  <div class="math-block">$$\|\widetilde Y\|^2 \;=\; d\,a^2 \;=\; \dfrac{2}{\pi}.$$</div>
+  <p>So $\|\widetilde x\| = \sqrt{2/\pi} < 1$ — a good representative of its sign cell, but its projection on every direction is multiplicatively shrunk.</p>
+  <div class="highlight">Need an unbiased estimator. Enter QJL.</div>
+</div>
+
+
+<!-- ════ PART 05 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">05</div>
+  <h1>QJL and Inner-Product TURBOQUANT</h1>
+  <div class="divider"></div>
+  <p class="subtitle">One-bit unbiased sketch, applied to the residual</p>
+</div>
+
+<div class="slide">
+  <h2>QJL Definition</h2><div class="divider"></div>
+  <p>Let $S\in\mathbb{R}^{d\times d}$ have iid $\mathcal{N}(0,1)$ entries. For $u\in S^{d-1}$:</p>
+  <div class="math-block">$$Q_{\mathrm{qjl}}(u) \;=\; \operatorname{sign}(Su) \;\in\; \{-1,+1\}^d, \qquad Q_{\mathrm{qjl}}^{-1}(z) \;=\; \dfrac{\sqrt{\pi/2}}{d}\,S^\top z.$$</div>
+  <p>One bit per coordinate. Unbiased estimator of $u$.</p>
+</div>
+
+<div class="slide">
+  <h2>Lemma — Unbiased with $1/d$ Variance</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma (QJL).</h3>
+    <div class="math-block">$$\mathbb{E}_S\langle y,Q_{\mathrm{qjl}}^{-1}(Q_{\mathrm{qjl}}(u))\rangle = \langle y,u\rangle, \qquad \operatorname{Var}_S(\cdot)\;\le\;\dfrac{\pi}{2d}\|y\|^2.$$</div>
+  </div>
+  <p><strong>Unbiasedness.</strong> Gaussian identity $\mathbb{E}\bigl[s\operatorname{sign}(s^\top u)\bigr] = \sqrt{2/\pi}\,u$ for $s\sim\mathcal{N}(0,I)$.</p>
+  <p><strong>Variance.</strong> Each summand $\le\tfrac{\pi}{2}\|y\|^2$ in second moment; $d$-fold averaging gives $\tfrac{\pi}{2d}\|y\|^2$.</p>
+</div>
+
+<div class="slide">
+  <h2>Two-Stage Decomposition</h2><div class="divider"></div>
+  <p>Write $x = \widetilde x_{\mathrm{mse}} + r$ where $\widetilde x_{\mathrm{mse}}$ is MSE-quantized:</p>
+  <div class="math-block">$$\langle y, x\rangle \;=\; \langle y, \widetilde x_{\mathrm{mse}}\rangle \;+\; \langle y, r\rangle.$$</div>
+  <p>First term: from the MSE-quantized vector. Second: estimate by QJL on the residual $r$.</p>
+  <div class="highlight">QJL variance scales with $\|r\|^2$. The MSE stage makes $\|r\|$ small, so QJL is accurate precisely when MSE worked.</div>
+</div>
+
+<div class="slide">
+  <h2>Algorithm and Theorem</h2><div class="divider"></div>
+<div class="code-block"><span class="kw">encode</span>(x, b):
+    idx = TQ_mse(x, b−1)        <span class="cm"># (b−1)·d bits</span>
+    r = x − TQ_mse_inv(idx);  γ = ‖r‖
+    q = sign(S·r) in {−1,+1}^d   <span class="cm"># d bits</span>
+    <span class="kw">return</span> (idx, q, γ)
+
+<span class="kw">decode</span>(idx, q, γ):
+    <span class="kw">return</span> TQ_mse_inv(idx) + γ·(√(π/2)/d)·S<span style="font-size:0.85em">T</span>·q</div>
+  <div class="card">
+    <h3>Theorem (TURBOQUANT$_{\mathrm{prod}}$).</h3>
+    <div class="math-block">$$\mathbb{E}\langle y,\widetilde x\rangle = \langle y,x\rangle,\qquad D_{\mathrm{prod}} \;\le\; \dfrac{\sqrt 3\,\pi^2\,\|y\|^2}{d}\cdot 4^{-b}.$$</div>
+  </div>
+  <p>Inner-product errors decay $d$ times faster than MSE errors.</p>
+</div>
+
+
+<!-- ════ PART 06 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">06</div>
+  <h1>KV Cache Quantization</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Online, data-oblivious, attention-preserving</p>
+</div>
+
+<div class="slide">
+  <h2>Why TURBOQUANT Fits the KV Cache</h2><div class="divider"></div>
+  <p>Decoder-only transformer: each new token uses inner products $\langle q_t, k_s\rangle$ between query and past keys.</p>
+  <p>Attention preservation $\Leftrightarrow$ inner-product preservation.</p>
+  <ul>
+    <li><strong>Online:</strong> each new key quantized as it arrives.</li>
+    <li><strong>No calibration:</strong> codebook universal, not dataset-specific.</li>
+    <li><strong>Inner-product control:</strong> unbiased, $\mathcal{O}(1/d)$ variance.</li>
+  </ul>
+  <div class="highlight">Quality-neutral around $3.5$ bits/channel; gradual degradation near $2.5$.</div>
+  <div class="cite">Daliri et al., "TurboQuant: Online Vector Quantization with Optimal Distortion", arXiv:2504.19874 (2025).</div>
+</div>
+
+
+<!-- RECAP -->
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Rotation:</strong> turns any unit vector into a sphere point with known coordinate density $f_d$.</li>
+    <li><strong>MSE TURBOQUANT:</strong> Lloyd&ndash;Max on $f_d$ achieves $D_{\mathrm{mse}}\le\tfrac{\sqrt 3\pi}{2}\cdot 4^{-b}$.</li>
+    <li><strong>Lower bound:</strong> sphere SLB + Yao $\Rightarrow$ exponent $4^{-b}$ optimal.</li>
+    <li><strong>Bias:</strong> MSE shrinks projections by $2/\pi$ at one bit.</li>
+    <li><strong>QJL:</strong> one-bit unbiased linear-functional estimator with $\mathcal{O}(1/d)$ variance.</li>
+    <li><strong>IP TURBOQUANT:</strong> two-stage; unbiased, $D_{\mathrm{prod}} \le \tfrac{\sqrt 3\pi^2\|y\|^2}{d}\cdot 4^{-b}$.</li>
+  </ul>
+</div>
+
+<div class="slide end-slide">
+  <div class="big-word">End of Module 1</div>
+  <p class="big-word-sub">Next module: diffusion models and the variational bound.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script defer src="../../reference/deck.js"></script>
+</body>
+</html>
