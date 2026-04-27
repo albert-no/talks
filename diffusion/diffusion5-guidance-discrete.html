@@ -11,24 +11,6 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
 <style>
-.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
-.exercise-list > li {
-  counter-increment: exn;
-  padding: 14px 18px 14px 64px;
-  position: relative;
-  margin-bottom: 12px;
-  background: var(--light);
-  border-left: 3px solid var(--yonsei-blue);
-  border-radius: 0 8px 8px 0;
-}
-.exercise-list > li::before {
-  content: "Q" counter(exn);
-  position: absolute;
-  left: 18px; top: 14px;
-  font-weight: 600;
-  color: var(--yonsei-blue);
-  letter-spacing: -0.02em;
-}
 .d5-algo {
   background: var(--light);
   border: 1px solid var(--slate);
@@ -72,7 +54,7 @@
       <div class="toc-rule"></div>
       <div>
         <div class="toc-label">Classifier guidance</div>
-        <div class="toc-sub">Bayes decomposition, time-dependent classifier, $\omega$-scaling</div>
+        <div class="toc-sub">Bayes decomposition, noisy classifier, $\omega$-scaling</div>
       </div>
     </div>
     <div class="toc-item">
@@ -116,40 +98,50 @@
 <div class="slide">
   <h2>Conditional Generation</h2>
   <div class="divider"></div>
-  <p>So far: sample from $P_{\mathbf{X}}$. In practice: want $P_{\mathbf{X}\,|\,Y}$ for label or prompt $Y$.</p>
-  <p><strong>Naive approach:</strong> train a separate conditional score $s_\theta(\mathbf{x}\,|\,Y=y)$ per label. Expensive, does not scale.</p>
+  <p>So far: sample from $P_{\mathbf{X}}$.</p>
+  <p>In practice: want $P_{\mathbf{X}\,|\,Y}$ for label or prompt $Y$.</p>
+  <p><strong>Naive:</strong> separate conditional score $s_\theta(\mathbf{x}\,|\,Y=y)$ per label.</p>
+  <p>Expensive; does not scale.</p>
   <div class="highlight">
-    <p><strong>Classifier guidance:</strong> reuse the pretrained unconditional score, steer with a small auxiliary classifier.</p>
+    <p><strong>Classifier guidance:</strong> reuse pretrained unconditional score.</p>
+    <p>Steer with a small auxiliary classifier.</p>
   </div>
   <div class="cite">Dhariwal &amp; Nichol, "Diffusion Models Beat GANs on Image Synthesis", NeurIPS 2021.</div>
 </div>
 
 <!-- SLIDE: Bayes decomposition -->
 <div class="slide">
-  <h2>Bayes Decomposition of Conditional Score</h2>
+  <h2>Bayes Decomposition</h2>
   <div class="divider"></div>
-  <p>From Bayes' rule and taking $\nabla_{\mathbf{x}} \log$:</p>
-  <div class="math-block">$$\nabla_{\mathbf{x}} \log P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) = \nabla_{\mathbf{x}} \log P_{\mathbf{X}}(\mathbf{x}) + \nabla_{\mathbf{x}} \log P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x}).$$</div>
-  <p>$P_Y(y)$ drops (no $\mathbf{x}$ dependence). <strong>Conditional score = unconditional score + classifier gradient.</strong></p>
+  <p>Bayes' rule:</p>
+  <div class="math-block">$$P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) = \frac{P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x})\,P_{\mathbf{X}}(\mathbf{x})}{P_Y(y)}.$$</div>
+  <p>Take $\nabla_{\mathbf{x}}\log$; the prior $P_Y(y)$ drops:</p>
+  <div class="math-block">$$\nabla_{\mathbf{x}} \log P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) \;=\; \nabla_{\mathbf{x}} \log P_{\mathbf{X}}(\mathbf{x}) \;+\; \nabla_{\mathbf{x}} \log P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x}).$$</div>
+  <div class="highlight">
+    <p>Conditional score = unconditional score + classifier gradient.</p>
+  </div>
 </div>
 
 <!-- SLIDE: Time-dependent classifier -->
 <div class="slide">
   <h2>Classifier on Noisy Inputs</h2>
   <div class="divider"></div>
-  <p>Sampling operates on noisy state $\mathbf{X}^{(n)}$, so train a classifier that works at that noise level:</p>
+  <p>Sampling operates on noisy state $\mathbf{X}^{(n)}$.</p>
+  <p>Train a classifier matched to that noise level:</p>
   <div class="math-block">$$c_\phi(\mathbf{X}^{(n)}, y, n) \;\approx\; P_{Y\,|\,\mathbf{X}^{(n)}}(y\,|\,\mathbf{X}^{(n)}).$$</div>
-  <p>Regular classifier with noise index $n$ as extra input. Trained on noisy images from the forward process.</p>
+  <p>Standard classifier; noise index $n$ as extra input.</p>
+  <p>Trained on noisy images from the forward process.</p>
 </div>
 
 <!-- SLIDE: Classifier-guided reverse SDE -->
 <div class="slide">
-  <h2>Classifier-Guided Reverse SDE</h2>
+  <h2>Guided Reverse SDE</h2>
   <div class="divider"></div>
-  <p>Replace unconditional score by the Bayes-decomposed conditional, amplified by $\omega > 1$:</p>
+  <p>Replace unconditional score by the Bayes-decomposed conditional, classifier term amplified by $\omega &gt; 1$:</p>
   <div class="math-block">$$d\bar{\mathbf{X}}_t = \Bigl(f - g^2\bigl(\nabla\log p_t(\bar{\mathbf{X}}_t) + \omega\,\nabla \log c_\phi(\bar{\mathbf{X}}_t, y, t)\bigr)\Bigr)dt + g\,d\bar{\mathbf{Z}}_t.$$</div>
   <div class="highlight">
-    <p>Larger $\omega$: sharper, more label-consistent samples. Trades diversity for fidelity.</p>
+    <p>Larger $\omega$: sharper, more label-consistent samples.</p>
+    <p>Trades diversity for fidelity.</p>
   </div>
 </div>
 
@@ -167,33 +159,37 @@
 <div class="slide">
   <h2>Setup</h2>
   <div class="divider"></div>
-  <p>$\Omega$: pixel-subsampling operator. $Y = \Omega(X^{(0)})$: observed pixels. $\bar{\Omega}$: complementary pixels to generate.</p>
-  <p>Let $Z^{(t)} = \bar{\Omega}(X^{(t)})$. It follows its own SDE on the complement:</p>
+  <p>$\Omega$: pixel-subsampling operator.</p>
+  <p>$Y = \Omega(X^{(0)})$: observed pixels.</p>
+  <p>$\bar{\Omega}$: complementary pixels to generate.</p>
+  <p>Let $Z^{(t)} = \bar{\Omega}(X^{(t)})$. The complement follows its own SDE:</p>
   <div class="math-block">$$dZ^{(t)} = \bar{\Omega}(f)\bigl(Z^{(t)}, t\bigr)\,dt + \bar{\Omega}(g)(t)\,d\bar{W}^{(t)}.$$</div>
-  <p>Brownian motion decomposes cleanly: coordinate-wise independent.</p>
+  <p>Brownian motion decomposes coordinate-wise.</p>
 </div>
 
 <!-- SLIDE: Conditional score approximation -->
 <div class="slide">
   <h2>Approximating the Conditional Score</h2>
   <div class="divider"></div>
-  <p>Want $p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr)$. Condition on the noisy version of the observation, use a single-sample approximation:</p>
-  <div class="math-block">$$p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr) \;\approx\; p_t\bigl(Z^{(t)}\,|\,\hat{\Omega}(X^{(t)})\bigr),$$</div>
-  <p>where $\hat{\Omega}(X^{(t)})$: noise-corrupted version of $Y$ at time $t$, generated by running the forward process on observed pixels.</p>
+  <p>Want $p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr)$.</p>
+  <p>Condition instead on a noised version of the observation:</p>
+  <div class="math-block">$$p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr) \;\approx\; p_t\bigl(Z^{(t)}\,|\,\hat{\Omega}(X^{(t)})\bigr).$$</div>
+  <p>$\hat{\Omega}(X^{(t)})$: forward process applied to $Y$ up to time $t$.</p>
 </div>
 
 <!-- SLIDE: Inpainting sampler -->
 <div class="slide">
   <h2>Inpainting Sampler</h2>
   <div class="divider"></div>
-  <div class="d5-algo">
+  <div class="d5-algo" style="max-width:1040px; margin:36px auto 22px;">
     <div class="d5-algo-title">Score-Guided Inpainting</div>
     <ol>
       <li>Sample $X^{(N)} \sim \mathcal{N}(0, I)$ on the full image.</li>
       <li>For $n = N, N{-}1, \ldots, 1$:
         <ol style="list-style:lower-alpha; padding-left:24px;">
-          <li>Sample $\epsilon_n \sim \mathcal{N}(0, I)$; form $\zeta_n = \beta_n\,Y + \gamma_n\,\epsilon_n$ (noised observation at level $n$).</li>
-          <li>Run one reverse-SDE step using $\bar{\Omega}\bigl(s_\theta([\bar{Z}^{(n)}; \zeta_n], n)\bigr)$ as guidance on generated pixels.</li>
+          <li>Sample $\epsilon_n \sim \mathcal{N}(0, I)$.</li>
+          <li>Form noised observation $\zeta_n = \beta_n\,Y + \gamma_n\,\epsilon_n$.</li>
+          <li>One reverse-SDE step using $\bar{\Omega}\bigl(s_\theta([\bar{Z}^{(n)}; \zeta_n], n)\bigr)$.</li>
         </ol>
       </li>
     </ol>
@@ -214,13 +210,24 @@
 <div class="slide">
   <h2>Why Drop the Classifier?</h2>
   <div class="divider"></div>
-  <p>Classifier guidance: second network, trained on noisy inputs, evaluated at every sampling step. Expensive and hard to train in high-noise regime.</p>
-  <p>Key identity:</p>
-  <div class="math-block">$$\nabla \log p_t(\mathbf{x}) + \omega\,\nabla \log p_t(y\,|\,\mathbf{x}) \;\equiv\; \omega\,\nabla \log p_t(\mathbf{x}\,|\,y) + (1-\omega)\,\nabla \log p_t(\mathbf{x}).$$</div>
+  <p>Classifier guidance: a second network trained on noisy inputs.</p>
+  <p>Evaluated at every sampling step.</p>
+  <p>Hard to train in the high-noise regime.</p>
   <div class="highlight">
-    <p><strong>Classifier-free guidance:</strong> one model provides both conditional and unconditional scores.</p>
+    <p><strong>Goal:</strong> one model providing both conditional and unconditional scores.</p>
   </div>
   <div class="cite">Ho &amp; Salimans, "Classifier-Free Diffusion Guidance", NeurIPS Workshop 2021.</div>
+</div>
+
+<!-- SLIDE: CFG identity -->
+<div class="slide">
+  <h2>The CFG Identity</h2>
+  <div class="divider"></div>
+  <p>Recall the Bayes decomposition:</p>
+  <div class="math-block">$$\nabla \log p_t(y\,|\,\mathbf{x}) \;=\; \nabla \log p_t(\mathbf{x}\,|\,y) - \nabla \log p_t(\mathbf{x}).$$</div>
+  <p>Substitute into the classifier-guided score:</p>
+  <div class="math-block">$$\nabla \log p_t(\mathbf{x}) + \omega\,\nabla \log p_t(y\,|\,\mathbf{x}) \;=\; \omega\,\nabla \log p_t(\mathbf{x}\,|\,y) + (1-\omega)\,\nabla \log p_t(\mathbf{x}).$$</div>
+  <p><strong>Exercise.</strong> Verify the substitution.</p>
 </div>
 
 <!-- SLIDE: CFG network -->
@@ -229,10 +236,13 @@
   <div class="divider"></div>
   <p>Train $\epsilon_\theta(\mathbf{X}^{(n)}, y, n)$ where $y$ is the label or null token $\varnothing$:</p>
   <ul>
-    <li>$\epsilon_\theta(\mathbf{X}^{(n)}, y, n) \approx$ conditional noise under label $y$.</li>
-    <li>$\epsilon_\theta(\mathbf{X}^{(n)}, \varnothing, n) \approx$ unconditional noise.</li>
+    <li>$\epsilon_\theta(\mathbf{X}^{(n)}, y, n)$: conditional noise under label $y$.</li>
+    <li>$\epsilon_\theta(\mathbf{X}^{(n)}, \varnothing, n)$: unconditional noise.</li>
   </ul>
-  <p><strong>Training trick:</strong> replace $y$ by $\varnothing$ with probability $p_\text{drop} \approx 0.1$–$0.2$. Network learns both in a single pass.</p>
+  <div class="highlight">
+    <p><strong>Training trick.</strong> Replace $y$ by $\varnothing$ with probability $p_\text{drop} \approx 0.1$–$0.2$.</p>
+    <p>Network learns both modes in a single pass.</p>
+  </div>
 </div>
 
 <!-- SLIDE: CFG sampling -->
@@ -240,10 +250,10 @@
   <h2>CFG Sampling Rule</h2>
   <div class="divider"></div>
   <p>At inference, combine two forward passes:</p>
-  <div class="math-block">$$\tilde{\epsilon}(\mathbf{X}^{(n)}, y, n) \;=\; \omega\,\epsilon_\theta(\mathbf{X}^{(n)}, y, n) - (\omega - 1)\,\epsilon_\theta(\mathbf{X}^{(n)}, \varnothing, n),\qquad \omega > 1.$$</div>
+  <div class="math-block">$$\tilde{\epsilon}(\mathbf{X}^{(n)}, y, n) \;=\; \omega\,\epsilon_\theta(\mathbf{X}^{(n)}, y, n) - (\omega - 1)\,\epsilon_\theta(\mathbf{X}^{(n)}, \varnothing, n),\qquad \omega &gt; 1.$$</div>
   <p>Use $\tilde{\epsilon}$ in place of $\epsilon_\theta$ in any DDPM / DDIM sampler.</p>
   <div class="highlight">
-    <p>Push toward label-consistent mode (weight $\omega$), pull back with unconditional (weight $\omega-1$). Net: label pull sharpened by $\omega$.</p>
+    <p>Push toward label-consistent mode (weight $\omega$); pull back with unconditional (weight $\omega-1$).</p>
   </div>
 </div>
 
@@ -255,8 +265,8 @@
     <div>
       <h3>Design levers</h3>
       <ul>
-        <li>Label-drop probability $p_\text{drop}$</li>
-        <li>Guidance scale $\omega$ at sampling</li>
+        <li>Drop probability $p_\text{drop}$</li>
+        <li>Guidance scale $\omega$</li>
         <li>Null-token embedding (learnable)</li>
       </ul>
     </div>
@@ -264,8 +274,8 @@
       <h3>Trade-offs</h3>
       <ul>
         <li>Larger $\omega$: sharper, less diverse</li>
-        <li>Two forward passes per step: $2\times$ cost</li>
-        <li>No auxiliary model to train or serve</li>
+        <li>Two passes per step: $2\times$ cost</li>
+        <li>No extra model to train</li>
       </ul>
     </div>
   </div>
@@ -285,10 +295,13 @@
 <div class="slide">
   <h2>What Breaks in the Discrete Case</h2>
   <div class="divider"></div>
-  <p>Continuous diffusion relies on adding Gaussian noise. Discrete data (tokens, categories) does not admit addition.</p>
-  <p>Natural substitute: <strong>random transitions</strong>. Switch $x$ to a different value with some probability. State distribution converges to a fixed stationary law.</p>
+  <p>Continuous diffusion adds Gaussian noise.</p>
+  <p>Discrete data (tokens, categories) does not admit addition.</p>
+  <p>Substitute: <strong>random transitions</strong>.</p>
+  <p>Switch $x$ to a different value with some probability.</p>
   <div class="highlight">
-    <p>Discrete diffusion: "additive noise" replaced by "stochastic transitions." Forward, reverse, score, loss: same recipe.</p>
+    <p>Additive noise replaced by stochastic transitions.</p>
+    <p>Forward, reverse, score, loss: same recipe.</p>
   </div>
 </div>
 
@@ -296,50 +309,78 @@
 <div class="slide">
   <h2>Forward: Transition Matrices</h2>
   <div class="divider"></div>
-  <p>Let $p_t \in [0,1]^K$ be the probability vector of $X_t$. Transition matrix $Q_t \in \mathbb{R}^{K\times K}$ with $Q_t(y, x) = \Pr(X_{t+1} = y\,|\,X_t = x)$:</p>
+  <p>Let $p_t \in [0,1]^K$ be the law of $X_t$.</p>
+  <p>Transition matrix $Q_t \in \mathbb{R}^{K\times K}$ with entry $Q_t(y, x) = \Pr(X_{t+1} = y\,|\,X_t = x)$:</p>
   <div class="math-block">$$p_{t+1} = Q_t\,p_t.$$</div>
-  <p>For a valid noising process: $p_t \to \pi$ for a fixed $\pi$ regardless of $p_0$.</p>
+  <p>Valid noising: marginals converge $p_t \to \pi$ regardless of $p_0$.</p>
   <p>Two standard choices: <strong>uniform</strong> and <strong>absorbing</strong> (masking).</p>
 </div>
 
 <!-- SLIDE: Uniform vs absorbing -->
 <div class="slide">
-  <h2>Uniform vs. Absorbing Transitions</h2>
+  <h2>Uniform vs. Absorbing</h2>
   <div class="divider"></div>
   <div class="grid-2">
     <div>
       <h3>Uniform</h3>
-      <p>Stay with prob $1-\epsilon$; otherwise jump uniformly to another token.</p>
+      <p>Stay with prob $1-\epsilon$.</p>
+      <p>Otherwise jump uniformly to another token.</p>
       <p>Stationary: uniform on $\{1,\ldots,K\}$.</p>
     </div>
     <div>
       <h3>Absorbing (mask)</h3>
-      <p>Non-mask tokens get replaced by $[\text{M}]$ at rate $\epsilon$; mask stays mask.</p>
+      <p>Replace by $[\text{M}]$ at rate $\epsilon$.</p>
+      <p>Mask stays mask.</p>
       <p>Stationary: all mass on $[\text{M}]$.</p>
     </div>
   </div>
+  <p><strong>Exercise.</strong> Compute mixing time for both choices.</p>
 </div>
 
 <!-- SLIDE: Continuous-time ODE -->
 <div class="slide">
-  <h2>Continuous-Time ODE on Probability Vectors</h2>
+  <h2>Continuous-Time Limit</h2>
   <div class="divider"></div>
-  <p>Take $\Delta t \to 0$: discrete updates become a linear ODE:</p>
+  <p>Take $\Delta t \to 0$. Discrete updates become a linear ODE:</p>
   <div class="math-block">$$\frac{dp_t}{dt} = Q_t\,p_t,\qquad p_0 = p_\text{data}.$$</div>
-  <p>Reverse rate matrix (for $x \ne y$):</p>
-  <div class="math-block">$$\overline{Q}_t(y, x) = \frac{p_t(y)}{p_t(x)}\,Q_t(x, y),\qquad \overline{Q}_t(x, x) = -\sum_{y \ne x}\overline{Q}_t(y, x).$$</div>
-  <p>Diagonal fixed by mass conservation. Novel quantity: the <strong>ratio</strong> $p_t(y)/p_t(x)$.</p>
+  <p>$Q_t$ now plays the role of a generator (rate matrix).</p>
+</div>
+
+<!-- SLIDE: Reverse rate matrix -->
+<div class="slide">
+  <h2>Reverse Rate Matrix</h2>
+  <div class="divider"></div>
+  <p>For $x \ne y$, the reverse generator is:</p>
+  <div class="math-block">$$\overline{Q}_t(y, x) = \frac{p_t(y)}{p_t(x)}\,Q_t(x, y).$$</div>
+  <p>Diagonal fixed by mass conservation:</p>
+  <div class="math-block">$$\overline{Q}_t(x, x) = -\sum_{y \ne x}\overline{Q}_t(y, x).$$</div>
+  <p>Novel quantity: the <strong>marginal ratio</strong> $p_t(y)/p_t(x)$.</p>
+  <p><strong>Exercise.</strong> Derive $\overline{Q}_t$ from the Bayes identity for $p_{t-\Delta t\,|\,t}$ as $\Delta t \to 0$.</p>
 </div>
 
 <!-- SLIDE: Discrete score -->
 <div class="slide">
   <h2>The Discrete Score Is a Ratio</h2>
   <div class="divider"></div>
-  <p>Continuous analog of the score $\nabla_{\mathbf{x}} \log p_t(\mathbf{x})$: the <strong>marginal ratio</strong>:</p>
+  <p>Continuous analog of the score $\nabla_{\mathbf{x}} \log p_t(\mathbf{x})$ becomes the marginal-ratio vector:</p>
   <div class="math-block">$$s(x, t) = \bigl(p_t(1)/p_t(x),\; p_t(2)/p_t(x),\; \ldots,\; p_t(K)/p_t(x)\bigr)^\top \in [0, \infty)^K.$$</div>
   <p>Learned by a neural network $s_\theta(x, t)$.</p>
   <div class="highlight">
-    <p>Continuous: gradient of log density. Discrete: ratio of densities between states. Same role, different object.</p>
+    <p>Continuous: gradient of log density.</p>
+    <p>Discrete: ratio of densities between states.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Why squared loss fails -->
+<div class="slide">
+  <h2>Squared Loss Fails</h2>
+  <div class="divider"></div>
+  <p>Naive: regress $s_\theta(x, t)_y$ onto the target ratio:</p>
+  <div class="math-block">$$\mathcal{L}_\text{sq}(\theta) = \mathbb{E}\!\left[\bigl(s_\theta(x, t)_y - \tfrac{p_t(y)}{p_t(x)}\bigr)^2\right].$$</div>
+  <p>Minimizer can be negative.</p>
+  <p>Ratios are non-negative; the loss does not encode that constraint.</p>
+  <div class="highlight">
+    <p>Need a loss whose minimizer is automatically positive.</p>
   </div>
 </div>
 
@@ -347,20 +388,24 @@
 <div class="slide">
   <h2>Score Entropy Loss</h2>
   <div class="divider"></div>
-  <p>Squared loss on $s_\theta - p_t(y)/p_t(x)$ fails: accepts negative estimates. Lou et al. (2024) propose <strong>score entropy</strong>:</p>
-  <div class="math-block">$$\mathcal{L}_\text{SE}(\theta) = \mathbb{E}_{x_t \sim p_t}\!\left[\sum_{y \ne x_t} w_{x_t, y}\!\left(s_\theta(x_t, t)_y - \frac{p_t(y)}{p_t(x_t)}\,\log s_\theta(x_t, t)_y + C\!\left(\frac{p_t(y)}{p_t(x_t)}\right)\right)\right],$$</div>
-  <p>with $C(a) = a(\log a - 1)$. The $\log s_\theta$ term forces positivity. Tractable denoising variant $\mathcal{L}_\text{DSE}$ uses $p_{t\,|\,0}$, analogous to score matching.</p>
+  <p>Lou et al. (2024): the <strong>score entropy</strong> loss:</p>
+  <div class="math-block">$$\mathcal{L}_\text{SE}(\theta) = \mathbb{E}_{x_t \sim p_t}\!\left[\sum_{y \ne x_t} w_{x_t, y}\!\left(s_\theta(x_t, t)_y - \tfrac{p_t(y)}{p_t(x_t)}\,\log s_\theta(x_t, t)_y + C\!\bigl(\tfrac{p_t(y)}{p_t(x_t)}\bigr)\right)\right].$$</div>
+  <p>Constant $C(a) = a(\log a - 1)$ makes the minimum zero.</p>
+  <p>The $\log s_\theta$ term forces positivity.</p>
+  <p><strong>Exercise.</strong> Show the minimizer satisfies $s_{\theta^\star}(x, t)_y = p_t(y)/p_t(x)$ when $w_{x,y} &gt; 0$.</p>
   <div class="cite">Lou, Meng &amp; Ermon, "Discrete Diffusion Modeling by Estimating the Ratios of the Data Distribution", ICML 2024 (Best Paper).</div>
 </div>
 
 <!-- SLIDE: Sequence-space note -->
 <div class="slide">
-  <h2>Practical Sequence Space</h2>
+  <h2>Sequence Space</h2>
   <div class="divider"></div>
-  <p>Real text: $\mathcal{X} = \{1, \ldots, K\}^L$. Direct transition matrix: $K^L \times K^L$ entries, intractable.</p>
-  <p><strong>Factored assumption:</strong> each token perturbed independently. This implies the <strong>Hamming-sparsity condition</strong>:</p>
+  <p>Real text: $\mathcal{X} = \{1, \ldots, K\}^L$.</p>
+  <p>Direct transition matrix has $K^L \times K^L$ entries. Intractable.</p>
+  <p><strong>Factored assumption:</strong> each token perturbed independently.</p>
+  <p>Implies the <strong>Hamming-sparsity condition</strong>:</p>
   <div class="math-block">$$Q_t(\mathbf{y}, \mathbf{x}) = 0\quad\text{whenever}\quad d_\text{H}(\mathbf{y}, \mathbf{x}) \geq 2.$$</div>
-  <p>Reverse process only needs $s_\theta$ on Hamming-distance-1 pairs.</p>
+  <p>Reverse process needs $s_\theta$ only on Hamming-distance-1 pairs.</p>
 </div>
 
 <!-- SLIDE: Series recap -->
@@ -368,27 +413,15 @@
   <h2>Series Recap</h2>
   <div class="divider"></div>
   <ul>
-    <li><strong>Lecture 1.</strong> VE forward, Bayes-plus-Tweedie reverse, score function.</li>
-    <li><strong>Lecture 2.</strong> VP forward, DDPM VLB, $\epsilon$-prediction loss.</li>
-    <li><strong>Lecture 3.</strong> SDE formulation, Fokker–Planck, Anderson reverse, score matching.</li>
-    <li><strong>Lecture 4.</strong> DDIM: same marginals, deterministic ODE sampler, inversion.</li>
-    <li><strong>Lecture 5.</strong> Classifier, inpainting, classifier-free guidance. Discrete diffusion: ratio scores, score-entropy loss.</li>
+    <li><strong>Lecture 1.</strong> VE forward, Bayes-plus-Tweedie reverse, score.</li>
+    <li><strong>Lecture 2.</strong> VP forward, DDPM VLB, $\epsilon$-prediction.</li>
+    <li><strong>Lecture 3.</strong> SDE, Fokker–Planck, Anderson reverse, score matching.</li>
+    <li><strong>Lecture 4.</strong> DDIM: same marginals, deterministic ODE, inversion.</li>
+    <li><strong>Lecture 5.</strong> Guidance and discrete diffusion.</li>
   </ul>
   <div class="highlight">
-    <p>One idea, many guises: forward corruption, reverse driven by the score, "predict the noise."</p>
+    <p>One idea, many guises: forward corruption, reverse driven by the score.</p>
   </div>
-</div>
-
-<!-- SLIDE: Check it yourself -->
-<div class="slide">
-  <h2>Check It Yourself</h2>
-  <div class="divider"></div>
-  <ol class="exercise-list">
-    <li>Verify the CFG algebraic identity: $\nabla \log p_t(\mathbf{x}) + \omega\,\nabla \log p_t(y\,|\,\mathbf{x}) = \omega\,\nabla \log p_t(\mathbf{x}\,|\,y) + (1-\omega)\,\nabla \log p_t(\mathbf{x})$.</li>
-    <li>Derive $\overline{Q}_t(y, x) = \tfrac{p_t(y)}{p_t(x)}\,Q_t(x, y)$ for $x \ne y$ from $p_{t-\Delta t\,|\,t}(y\,|\,x) = p_{t\,|\,t-\Delta t}(x\,|\,y)\,\tfrac{p_{t-\Delta t}(y)}{p_t(x)}$ as $\Delta t \to 0$.</li>
-    <li>Show the score entropy loss has minimizer $s_{\theta^\star}(x, t)_y = p_t(y)/p_t(x)$ when $w_{x,y} > 0$. <em>Hint:</em> first-order condition in $s_\theta(x, t)_y$.</li>
-    <li>For absorbing transitions, compute the stationary distribution and mixing time. Compare with uniform transitions.</li>
-  </ol>
 </div>
 
 <!-- SLIDE: End -->
@@ -398,7 +431,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 26</div>
+<div class="slide-num" id="slideNum">1 / 29</div>
 
 </div><!-- end deck -->
 

@@ -11,24 +11,6 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
   onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
 <style>
-.exercise-list { list-style: none; padding: 0; margin: 0; counter-reset: exn; }
-.exercise-list > li {
-  counter-increment: exn;
-  padding: 14px 18px 14px 64px;
-  position: relative;
-  margin-bottom: 12px;
-  background: var(--light);
-  border-left: 3px solid var(--yonsei-blue);
-  border-radius: 0 8px 8px 0;
-}
-.exercise-list > li::before {
-  content: "Q" counter(exn);
-  position: absolute;
-  left: 18px; top: 14px;
-  font-weight: 600;
-  color: var(--yonsei-blue);
-  letter-spacing: -0.02em;
-}
 .d4-algo {
   background: var(--light);
   border: 1px solid var(--slate);
@@ -79,7 +61,7 @@
       <div class="toc-num">02</div>
       <div class="toc-rule"></div>
       <div>
-        <div class="toc-label">DDIM's non-Markovian forward</div>
+        <div class="toc-label">Non-Markovian forward</div>
         <div class="toc-sub">Same marginals, tunable stochasticity</div>
       </div>
     </div>
@@ -88,7 +70,7 @@
       <div class="toc-rule"></div>
       <div>
         <div class="toc-label">DDIM sampling</div>
-        <div class="toc-sub">$\sigma_n \equiv 0$ and the probability-flow ODE</div>
+        <div class="toc-sub">Predicted clean signal, ODE limit</div>
       </div>
     </div>
     <div class="toc-item">
@@ -114,22 +96,33 @@
 
 <!-- SLIDE: DDPM loss recap -->
 <div class="slide">
-  <h2>A Closer Look at the DDPM Loss</h2>
+  <h2>DDPM $\epsilon$-Loss Recap</h2>
   <div class="divider"></div>
-  <p>The $\epsilon$-prediction training loss per step:</p>
+  <p>Per-step training loss:</p>
   <div class="math-block">$$L_{n-1} = \tilde{\lambda}_n\,\mathbb{E}_{X^{(0)},\,\epsilon}\!\left[\bigl\|\epsilon - \epsilon_\theta\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,\epsilon,\; n\bigr)\bigr\|^2\right].$$</div>
-  <p>The forward process enters only through the <strong>single-time marginal</strong> $q\bigl(X^{(n)}\,|\,X^{(0)}\bigr)$. The joint $q(X^{(1:N)}\,|\,X^{(0)})$ never appears.</p>
+  <p>Input to $\epsilon_\theta$: a sample from the single-time marginal.</p>
 </div>
 
-<!-- SLIDE: Freedom to redesign -->
+<!-- SLIDE: Only marginals -->
 <div class="slide">
-  <h2>The Freedom This Gives</h2>
+  <h2>Only Marginals Enter</h2>
   <div class="divider"></div>
-  <p>Any forward process with</p>
-  <div class="math-block">$$q(X^{(n)}\,|\,X^{(0)}) = \mathcal{N}\!\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\;(1-\bar{\alpha}_n)\,I\bigr)$$</div>
-  <p>yields the <strong>same $\epsilon$-prediction loss</strong> and the same trained network.</p>
+  <p>The forward process appears only through:</p>
+  <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(0)}\bigr) = \mathcal{N}\!\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\;(1-\bar{\alpha}_n)\,I\bigr).$$</div>
   <div class="highlight">
-    <p><strong>DDIM:</strong> keep the same marginals, build a non-Markovian joint, use a reverse process with tunable stochasticity down to zero.</p>
+    <p>The joint $q(X^{(1:N)}\,|\,X^{(0)})$ never appears in training.</p>
+    <p>Any joint with the same marginals yields the same loss.</p>
+  </div>
+</div>
+
+<!-- SLIDE: DDIM idea -->
+<div class="slide">
+  <h2>DDIM in One Sentence</h2>
+  <div class="divider"></div>
+  <p>Keep the DDPM marginals. Build a non-Markovian joint with parameter $\{\sigma_n\}$.</p>
+  <p>Recover a sampler with <strong>tunable stochasticity</strong>, down to fully deterministic.</p>
+  <div class="highlight">
+    <p>Same trained network. Different sampler.</p>
   </div>
   <div class="cite">Song, Meng &amp; Ermon, "Denoising Diffusion Implicit Models", ICLR 2021.</div>
 </div>
@@ -139,39 +132,78 @@
      ==================================================================== -->
 <div class="slide section-slide left">
   <div class="section-num">02</div>
-  <h1>DDIM's Non-Markovian Forward</h1>
+  <h1>Non-Markovian Forward</h1>
   <div class="divider"></div>
   <p class="subtitle">Same marginals, tunable stochasticity</p>
 </div>
 
-<!-- SLIDE: DDIM forward -->
+<!-- SLIDE: Setup -->
 <div class="slide">
-  <h2>DDIM Forward Distribution</h2>
+  <h2>Setup</h2>
   <div class="divider"></div>
-  <p>Fix schedule $\{\bar{\alpha}_n\}$ and arbitrary $\{\sigma_n \geq 0\}$:</p>
-  <div class="math-block">$$q(X^{(n)}\,|\,X^{(n+1)}, X^{(0)}) = \mathcal{N}\!\left(\sqrt{\bar{\alpha}_n}\,X^{(0)} + \frac{\sqrt{1-\bar{\alpha}_n - \sigma_{n+1}^2}}{\sqrt{1-\bar{\alpha}_{n+1}}}\,\bigl(X^{(n+1)} - \sqrt{\bar{\alpha}_{n+1}}\,X^{(0)}\bigr),\;\sigma_{n+1}^2\,I\right).$$</div>
-  <p>The conditional depends on <strong>both</strong> $X^{(n+1)}$ and $X^{(0)}$: non-Markovian.</p>
+  <ul>
+    <li>Schedule $\{\bar{\alpha}_n\}_{n=0}^N$ inherited from DDPM.</li>
+    <li>Free parameters $\{\sigma_n \geq 0\}_{n=1}^N$.</li>
+    <li>Target: define $q$ on $X^{(0:N)}$ with the DDPM marginals.</li>
+  </ul>
+  <p>Strategy: specify $q(X^{(n)}\,|\,X^{(n+1)}, X^{(0)})$, condition both on the next step <em>and</em> the clean signal.</p>
 </div>
 
-<!-- SLIDE: Marginal matching -->
+<!-- SLIDE: DDIM forward conditional -->
+<div class="slide">
+  <h2>Forward Conditional</h2>
+  <div class="divider"></div>
+  <p>For $n = 0, \ldots, N-1$:</p>
+  <div class="math-block">$$q(X^{(n)}\,|\,X^{(n+1)}, X^{(0)}) = \mathcal{N}\!\left(\sqrt{\bar{\alpha}_n}\,X^{(0)} + \frac{\sqrt{1-\bar{\alpha}_n - \sigma_{n+1}^2}}{\sqrt{1-\bar{\alpha}_{n+1}}}\,\bigl(X^{(n+1)} - \sqrt{\bar{\alpha}_{n+1}}\,X^{(0)}\bigr),\;\sigma_{n+1}^2\,I\right).$$</div>
+  <p>The mean depends on <strong>both</strong> $X^{(n+1)}$ and $X^{(0)}$.</p>
+  <p>Conditioning on $X^{(0)}$ everywhere makes the chain non-Markovian in $X^{(n)}$ alone.</p>
+</div>
+
+<!-- SLIDE: Marginal claim -->
 <div class="slide">
   <h2>Marginals Match DDPM</h2>
   <div class="divider"></div>
-  <p>By induction, $q(X^{(n)}\,|\,X^{(0)}) = \mathcal{N}\!\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\;(1-\bar{\alpha}_n)\,I\bigr)$ for every $n$, regardless of $\{\sigma_n\}$.</p>
-  <ul>
-    <li>Any DDPM-trained network is <strong>directly usable</strong> in DDIM.</li>
-    <li>Training cost identical. Only the <strong>sampler</strong> differs.</li>
-  </ul>
+  <p>For every $n$ and every choice of $\{\sigma_n\}$:</p>
+  <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(0)}\bigr) = \mathcal{N}\!\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\;(1-\bar{\alpha}_n)\,I\bigr).$$</div>
+  <div class="highlight">
+    <p>Identical to the DDPM single-time marginal.</p>
+    <p>A DDPM-trained $\epsilon_\theta$ is directly usable in DDIM.</p>
+  </div>
 </div>
 
-<!-- SLIDE: Deterministic forward -->
+<!-- SLIDE: Induction (proof sketch) -->
 <div class="slide">
-  <h2>Deterministic Choice $\sigma_n \equiv 0$</h2>
+  <h2>Proof by Backward Induction</h2>
   <div class="divider"></div>
-  <p>Setting $\sigma_n = 0$: forward conditional becomes Dirac. Given $X^{(0)}$ and one later step, every other step is <strong>determined</strong>. Chain still has the same marginals as DDPM.</p>
+  <p>Base case $n=N$: by construction.</p>
+  <p>Inductive step: assume $X^{(n+1)}\,|\,X^{(0)} \sim \mathcal{N}\!\bigl(\sqrt{\bar{\alpha}_{n+1}}\,X^{(0)},\;(1-\bar{\alpha}_{n+1})\,I\bigr)$. Sum of two independent Gaussians conditional on $X^{(0)}$:</p>
+  <div class="math-block">$$\begin{aligned}
+    \mathbb{E}[X^{(n)}|X^{(0)}] &= \sqrt{\bar{\alpha}_n}\,X^{(0)}, \\
+    \mathrm{Var}(X^{(n)}|X^{(0)}) &= (1-\bar{\alpha}_n - \sigma_{n+1}^2) + \sigma_{n+1}^2 = 1-\bar{\alpha}_n.
+  \end{aligned}$$</div>
+  <p>$\sigma_{n+1}^2$ cancels: marginals independent of $\{\sigma_n\}$.</p>
+</div>
+
+<!-- SLIDE: Recovers DDPM -->
+<div class="slide">
+  <h2>DDPM as a Special Case</h2>
+  <div class="divider"></div>
+  <p>The DDIM family contains DDPM. Pick:</p>
+  <div class="math-block">$$\sigma_{n+1}^2 = \beta_{n+1}\,\frac{1-\bar{\alpha}_n}{1-\bar{\alpha}_{n+1}}.$$</div>
+  <p>Forward collapses to $q(X^{(n)}\,|\,X^{(n+1)})$: Markov. Recovers the DDPM reverse step.</p>
+  <p><strong>Exercise.</strong> Verify this $\sigma$ choice gives the DDPM update.</p>
+</div>
+
+<!-- SLIDE: Deterministic limit -->
+<div class="slide">
+  <h2><strong>$\sigma_n \to 0$</strong>: Deterministic Forward</h2>
+  <div class="divider"></div>
+  <p>Set every $\sigma_n = 0$. Forward conditional becomes Dirac.</p>
+  <p>Given $X^{(0)}$ and one $X^{(n)}$, all other $X^{(k)}$ are determined. Marginals still match DDPM.</p>
   <div class="highlight">
-    <p>Interpolation: $\sigma_n = \sqrt{\beta_n \cdot (1-\bar\alpha_n)/(1-\bar\alpha_{n+1})}$ (DDPM-like) to $\sigma_n = 0$ (deterministic) is continuous.</p>
+    <p>One knob $\{\sigma_n\}$ interpolates DDPM (full noise) to fully deterministic.</p>
   </div>
+  <p><strong>Exercise.</strong> Show the $\sigma_n=0$ update is a consistent discretization of the probability-flow ODE.</p>
 </div>
 
 <!-- ====================================================================
@@ -181,66 +213,70 @@
   <div class="section-num">03</div>
   <h1>DDIM Sampling</h1>
   <div class="divider"></div>
-  <p class="subtitle">From $\epsilon_\theta$ to samples, with tunable noise</p>
+  <p class="subtitle">Predicted clean signal, ODE limit</p>
 </div>
 
 <!-- SLIDE: Training reuse -->
 <div class="slide">
-  <h2>Training: Nothing Changes</h2>
+  <h2>Training: Unchanged</h2>
   <div class="divider"></div>
-  <p>DDIM trains the same $\epsilon$-prediction network as DDPM. Given $X^{(0)}$, draw $\epsilon \sim \mathcal{N}(0, I)$ and $n \sim \text{Unif}$:</p>
+  <p>DDIM trains the same $\epsilon$-prediction network as DDPM.</p>
+  <p>Sample $X^{(0)} \sim p_{\text{data}}$, $\epsilon \sim \mathcal{N}(0,I)$, $n \sim \mathrm{Unif}$:</p>
   <div class="math-block">$$X^{(n)} = \sqrt{\bar{\alpha}_n}\,X^{(0)} + \sqrt{1-\bar{\alpha}_n}\,\epsilon.$$</div>
   <div class="highlight">
-    <p>Training is Markov (loss depends only on single-time marginals). Sampling is where the non-Markovian structure pays off.</p>
+    <p>Loss depends only on single-time marginals.</p>
+    <p>The non-Markovian structure pays off only at sampling time.</p>
   </div>
 </div>
 
-<!-- SLIDE: hat X^0 reconstruction -->
+<!-- SLIDE: Predicted clean signal -->
 <div class="slide">
   <h2>Predicted Clean Signal</h2>
   <div class="divider"></div>
-  <p>At sampling time, invert the noise equation to estimate $X^{(0)}$ from the current state:</p>
+  <p>Invert the noise equation $X^{(n+1)} = \sqrt{\bar{\alpha}_{n+1}}\,X^{(0)} + \sqrt{1-\bar{\alpha}_{n+1}}\,\epsilon$ for $X^{(0)}$, plug in $\epsilon_\theta$:</p>
   <div class="math-block">$$\hat{X}^{(0)} = \frac{X^{(n+1)} - \sqrt{1-\bar{\alpha}_{n+1}}\,\epsilon_\theta(X^{(n+1)}, n+1)}{\sqrt{\bar{\alpha}_{n+1}}}.$$</div>
-  <p>The $\epsilon$-prediction rearranged: tells us where the network thinks the clean sample lies.</p>
+  <p>The network's running guess for the clean sample.</p>
 </div>
 
-<!-- SLIDE: DDIM reverse step -->
+<!-- SLIDE: DDIM reverse update -->
 <div class="slide">
   <h2>DDIM Reverse Update</h2>
   <div class="divider"></div>
-  <p>Plug $\hat{X}^{(0)}$ into the DDIM forward conditional:</p>
-  <div class="math-block">$$X^{(n)} = \sqrt{\bar{\alpha}_n}\,\hat{X}^{(0)} + \sqrt{1-\bar{\alpha}_n-\sigma_{n+1}^2}\,\epsilon_\theta(X^{(n+1)}, n+1) + \sigma_n\,Z^{(n)},\quad Z^{(n)}\sim\mathcal{N}(0,I).$$</div>
-  <p>Three pieces: <strong>toward data</strong> (via $\hat{X}^{(0)}$), <strong>along noise direction</strong>, optional <strong>fresh noise</strong>.</p>
+  <p>Forward conditional with $X^{(0)} \to \hat{X}^{(0)}$ and $X^{(n+1)}-\sqrt{\bar{\alpha}_{n+1}}\hat{X}^{(0)} \to \sqrt{1-\bar{\alpha}_{n+1}}\,\epsilon_\theta$:</p>
+  <div class="math-block">$$X^{(n)} = \underbrace{\sqrt{\bar{\alpha}_n}\,\hat{X}^{(0)}}_{\text{toward data}} + \underbrace{\sqrt{1-\bar{\alpha}_n-\sigma_{n+1}^2}\,\epsilon_\theta(X^{(n+1)}, n+1)}_{\text{noise direction}} + \underbrace{\sigma_n\,Z^{(n)}}_{\text{fresh noise}}.$$</div>
+  <p>Three pieces: signal pull, noise direction, optional fresh noise.</p>
 </div>
 
-<!-- SLIDE: Sampling algo -->
+<!-- SLIDE: Sampling algorithm -->
 <div class="slide">
   <h2>Sampling Algorithm</h2>
   <div class="divider"></div>
-  <div class="d4-algo">
+  <div class="d4-algo" style="max-width:1040px; margin:36px auto 22px;">
     <div class="d4-algo-title">DDIM Sampling</div>
     <ol>
       <li>Sample $X^{(N)} \sim \mathcal{N}(0, I)$.</li>
-      <li>For $n = N{-}1, N{-}2, \ldots, 0$:
+      <li>For $n = N{-}1, \ldots, 0$:
         <ol style="list-style:lower-alpha; padding-left:24px;">
-          <li>Compute $\hat{X}^{(0)} = \bigl(X^{(n+1)} - \sqrt{1-\bar{\alpha}_{n+1}}\,\epsilon_\theta(X^{(n+1)}, n+1)\bigr)/\sqrt{\bar{\alpha}_{n+1}}$.</li>
-          <li>If $\sigma_n > 0$: sample $Z^{(n)}\sim\mathcal{N}(0,I)$, else skip.</li>
+          <li>$\hat{X}^{(0)} = \bigl(X^{(n+1)} - \sqrt{1-\bar{\alpha}_{n+1}}\,\epsilon_\theta(X^{(n+1)}, n+1)\bigr)/\sqrt{\bar{\alpha}_{n+1}}$.</li>
+          <li>Sample $Z^{(n)} \sim \mathcal{N}(0,I)$ if $\sigma_n > 0$.</li>
           <li>$X^{(n)} = \sqrt{\bar{\alpha}_n}\,\hat{X}^{(0)} + \sqrt{1-\bar{\alpha}_n-\sigma_{n+1}^2}\,\epsilon_\theta(X^{(n+1)}, n+1) + \sigma_n\,Z^{(n)}$.</li>
         </ol>
       </li>
+      <li>Return $X^{(0)}$.</li>
     </ol>
   </div>
+  <p style="text-align:center;">$\sigma_n = 0$: skip step (b), generator is deterministic.</p>
 </div>
 
-<!-- SLIDE: Probability flow ODE -->
+<!-- SLIDE: Probability-flow ODE -->
 <div class="slide">
-  <h2>$\sigma_n \equiv 0$: Probability-Flow ODE</h2>
+  <h2>Probability-Flow ODE</h2>
   <div class="divider"></div>
-  <p>When $\sigma_n = 0$, the reverse step is deterministic. Continuous-time limit:</p>
-  <div class="math-block">$$\frac{dX_t}{dt} = f(X_t, t) - \frac{g^2(t)}{2}\,\nabla_{\mathbf{x}} \log p_t(X_t).$$</div>
-  <p>This ODE has the same marginals $\{p_t\}$ as the forward SDE. DDIM with $\sigma_n = 0$ is a specific discretization for VP diffusion.</p>
+  <p>At $\sigma_n \equiv 0$, the reverse step is deterministic. Continuous-time limit:</p>
+  <div class="math-block">$$\frac{dX_t}{dt} = f(X_t, t) - \tfrac{1}{2}g^2(t)\,\nabla_{\mathbf{x}} \log p_t(X_t).$$</div>
+  <p>Same marginals $\{p_t\}$ as the forward SDE. DDIM at $\sigma_n=0$ is a discretization for VP diffusion.</p>
   <div class="highlight">
-    <p>Stochastic forward, deterministic generative process. Same marginals. Score does all the work.</p>
+    <p>Stochastic forward, deterministic generator. Score does all the work.</p>
   </div>
 </div>
 
@@ -254,28 +290,31 @@
   <p class="subtitle">Why DDIM matters in practice</p>
 </div>
 
-<!-- SLIDE: Three consequences -->
+<!-- SLIDE: Three benefits -->
 <div class="slide">
   <h2>Three Benefits</h2>
   <div class="divider"></div>
   <div class="grid-3">
     <div class="card" style="text-align:center;">
       <h3>Fewer steps</h3>
-      <p>Large strides on the index axis. 50 steps often match 1000-step DDPM quality.</p>
+      <p>Large strides on the index axis.</p>
+      <p>50 steps match 1000-step DDPM.</p>
     </div>
     <div class="card" style="text-align:center;">
       <h3>Inversion</h3>
-      <p>Run the deterministic generator <strong>backwards</strong>: recover the latent noise from an image. Used for editing and attribution.</p>
+      <p>Run the generator <strong>backwards</strong>.</p>
+      <p>Recover latent noise from an image.</p>
     </div>
     <div class="card" style="text-align:center;">
       <h3>Latent interpolation</h3>
-      <p>Interpolating noise latents yields smooth, meaningful paths in image space.</p>
+      <p>Smooth paths in image space.</p>
+      <p>From interpolated noise latents.</p>
     </div>
   </div>
-  <p>All three hinge on: $X^{(0)}$ is a deterministic function of $X^{(N)}$ under $\sigma_n = 0$.</p>
+  <p>All three rely on $X^{(0)}$ being a deterministic function of $X^{(N)}$.</p>
 </div>
 
-<!-- SLIDE: When to use which -->
+<!-- SLIDE: DDPM vs DDIM table -->
 <div class="slide">
   <h2>DDPM or DDIM?</h2>
   <div class="divider"></div>
@@ -287,9 +326,9 @@
       <tr><td>Forward</td><td>Markov</td><td>Non-Markovian</td></tr>
       <tr><td>Reverse variance</td><td>$\sigma_n$ fixed</td><td>$\sigma_n$ free</td></tr>
       <tr><td>Determinism</td><td>Stochastic</td><td>Tunable to $0$</td></tr>
-      <tr><td>Training objective</td><td>$\epsilon$-prediction</td><td>$\epsilon$-prediction (same)</td></tr>
-      <tr><td>Step count</td><td>Typically $1000$</td><td>Often $20$–$50$</td></tr>
-      <tr><td>Inversion</td><td>Not possible</td><td>Trivial ($\sigma_n = 0$)</td></tr>
+      <tr><td>Training</td><td>$\epsilon$-prediction</td><td>$\epsilon$-prediction</td></tr>
+      <tr><td>Step count</td><td>$\sim 1000$</td><td>$20$–$50$</td></tr>
+      <tr><td>Inversion</td><td>Not possible</td><td>Trivial at $\sigma_n=0$</td></tr>
     </tbody>
   </table>
 </div>
@@ -299,23 +338,12 @@
   <h2>Lecture Recap</h2>
   <div class="divider"></div>
   <ul>
-    <li>DDPM $\epsilon$-loss depends only on $q(X^{(n)}\,|\,X^{(0)})$, not the joint.</li>
-    <li><strong>DDIM</strong> preserves that marginal via a non-Markovian forward parameterized by $\{\sigma_n\}$.</li>
-    <li>$\sigma_n \equiv 0$: reverse is <strong>deterministic</strong>, discretizes the probability-flow ODE.</li>
-    <li>Training shared. Sampling is a solver choice.</li>
+    <li>DDPM $\epsilon$-loss depends only on $q(X^{(n)}\,|\,X^{(0)})$.</li>
+    <li><strong>DDIM</strong>: non-Markovian forward, same marginals, parameter $\{\sigma_n\}$.</li>
+    <li>$\sigma_n \equiv 0$: deterministic generator, probability-flow ODE.</li>
+    <li>Training shared with DDPM. Sampling is a solver choice.</li>
     <li>Wins: fewer steps, invertibility, clean latent interpolation.</li>
   </ul>
-</div>
-
-<!-- SLIDE: Check it yourself -->
-<div class="slide">
-  <h2>Check It Yourself</h2>
-  <div class="divider"></div>
-  <ol class="exercise-list">
-    <li>Show by induction that DDIM forward satisfies $q(X^{(n)}\,|\,X^{(0)}) = \mathcal{N}\!\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\;(1-\bar{\alpha}_n)\,I\bigr)$ for any $\{\sigma_n\}$.</li>
-    <li>Show that $\sigma_n^2 = \beta_n\,(1-\bar{\alpha}_n)/(1-\bar{\alpha}_{n+1})$ recovers the DDPM reverse update.</li>
-    <li>Show that the $\sigma_n = 0$ DDIM update is a valid explicit discretization of the probability-flow ODE for VP diffusion.</li>
-  </ol>
 </div>
 
 <!-- SLIDE: End / bridge -->
@@ -325,7 +353,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 19</div>
+<div class="slide-num" id="slideNum">1 / 24</div>
 
 </div><!-- end deck -->
 
