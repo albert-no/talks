@@ -28,6 +28,11 @@ Canonical rules for slide decks. **Audience**: academic conference talks and mas
 | Section divider | Recipes → Section divider |
 | Title slide / Closer | Recipes → Title / Closer |
 | Diagram with math labels | Recipes → Diagram (HTML + SVG arrows) |
+| Make a diagram dominate the slide | Recipes → Diagram dominates |
+| Build-up of nearly identical slides | Recipes → Build-up no-fade |
+| Recall a definition the audience may have forgotten | Recipes → Recall card |
+| Cite a paper (venue order, not arXiv) | Conventions → Citations |
+| What "page N" means | Conventions → Page numbering |
 | Trace a debugging issue | `GOTCHAS.md` |
 
 ---
@@ -57,6 +62,10 @@ Important content (audience must read it during the talk) → body size. Non-imp
 **One claim per line.** When a paragraph, `<li>`, `.highlight`, or `.card` carries multiple distinct claims joined by periods, split each into its own `<p>` (or convert the run to a `<ul>` if there are 3+ short claims). Two assertions that look like one sentence read as one idea — the audience won't track both. This applies inside `.highlight` / `.card` too: separate `<p>` siblings, not concatenated sentences.
 
 **Math-comma-math — anti-pattern.** Most of the time, starting a clause with math is fine. The specific failure is when the *previous* clause also *ended* in math: "For large $N$, $N\sigma^2$ dominates" — the two glyphs sit on either side of the comma and the eye reads them as one continuous expression ($N, N\sigma^2$). Insert a noun in the second clause ("the second term $N\sigma^2$ dominates") or restructure so the boundary isn't math-comma-math.
+
+**Em-dash mid-sentence — anti-pattern.** "X is a sparsifier — pruning emerges" wraps awkwardly at slide font sizes; the dash often orphans alone on a line. Replace with a colon plus `<br>` (one-shot internal break is allowed by Priority 1 step 2) or split into two `<p>` tags. Em-dashes are only safe when they're part of a technical glyph (`7–8B`, `fill-in-the-middle`).
+
+**Numerical anchors next to closed-form formulas.** When a slide states a closed-form `R(D)`, `D(R)`, or any quantity-as-function, pin a concrete number for the running example next to it: `R(D) = 1 - H_b(D)$, &nbsp;$R(\tfrac14) \approx 0.189$ bits` reads in one glance. The audience reads the formula; the speaker says the number; both belong on the slide.
 
 When prose visibly wraps:
 
@@ -276,6 +285,8 @@ Two related equations stacked vertically → single `<div class="math-block">` w
 
 **Exception**: when the second equation is a *key conclusion* deserving its own moment (final result, closing claim), promote it to its own `math-block` so it lands separately from the working math above. The visual gap then becomes signal, not noise.
 
+**Margin override when two blocks are unavoidable.** Each `.math-block` carries ~30 px of vertical padding/margin. Two stacked blocks add up to ~60 px of dead space, often pushing a closing highlight or footer off the slide. If you genuinely need two adjacent `math-block` divs (e.g. a derivation followed by a one-line conclusion), override the default with inline `style="margin: 8px 0;"` on each — never leave them at default and hope.
+
 ### Multi-step proof pattern
 
 For derivations that span 4+ logical steps, bracket the sequence. Definitions precede roadmaps; recap is a chained equation, not a re-listed bullet summary.
@@ -335,6 +346,28 @@ When deriving B from A, state A first as a self-contained fact (own paragraph + 
 <p>The reverse posterior is Gaussian:</p>
 <div class="math-block">$$q(\cdots) = \mathcal{N}(\mu_n, \beta_n),$$</div>
 <p>where $\mu_n$ uses the conditional score, known in closed form since $q(X^{(n)}|X^{(0)}) = \mathcal{N}(\ldots)$.</p>
+```
+
+---
+
+## Conventions
+
+### Page numbering
+
+The on-screen `slide-num` indicator (and any user reference to "page N") counts **every** `<div class="slide">` element in document order — title slide, TOC, section dividers, content slides, recap, end-slide all included. `deck.js` enumerates them with `querySelectorAll('.slide')` and shows `(current+1) / total`. When the user says "page 23", count from 1 starting at the title.
+
+When you edit, prefer matching slides by content (`<h2>` text, distinctive class) rather than position — slide numbers shift the moment you insert or remove anything. Only treat the page number as a navigation hint, not a stable identifier.
+
+### Citations
+
+`<div class="cite">…</div>` format: `Authors (in venue order), "Title", Venue YYYY` — no arXiv ID unless explicitly requested. Use the **venue's** author order (PMLR / NeurIPS / JMLR / journal proceedings page), not arXiv's, since they sometimes differ. `et al.` is acceptable for 4+ authors after first reference; spell out all authors on the first slide that introduces a paper.
+
+```html
+<!-- yes -->
+<div class="cite">Isik, Weissman, and No, "An Information-Theoretic Justification for Model Pruning", AISTATS 2022.</div>
+
+<!-- no: arXiv-only attribution -->
+<div class="cite">Isik et al., arXiv:2102.08329.</div>
 ```
 
 ---
@@ -429,11 +462,29 @@ One citation per slide. Don't wrap title in `<em>` (gray-on-gray is mud).
 
 **Algorithm slide.** A single styled box, centered. Don't pad with a right-column auxiliary diagram — the algorithm is the exhibit. Per-deck define `.<deck>-algo` once if reused (background `--light`, left border 3px `--yonsei-blue`, padding `16px 22px`, radius `0 10px 10px 0`).
 
+Use a counter-based `::before` for step numbers — default `<ol>` markers render too small and lack the visual weight needed at slide font sizes. Pad the step body left so the number visibly precedes the text:
+
+```css
+.<deck>-algo ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; }
+.<deck>-algo ol li {
+  counter-increment: step;
+  padding: 8px 0 8px 56px;
+  position: relative;
+  line-height: 1.45;
+}
+.<deck>-algo ol li::before {
+  content: counter(step) ".";
+  position: absolute; left: 12px; top: 8px;
+  font-weight: 700; color: var(--yonsei-blue);
+  width: 36px; text-align: right;
+}
+.<deck>-algo ol li + li { border-top: 1px solid var(--slate); }
+```
+
 ```html
 <div class="slide">
   <h2>Training Algorithm</h2><div class="divider"></div>
   <div class="d2-algo" style="max-width:880px; margin:36px auto 22px;">
-    <div class="d2-algo-title">DDPM Training — repeat until converged</div>
     <ol>
       <li>Sample $X^{(0)} \sim p_{\text{data}}$.</li>
       <li>Sample $\epsilon \sim \mathcal{N}(0,1)$.</li>
@@ -445,7 +496,68 @@ One citation per slide. Don't wrap title in `<em>` (gray-on-gray is mud).
 </div>
 ```
 
-`max-width` ≈ 880px for compact algorithms, ≈ 1040px when a step carries long math. Caption below, centered. Add a side diagram only if it conveys real new information beyond what's in the algorithm.
+`max-width` ≈ 880px for compact algorithms, ≈ 1040px when a step carries long math. Caption below, centered. Add a side diagram only if it conveys real new information beyond what's in the algorithm. Algorithms always live in a per-deck `.<deck>-algo` styled box — never `.code-block`.
+
+**Build-up no-fade pattern.** When several consecutive slides differ only by a single value (Lloyd–Max iteration, Bayes-step coloring, table-cell update), the engine's per-element fadeIn (`animation: fadeIn 0.4s ease both` with 0.06–0.30s stagger) makes navigation feel like a flash on every click. Disable it on those slides only with a per-deck class:
+
+```html
+<style>
+.<deck>-no-fade.active > * { animation: none !important; }
+</style>
+
+<div class="slide <deck>-no-fade">…</div>
+<div class="slide <deck>-no-fade">…</div>
+```
+
+Result: consecutive build-up slides feel like a single animated frame change. Keep the fade-in on every other slide where it helps the eye land. Pattern complements (does not replace) the multi-slide proof build-up — see Math-heavy → Build-up.
+
+**Recall card.** When a slide depends on a definition the audience saw 5+ slides ago (typical-set definition, AEP, KKT, a specific lemma), lead with a small recall card. Cheaper than asking the audience to remember:
+
+```html
+<div class="card" style="padding: 10px 16px; margin-bottom: 10px;">
+  <p><strong>Recall (typical set).</strong> $T_\varepsilon^{(n)}(P) = \{z^n : |\hat P_{z^n}(a) - P(a)| < \varepsilon \;\forall a\}$. <strong>AEP:</strong> $|T_\varepsilon^{(n)}(P)| \doteq 2^{nH(P)}$.</p>
+</div>
+<p>Now we use this to count Hamming-ball volumes…</p>
+```
+
+Use only when the dependency is non-obvious. Don't pile up Recall cards — one per slide max.
+
+**Diagram dominates.** When the user says "make the diagram much larger" or the slide is essentially "this picture, plus one short caption", check three things in order:
+
+1. Does the SVG carry a `style="max-width: <small>"` constraint? Remove it. (`max-width` belongs on the wrapper `<div>`, not the SVG itself.)
+2. Is the layout `.cols` (two equal-width children)? Switch to `.cols` with `.col-1-3` (text) + `.col-2-3` (diagram) so the diagram gets 2/3 of the slide.
+3. Is the SVG viewBox unnecessarily small (e.g. `220×130`)? Bump to `~400×240` so labels render at readable absolute pixel sizes — labels at `1.0–1.4rem` need a viewBox where `font-size` math lands in a sensible scale relative to the SVG's content.
+
+```html
+<div class="slide">
+  <h2>Setup and Statement</h2><div class="divider"></div>
+  <div class="cols">
+    <div class="col-1-3"><!-- text + math --></div>
+    <div class="col-2-3"><!-- big SVG with HTML overlays --></div>
+  </div>
+</div>
+```
+
+For pure single-diagram slides, drop the cols entirely and center the SVG with `max-width: ~960px; margin: 24px auto`.
+
+**KaTeX overlays on SVG.** KaTeX skips SVG `<text>` nodes — math labels go in absolute-positioned HTML spans on top of the SVG. Recommended sizes:
+
+- Axis labels (`$X_1$`, `$X_2$`, `$\widehat X^n$`): `font-size: 1.3–1.4rem; font-weight: 700;`
+- Threshold / index labels (`$\tau_i$`, `$\hat x_j$`): `font-size: 1.0–1.1rem; font-weight: 600;`
+- Annotation labels (atom mass, density names): `font-size: 1.1–1.4rem; font-weight: 600;`
+
+Position via `left: %; top: %;` computed against the viewBox: for viewBox `W × H` and SVG coord `(x, y)`, `left = x/W·100%`, `top = y/H·100%`. Use `transform: translate(-50%, -50%)` for centered labels, `transform: translate(-100%, -50%)` for right-aligned (typical for y-axis labels).
+
+```html
+<div style="position: relative;">
+  <svg viewBox="0 0 400 240" style="display: block; width: 100%;">…</svg>
+  <span style="position: absolute; left: 50%; top: 87%;
+               transform: translate(-50%, -50%);
+               font-size: 1.1rem;">$\hat x = 0$</span>
+</div>
+```
+
+**Never** put `max-width` on the SVG — put it on the wrapper instead, otherwise labels and SVG can drift apart.
 
 **Inline exercise.** Plain `<p><strong>Exercise.</strong> …</p>` placed next to the related content (definition, theorem, formula). Optional `<em>Hint:</em>` clause. **Don't** create a trailing "Check It Yourself" slide; **don't** introduce per-deck `.exercise-list` styling — the standalone exercise slide pattern was retired.
 

@@ -260,3 +260,74 @@ Fix: default to a single styled box, centered with `max-width: 880–1040px; mar
 Symptom: the on-screen slide label says "Slide 7 — Forward process" but the deck has rearranged and slide 7 is now something else.
 
 Fix: keep `data-screen-label` values in sync with actual slide position when inserting or removing slides. Not fatal, just confusing during review.
+
+## Slide-num invisible despite being in the DOM
+
+Symptom: `#slideNum` exists with the correct text content (`1 / 34`), but nothing is visible at the bottom-right of the deck.
+
+Cause: prior to fix, `.slide-num` was a child of `.deck`, which carries `transform: translate(-50%, -50%) scale(N)`. Children of a transformed ancestor are clipped/scaled with it, and during the engine's initial scale calculation the slide-num could land outside the visible viewport rectangle even though its CSS position was bottom-right relative to the deck.
+
+Fix (canonical, applied 2026-04): `deck.js` reparents `#slideNum` to `<body>` on init; `.slide-num` is `position: fixed; bottom: 12px; right: 22px; font-size: 1.2rem; font-weight: 700; color: var(--charcoal); z-index: 9999;`. This places the page number at the *true viewport* bottom-right, immune to any deck transform. Don't put `slide-num` back inside `.deck`.
+
+## Equation broken on page N → all later slides garbled
+
+Symptom: a math-block on page N renders as raw `$$…$$` text or random italicized letters, **and every slide after page N is also garbled**.
+
+Cause: KaTeX runs with `throwOnError: false`, so a parse failure doesn't crash but corrupts the auto-render walker's cursor. The most common single trigger is **literal `<` inside math being parsed by the HTML lexer as the start of a tag** — `X_{<i}`, `\sum_{i<j}`, `0<D\le\sigma^2` — which silently swallows everything until the next `>`. KaTeX never sees the original math.
+
+First-pass diagnosis when the user reports cascading breakage:
+```
+grep -nE '\$[^$]*<[a-zA-Z]' <deck>.html
+grep -nE '\$\$[^$]*<[a-zA-Z]' <deck>.html
+```
+Replace any matched `<` with `&lt;` inside math expressions.
+
+Other (rarer) triggers: unbalanced `\begin{aligned}/\end{aligned}`, missing `&` alignment markers, a stray `$` in surrounding prose that opens a phantom math span, mismatched `{}`. If grepping for `<` doesn't find the bug, scan the math-blocks above the first visibly-broken slide for these.
+
+## "Page N" — what counts
+
+Symptom: user says "page 9, the Toy Gaussian slide", but page 9 in the deck file is a section divider; the Toy Gaussian slide is page 10.
+
+Cause: `deck.js` enumerates slides as `document.querySelectorAll('.slide')` — title, TOC, section dividers, content, recap, end-slide all count. The on-screen `slide-num` shows this position. Users sometimes mentally skip section dividers when referring to a slide.
+
+Fix: when in doubt, re-confirm by content (h2 text), not number. Don't blindly edit "page N" — verify what's actually there. Add a short slide-number map to your scratchpad before diving in:
+```
+13: Lloyd-Max Initial
+14: Lloyd-Max Step ① iter 1
+…
+```
+
+## Build-up slides flash on every advance
+
+Symptom: a sequence of 4–7 slides differing only by a single quantity (Lloyd–Max iteration, proof-step coloring, table-cell update) feels jumpy / flickery on every click — each child element runs its own 0.06–0.30s staggered fadeIn.
+
+Cause: the engine's `.slide.active > * { animation: fadeIn 0.4s ease both }` rule applies to every slide; identical content fading in from 0 → 1 looks like a flash when the only change between slides is one line of math.
+
+Fix: define a per-deck `.<deck>-no-fade.active > * { animation: none !important }` rule and tag the build-up slides `class="slide <deck>-no-fade"`. Animations remain on every other slide; build-up sequences feel like stop-motion. Pattern documented in `DESIGN_SYSTEM.md` → Recipes → Build-up no-fade.
+
+## SVG `max-width` silently shrinks the diagram
+
+Symptom: the user says "make the diagram much larger", but the SVG already has `width="100%"` so it should fill its container.
+
+Cause: `<svg ... style="max-width: 240px">` (or similar) caps the rendered size regardless of the column width. In a 600-px-wide column the SVG renders at 240 px and looks tiny.
+
+Fix: remove `max-width` from the SVG. If you need to constrain size, put `max-width` on the wrapper `<div>` instead — the SVG inherits the wrapper's width, and the absolute-positioned KaTeX overlay spans (which use `top: %; left: %;` of the wrapper) keep their alignment.
+
+## Empty bottom half of slide is not a layout bug
+
+Symptom: a slide with a sparse body (h2 + 1 paragraph + 1 short list) has 200+ px of empty space at the bottom. User says "use the empty space".
+
+Cause: `.slide` is `display: flex; flex-direction: column;` with default `justify-content: flex-start;` — sparse content sits at top.
+
+Fix, in priority order:
+1. **Add structural content** that closes the slide: a math-block summarizing the chain, a `.highlight` capturing the takeaway, a recall card linking back to a prior definition. This is almost always what the user wants — they have a takeaway they hadn't surfaced.
+2. Re-balance with `justify-content: center` only when the content is genuinely complete and you want it visually centered.
+3. Avoid spacers / fake `<br>` rows (Priority 3 forbids middle voids; this one ban *includes* trailing pseudo-padding to fake balance).
+
+## Citation order: venue, not arXiv
+
+Symptom: user corrects you — "the citation should read Author A, Author B, Author C" but you wrote "Author A, Author C, Author B".
+
+Cause: arXiv preprints sometimes list authors in a different order than the official venue (PMLR / NeurIPS proceedings / journal). The arXiv abstract page or Google Scholar entry doesn't always match the canonical proceedings ordering. Authors do reshuffle.
+
+Fix: when adding `.cite`, use the **venue's** listing (PMLR page, NeurIPS proceedings page, journal TOC), not the arXiv abstract page. Default format: `Authors (in venue order), "Title", Venue YYYY` — no arXiv ID unless explicitly requested. If unsure, ask before drafting.

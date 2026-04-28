@@ -64,6 +64,7 @@
   font-size: 1.5rem;
 }
 .l1-contingency td { font-size: 1.7rem; font-weight: 600; }
+.l1-no-fade.active > * { animation: none !important; }
 </style>
 </head>
 <body data-brand-logo="../../reference/kor-eng2.png">
@@ -240,7 +241,7 @@
   </div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Initial</strong> &middot; arbitrary $\tau$ and $\hat x$ (deliberately bad).</p>
   <div style="position:relative;">
@@ -270,7 +271,7 @@
   <div class="math-block">$\tau = (-2.0,\; 0,\; 2.0)$ &nbsp;&middot;&nbsp; $\hat x = (-3.0,\; -1.0,\; 1.0,\; 3.0)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.34$</strong></div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Step ① — update $\hat x$</strong> &middot; $\hat x_i \leftarrow \mathbb{E}[X \mid \tau_i \le X &lt; \tau_{i+1}]$. <em>$\tau$ unchanged.</em></p>
   <div style="position:relative;">
@@ -300,7 +301,7 @@
   <div class="math-block">$\tau = (-2.0,\; 0,\; 2.0)$ &nbsp;&middot;&nbsp; $\hat x = (-2.37,\; -0.72,\; 0.72,\; 2.37)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.244$</strong></div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Step ② — update $\tau$</strong> &middot; $\tau_{i+1} \leftarrow \tfrac{1}{2}(\hat x_i + \hat x_{i+1})$. <em>$\hat x$ unchanged.</em></p>
   <div style="position:relative;">
@@ -330,7 +331,7 @@
   <div class="math-block">$\tau = (-1.55,\; 0,\; 1.55)$ &nbsp;&middot;&nbsp; $\hat x = (-2.37,\; -0.72,\; 0.72,\; 2.37)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.195$</strong></div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Step ① (iter 2) — update $\hat x$</strong> &middot; new conditional means under the tightened cells. <em>$\tau$ unchanged.</em></p>
   <div style="position:relative;">
@@ -360,7 +361,7 @@
   <div class="math-block">$\tau = (-1.55,\; 0,\; 1.55)$ &nbsp;&middot;&nbsp; $\hat x = (-1.98,\; -0.63,\; 0.63,\; 1.98)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.171$</strong></div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Step ② (iter 2) — update $\tau$</strong> &middot; midpoints of the new $\hat x$ pairs. <em>$\hat x$ unchanged.</em></p>
   <div style="position:relative;">
@@ -390,7 +391,7 @@
   <div class="math-block">$\tau = (-1.31,\; 0,\; 1.31)$ &nbsp;&middot;&nbsp; $\hat x = (-1.98,\; -0.63,\; 0.63,\; 1.98)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.149$</strong></div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Step ① (iter 3) — update $\hat x$</strong> &middot; reps move inward toward the new midpoints. <em>$\tau$ unchanged.</em></p>
   <div style="position:relative;">
@@ -420,7 +421,7 @@
   <div class="math-block">$\tau = (-1.31,\; 0,\; 1.31)$ &nbsp;&middot;&nbsp; $\hat x = (-1.78,\; -0.57,\; 0.57,\; 1.78)$ &nbsp;&middot;&nbsp; <strong>$D \approx 0.138$</strong></div>
 </div>
 
-<div class="slide">
+<div class="slide l1-no-fade">
   <h2>Lloyd&ndash;Max in Action ($R=2$, $X\sim\mathcal{N}(0,1)$)</h2><div class="divider"></div>
   <p><strong>Converged</strong> &middot; many more alternations &middot; $\tau, \hat x$ stop moving.</p>
   <div style="position:relative;">
@@ -587,7 +588,7 @@
   <div class="grid-2" style="margin-top:8px;">
     <div>
       <h3 style="text-align:center;">Square</h3>
-      <div style="position:relative;">
+      <div style="position:relative; max-width: 260px; margin: 0 auto;">
         <svg viewBox="0 0 300 240" width="100%" style="background:var(--light);border-radius:8px;display:block;">
           <rect x="80" y="50" width="140" height="140" stroke="#003876" stroke-width="2" fill="#003876" fill-opacity="0.06"/>
           <line x1="150" y1="120" x2="220" y2="50" stroke="#d94040" stroke-width="2.2" marker-end="url(#sq-arrow)"/>
@@ -604,7 +605,7 @@
     </div>
     <div>
       <h3 style="text-align:center;">Hexagon</h3>
-      <div style="position:relative;">
+      <div style="position:relative; max-width: 260px; margin: 0 auto;">
         <svg viewBox="0 0 300 240" width="100%" style="background:var(--light);border-radius:8px;display:block;">
           <polygon points="150,33.85 225.21,77.42 225.21,164.58 150,208.15 74.79,164.58 74.79,77.42" stroke="#003876" stroke-width="2" fill="#003876" fill-opacity="0.06"/>
           <line x1="150" y1="121" x2="225.21" y2="77.42" stroke="#d94040" stroke-width="2.2" marker-end="url(#hx-arrow)"/>
@@ -620,7 +621,7 @@
       <p style="text-align:center; margin-top:6px;">$r_{\mathrm{hex}} \approx 0.62\,a$ &middot; same area</p>
     </div>
   </div>
-  <div class="highlight" style="margin-top:8px;">High-$d$ typical shell at $\sqrt{n\sigma^2}$ &middot; round cells cover it; cubes waste corners.</div>
+  <div class="highlight" style="margin-top:10px;">High-$d$ typical shell at $\sqrt{n\sigma^2}$ &middot; round cells cover it; cubes waste corners.</div>
 </div>
 
 
@@ -721,26 +722,51 @@
 <!-- Binary toy as worked example BEFORE formal achievability -->
 <div class="slide">
   <h2>Binary Toy — Setup</h2><div class="divider"></div>
-  <p>$X_i \stackrel{\mathrm{iid}}{\sim} \mathrm{Bern}(1/2)$, &nbsp; $d_H(x,\hat x) = \mathbb{1}\{x\ne\hat x\}$.</p>
-  <p>Block length $n=24$, &nbsp; target distortion $D=1/4$, &nbsp; so $nD = 6$ flips.</p>
-  <div class="highlight">Find a codeword within $6$ Hamming flips of $X^n$.</div>
+  <ul>
+    <li><strong>Source:</strong> $X_i \stackrel{\mathrm{iid}}{\sim} \mathrm{Bern}(1/2)$</li>
+    <li><strong>Distortion:</strong> $d_H(x,\hat x) = \mathbb{1}\{x \ne \hat x\}$ &nbsp;(Hamming)</li>
+    <li><strong>Block length:</strong> $n = 24$</li>
+    <li><strong>Target distortion:</strong> $D = 1/4$</li>
+    <li><strong>Hamming budget:</strong> $nD = 6$ flips</li>
+  </ul>
+  <div class="highlight" style="margin-top:14px;">Find a codeword $\widehat X^n$ within $6$ Hamming flips of $X^n$.</div>
 </div>
 
 <div class="slide">
   <h2>Binary $R(D)$ and the Test Channel</h2><div class="divider"></div>
   <p>Rate&ndash;distortion function:</p>
-  <div class="math-block">$$R(D) \;=\; 1 - H_b(D), \qquad 0\le D\le 1/2.$$</div>
-  <p>Achieving joint distribution $P_{X,\widehat X}$: backward channel</p>
-  <div class="math-block">$$X = \widehat X \oplus Z, \quad \widehat X\sim\mathrm{Bern}(1/2),\; Z\sim\mathrm{Bern}(D),\; \widehat X\perp Z.$$</div>
-  <p>$\Pr[X\ne\widehat X] = D$ &nbsp;&middot;&nbsp; $I(X;\widehat X) = H(X) - H(X\mid\widehat X) = 1 - H_b(D)$.</p>
+  <div class="math-block" style="margin: 8px 0;">$$R(D) \;=\; 1 - H_b(D), \qquad R(\tfrac{1}{4}) \;=\; 1 - H_b(\tfrac{1}{4}) \;\approx\; 0.189 \text{ bits}.$$</div>
+  <p>Achieving joint $P_{X,\widehat X}$: backward channel</p>
+  <div class="math-block" style="margin: 8px 0;">$$X = \widehat X \oplus Z, \quad \widehat X\sim\mathrm{Bern}(1/2),\; Z\sim\mathrm{Bern}(D),\; \widehat X\perp Z.$$</div>
+  <p>$\Pr[X\ne\widehat X] = D$ &nbsp;&middot;&nbsp; $I(X;\widehat X) = 1 - H_b(D)$.</p>
 </div>
 
 <div class="slide">
   <h2>One Source, Many Candidates</h2><div class="divider"></div>
   <p>Source draw, $n=24$:</p>
-  <div class="math-block">$X^n = $&nbsp;<span class="l1-bitstr">101000100001100010000100</span></div>
-  <p>A random $\mathrm{Bern}(1/2)^{24}$ candidate typically differs in $\approx 12$ positions.</p>
-  <p>Generate $M = 2^{nR}$ candidates; one eventually lands inside the $6$-flip ball.</p>
+  <div class="math-block" style="margin:8px 0;">$X^n = $&nbsp;<span class="l1-bitstr">101000100001100010000100</span></div>
+  <div class="cols" style="gap:36px; align-items:center; margin-top:6px;">
+    <div>
+      <p>A random $\widehat X^n \sim \mathrm{Bern}(1/2)^{24}$ is independent of $X^n$:</p>
+      <ul>
+        <li>Each cell $\;=\; n \cdot \tfrac{1}{4} \;=\; 6$</li>
+        <li>Disagreement $\;\approx\; n/2 = 12$ &mdash; far from the $6$-flip ball</li>
+      </ul>
+    </div>
+    <div>
+      <p style="text-align:center; margin:0 0 4px 0;"><strong>Independent baseline</strong></p>
+      <table class="l1-contingency">
+        <thead>
+          <tr><th></th><th>$\hat x_i = 0$</th><th>$\hat x_i = 1$</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>$x_i = 0$</th><td>$6$</td><td>$6$</td></tr>
+          <tr><th>$x_i = 1$</th><td>$6$</td><td>$6$</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:8px;">Generate $M = 2^{nR}$ candidates &middot; one eventually lands inside.</div>
 </div>
 
 <div class="slide">
@@ -779,33 +805,31 @@
 
 <div class="slide">
   <h2>Empirical Joint Matches the Test Channel</h2><div class="divider"></div>
-  <p>Pair $\widehat X^n(14)$ with $X^n$ &middot; counts (left) vs ideal $n\,P_{X,\widehat X}$ at $D=1/4$ (right):</p>
+  <p>Pair $\widehat X^n(14)$ with $X^n$ &middot; empirical (left) vs ideal $n\,P_{X,\widehat X}$ at $D=1/4$ (right):</p>
   <div class="cols" style="gap:36px; align-items:flex-start;">
     <div>
-      <p style="text-align:center; margin:0 0 4px 0;"><strong>Empirical count</strong></p>
+      <p style="text-align:center; margin:0 0 4px 0;"><strong>Empirical (matched)</strong></p>
       <table class="l1-contingency">
         <thead>
           <tr><th></th><th>$\hat x_i = 0$</th><th>$\hat x_i = 1$</th></tr>
         </thead>
         <tbody>
-          <tr><th>$x_i = 0$</th><td>$13$</td><td>$4$</td></tr>
-          <tr><th>$x_i = 1$</th><td>$2$</td><td>$5$</td></tr>
+          <tr><th>$x_i = 0$</th><td>$13\;(\tfrac{13}{24})$</td><td>$4\;(\tfrac{4}{24})$</td></tr>
+          <tr><th>$x_i = 1$</th><td>$2\;(\tfrac{2}{24})$</td><td>$5\;(\tfrac{5}{24})$</td></tr>
         </tbody>
       </table>
-      <p style="text-align:center; margin:4px 0 0 0;">fractions $\tfrac{13}{24},\tfrac{4}{24},\tfrac{2}{24},\tfrac{5}{24}$</p>
     </div>
     <div>
-      <p style="text-align:center; margin:0 0 4px 0;"><strong>Ideal $P_{X,\widehat X}$</strong></p>
+      <p style="text-align:center; margin:0 0 4px 0;"><strong>Ideal $n\,P^\star$</strong></p>
       <table class="l1-contingency">
         <thead>
           <tr><th></th><th>$\hat x_i = 0$</th><th>$\hat x_i = 1$</th></tr>
         </thead>
         <tbody>
-          <tr><th>$x_i = 0$</th><td>$\tfrac{3}{8}$</td><td>$\tfrac{1}{8}$</td></tr>
-          <tr><th>$x_i = 1$</th><td>$\tfrac{1}{8}$</td><td>$\tfrac{3}{8}$</td></tr>
+          <tr><th>$x_i = 0$</th><td>$9\;(\tfrac{3}{8})$</td><td>$3\;(\tfrac{1}{8})$</td></tr>
+          <tr><th>$x_i = 1$</th><td>$3\;(\tfrac{1}{8})$</td><td>$9\;(\tfrac{3}{8})$</td></tr>
         </tbody>
       </table>
-      <p style="text-align:center; margin:4px 0 0 0;">$(1{-}D)/2,\,D/2,\,D/2,\,(1{-}D)/2$</p>
     </div>
   </div>
   <div class="highlight" style="margin-top:6px;">Empirical $\approx$ ideal &middot; <strong>joint typicality</strong> &middot; the basis of random-coding achievability.</div>
@@ -813,10 +837,12 @@
 
 <div class="slide">
   <h2>Ball Volume = Typical-Set Size</h2><div class="divider"></div>
-  <p>Hamming ball $B(0, nD) = \{z\in\{0,1\}^n : \text{wt}(z) \le nD\}$.</p>
-  <p>Each $z$ encodes an <strong>error pattern</strong> &middot; fraction of ones $\le D$.</p>
-  <p>Under $\mathrm{Bern}(D)$, the typical pattern has exactly $\approx nD$ ones.</p>
-  <div class="math-block">$$|T_\varepsilon^{(n)}(\mathrm{Bern}(D))| \;\doteq\; 2^{n H_b(D)} \quad\text{(AEP).}$$</div>
+  <div class="card" style="padding: 10px 16px; margin-bottom: 10px;">
+    <p><strong>Recall (typical set).</strong> $T_\varepsilon^{(n)}(P) = \{z^n : |\tfrac{1}{n}\!\sum_i \mathbb{1}\{z_i=a\} - P(a)| &lt; \varepsilon \;\forall a\}$. <strong>AEP:</strong> $|T_\varepsilon^{(n)}(P)| \doteq 2^{nH(P)}$.</p>
+  </div>
+  <p>Hamming ball $B(0, nD) = \{z\in\{0,1\}^n : \text{wt}(z) \le nD\}$ &middot; each $z$ is an <strong>error pattern</strong>.</p>
+  <p>Typical $\mathrm{Bern}(D)$ pattern has $\approx nD$ ones &middot; so</p>
+  <div class="math-block" style="margin: 8px 0;">$$|T_\varepsilon^{(n)}(\mathrm{Bern}(D))| \;\doteq\; 2^{n H_b(D)}.$$</div>
   <div class="highlight">Ball volume $\;\asymp\;$ size of the strongly-typical set under the error law.</div>
 </div>
 
@@ -842,11 +868,16 @@
 
 <div class="slide">
   <h2>Generalization: the Optimal Test Channel</h2><div class="divider"></div>
-  <p>For any source $P_X$ and target $D$, identify the optimizer:</p>
-  <div class="math-block">$$P^\star_{X,\widehat X} \;=\; \arg\inf\!\bigl\{ I(X;\widehat X) : \mathbb{E}\,d(X,\widehat X) \le D \bigr\}.$$</div>
-  <p>Draw codewords iid from the marginal $P^\star_{\widehat X}$ &middot; pick any $m$ with $(X^n, \widehat X^n(m))$ jointly typical.</p>
-  <p>$M = 2^{nR}$ codewords with $R > I(X;\widehat X^\star)$ &middot; one match w.h.p.</p>
-  <div class="highlight"><strong>Open question:</strong> how to find $P^\star_{X,\widehat X}$ for a given source. <em>Lecture 2: Gaussian, Laplacian.</em></div>
+  <ul>
+    <li>Identify the optimizer for source $P_X$ at distortion $D$:</li>
+  </ul>
+  <div class="math-block" style="margin: 6px 0;">$$P^\star_{X,\widehat X} \;=\; \arg\inf\!\bigl\{ I(X;\widehat X) : \mathbb{E}\,d(X,\widehat X) \le D \bigr\}.$$</div>
+  <ul>
+    <li>Draw codewords iid from the marginal $P^\star_{\widehat X}$</li>
+    <li>Pick any $m$ with $(X^n, \widehat X^n(m))$ jointly typical</li>
+    <li>$M = 2^{nR}$ codewords with $R > I(X;\widehat X^\star)$ &nbsp;$\Rightarrow$&nbsp; match w.h.p.</li>
+  </ul>
+  <div class="highlight" style="margin-top:8px; padding: 10px 16px;"><strong>Open question:</strong> how to find $P^\star_{X,\widehat X}$ for a given source. <em>Lecture 2: Gaussian, Laplacian.</em></div>
 </div>
 
 <div class="slide">
