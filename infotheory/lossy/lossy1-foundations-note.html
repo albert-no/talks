@@ -112,6 +112,61 @@
 </section>
 
 <section>
+  <h2>Slide &mdash; What are we optimizing over?</h2>
+  <p>The information rate&ndash;distortion function $R^{(I)}(D)$ is defined as a constrained minimization over a probability object. It is worth being explicit about what is fixed, what is free, and what is derived:</p>
+  <ul>
+    <li><strong>Fixed.</strong> The source marginal $P_X$ (handed to us by the world), the distortion measure $d(\cdot,\cdot)$, and the budget $D$.</li>
+    <li><strong>Free.</strong> The conditional distribution $P_{\widehat X\mid X}$ &mdash; equivalently, a stochastic transition kernel from the source alphabet to the reproduction alphabet. Each row $P_{\widehat X\mid X}(\cdot\mid x)$ is a probability vector. This object is also called the <em>test channel</em>.</li>
+    <li><strong>Derived.</strong> Once $P_{\widehat X\mid X}$ is chosen, the joint $P_{X,\widehat X}=P_X\,P_{\widehat X\mid X}$, the output marginal $P_{\widehat X}=\sum_x P_X(x)P_{\widehat X\mid X}(\cdot\mid x)$, and the mutual information $I(X;\widehat X)$ are all determined.</li>
+  </ul>
+  <p>The optimization is a convex program: $I(X;\widehat X)$ is a convex function of $P_{\widehat X\mid X}$ when $P_X$ is held fixed (a standard fact in information theory). The distortion constraint $\mathbb{E}\,d \le D$ is linear in $P_{\widehat X\mid X}$. Hence Lagrangian / KKT methods apply, and the solution can be characterized by stationarity conditions.</p>
+  <p>The Blahut&ndash;Arimoto algorithm is one numerical procedure for solving this optimization for arbitrary discrete sources; for many continuous sources of interest (Gaussian, Laplacian) the solution can be found in closed form, as we will see in Lecture 2.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Solving the optimization (binary)</h2>
+  <p>For $X\sim\mathrm{Bern}(1/2)$ under Hamming distortion, the test channel is a $2\times 2$ row-stochastic matrix with two free entries:</p>
+  <div class="deriv">
+    \[
+    P_{\widehat X\mid X} = \begin{pmatrix} 1-\alpha_0 & \alpha_0 \\ \alpha_1 & 1-\alpha_1 \end{pmatrix}, \qquad \mathbb{E}\,d_H = \tfrac{\alpha_0+\alpha_1}{2}.
+    \]
+  </div>
+  <p>By the symmetry of source and distortion under $X\leftrightarrow 1-X$, the optimum is symmetric: $\alpha_0=\alpha_1=\alpha$. (More formally, if $(\alpha_0^\star,\alpha_1^\star)$ is optimal then so is $(\alpha_1^\star,\alpha_0^\star)$ by relabeling, and the average $(\bar\alpha,\bar\alpha)$ is at least as good by convexity.) With this reduction:</p>
+  <div class="deriv">
+    \[
+    \widehat X\sim\mathrm{Bern}(1/2),\qquad H(\widehat X\mid X) = H_b(\alpha),\qquad I(X;\widehat X) = 1 - H_b(\alpha).
+    \]
+  </div>
+  <p>Since $1-H_b(\alpha)$ is strictly decreasing on $\alpha\in[0,1/2]$, the constrained minimum is attained at the boundary $\alpha=D$ (assuming $D\le 1/2$). This gives $R^{(I)}(D)=1-H_b(D)$ and the optimal joint $P^\star_{X,\widehat X}$ described by $X=\widehat X\oplus Z$ with $\widehat X\sim\mathrm{Bern}(1/2)$ and $Z\sim\mathrm{Bern}(D)$ independent.</p>
+  <p>Note that the optimal output marginal $P^\star_{\widehat X}=\mathrm{Bern}(1/2)$ <em>matches</em> the source marginal here. This is a coincidence of the binary symmetric setup; for general sources the optimal $P^\star_{\widehat X}$ does not equal $P_X$ (e.g. for Laplacian sources $P^\star_{\widehat X}$ has a Dirac atom at zero &mdash; see Lecture 2).</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Suboptimal codebook (wrong marginal)</h2>
+  <p>The achievability theorem says: draw codewords iid from $P^\star_{\widehat X}$ and rate $R&gt;R(D)$ suffices. What if we instead drew codewords from a different product distribution &mdash; say $\mathrm{Bern}(p)^n$ with $p\ne 1/2$? The codebook still works, but at a strictly worse rate.</p>
+  <p>Fix a typical $X^n$ with $k\approx n/2$ ones. The bits of the disagreement vector $X^n\oplus\widehat X^n$ are independent: rate $p$ at zeros-positions of $X^n$, rate $1-p$ at ones-positions. By Sanov's theorem, the probability that the empirical disagreement rate is at most $D$ decays exponentially with rate</p>
+  <div class="deriv">
+    \[
+    \rho(p,D) \;=\; \min_{\substack{q_0,q_1\\ (q_0+q_1)/2\,\le\,D}} \tfrac{1}{2}\bigl[D_{\mathrm{KL}}(q_0\|p) + D_{\mathrm{KL}}(q_1\|1-p)\bigr],
+    \]
+  </div>
+  <p>where $q_0$ is the optimal exponent on zeros-positions and $q_1$ on ones-positions. By Lagrangian stationarity, $q_0$ and $q_1$ satisfy</p>
+  <div class="deriv">
+    \[
+    \frac{q_0(1-p)}{p(1-q_0)} \;=\; \frac{q_1\,p}{(1-p)(1-q_1)} \qquad\text{and}\qquad \tfrac{q_0+q_1}{2} = D.
+    \]
+  </div>
+  <p>For $p=1/2$ the system is symmetric: $q_0=q_1=D$, $\rho(1/2,D)=1-H_b(D)=R(D)$. For $p\ne 1/2$ the symmetry is broken &mdash; on zeros-positions a flip is the unlikely event ($p$ small), so $q_0$ stays small; on ones-positions a "flip" means agreeing with $X_i=1$ when the codeword has bias $p$ for ones, which is the unlikely event when $p&lt;1/2$, so $q_1$ is pushed up.</p>
+  <p>Worked numbers for $D=1/4$:</p>
+  <ul>
+    <li><strong>$p=1/4$:</strong> $16q_0^2+12q_0-1=0$ gives $q_0\approx 0.0757$, $q_1\approx 0.4243$. Plugging in: $\rho\approx 0.246$ bits, vs $R(D)\approx 0.189$ bits. Codebook size threshold rises from $2^{n\cdot 0.189}\approx 23$ to $2^{n\cdot 0.246}\approx 60$ at $n=24$.</li>
+    <li><strong>$p=1/8$:</strong> $96q_0^2+52q_0-1=0$ gives $q_0\approx 0.0186$, $q_1\approx 0.4814$. $\rho\approx 0.381$ bits. Codebook threshold $\approx 565$ at $n=24$ &mdash; an order of magnitude over the optimal $\sim 23$.</li>
+  </ul>
+  <p>The penalty grows as $p$ moves away from $1/2$, and at $p=0$ or $p=1$ the codebook becomes a deterministic constant string: the only disagreement-rate distribution achievable is $(q_0,q_1)=(p,1-p)$, which gives mean disagreement $1/2$ and no slack to dip below $D&lt;1/2$ &mdash; $\rho\to\infty$.</p>
+  <p>Operationally: every codeword law that is not the optimal $P^\star_{\widehat X}$ wastes bits. The information &ndash; theoretic optimization $\arg\inf I(X;\widehat X)$ is exactly the codebook law that minimizes the rate needed to find a match.</p>
+</section>
+
+<section>
   <h2>Slide &mdash; The mutual information formula</h2>
   <p>Shannon's theorem is in two parts:</p>
   <ul>
@@ -160,6 +215,146 @@
   </div>
   <p>and the bound is exponentially tight: $|B(0,nD)|\sim 2^{nH_b(D)}/\sqrt{n}$ up to polynomial factors. Plugging into the cover bound gives the threshold rate $R(D)=1-H_b(D)$.</p>
   <p>For non-uniform Bernoulli sources (Bernoulli$(p)$ with $p\ne 1/2$), the analogous threshold is $R(D)=H_b(p)-H_b(D)$ for $D\le p$, which reflects the smaller entropy of a biased source.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Worked example: biased binary</h2>
+  <p>The binary symmetric source ($p=1/2$) is the simplest case but somewhat misleading: source and codebook share the same marginal $\mathrm{Bern}(1/2)$. The biased case $p&lt;1/2$ breaks this coincidence and is the cleanest illustration that the optimal codebook law is <em>different</em> from the source law.</p>
+  <h3>Lower bound (converse).</h3>
+  <p>For any $P_{X,\widehat X}$ with $X\sim\mathrm{Bern}(p)$ and $\mathbb E[d_H(X,\widehat X)]=\Pr(X\ne\widehat X)\le D$,</p>
+  <div class="deriv">
+    \[
+    \begin{aligned}
+    I(X;\widehat X) &= H(X) - H(X\mid\widehat X) \\
+                    &= H_b(p) - H(X\oplus\widehat X\mid\widehat X) \\
+                    &\ge H_b(p) - H(X\oplus\widehat X) \\
+                    &\ge H_b(p) - H_b\!\bigl(\Pr(X\ne\widehat X)\bigr) \\
+                    &\ge H_b(p) - H_b(D),
+    \end{aligned}
+    \]
+  </div>
+  <p>where the inequalities use (i) conditioning reduces entropy, (ii) the binary entropy is concave and increasing on $[0,1/2]$, and (iii) the distortion constraint $\Pr(X\ne\widehat X)\le D\le p\le 1/2$.</p>
+  <h3>Achievability (matching upper bound).</h3>
+  <p>Set $X=\widehat X\oplus Z$ with $\widehat X\sim\mathrm{Bern}(q)$, $Z\sim\mathrm{Bern}(D)$, $\widehat X\perp Z$. The constraint $\Pr(X=1)=p$ gives one equation in one unknown:</p>
+  <div class="deriv">
+    \[
+    q(1-D) + (1-q)D = p \;\Longrightarrow\; q = \frac{p-D}{1-2D}.
+    \]
+  </div>
+  <p>Note $q\le p$ for $D\ge 0$, with equality only at $D=0$ (no compression). The mutual information is</p>
+  <div class="deriv">
+    \[
+    I(X;\widehat X) = H(X) - H(X\mid\widehat X) = H_b(p) - H(Z) = H_b(p) - H_b(D),
+    \]
+  </div>
+  <p>matching the lower bound. Hence $R(D)=H_b(p)-H_b(D)$ for $0\le D\le p$, and $R(D)=0$ for $D\ge p$ (output the constant $\widehat X=0$ and accept distortion $p$).</p>
+  <h3>Why the codeword law differs from the source law.</h3>
+  <p>The optimal output marginal is $P^\star_{\widehat X}=\mathrm{Bern}(q)$ with $q=(p-D)/(1-2D)$. For $D&gt;0$ this is strictly less than $p$ &mdash; the codewords are <em>sparser</em> than the source. Intuitively, the encoder relies on the noise $Z$ (rate $D$) to flip a fraction $D$ of the bits up to the source rate $p$; the codeword only needs to carry the "remaining" ones, which are scarcer. This is the simplest example of a phenomenon that becomes dramatic for the Laplacian source in Lecture 2, where the optimal output marginal develops a Dirac atom at zero (sparse reproduction) even though the source itself has full support.</p>
+  <h3>Numerics for $p=0.2,D=0.1$.</h3>
+  <p>$H_b(0.2)=-0.2\log_2 0.2 - 0.8\log_2 0.8 \approx 0.7219$ bits. $H_b(0.1)\approx 0.4690$ bits. $R(D)\approx 0.2529$ bits/symbol. The optimal $\widehat X^\star\sim\mathrm{Bern}(1/8)$. Codebook size for block length $n$: $M=\lceil 2^{n\cdot 0.253}\rceil$.</p>
+  <p>For comparison, the symmetric case ($p=1/2,D=0.1$) would give $R(D)=1-H_b(0.1)\approx 0.531$ bits &mdash; more than double. A biased source has lower entropy and is therefore easier to compress, which the formula $H_b(p)-H_b(D)$ captures cleanly.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Forbidden reproduction (infinite distortion)</h2>
+  <p>This example illustrates what happens when one direction of the distortion is <em>infinite</em> &mdash; an absolute prohibition on certain reproduction choices &mdash; while the symmetric source is unchanged. The asymmetry forces structural changes in the optimal joint.</p>
+  <h3>Why the joint becomes triangular.</h3>
+  <p>The expected distortion is</p>
+  <div class="deriv">
+    \[
+    \mathbb{E}[d(X,\widehat X)] = \sum_{x,\hat x} p(x,\hat x)\,d(x,\hat x).
+    \]
+  </div>
+  <p>If $d(0,1)=\infty$ and we want a finite expected distortion, the only way is to set the coefficient $p(0,1) = 0$ exactly. Any positive mass there would produce $0\cdot\infty = \infty$ (or, more carefully: the limit makes the constraint infeasible). So the joint matrix has a hard zero in the $(0,1)$ corner.</p>
+  <p>The other three entries must sum to $1$ and respect the source marginal $p(X{=}0)=p(X{=}1)=1/2$. After accounting for these constraints, only one parameter remains, namely $D = p(1,0)$, and the joint takes the triangular form on the slide.</p>
+  <h3>The output marginal is biased.</h3>
+  <p>The output marginal is $\Pr(\widehat X{=}0) = 1/2 + D$ and $\Pr(\widehat X{=}1) = 1/2 - D$. For any $D\in(0,1/2)$ this is strictly biased toward $0$ &mdash; intuitively, the encoder &ldquo;dumps&rdquo; the lossy bits onto the safe side ($\widehat X{=}0$ is a permitted reproduction for both source values), and only carefully sets $\widehat X{=}1$ when the source is actually $1$.</p>
+  <h3>The mutual information.</h3>
+  <p>Using $H(X)=1$ and computing the conditional entropy:</p>
+  <div class="deriv">
+    \[
+    \begin{aligned}
+    H(X\mid\widehat X{=}0) &= H_b\!\Bigl(\tfrac{1/2}{1/2+D}\Bigr), \\
+    H(X\mid\widehat X{=}1) &= 0 \quad \text{(deterministic)}, \\
+    H(X\mid\widehat X) &= \bigl(\tfrac{1}{2}+D\bigr)\,H_b\!\Bigl(\tfrac{1/2}{1/2+D}\Bigr) \;+\; \bigl(\tfrac{1}{2}-D\bigr)\cdot 0.
+    \end{aligned}
+    \]
+  </div>
+  <p>Subtracting from $H(X)=1$ gives the formula on the slide. After algebraic simplification using $H_b(q) = -q\log q - (1-q)\log(1-q)$:</p>
+  <div class="deriv">
+    \[
+    R(D) = \tfrac{1}{2} \;-\; \bigl(\tfrac{1}{2}+D\bigr)\log\!\bigl(\tfrac{1}{2}+D\bigr) \;+\; D\log D.
+    \]
+  </div>
+  <h3>Numerical comparison to the symmetric Hamming case.</h3>
+  <table>
+    <thead><tr><th>$D$</th><th>$R(D)$ (forbidden)</th><th>$R(D) = 1 - H_b(D)$ (symmetric)</th></tr></thead>
+    <tbody>
+      <tr><td>$0$</td><td>$1$</td><td>$1$</td></tr>
+      <tr><td>$1/8$</td><td>$\approx 0.594$</td><td>$\approx 0.456$</td></tr>
+      <tr><td>$1/4$</td><td>$\approx 0.311$</td><td>$\approx 0.189$</td></tr>
+      <tr><td>$1/2$</td><td>$0$</td><td>$0$</td></tr>
+    </tbody>
+  </table>
+  <p>The asymmetric (&ldquo;forbidden&rdquo;) version always requires <em>more</em> bits at the same distortion. The geometric reason: the test channel has a hard wall on one side, so the encoder can&rsquo;t use both halves of the reproduction alphabet symmetrically.</p>
+  <h3>Why this matters.</h3>
+  <p>This is the simplest concrete example where $P^\star_{\widehat X} \ne P_X$ even though $P_X$ is uniform. The classical &ldquo;binary symmetric&rdquo; case has $P^\star_{\widehat X}=\mathrm{Bern}(1/2)=P_X$ as a coincidence; the forbidden-reproduction case breaks the coincidence cleanly. It also sets up intuition for the Laplacian case (Lecture 2), where the optimal output develops a hard atom at zero &mdash; the continuous analogue of dumping mass onto a &ldquo;safe&rdquo; reproduction.</p>
+</section>
+
+<section>
+  <h2>Slide &mdash; Uniform ternary source &amp; the Shannon lower bound</h2>
+  <p>This example introduces the <em>Shannon lower bound</em> in a discrete setting: a tight, conditional-entropy-style bound on $R(D)$ that doesn&rsquo;t require any explicit construction. For the uniform ternary source under Hamming distortion the bound is tight; for non-uniform sources it is generally a strict bound but still useful.</p>
+  <h3>The chain of inequalities.</h3>
+  <p>Let $V$ be the reproduction. The four steps in the slide&rsquo;s derivation:</p>
+  <ol>
+    <li><strong>(i)</strong>: $I(U;V) = H(U) - H(U\mid V)$ by definition.</li>
+    <li><strong>(ii)</strong>: $H(U\mid V) = H(U\ominus V\mid V)$ because, conditional on $V=v$, the map $u\mapsto u\ominus v$ is a bijection on $\{0,1,2\}$ &mdash; it just relabels symbols, leaving the conditional entropy unchanged.</li>
+    <li><strong>(iii)</strong>: $H(U\ominus V \mid V) \le H(U\ominus V)$ because conditioning never increases entropy.</li>
+    <li><strong>(iv)</strong>: $H(U\ominus V) \le \phi(D)$ because the marginal of $Z := U\ominus V$ has $\Pr(Z\ne 0) = \Pr(U\ne V) = \mathbb{E}[d_H(U,V)] \le D$, so it lies in the feasible set defining $\phi$.</li>
+  </ol>
+  <p>The chain holds for <em>every</em> joint $P_{U,V}$ in the feasible set, so the infimum over feasible joints is also bounded below by $H(U)-\phi(D)$. That gives $R(D) \ge H(U) - \phi(D)$.</p>
+  <h3>Computing $\phi(D)$ explicitly.</h3>
+  <p>$\phi(D)$ asks: among ternary distributions $Z$ with $\Pr(Z\ne 0) \le D$, which has the largest entropy? Write the law as $(p_0, p_1, p_2)$ with $p_1+p_2 \le D$ and $p_0 = 1-(p_1+p_2)$. Concavity of entropy says we should</p>
+  <ul>
+    <li>Push the constraint to the boundary: $p_1+p_2 = D$ exactly (giving $p_0 = 1-D$).</li>
+    <li>Distribute the remaining mass $D$ uniformly over the two symbols $\{1,2\}$: $p_1 = p_2 = D/2$.</li>
+  </ul>
+  <p>Plugging in:</p>
+  <div class="deriv">
+    \[
+    \begin{aligned}
+    \phi(D) &= -(1-D)\log(1-D) - 2\cdot\tfrac{D}{2}\log\tfrac{D}{2} \\
+            &= H_b(D) - D\log\tfrac{1}{2} \\
+            &= H_b(D) + D.
+    \end{aligned}
+    \]
+  </div>
+  <p>This formula holds for $0 \le D \le 2/3$. For $D \ge 2/3$ the unconstrained max is achieved at uniform $Z$ with $H(Z) = \log 3$, so $\phi(D) = \log 3$ and $R(D) = 0$.</p>
+  <h3>Why the bound is tight for uniform $U$.</h3>
+  <p>Tightness requires <em>simultaneous</em> equality in (iii) and (iv):</p>
+  <ul>
+    <li><strong>(iii)</strong> is tight iff $U \ominus V$ is independent of $V$.</li>
+    <li><strong>(iv)</strong> is tight iff $U \ominus V$ has the maximizing law $(1-D, D/2, D/2)$.</li>
+  </ul>
+  <p>Construction: pick $V$ uniform on $\{0,1,2\}$, $Z_D \sim (1-D, D/2, D/2)$ independent of $V$, and set $U = V \oplus Z_D$. Then</p>
+  <ul>
+    <li>$U$ is uniform: convolving uniform with anything on a finite group stays uniform (this is special to uniform $U$ and is the reason the bound is tight in this case).</li>
+    <li>$U \ominus V = Z_D$ is independent of $V$ &mdash; (iii) tight.</li>
+    <li>$Z_D$ has the maximizing law &mdash; (iv) tight.</li>
+  </ul>
+  <p>Therefore $R(D) = \log 3 - \phi(D) = \log 3 - H_b(D) - D$ on $[0, 2/3]$.</p>
+  <h3>Numerics.</h3>
+  <table>
+    <thead><tr><th>$D$</th><th>$\phi(D)$</th><th>$R(D)$ (bits)</th></tr></thead>
+    <tbody>
+      <tr><td>$0$</td><td>$0$</td><td>$\log 3 \approx 1.585$</td></tr>
+      <tr><td>$1/3$</td><td>$\approx 1.252$</td><td>$\approx 0.334$</td></tr>
+      <tr><td>$2/3$</td><td>$\log 3$</td><td>$0$</td></tr>
+    </tbody>
+  </table>
+  <h3>Generalization.</h3>
+  <p>For a $k$-ary uniform source under Hamming distortion, the same argument gives $R(D) = \log k - H_b(D) - D\log(k-1)$ for $0\le D\le 1-1/k$, by setting $\phi(D) = H_b(D) + D\log(k-1)$ &mdash; spread the mismatch mass uniformly over the $k-1$ non-zero symbols. At $k=2$ this recovers $R(D) = 1 - H_b(D)$ (the binary symmetric case), and at $k=3$ we get $R(D) = \log 3 - H_b(D) - D$ with $\log(k-1) = \log 2 = 1$. So the ternary formula is one slot in a family.</p>
+  <p>For non-uniform sources the Shannon lower bound is generally <em>not</em> tight; an additional term involving $D_{\mathrm{KL}}$ from a balancing distribution appears. The uniform case is special because the convolution argument preserves uniformity exactly.</p>
 </section>
 
 <section>

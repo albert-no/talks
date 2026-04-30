@@ -1,0 +1,303 @@
+\documentclass[12pt]{article}
+\usepackage{it_hw}
+
+\newcommand{\E}{\field{E}}
+\input{macro}
+\excludeversion{problem}
+\includeversion{solution}
+
+\begin{document}
+
+\begin{center}
+{\bf Information Theory and Its Application in Deep Learning: Final \begin{solution}Solutions\end{solution}} \\ \medskip
+\begin{problem}Thursday, June 12, 2025 \end{problem}
+\end{center}
+
+\begin{problem}
+\noindent 
+\begin{itemize}
+\item You can use previous parts of a problem even if you did not solve them.
+\item As throughout the course, entropy ($H$) and Mutual Information ($I$) are in bits.
+\item $\log$ is taken in base 2. 
+\end{itemize}
+\LeftFoot{Final}
+\end{problem}
+\begin{solution}
+\LeftFoot{Final Solution}
+\end{solution}
+
+\begin{problem}
+
+    \vskip .3in
+    {\bf ID : \underline{\hspace{6cm}}}\\
+    \vskip .3in
+    {\bf Name : \underline{\hspace{5.5cm}}}\\
+    ~
+    \vskip 2in
+    \begin{table}[h]
+        \Large
+        \begin{tabular}{c|c}
+           1 &\textcolor{white}{aaaaaaaa}/~30\\
+           2 &\textcolor{white}{aaaaaaaa}/~40 \\
+           3 &\textcolor{white}{aaaaaaaa}/~30 \\
+            \hline
+           Total &  \textcolor{white}{aaaaaaaa}/~100 \\
+        \end{tabular}
+    \end{table}
+    \newpage
+    {\bf extra sheet}
+    \newpage
+\end{problem}
+
+\begin{enumerate}
+
+\item {\bf Nonuniform Time Scale Diffusion} {(\it 30 points)}\\
+For a data variable $X$, consider a diffusion model with latent variables $Z_t$,
+where $t$ runs from $t=0$ (least noisy) to $t=1$ (most noisy).
+The distribution of latent variable $Z_t$ conditioned on $X$ for $t\in[0, 1]$ is given by
+\begin{align*}
+    q(Z_t|X)\sim \mathcal{N}(\alpha_t X, \sigma_t^2).
+\end{align*}
+Furthermore, for $t>s$, the conditional distribution $Z_t$ given $Z_s$ is given by
+\begin{align*}
+    q(Z_t|Z_s) \sim \mathcal{N}(\alpha_{t|s} Z_s, \sigma_{t|s}^2)
+\end{align*}
+where $\alpha_{t|s} = \alpha_t/\alpha_s$ and $\sigma_{t|s}^2 = \sigma_t^2 - \alpha_{t|s}^2\sigma_s^2$.
+\begin{enumerate}
+\item Let $q(Z_s|Z_t, X) \sim \mathcal{N}(\mu_Q(Z_t, X;s, t), \sigma_Q^2(s, t))$.
+Find $\mu_Q(Z_t, X;s, t)$ and $\sigma_Q^2(s, t)$.  {(\it 10 points)}
+\item Let $t_i = i/T$ for $0\leq i\leq T$.
+Consider a following reverse distribution $p$:
+\begin{align*}
+    p(X) = \int_{\mathbf{Z}} p(Z_1) p(X|Z_0) \prod_{i=1}^T p(Z_{t_{i-1}}|Z_{t_i})\, d\mathbf{Z}
+\end{align*}
+where $Z$ represents the whole $(Z_{t_0}, \dots, Z_{t_T})$.
+
+Show the following variational bound
+\begin{align*}
+    -\log p(X) \leq D(q(Z_1|X)\| p(Z_1)) + \field{E}_{q(Z_0|X)}[-\log p(X|Z_0)] + \mathcal{L}(X)
+\end{align*}
+where
+\begin{align*}
+    \mathcal{L}(X) = \sum_{i=1}^T \field{E}_{q(Z_{t_i}|X)} \left[D(q(Z_{t_{i-1}}|Z_{t_i}, X)\| p(Z_{t_{i-1}}|Z_{t_i}))\right].
+\end{align*}
+{(\it 10 points)}
+\item Let $p(Z_{t_{i-1}}|Z_{t_i}) = q(Z_{t_{i-1}}|Z_{t_i}, X=\hat{x}_{\theta}(Z_{t_i}; t_i))$.
+Show that 
+\begin{align*}
+    \mathcal{L}(X) = \frac{1}{2} \sum_{i=1}^T \field{E}_{q(Z_{t_i}|X)} \left[\left(\mbox{SNR}(t_{i-1}) - \mbox{SNR}(t_i)\right) \|X - \hat{x}_\theta(Z_{t_i};t_i)\|^2\right]
+\end{align*}
+where $\mbox{SNR}(t) = \alpha_t^2 / \sigma_t^2$.
+{(\it 10 points)}
+\end{enumerate}
+%Solution   
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .2in
+\begin{solution}{\bf Solution: Nonuniform Time Scale Diffusion.}
+\begin{enumerate}
+    \item Since \[
+    \left.\begin{bmatrix}
+    Z_s\\Z_t
+    \end{bmatrix}\right\vert X \sim \mathcal{N}\left(\begin{bmatrix}
+    \alpha_sX\\\alpha_tX
+    \end{bmatrix},\,\begin{bmatrix}
+    \sigma_s^2&\alpha_{t|s}\sigma_s^2\\\alpha_{t|s}\sigma_s^2&\sigma_t^2
+    \end{bmatrix}\right),
+    \]
+    the conditional distribution is given by \[Z_s\,|\,Z_t,X\sim \mathcal{N}\left(\alpha_sX+\frac{\alpha_{t|s}\sigma_s^2}{\sigma_t^2}(Z_t-\alpha_tX),\,\sigma_s^2-\frac{(\alpha_{t|s}\sigma_s^2)^2}{\sigma_t^2}\right).\]
+
+    Thus, 
+    \[\begin{aligned}\mu_Q(Z_t,X;s,t)&=\alpha_sX+\frac{\alpha_{t|s}\sigma_s^2}{\sigma_t^2}(Z_t-\alpha_tX)\\&=\frac{\alpha_{t|s}\sigma_s^2}{\sigma_t^2}Z_t+\alpha_sX-\frac{\alpha_{t|s}\sigma_s^2}{\sigma_t^2}(\alpha_{t|s}\alpha_s)X\\&=\frac{\alpha_{t|s}\sigma_s^2}{\sigma_t^2}Z_t+\alpha_s\left(1-\frac{\alpha_{t|s}^2\sigma_s^2}{\sigma_t^2}\right)X\\&=\frac{\alpha_{t|s}\sigma_s^2}{\sigma_t^2}Z_t+\frac{\alpha_s\sigma_{t|s}^2}{\sigma_t^2}X,
+    \end{aligned}
+    \]
+    and
+    \[
+    \sigma_Q^2(s,t)=\sigma_s^2-\frac{(\alpha_{t|s}\sigma_s^2)^2}{\sigma_t^2}=\frac{\sigma_s^2\sigma_{t|s}^2}{\sigma_t^2}.
+    \]
+    \item First, we have 
+    \[\begin{aligned}
+        -\log p(X)&=-\log\int p(X,\bZ)d\bZ\\&=-\log\int q(\bZ|X)\frac{p(X,\bZ)}{q(\bZ|X)}d\bZ\\&=-\log\mathbb{E}_{q(\bZ|X)}\left[\frac{p(X,\bZ)}{q(\bZ|X)}\right]\\&\leq\mathbb{E}_{q(\bZ|X)}\left[\log\frac{q(\bZ|X)}{p(X,\bZ)}\right]
+    \end{aligned}\]
+    by Jensen's inequality.
+    Now we have factorizations
+    \[p(X, \bZ) =p(X,Z_{t_0},\dots, Z_{t_T})=p(Z_1) p(X|Z_0) \prod_{i=1}^{T} p(Z_{t_{i-1}}|Z_{t_i})
+    \]
+    and
+    \[
+    q(\bZ|X) = q(Z_{t_0}, \dots, Z_{t_T}|X) = q(Z_0|X) \prod_{i=1}^{T} q(Z_{t_i}|Z_{t_{i-1}},X).
+    \]
+    By Bayes' theorem, 
+    \[q(Z_{t_i}|Z_{t_{i-1}},X)=q(Z_{t_i}|Z_{t_{i-1}})=\frac{q(Z_{t_{i-1}}|Z_{t_i},X)q(Z_{t_i}|X)}{q(Z_{t_{i-1}}|X)}.\]
+    
+    Then,
+    \[\begin{aligned}
+    &\mathbb{E}_{q(\bZ|X)}\left[\log\frac{q(\bZ|X)}{p(X,\bZ)}\right] \\
+    &= \mathbb{E}_{q(\bZ|X)}\left[\log\frac{q(Z_0|X) \prod_{i=1}^{T} q(Z_{t_i}|Z_{t_{i-1}})}{p(Z_1) p(X|Z_0) \prod_{i=1}^{T} p(Z_{t_{i-1}}|Z_{t_i})}\right] \\
+    &= \mathbb{E}_{q(\bZ|X)}\left[ \log q(Z_0|X) - \log p(X|Z_0) - \log p(Z_1) \right. \\
+    & \qquad \left. + \sum_{i=1}^{T} \left( \log q(Z_{t_i}|Z_{t_{i-1}}) - \log p(Z_{t_{i-1}}|Z_{t_i}) \right) \right] \\
+    &= \mathbb{E}_{q(\bZ|X)}\left[ \log q(Z_0|X) - \log p(X|Z_0) - \log p(Z_1) \right. \\
+    & \qquad \left. + \sum_{i=1}^{T} \left( \log\frac{q(Z_{t_{i-1}}|Z_{t_i}, X)q(Z_{t_i}|X)}{q(Z_{t_{i-1}}|X)} - \log p(Z_{t_{i-1}}|Z_{t_i}) \right) \right] \\
+    &= \mathbb{E}_{q(\bZ|X)}\left[ \log q(Z_0|X) - \log p(X|Z_0) - \log p(Z_1) \right. \\
+    & \qquad \left. + \sum_{i=1}^{T} \left( \log q(Z_{t_i}|X) - \log q(Z_{t_{i-1}}|X) \right) + \sum_{i=1}^{T} \log\frac{q(Z_{t_{i-1}}|Z_{t_i}, X)}{p(Z_{t_{i-1}}|Z_{t_i})} \right] \\
+    &= \mathbb{E}_{q(\bZ|X)}\left[ \log q(Z_0|X) - \log p(X|Z_0) - \log p(Z_1) \right. \\
+    & \qquad \left. + (\log q(Z_1|X) - \log q(Z_0|X)) + \sum_{i=1}^{T} \log\frac{q(Z_{t_{i-1}}|Z_{t_i}, X)}{p(Z_{t_{i-1}}|Z_{t_i})} \right] \\
+    &=\mathbb{E}_{q(Z_0|X)}[-\log p(X|Z_0)] + D(q(Z_1|X) \| p(Z_1)) + \mathcal{L}(X).
+    \end{aligned}\]
+    \item We have \[p(Z_{t_{i-1}}|Z_{t_i})\sim \mathcal{N}(\mu_{\theta}(Z_{t_i};t_{i-1},t_i),\,\sigma_Q^2(t_{i-1},t_i)),\] where $\mu_{\theta}(Z_{t_i};t_{i-1},t_i) = \frac{\alpha_{t_i|t_{i-1}}\sigma_{t_{i-1}}^2}{\sigma_{t_i}^2}Z_t+\frac{\alpha_{t_{i-1}}\sigma_{t_i|t_{i-1}}^2}{\sigma_{t_i}^2}\hat{x}_{\theta}(Z_{t_i};t_i)$.
+    The KL divergence between two Gaussian distributions with common variance is given by:
+    \[
+    \begin{aligned}
+        D(q(Z_{t_{i-1}}|Z_{t_i}, X)\| p(Z_{t_{i-1}}|Z_{t_i}))&=\frac{1}{2\sigma^2_Q(t_{i-1},t_i)}\|\mu_Q-\mu_{\theta}\|^2\\
+        &=\frac{\sigma_{t_i}^2}{2\sigma^2_{t_i|t_{i-1}}\sigma^2_{t_{i-1}}}\frac{\alpha^2_{t_{i-1}}\sigma_{t_i|t_{i-1}}^4}{\sigma_{t_i}^4}\|X-\hat{x}_\theta(Z_{t_i};t_i)\|^2\\&=\frac{1}{2\sigma^2_{t_{i-1}}}\frac{\alpha^2_{t_{i-1}}\sigma_{t_i|t_{i-1}}^2}{\sigma^2_{t_i}}\|X-\hat{x}_\theta(Z_{t_i};t_i)\|^2\\&=\frac{1}{2\sigma^2_{t_{i-1}}}\frac{\alpha^2_{t_{i-1}}(\sigma_{t_i}^2-\alpha^2_{t_i|t_{i-1}}\sigma^2_{t_{i-1}})}{\sigma^2_{t_i}}\|X-\hat{x}_\theta(Z_{t_i};t_i)\|^2\\&=\frac{1}{2}\frac{\alpha^2_{t_{i-1}}\sigma_{t_i}^2/\sigma^2_{t_{i-1}}-\alpha^2_{t_i}}{\sigma^2_{t_i}}\|X-\hat{x}_\theta(Z_{t_i};t_i)\|^2\\&=\frac12\left(\text{SNR}(t_{i-1})-\text{SNR}(t_i)\right)\|X-\hat{x}_\theta(Z_{t_i};t_i)\|^2.
+    \end{aligned} \]
+    Thus, 
+    \[
+    \begin{aligned}\mathcal{L}(X) &=  \sum_{i=1}^T \field{E}_{q(Z_{t_i}|X)}[D(q(Z_{t_{i-1}}|Z_{t_i}, X)\| p(Z_{t_{i-1}}|Z_{t_i})]\\&=\frac12\sum_{i=1}^T\field{E}_{q(Z_{t_i}|X)}\left[\left(\text{SNR}(t_{i-1})-\text{SNR}(t_i)\right)\|X-\hat{x}_\theta(Z_{t_i};t_i)\|^2\right].
+    \end{aligned}
+    \]
+\end{enumerate}
+\end{solution}
+
+
+\begin{problem}
+    \newpage~\newpage
+\end{problem}
+
+% Problem 2: Zero Rate
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .3in
+\item {\bf Zero Rate Scheme}  {(\it 40 points)}\\
+Consider the rate distortion problem where the source is i.i.d.~Gaussian $X^n\sim \mathcal{N}(0,1)$,
+and the distortion measure is the mean squared error.
+The rate distortion function for this setup is given by $R(D) = \frac{1}{2}\log \frac{1}{D}$ for $D\leq 1$.
+\begin{enumerate}
+    \item Explain what happens when $D>1$. {(\it 5 points)}
+    \item Find the distortion rate function $D(R)$. What is the value of $D(0)$? {(\it 5 points)}
+    \item Consider a codebook $\mathcal{C} = \{C_1, C_2, \dots, C_n\}$ of size $n$ (same as blocklength),
+    where each codeword $C_i = (c_{i,1}, \dots, c_{i, n})$ is the zero vector except for the $i$-th coordinate:
+    \begin{align*}
+        c_{i, j} = \begin{cases} \sqrt{2\log n} &\mbox{$j=i$}\\ 0&\mbox{otherwise}\end{cases}
+    \end{align*}
+    The encoding scheme maps $X^n$ to the codeword $C_m\in\mathcal{C}$ that is closest in Euclidean distance.
+    What is the rate $R_n$ of this scheme (as a function of $n$)?
+    Show that $\lim_{n\rightarrow \infty} R_n = 0$. {(\it 5 points)}
+    \item Let $D_n$ denote the expected distortion achieved by the above codebook $\mathcal{C}$.
+    Compute
+    \begin{align*}
+        \lim_{n\rightarrow \infty} \frac{D_n-1}{R_n}.
+    \end{align*}
+    You may use the following asymptotic result:
+    \begin{align*}
+        \max_i X_i = \sqrt{2\log n} + \mathcal{O} \left(\frac{\log\log n}{\sqrt{\log n}}\right)
+    \end{align*}{(\it 15 points)}
+    \item Explain why the above scheme is considered zero-rate optimal.
+    {(\it 10 points)}
+\end{enumerate}
+
+%Solution   
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .2in
+\begin{solution}{\bf Solution: Zero Rate Scheme.}
+\begin{enumerate}
+    \item For $D>1$, no message is required since $D=1$ can be achieved by spitting all mean values.
+    I.e., $R(1) = 0$.
+    \item $D(R) = 2^{-2R}$ which is an inverse function of $R(D)$. Also, $D(0) = 1$.
+    \item Since the number of messages is $n$, and the rate is $R_n = \log n/n$.
+    It is clear that 
+    \begin{align*}
+        \lim_{n\rightarrow \infty} R_n = \lim_{n\rightarrow \infty} \frac{\log n}{n} = 0.
+    \end{align*}
+    \item Consider an alternative encoding strategy, where $m$ is an index of maximum value
+    \begin{align*}
+        m = \argmax X_i.
+    \end{align*}
+    This is suboptimal (compared to the min-distance encoding),
+    but it is enough to achieve zero-rate optimality (as we will see in the next problem).
+    Once we prove it, it is clear that the optimal scheme (min-distance encoding) will also achieve zero rate opitmality.
+
+    The distortion of max-index encoding is
+    \begin{align*}
+        D_n =& \frac{1}{n} \left(\sum_{i=1}^n X_i^2 + (X_m - \sqrt{2\log n})^2 - X_m^2\right)\\
+        =& \frac{1}{n} \left(\sum_{i=1}^n X_i^2 - 2\sqrt{2\log n} X_m + 2\log n\right)\\
+        =& \frac{1}{n} \left(\sum_{i=1}^n X_i^2 - 2\log n + \mathcal{O}(\log \log n)\right)
+    \end{align*}
+    Since $\lim_{n\rightarrow \infty} \frac{1}{n}\sum_{i=1}^n X_i^2 = 1$, we have
+    \begin{align*}
+        \lim_{n\rightarrow \infty} \frac{D_n - 1}{R_n}
+        =&  \lim_{n\rightarrow \infty} \frac{-2\log n + \mathcal{O}(\log \log n)}{\log n}\\
+        =& -2.
+    \end{align*}
+    \item Since $D'(0) = -2$ and the above limit 
+    $\frac{D_n-1}{R_n}$ achieves the optimal slope (the slope of optimal distortion rate function at $R=0$),
+    we can say that it is zero-rate optimal.
+\end{enumerate}
+\end{solution}
+
+\begin{problem}
+    \newpage~\newpage
+\end{problem}
+
+% Problem 3: Ternary Source
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .3in
+\item {\bf Ternary Source} {(\it 30 points)}
+\begin{enumerate}
+\item Consider the problem of rate distortion coding of a memoryless source $U_i\sim U$, where the source and the reconstruction alphabets are both equal and ternary, i.e., $U = V = \{0, 1, 2\}$. Let the distortion measure be Hamming loss
+\[d(u, v) =\begin{cases}
+0 &\mbox{if $u = v$}\\
+1 &\mbox{otherwise}.
+\end{cases}\]
+For $U, V$ that are jointly distributed such that $\E [d(U, V )] \leq D$, justify the following chain of equalities and inequalities
+\begin{align*}
+I(U; V ) \stackrel{(i)}{=}& H(U)-H(U|V)\\
+\stackrel{(ii)}{=}& H(U)-H(U\ominus V|V)\\
+\stackrel{(iii)}{\geq}& H(U)-H(U\ominus V)\\
+\stackrel{(iv)}{\geq}& H(U)-\phi(D)
+\end{align*}
+where $\ominus$ denotes subtraction modulo-3, and
+\begin{align*}
+    \phi(D) = \max_{Z: P(Z\neq 0) \leq D} H(Z)    
+\end{align*}
+over all ternary random variable $Z\in \{0, 1, 2\}$.
+
+Argue why this implies that the rate distortion function of the source $U$ is lower bounded as
+\[R(D)\geq H(U)- \phi(D)\]
+This inequality is known as the `Shannon lower bound' (specialized to our setting of ternary alphabets and Hamming loss).
+{(\it 20 points)}
+
+\item Show that when $U$ is uniform (on $\{0, 1, 2\}$), the Shannon lower bound holds with equality, i.e.,
+\[R(D) = H(U) -\phi(D)= \log 3 -\phi(D)\quad,\quad 0\leq D \leq 1.\]
+Hint: establish, by construction, existence of a joint distribution on $U, V$ such that $U$ is uniform and the inequalities in (iv) hold with equalities.
+{(\it 10 points)}
+
+\end{enumerate}
+
+%Solution   
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .2in
+\begin{solution}{\bf Solution: Ternary Source.}
+\begin{enumerate}
+\item
+ (i) from definition of mutual information\\
+(ii) from invariance of entropy to translation of the RV (or to any one-to-one transformation)\\
+(iii) conditioning reduces entropy\\
+(iv) due to $Pr(U \ominus V \neq 0) = \E [d(U, V )]\leq D$ and the definition of $\phi$.\\
+Thus, $H(U)-\phi(D)$ lower bounds any mutual information in the feasible set over which the minimum in the definition of $R(D)$ is taken, and therefore lower bounds $R(D)$.
+
+\item  We need to find a joint distribution on $(U, V )$ such that:
+\begin{itemize}
+\item $U$ is uniform.
+\item $ U\ominus V$ is independent on $V$ (for equality in (iii))
+\item $ U \ominus V \sim Z_D$ (for equality in (iv))
+\end{itemize}
+But taking $V$ to be uniform, and $U = V \oplus Z_D$, for $Z_D$ independent of $V$ , satisfies these three conditions.
+
+
+\end{enumerate}
+\end{solution}
+\end{enumerate}
+
+\begin{problem}
+    \newpage~\newpage~\newpage~\newpage
+\end{problem}
+\end{document}

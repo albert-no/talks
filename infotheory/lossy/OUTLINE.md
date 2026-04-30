@@ -39,25 +39,48 @@ Section 05 collapsed: the binary toy now lives inside section 04 as the worked r
 | | Vector quantization | `:382` |
 | | Round cells beat rectangles (5-4-5-4-5 hex tiling) | `:390` |
 | | Sphere-like cells win | `:496` |
-| **04 — Shannon's theorem (with binary worked example)** | Converse, binary toy, random coding | `:508-704` |
-| | **Theorem statement** | `:516` |
-| | Why mutual information appears (intuition) | `:527` |
-| | Converse — outline | `:545` |
-| | Converse step 1 — rate ≥ I (DPI) | `:557` |
-| | Converse step 2 — single-letterize | `:568` |
-| | Converse step 3 — convexity | `:579` |
-| | Converse — summary | `:591` |
-| | Binary toy — setup | `:603` |
-| | Binary R(D) and the test channel | `:610` |
-| | One source, many candidates | `:619` |
-| | Codebook of 16 candidates (red-marked diffs) | `:627` |
-| | Empirical joint matches the test channel (2×2 contingency) | `:660` |
-| | Threshold rate from ball volume | `:677` |
-| | Achievability — random codebook | `:686` |
-| | Achievability — joint AEP | `:695` |
-| Recap / End | | `:706` |
+| **04 — Shannon's theorem (with binary worked example)** | Converse, optimization, binary toy, random coding | `:629-985` |
+| | **Theorem statement** | `:637` |
+| | **What are we optimizing over?** (fixed/free/derived, convex program) | `:648` |
+| | Why mutual information appears (intuition) | `:659` |
+| | Converse — outline | `:677` |
+| | Converse step 1 — rate ≥ I (DPI) | `:689` |
+| | Converse step 2 — single-letterize | `:700` |
+| | Converse step 3 — convexity | `:711` |
+| | Converse — summary | `:723` |
+| | Binary toy — setup | `:735` |
+| | **Solving the optimization (binary)** — α derivation of $1{-}H_b(D)$ | `:747` |
+| | Binary R(D) and the test channel | `:755` |
+| | One source, many candidates (X has 12 ones) | `:764` |
+| | **Codebook of 24 candidates** ($R \approx 0.191 > R(D)$, match at $m=18$) | `:792` |
+| | Empirical joint matches the test channel — exact $9,3,3,9$ | `:834` |
+| | Ball volume = typical-set size | `:866` |
+| | Threshold rate from ball volume | `:877` |
+| | **What if we pick a wrong marginal?** — Sanov rate $\rho(p,D)$ | `:886` |
+| | **Penalty in numbers** — Bern(1/2) vs Bern(1/4) vs Bern(1/8) | `:898` |
+| | From binary toy to general recipe | `:913` |
+| | Generalization — the optimal test channel | `:924` |
+| | Achievability — random codebook | `:938` |
+| | Achievability — joint AEP | `:947` |
+| | **Biased binary — setup** | `:958` |
+| | **Biased binary — lower bound** (chain of inequalities) | `:969` |
+| | **Biased binary — achievability** ($q = (p-D)/(1-2D)$) | `:985` |
+| | **Biased binary — $R(D)$ and codebook law** | `:995` |
+| | **Biased binary — plug in: $p=0.2, D=0.1$** | `:1006` |
+| | **Biased binary — trivial regime $D \ge p$** | `:1017` |
+| | **Forbidden reproduction — setup** (distortion table) | `:1029` |
+| | **Forbidden — constraint forces structure** ($p(0,1)=0$) | `:1045` |
+| | **Forbidden — marginal & $I(\alpha)$** | `:1054` |
+| | **Forbidden — solving the optimization** (derivative) | `:1063` |
+| | **Forbidden — compared to symmetric** (numerics table) | `:1072` |
+| | **Uniform ternary — setup** ($Z = U\ominus V$) | `:1089` |
+| | **Uniform ternary — chain of inequalities** | `:1097` |
+| | **Uniform ternary — Shannon lower bound** | `:1113` |
+| | **Uniform ternary — computing $\phi(D)$** | `:1122` |
+| | **Uniform ternary — achievability** | `:1133` |
+| Recap / End | | `:1147` |
 
-**Key:** Achievable region `:160`; Lloyd–Max examples `:245, :275, :305, :335`; Shannon theorem `:516`; converse `:545–:591`; binary worked example `:603–:677`; achievability `:686, :695`.
+**Key:** Achievable region `:160`; Lloyd–Max examples `:245, :275, :305, :335`; Shannon theorem `:637`; what we optimize `:648`; converse `:677–:723`; binary worked example `:735–:877`; binary optimization `:747`; suboptimal codebook penalty `:886, :898`; achievability `:938, :947`; biased binary `:958–:1017` (6 slides); forbidden reproduction `:1029–:1072` (5 slides); ternary uniform `:1089–:1133` (5 slides).
 
 ### Note (`lossy1-foundations-note.html`)
 - Lossless vs lossy continuous sources
@@ -79,31 +102,38 @@ Section 05 collapsed: the binary toy now lives inside section 04 as the worked r
 | Section | Slide | Line |
 |---|---|---|
 | Title / Contents | | `:19, :30` |
-| **01 — Gaussian R(D)** | (1/2)log(σ²/D), achievability + converse | `:63-129` |
-| | Statement | `:71` |
-| | Achievability — backward Gaussian channel | `:78` |
-| | Forward form — linear shrinkage | `:87` |
-| | Converse — Gaussian maximizes entropy | `:94` |
-| | Geometric picture | `:102` |
-| **02 — Shannon lower bound** | Gaussian = worst case | `:131-162` |
-| | Statement (squared error) | `:139` |
-| | Proof — maximize entropy of error | `:148` |
-| | Gaussian hits the bound — hardest source | `:156` |
-| **03 — Laplacian R(D)** | Atom at zero in optimal reproduction | `:164-195` |
-| | Setup + statement | `:172` |
-| | Converse — auxiliary density trick | `:179` |
-| | Achievability — sparse mixture | `:187` |
-| **04 — Pruning from R(D)** | Optimal NN compression is sparse | `:197-232` |
-| | Network and compressed weights | `:205` |
-| | **Theorem — weight-distortion bounds output-distortion** | `:213` |
-| | Pruning is optimal | `:222` |
-| **05 — EVT and CROM** | Rateless lossy via extremes | `:234-269` |
-| | Extremes are almost predictable | `:242` |
-| | CROM (send index, reconstruct spike) | `:249` |
-| | Iterate with random rotations | `:257` |
-| Recap | | `:271` |
+| **01 — Gaussian R(D)** | (1/2)log(σ²/D), achievability + converse, plug-ins | `:107-251` |
+| | Statement | `:115` |
+| | Achievability — backward Gaussian channel | `:122` |
+| | Achievability — shell-cover picture | `:132` |
+| | **Example — Heights ($\mu=170, \sigma^2=10$)**: scalar vs $R(D)$ | `:186` |
+| | **Example — Plug in $\sigma^2 = 10$**: each bit cuts $D$ by 4 | `:202` |
+| | Forward form — linear shrinkage | `:219` |
+| | Converse — Gaussian maximizes entropy | `:228` |
+| | Converse — sphere cover | `:236` |
+| **02 — Shannon lower bound** | Gaussian = worst case | `:310-345` |
+| | Statement (squared error) | `:318` |
+| | Proof — maximize entropy of error | `:327` |
+| | Gaussian hits the bound — hardest source | `:337` |
+| **03 — Laplacian R(D)** | Atom at zero in optimal reproduction, plug-in | `:347-419` |
+| | Setup + statement | `:355` |
+| | Converse — auxiliary density trick | `:384` |
+| | Achievability — sparse mixture | `:393` |
+| | **Example — Plug in $\lambda = 1$**: sparsity grows as $D^2$ | `:404` |
+| **04 — Pruning from R(D)** | Optimal NN compression is sparse | `:421-477` |
+| | Network and compressed weights | `:429` |
+| | **Theorem — weight-distortion bounds output-distortion** | `:437` |
+| | Trained weights are Laplacian-like | `:446` |
+| | Optimal Laplacian code is a sparsifier | `:459` |
+| | Pruning is optimal | `:468` |
+| **05 — EVT and CROM** | Rateless lossy via extremes | `:480-525` |
+| | Extremes are almost predictable | `:488` |
+| | CROM (send index, reconstruct spike) | `:497` |
+| | Random rotations Gaussianize | `:506` |
+| | Iterate with random rotations | `:514` |
+| Recap | | `:530` |
 
-**Key:** Gaussian R(D) `:71`; backward channel `:78`; Shannon LB `:139`; auxiliary density trick `:179`; layer-wise telescoping `:213`.
+**Key:** Gaussian R(D) `:115`; backward channel `:122`; heights example `:186`; Gaussian plug-in `:202`; Shannon LB `:318`; auxiliary density trick `:384`; Laplacian plug-in `:404`; layer-wise telescoping `:437`.
 
 **Bug fixed:** literal `<` inside math (e.g. `0<D\le σ²`) was being parsed as start of `<i>`/`<D>` tags by the HTML lexer, cascading garbage into all subsequent slides. Replaced with `&lt;` at lines 73, 79, 174.
 

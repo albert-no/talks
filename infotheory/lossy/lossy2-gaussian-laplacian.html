@@ -35,6 +35,24 @@
   text-align: right;
 }
 .l2-algo ol li + li { border-top: 1px solid var(--slate); }
+.l2-table {
+  margin: 6px auto;
+  border-collapse: collapse;
+}
+.l2-table th, .l2-table td {
+  padding: 6px 18px;
+  text-align: center;
+  border: 1px solid var(--slate);
+}
+.l2-table th {
+  background: var(--light);
+  font-weight: 700;
+  color: var(--charcoal);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.4rem;
+}
+.l2-table td { font-size: 1.4rem; font-weight: 500; }
 </style>
 </head>
 <body data-brand-logo="../../reference/kor-eng2.png">
@@ -162,6 +180,39 @@
       <span style="position:absolute; left:5%; top:90%; font-size:1rem; line-height:1; font-weight:600; color:var(--warn);">codebook $\widehat X^n(m)$</span>
     </div>
   </div>
+</div>
+
+<div class="slide">
+  <h2>Example — Heights ($\mu=170$, $\sigma^2 = 10$)</h2><div class="divider"></div>
+  <p>From Lecture 1: scalar quantization of $X \sim \mathcal{N}(170, 10)$ under squared error.</p>
+  <table class="l2-table" style="margin: 8px auto;">
+    <thead>
+      <tr><th>Rate $R$</th><th>Scalar $D$</th><th>$R(D) = \tfrac12\log(\sigma^2/D)$ at same $D$</th><th>Bits saved</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>$0$</th><td>$10$</td><td>$0$</td><td>$0$</td></tr>
+      <tr><th>$1$</th><td>$\sigma^2(1{-}\tfrac{2}{\pi}) \approx 3.64$</td><td>$\tfrac12\log(10/3.64) \approx 0.73$</td><td>$\approx 0.27$</td></tr>
+      <tr><th>$2$ (Lloyd&ndash;Max)</th><td>$\approx 1.17$</td><td>$\tfrac12\log(10/1.17) \approx 1.55$</td><td>$\approx 0.45$</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">Lloyd&ndash;Max at $R=2$: $D \approx 1.17$ &middot; $R(D)$ would only need $\approx 1.55$ bits &middot; <strong>scalar quantization wastes $\approx 0.45$ bits</strong>.</div>
+</div>
+
+<div class="slide">
+  <h2>Example — Plug In $\sigma^2 = 10$</h2><div class="divider"></div>
+  <p>$R(D) = \tfrac12\log_2(\sigma^2/D)$ &middot; rate doubles each time $D$ shrinks by $4$:</p>
+  <table class="l2-table" style="margin: 8px auto;">
+    <thead>
+      <tr><th>$D$</th><th>$\sigma^2/D$</th><th>$R(D)$ (bits)</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>$10$</th><td>$1$</td><td>$0$</td></tr>
+      <tr><th>$2.5$</th><td>$4$</td><td>$1$</td></tr>
+      <tr><th>$0.625$</th><td>$16$</td><td>$2$</td></tr>
+      <tr><th>$0.156$</th><td>$64$</td><td>$3$</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">Each extra bit cuts $D$ by a factor of $4$ &middot; $R=2$ achieves $D = 0.625$ ($\sigma^2/16$), vs. $1.17$ for scalar Lloyd&ndash;Max.</div>
 </div>
 
 <div class="slide">
@@ -347,6 +398,23 @@
   <p><strong>Mutual information:</strong> $I(X;\widehat X) = -\log(\lambda D)$.</p>
   <div class="highlight">Optimal Laplacian reproduction has a <strong>Dirac atom at zero</strong>.</div>
   <div class="cite">Isik, Weissman, and No, "An Information-Theoretic Justification for Model Pruning", AISTATS 2022.</div>
+</div>
+
+<div class="slide">
+  <h2>Example — Plug In $\lambda = 1$</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Lap}(1)$ &middot; $\mathbb{E}|X| = 1$ &middot; $R(D) = -\log_2(D)$ for $D \le 1$.</p>
+  <table class="l2-table" style="margin: 8px auto;">
+    <thead>
+      <tr><th>$D$</th><th>$R(D)$ (bits)</th><th>Atom mass $\lambda^2 D^2$ at $\hat x = 0$</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>$1$</th><td>$0$</td><td>$1.00$ &middot; output is constant $0$</td></tr>
+      <tr><th>$0.5$</th><td>$1$</td><td>$0.25$</td></tr>
+      <tr><th>$0.1$</th><td>$\approx 3.32$</td><td>$0.01$</td></tr>
+      <tr><th>$0.01$</th><td>$\approx 6.64$</td><td>$10^{-4}$</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">Sparsity grows as $D^2$ &middot; tightening the budget shrinks the atom $\Rightarrow$ <strong>more weights survive pruning</strong>.</div>
 </div>
 
 <!-- ════ PART 04 ════ -->

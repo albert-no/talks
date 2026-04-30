@@ -645,6 +645,17 @@
 </div>
 
 <div class="slide">
+  <h2>What Are We Optimizing Over?</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Fixed by the problem:</strong> source $P_X$ &middot; distortion $d$ &middot; budget $D$.</li>
+    <li><strong>Free variable:</strong> test channel $P_{\widehat X\mid X}$ &middot; one stochastic row per $x$.</li>
+    <li><strong>Derived:</strong> joint $P_{X,\widehat X} = P_X\,P_{\widehat X\mid X}$ &middot; output marginal $P_{\widehat X}$.</li>
+  </ul>
+  <div class="math-block">$$\inf_{P_{\widehat X\mid X}}\; I(X;\widehat X) \quad\text{s.t.}\quad \sum_{x,\hat x} P_X(x)\,P_{\widehat X\mid X}(\hat x|x)\,d(x,\hat x) \;\le\; D.$$</div>
+  <div class="highlight">Convex objective in $P_{\widehat X\mid X}$ &middot; linear constraint &middot; KKT yields $P^\star_{\widehat X\mid X}$.</div>
+</div>
+
+<div class="slide">
   <h2>Why Mutual Information Appears</h2><div class="divider"></div>
   <p>Encoder + decoder = noisy channel from $X^n$ to $\widehat X^n$.</p>
   <div style="display:flex; justify-content:center; align-items:center; gap:18px; margin:14px 0; font-size:1.7rem;">
@@ -733,6 +744,14 @@
 </div>
 
 <div class="slide">
+  <h2>Solving the Optimization &mdash; Binary</h2><div class="divider"></div>
+  <p>Symmetric source + symmetric distortion $\Rightarrow$ symmetric optimum (single flip rate $\alpha$):</p>
+  <div class="math-block" style="margin: 8px 0;">$$P_{\widehat X\mid X} = \begin{pmatrix} 1-\alpha & \alpha \\ \alpha & 1-\alpha \end{pmatrix},\qquad \mathbb{E}\,d_H = \alpha \le D,\qquad \widehat X\sim\mathrm{Bern}(\tfrac12).$$</div>
+  <div class="math-block" style="margin: 8px 0;">$$I(X;\widehat X) \;=\; H(\widehat X) - H(\widehat X\mid X) \;=\; 1 - H_b(\alpha).$$</div>
+  <div class="highlight">$1-H_b(\alpha)$ decreasing in $\alpha\le 1/2$ &middot; minimum at $\alpha = D$ &middot; $R(D) = 1 - H_b(D)$.</div>
+</div>
+
+<div class="slide">
   <h2>Binary $R(D)$ and the Test Channel</h2><div class="divider"></div>
   <p>Rate&ndash;distortion function:</p>
   <div class="math-block" style="margin: 8px 0;">$$R(D) \;=\; 1 - H_b(D), \qquad R(\tfrac{1}{4}) \;=\; 1 - H_b(\tfrac{1}{4}) \;\approx\; 0.189 \text{ bits}.$$</div>
@@ -744,7 +763,7 @@
 <div class="slide">
   <h2>One Source, Many Candidates</h2><div class="divider"></div>
   <p>Source draw, $n=24$:</p>
-  <div class="math-block" style="margin:8px 0;">$X^n = $&nbsp;<span class="l1-bitstr">101000100001100010000100</span></div>
+  <div class="math-block" style="margin:8px 0;">$X^n = $&nbsp;<span class="l1-bitstr">110100110010110100100110</span></div>
   <div class="cols" style="gap:36px; align-items:center; margin-top:6px;">
     <div>
       <p>A random $\widehat X^n \sim \mathrm{Bern}(1/2)^{24}$ is independent of $X^n$:</p>
@@ -770,34 +789,42 @@
 </div>
 
 <div class="slide">
-  <h2>Codebook of $16 = 2^{4}$ Candidates</h2><div class="divider"></div>
-  <p style="margin-bottom:2px;">Source: $X^n = $&nbsp;<span class="l1-bitstr">101000100001100010000100</span></p>
-  <p style="margin-top:2px;">Rate $R = 4/24 \approx 0.167$ &middot; bits in red differ from $X^n$.</p>
+  <h2>Codebook of $24 \approx \lceil 2^{nR(D)}\rceil$ Candidates</h2><div class="divider"></div>
+  <p style="margin-bottom:2px;">Source: $X^n = $&nbsp;<span class="l1-bitstr">110100110010110100100110</span></p>
+  <p style="margin-top:2px;">Rate $R = \log_2(24)/24 \approx 0.191 > R(D)$ &middot; bits in red differ from $X^n$.</p>
   <div class="l1-cb-cols">
     <table class="l1-cb-table">
       <thead><tr><th>$m$</th><th>$\widehat X^n(m)$</th><th>$d_H$</th></tr></thead>
       <tbody>
-        <tr><td class="l1-cb-m">1</td><td class="l1-cb-bits">1<span style="color:var(--warn);">10111</span>1<span style="color:var(--warn);">11</span>001<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>0100<span style="color:var(--warn);">11011</span></td><td>14</td></tr>
-        <tr><td class="l1-cb-m">2</td><td class="l1-cb-bits">101<span style="color:var(--warn);">11</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">01</span>00<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">011</span></td><td>12</td></tr>
-        <tr><td class="l1-cb-m">3</td><td class="l1-cb-bits"><span style="color:var(--warn);">01</span>10<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">110</span>1000<span style="color:var(--warn);">011</span>00<span style="color:var(--warn);">0</span>00</td><td>11</td></tr>
-        <tr><td class="l1-cb-m">4</td><td class="l1-cb-bits"><span style="color:var(--warn);">01</span>100<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">111</span>01<span style="color:var(--warn);">011</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>0010<span style="color:var(--warn);">1</span></td><td>12</td></tr>
-        <tr><td class="l1-cb-m">5</td><td class="l1-cb-bits">10<span style="color:var(--warn);">0</span>000<span style="color:var(--warn);">0</span>00001<span style="color:var(--warn);">01</span>00<span style="color:var(--warn);">0</span>000<span style="color:var(--warn);">10</span>00</td><td>7</td></tr>
-        <tr><td class="l1-cb-m">6</td><td class="l1-cb-bits">1010001<span style="color:var(--warn);">11</span>001<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">11</span>00<span style="color:var(--warn);">0</span>00</td><td>7</td></tr>
-        <tr><td class="l1-cb-m">7</td><td class="l1-cb-bits">1<span style="color:var(--warn);">101</span>001<span style="color:var(--warn);">1111</span>1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>010<span style="color:var(--warn);">1</span>001<span style="color:var(--warn);">11</span></td><td>12</td></tr>
-        <tr><td class="l1-cb-m">8</td><td class="l1-cb-bits">101<span style="color:var(--warn);">11</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>00<span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">11</span>01<span style="color:var(--warn);">1</span>00<span style="color:var(--warn);">101</span>0</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">1</td><td class="l1-cb-bits">1<span style="color:var(--warn);">010</span>001<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">01</span>1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">01</span>0<span style="color:var(--warn);">0</span>001<span style="color:var(--warn);">0</span>0</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">2</td><td class="l1-cb-bits"><span style="color:var(--warn);">001</span>1001<span style="color:var(--warn);">0</span>0010<span style="color:var(--warn);">00</span>01<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">0</span>0</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">3</td><td class="l1-cb-bits"><span style="color:var(--warn);">001</span>1<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1010</span>1<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">0</span>0</td><td>16</td></tr>
+        <tr><td class="l1-cb-m">4</td><td class="l1-cb-bits">110<span style="color:var(--warn);">011</span>11<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">10010</span>0<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">1</span>110</td><td>12</td></tr>
+        <tr><td class="l1-cb-m">5</td><td class="l1-cb-bits"><span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">1</span>10<span style="color:var(--warn);">1</span>11<span style="color:var(--warn);">110</span>0<span style="color:var(--warn);">00</span>0<span style="color:var(--warn);">0</span>0010<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">0</span>0</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">6</td><td class="l1-cb-bits">11<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">1</span>11<span style="color:var(--warn);">1101</span>1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">100</span>0</td><td>14</td></tr>
+        <tr><td class="l1-cb-m">7</td><td class="l1-cb-bits"><span style="color:var(--warn);">0010</span>001<span style="color:var(--warn);">011</span>1<span style="color:var(--warn);">1001</span>1<span style="color:var(--warn);">11</span>100<span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">1</span></td><td>15</td></tr>
+        <tr><td class="l1-cb-m">8</td><td class="l1-cb-bits">1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">01</span>0<span style="color:var(--warn);">0</span>10<span style="color:var(--warn);">1</span>101<span style="color:var(--warn);">010</span>00100110</td><td>8</td></tr>
+        <tr><td class="l1-cb-m">9</td><td class="l1-cb-bits"><span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">1</span>10<span style="color:var(--warn);">1</span>11<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">0</span>1010<span style="color:var(--warn);">1011001</span></td><td>13</td></tr>
+        <tr><td class="l1-cb-m">10</td><td class="l1-cb-bits"><span style="color:var(--warn);">0</span>101<span style="color:var(--warn);">1</span>011<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">00</span>010<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">00</span>0</td><td>9</td></tr>
+        <tr><td class="l1-cb-m">11</td><td class="l1-cb-bits"><span style="color:var(--warn);">0</span>10<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">10</span>10<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">1001</span>1<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">100</span>0</td><td>14</td></tr>
+        <tr><td class="l1-cb-m">12</td><td class="l1-cb-bits"><span style="color:var(--warn);">0010</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">010010</span>0<span style="color:var(--warn);">1</span>10<span style="color:var(--warn);">1</span>110</td><td>14</td></tr>
       </tbody>
     </table>
     <table class="l1-cb-table">
       <thead><tr><th>$m$</th><th>$\widehat X^n(m)$</th><th>$d_H$</th></tr></thead>
       <tbody>
-        <tr><td class="l1-cb-m">9</td><td class="l1-cb-bits">1<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">00</span>0<span style="color:var(--warn);">11</span>10000<span style="color:var(--warn);">0</span>00</td><td>11</td></tr>
-        <tr><td class="l1-cb-m">10</td><td class="l1-cb-bits"><span style="color:var(--warn);">01</span>100<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">110</span>10<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">01</span>000<span style="color:var(--warn);">011</span></td><td>12</td></tr>
-        <tr><td class="l1-cb-m">11</td><td class="l1-cb-bits">101<span style="color:var(--warn);">1110</span>0<span style="color:var(--warn);">11</span>0<span style="color:var(--warn);">00111</span>10<span style="color:var(--warn);">1</span>00100</td><td>12</td></tr>
-        <tr><td class="l1-cb-m">12</td><td class="l1-cb-bits">1<span style="color:var(--warn);">1</span>10<span style="color:var(--warn);">1</span>0100<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">111</span>100<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0</td><td>10</td></tr>
-        <tr><td class="l1-cb-m">13</td><td class="l1-cb-bits">101<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">00</span>000100<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0</td><td>8</td></tr>
-        <tr class="l1-cb-best"><td class="l1-cb-m"><strong>14</strong></td><td class="l1-cb-bits">1010<span style="color:var(--warn);">1</span>010<span style="color:var(--warn);">1</span>00<span style="color:var(--warn);">0</span>100<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">1</span>000<span style="color:var(--warn);">0</span>00</td><td><strong style="color:var(--success);">6 ✓</strong></td></tr>
-        <tr><td class="l1-cb-m">15</td><td class="l1-cb-bits">1<span style="color:var(--warn);">1</span>100<span style="color:var(--warn);">101111</span>110001<span style="color:var(--warn);">11</span>0010<span style="color:var(--warn);">1</span></td><td>10</td></tr>
-        <tr><td class="l1-cb-m">16</td><td class="l1-cb-bits">1<span style="color:var(--warn);">10</span>000<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">1</span>01100<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">1</span>00010<span style="color:var(--warn);">1</span></td><td>7</td></tr>
+        <tr><td class="l1-cb-m">13</td><td class="l1-cb-bits">1<span style="color:var(--warn);">0101</span>011<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">010010</span>0<span style="color:var(--warn);">101</span>01<span style="color:var(--warn);">0</span>0</td><td>15</td></tr>
+        <tr><td class="l1-cb-m">14</td><td class="l1-cb-bits">110<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>11<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">10</span>101<span style="color:var(--warn);">11011</span>1<span style="color:var(--warn);">0</span>0</td><td>11</td></tr>
+        <tr><td class="l1-cb-m">15</td><td class="l1-cb-bits"><span style="color:var(--warn);">00</span>01<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>10<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">10</span>1<span style="color:var(--warn);">101</span>0<span style="color:var(--warn);">01</span>01<span style="color:var(--warn);">0</span>0</td><td>13</td></tr>
+        <tr><td class="l1-cb-m">16</td><td class="l1-cb-bits">1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">01</span>01<span style="color:var(--warn);">011</span>10<span style="color:var(--warn);">00</span>0<span style="color:var(--warn);">01</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">01</span></td><td>14</td></tr>
+        <tr><td class="l1-cb-m">17</td><td class="l1-cb-bits">1<span style="color:var(--warn);">01</span>10<span style="color:var(--warn);">100</span>00101<span style="color:var(--warn);">01</span>1<span style="color:var(--warn);">110</span>0<span style="color:var(--warn);">1001</span></td><td>14</td></tr>
+        <tr class="l1-cb-best"><td class="l1-cb-m"><strong>18</strong></td><td class="l1-cb-bits">11<span style="color:var(--warn);">1</span>10<span style="color:var(--warn);">10</span>1001<span style="color:var(--warn);">10</span>101001001<span style="color:var(--warn);">0</span>0</td><td><strong style="color:var(--success);">6 ✓</strong></td></tr>
+        <tr><td class="l1-cb-m">19</td><td class="l1-cb-bits">1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">0</span>001<span style="color:var(--warn);">10</span>101001<span style="color:var(--warn);">1</span>011<span style="color:var(--warn);">1</span></td><td>8</td></tr>
+        <tr><td class="l1-cb-m">20</td><td class="l1-cb-bits">1<span style="color:var(--warn);">0</span>010<span style="color:var(--warn);">1001101</span>1<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">10</span>0<span style="color:var(--warn);">10</span>10</td><td>14</td></tr>
+        <tr><td class="l1-cb-m">21</td><td class="l1-cb-bits">110<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>110<span style="color:var(--warn);">10</span>01<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">0</span>00<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">10</span>1<span style="color:var(--warn);">1</span></td><td>10</td></tr>
+        <tr><td class="l1-cb-m">22</td><td class="l1-cb-bits"><span style="color:var(--warn);">00</span>01<span style="color:var(--warn);">1</span>01<span style="color:var(--warn);">0</span>001<span style="color:var(--warn);">10</span>10<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">1</span>1<span style="color:var(--warn);">1</span>0110</td><td>9</td></tr>
+        <tr><td class="l1-cb-m">23</td><td class="l1-cb-bits"><span style="color:var(--warn);">00</span>01<span style="color:var(--warn);">11001</span>01<span style="color:var(--warn);">1001</span>1<span style="color:var(--warn);">11</span>1<span style="color:var(--warn);">1</span>0<span style="color:var(--warn);">0</span>10</td><td>15</td></tr>
+        <tr><td class="l1-cb-m">24</td><td class="l1-cb-bits">1<span style="color:var(--warn);">01</span>10<span style="color:var(--warn);">1</span>1100<span style="color:var(--warn);">0</span>0<span style="color:var(--warn);">0</span>1<span style="color:var(--warn);">101</span>010<span style="color:var(--warn);">1</span>110</td><td>9</td></tr>
       </tbody>
     </table>
   </div>
@@ -805,7 +832,7 @@
 
 <div class="slide">
   <h2>Empirical Joint Matches the Test Channel</h2><div class="divider"></div>
-  <p>Pair $\widehat X^n(14)$ with $X^n$ &middot; empirical (left) vs ideal $n\,P_{X,\widehat X}$ at $D=1/4$ (right):</p>
+  <p>Pair $\widehat X^n(18)$ with $X^n$ &middot; empirical (left) vs ideal $n\,P_{X,\widehat X}$ at $D=1/4$ (right):</p>
   <div class="cols" style="gap:36px; align-items:flex-start;">
     <div>
       <p style="text-align:center; margin:0 0 4px 0;"><strong>Empirical (matched)</strong></p>
@@ -814,8 +841,8 @@
           <tr><th></th><th>$\hat x_i = 0$</th><th>$\hat x_i = 1$</th></tr>
         </thead>
         <tbody>
-          <tr><th>$x_i = 0$</th><td>$13\;(\tfrac{13}{24})$</td><td>$4\;(\tfrac{4}{24})$</td></tr>
-          <tr><th>$x_i = 1$</th><td>$2\;(\tfrac{2}{24})$</td><td>$5\;(\tfrac{5}{24})$</td></tr>
+          <tr><th>$x_i = 0$</th><td>$9\;(\tfrac{9}{24})$</td><td>$3\;(\tfrac{3}{24})$</td></tr>
+          <tr><th>$x_i = 1$</th><td>$3\;(\tfrac{3}{24})$</td><td>$9\;(\tfrac{9}{24})$</td></tr>
         </tbody>
       </table>
     </div>
@@ -852,7 +879,36 @@
   <div class="math-block">$$\dfrac{|B(0,nD)|}{2^n} \;\le\; 2^{-n(1 - H_b(D))}.$$</div>
   <p>$M = 2^{nR}$ candidates &middot; expected hits $= M \cdot 2^{-n(1-H_b(D))}$.</p>
   <p>Match w.h.p. iff $R > 1 - H_b(D) = R(D)$.</p>
-  <div class="highlight">$D=1/4$: $R(D) \approx 0.189$ &middot; $M=16$ ($R\approx 0.167$) just under &middot; $M=32$ above.</div>
+  <div class="highlight">$D=1/4$: $R(D) \approx 0.189$ &middot; $M = \lceil 2^{nR(D)}\rceil = 24$ ($R\approx 0.191$) just above threshold.</div>
+</div>
+
+<div class="slide">
+  <h2>What If We Pick a Wrong Marginal?</h2><div class="divider"></div>
+  <p>Same $X^n$, target $D = 1/4$ &middot; redraw codewords iid $\mathrm{Bern}(p)^n$ with $p \ne 1/2$.</p>
+  <ul>
+    <li>Codeword weight $\approx np$ &middot; source weight $\approx n/2$ &middot; <strong>imbalance</strong>.</li>
+    <li>Mismatch bits no longer iid $\mathrm{Bern}(\cdot)$: rate $p$ at zeros-positions, rate $1-p$ at ones-positions.</li>
+    <li>Single-codeword match probability decays at a steeper rate $\rho(p,D) > R(D)$.</li>
+  </ul>
+  <div class="math-block">$$\rho(p,D) \;=\; \min_{\substack{q_0,q_1 \\ (q_0+q_1)/2 \,\le\, D}}\; \tfrac{1}{2}\bigl[D_{\mathrm{KL}}(q_0\|p) + D_{\mathrm{KL}}(q_1\|1-p)\bigr].$$</div>
+  <div class="highlight">$\rho(p,D) \ge 1 - H_b(D)$ &middot; equality iff $p = 1/2$ &middot; the optimal $P^\star_{\widehat X}$ <em>minimizes the codebook size</em>.</div>
+</div>
+
+<div class="slide">
+  <h2>Penalty in Numbers ($n=24$, $D=1/4$)</h2><div class="divider"></div>
+  <p>Source $X^n$ has $\approx 12$ ones &middot; ball of radius $6$ around $X^n$ contains low-weight strings biased toward $X^n$&rsquo;s pattern.</p>
+  <table class="l1-contingency" style="margin: 6px auto;">
+    <thead>
+      <tr><th>Codeword law</th><th>Mean weight</th><th>Rate $\rho(p,D)$</th><th>Codebook $\sim 2^{n\rho}$</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>$\mathrm{Bern}(1/2)$ (optimal)</th><td>$12$</td><td>$0.189$</td><td>$\sim 23$</td></tr>
+      <tr><th>$\mathrm{Bern}(1/4)$</th><td>$\;\;6$</td><td>$0.246$</td><td>$\sim 60$</td></tr>
+      <tr><th>$\mathrm{Bern}(1/8)$</th><td>$\;\;3$</td><td>$0.381$</td><td>$\sim 565$</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Reading the table.</strong> Bern$(1/8)$ codewords are <em>too sparse</em>: most look like the all-zero string (distance $\approx 12$ from $X^n$). Each halving of $p$ pushes the typical codeword&ndash;source distance further from $D$, so far more codewords are needed before any one happens to land in the ball.</p>
+  <div class="highlight">Wrong marginal $\Rightarrow$ <strong>exponentially more codewords</strong> &middot; the optimization $\arg\inf I$ pinpoints the law that wastes <em>zero</em> bits.</div>
 </div>
 
 <div class="slide">
@@ -860,8 +916,8 @@
   <p><strong>Binary case:</strong></p>
   <ul>
     <li>Drew codewords $\widehat X^n(m) \stackrel{\mathrm{iid}}{\sim} \mathrm{Bern}(1/2)^n$.</li>
-    <li>Found a candidate $\widehat X^n(14)$ within $nD$ Hamming flips of $X^n$.</li>
-    <li>Empirical joint $(X^n, \widehat X^n(14))$ matched the test-channel $P_{X,\widehat X}$ at $D=1/4$.</li>
+    <li>Found a candidate $\widehat X^n(18)$ within $nD$ Hamming flips of $X^n$.</li>
+    <li>Empirical joint $(X^n, \widehat X^n(18))$ matched the test-channel $P_{X,\widehat X}$ at $D=1/4$.</li>
   </ul>
   <div class="highlight">Three ingredients: <strong>codeword law</strong>, <strong>match criterion</strong>, <strong>typicality.</strong></div>
 </div>
@@ -896,6 +952,193 @@
   <p>$R > I + 3\varepsilon$: encoder error doubly-exponentially small.</p>
   <p><strong>On the match event:</strong>&nbsp; $\tfrac{1}{n}\sum d \le \mathbb{E}\,d + \varepsilon \le D - \delta + \varepsilon$.</p>
   <div class="highlight">Every $R > R^{(I)}(D)$ achievable.</div>
+</div>
+
+<div class="slide">
+  <h2>Biased Binary — Setup</h2><div class="divider"></div>
+  <p>Source $X \sim \mathrm{Bern}(p)$, $p \le 1/2$ &middot; Hamming distortion $d_H(x,\hat x) = \mathbb{1}\{x \ne \hat x\}$ &middot; budget $D \le p$.</p>
+  <p><strong>Goal:</strong> $R(D) = \inf I(X;\widehat X)$ over test channels $P_{\widehat X|X}$ with $\mathbb{E}\,d_H \le D$.</p>
+  <ul>
+    <li><strong>Step 1 (converse):</strong> show $I(X;\widehat X) \ge H_b(p) - H_b(D)$.</li>
+    <li><strong>Step 2 (achievability):</strong> exhibit a joint that attains equality.</li>
+  </ul>
+  <div class="highlight">$p = 1/2$ recovers symmetric $R(D) = 1 - H_b(D)$ &middot; here the source bias breaks the symmetry between $X$ and $\widehat X$.</div>
+</div>
+
+<div class="slide">
+  <h2>Biased Binary — Lower Bound (Converse)</h2><div class="divider"></div>
+  <p>Decompose $I$ via the disagreement $X \oplus \widehat X$:</p>
+  <div class="math-block" style="margin: 6px 0;">$$\begin{aligned}
+    I(X;\widehat X) &= H(X) - H(X \mid \widehat X) \\
+                    &\stackrel{(\mathrm{i})}{=} H_b(p) - H(X \oplus \widehat X \mid \widehat X) \\
+                    &\stackrel{(\mathrm{ii})}{\ge} H_b(p) - H(X \oplus \widehat X) \\
+                    &\stackrel{(\mathrm{iii})}{\ge} H_b(p) - H_b(D).
+  \end{aligned}$$</div>
+  <ul>
+    <li>(i) given $\widehat X$, the map $x \mapsto x\oplus\widehat X$ is a bijection on $\{0,1\}$.</li>
+    <li>(ii) conditioning reduces entropy.</li>
+    <li>(iii) $\Pr(X\ne\widehat X) \le D \le 1/2$ and $H_b$ is increasing on $[0,1/2]$.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Biased Binary — Achievability</h2><div class="divider"></div>
+  <p>Try $X = \widehat X \oplus Z$ with $\widehat X \sim \mathrm{Bern}(q)$, $Z \sim \mathrm{Bern}(D)$ independent.</p>
+  <p><strong>Match the source marginal</strong> $\Pr[X=1] = p$:</p>
+  <div class="math-block" style="margin: 6px 0;">$$q(1-D) + (1-q)D = p \;\Longrightarrow\; q \;=\; \dfrac{p - D}{1 - 2D}.$$</div>
+  <p><strong>Verify the mutual information:</strong></p>
+  <div class="math-block" style="margin: 6px 0;">$$I(X;\widehat X) = H(X) - H(X\mid\widehat X) = H_b(p) - H(Z) = H_b(p) - H_b(D).$$</div>
+  <div class="highlight">Equality with the converse bound &middot; the construction is optimal.</div>
+</div>
+
+<div class="slide">
+  <h2>Biased Binary — $R(D)$ and Codebook Law</h2><div class="divider"></div>
+  <div class="math-block" style="margin: 6px 0;">$$R(D) \;=\; H_b(p) - H_b(D), \qquad 0 \le D \le p.$$</div>
+  <p>Optimal output marginal: $P^\star_{\widehat X} = \mathrm{Bern}(q)$ with $q = \tfrac{p-D}{1-2D}$.</p>
+  <ul>
+    <li>$D = 0$: $q = p$ &mdash; codeword law equals the source.</li>
+    <li>$D > 0$: $q < p$ &mdash; codewords are <strong>sparser</strong> than the source.</li>
+  </ul>
+  <div class="highlight">Encoder leans on the noise $Z \sim \mathrm{Bern}(D)$ to flip up to source rate $p$ &middot; codebook only carries the &ldquo;remaining&rdquo; ones.</div>
+</div>
+
+<div class="slide">
+  <h2>Plug In: $p = 0.2$, $D = 0.1$</h2><div class="divider"></div>
+  <ul>
+    <li>$R(D) = H_b(0.2) - H_b(0.1) \approx 0.722 - 0.469 = 0.253$ bits.</li>
+    <li>Optimal $q = \frac{0.2 - 0.1}{1 - 0.2} = 0.125$ &middot; $\widehat X^\star \sim \mathrm{Bern}(1/8)$.</li>
+    <li>Check: $\Pr[X=1] = \tfrac{1}{8}\!\cdot\!\tfrac{9}{10} + \tfrac{7}{8}\!\cdot\!\tfrac{1}{10} = \tfrac{16}{80} = 0.2$ ✓.</li>
+    <li>Codebook iid $\mathrm{Bern}(1/8)^n$ &middot; codeword weight $\approx n/8$, source weight $\approx n/5$.</li>
+  </ul>
+  <div class="highlight">$P^\star_{\widehat X} = \mathrm{Bern}(1/8) \ne \mathrm{Bern}(1/5) = P_X$ &middot; <strong>codeword law $\ne$ source law</strong> in general.</div>
+</div>
+
+<div class="slide">
+  <h2>Trivial Regime: $D \ge p$</h2><div class="divider"></div>
+  <p>$X \sim \mathrm{Bern}(p)$ &middot; if the budget is loose enough, no bits are needed.</p>
+  <ul>
+    <li>Set $\widehat X = 0$ deterministically &middot; rate $R = 0$.</li>
+    <li>Distortion: $\mathbb{E}\,d_H(X,\widehat X) = \Pr[X=1] = p \le D$ ✓.</li>
+    <li>$R(D) = 0$ for all $D \ge p$ &middot; consistent with $H_b(p) - H_b(D)$ at $D = p$.</li>
+  </ul>
+  <div class="math-block">$$R(D) \;=\; \begin{cases} H_b(p) - H_b(D), & 0 \le D \le p, \\ 0, & D \ge p. \end{cases}$$</div>
+  <div class="highlight">Permitted error $\ge$ source bias $\Rightarrow$ output the majority symbol &middot; encoder is silent.</div>
+</div>
+
+<div class="slide">
+  <h2>Forbidden Reproduction — Setup</h2><div class="divider"></div>
+  <p>$X \sim \mathrm{Bern}(1/2)$ &middot; asymmetric distortion (one corner is forbidden):</p>
+  <table class="l1-contingency" style="margin: 8px auto;">
+    <thead>
+      <tr><th>$d(x,\hat x)$</th><th>$\hat x = 0$</th><th>$\hat x = 1$</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>$x = 0$</th><td>$0$</td><td>$\infty$</td></tr>
+      <tr><th>$x = 1$</th><td>$1$</td><td>$0$</td></tr>
+    </tbody>
+  </table>
+  <p>Reading: $\widehat X = 0$ is "safe" for both source values; $\widehat X = 1$ at $X = 0$ is impossible.</p>
+  <div class="highlight">Real-world analogue: predicting "1" when truth is "0" (false positive) is unrecoverable; the reverse is just a small loss.</div>
+</div>
+
+<div class="slide">
+  <h2>Forbidden Reproduction — Constraint Forces Structure</h2><div class="divider"></div>
+  <p>Expected distortion expands as</p>
+  <div class="math-block" style="margin: 6px 0;">$$\mathbb{E}\,d \;=\; 0 \cdot p(0,0) \;+\; \infty \cdot p(0,1) \;+\; 1 \cdot p(1,0) \;+\; 0 \cdot p(1,1) \;\le\; D.$$</div>
+  <p>Finite RHS forces $p(0,1) = 0$ exactly &middot; combined with marginals $p(X{=}0)=p(X{=}1)=\tfrac12$:</p>
+  <div class="math-block" style="margin: 6px 0;">$$P_{X,\widehat X} \;=\; \begin{pmatrix} 1/2 & 0 \\ \alpha & 1/2-\alpha \end{pmatrix}, \qquad \alpha := p(X{=}1, \widehat X{=}0).$$</div>
+  <div class="highlight">A 2$\times$2 stochastic problem collapses to <strong>one parameter</strong> $\alpha\in[0,1/2]$ with constraint $\alpha\le D$.</div>
+</div>
+
+<div class="slide">
+  <h2>Forbidden Reproduction — Marginal &amp; $I(\alpha)$</h2><div class="divider"></div>
+  <p>Output marginal (column sums):</p>
+  <div class="math-block" style="margin: 6px 0;">$$\Pr(\widehat X{=}0) = \tfrac{1}{2} + \alpha, \qquad \Pr(\widehat X{=}1) = \tfrac{1}{2} - \alpha.$$</div>
+  <p>$\widehat X{=}1$ implies $X{=}1$ deterministically &middot; $\widehat X{=}0$ has $\Pr(X{=}1\mid\widehat X{=}0) = 2\alpha$.</p>
+  <div class="math-block" style="margin: 6px 0;">$$I(\alpha) \;=\; H(\widehat X) - H(\widehat X \mid X) \;=\; H_b\!\bigl(\tfrac{1}{2}+\alpha\bigr) \;-\; \tfrac{1}{2}\,H_b(2\alpha).$$</div>
+  <div class="highlight">$\alpha = 0$: $I = 1$ (lossless) &middot; $\alpha = 1/2$: $I = 0$ (output constant $0$).</div>
+</div>
+
+<div class="slide">
+  <h2>Forbidden Reproduction — Solving the Optimization</h2><div class="divider"></div>
+  <p>Differentiate using $\frac{d}{dp} H_b(p) = \log\frac{1-p}{p}$:</p>
+  <div class="math-block" style="margin: 4px 0; padding: 8px 16px;">$$\dfrac{dI}{d\alpha} \;=\; \log\dfrac{\tfrac{1}{2}-\alpha}{\tfrac{1}{2}+\alpha} \;-\; \log\dfrac{1-2\alpha}{2\alpha} \;=\; \log\dfrac{\alpha}{\tfrac{1}{2}+\alpha} \;<\; 0.$$</div>
+  <p>$I$ strictly decreasing on $(0,1/2)$ &middot; minimum on $\{\alpha\le D\}$ at the boundary:</p>
+  <div class="math-block" style="margin: 4px 0; padding: 8px 16px;">$$\alpha^\star = D \;\Longrightarrow\; R(D) \;=\; H_b\!\bigl(\tfrac{1}{2}+D\bigr) \;-\; \tfrac{1}{2}\,H_b(2D).$$</div>
+  <div class="highlight">Tighter budget $\Rightarrow$ smaller $\alpha$ allowed $\Rightarrow$ more bits &middot; encoder always saturates the constraint.</div>
+</div>
+
+<div class="slide">
+  <h2>Forbidden Reproduction — Compared to Symmetric</h2><div class="divider"></div>
+  <table class="l1-contingency" style="margin: 8px auto;">
+    <thead>
+      <tr><th>$D$</th><th>$R$ (forbidden)</th><th>$R$ (symmetric)</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>$0$</th><td>$1$</td><td>$1$</td></tr>
+      <tr><th>$1/8$</th><td>$\approx 0.594$</td><td>$\approx 0.456$</td></tr>
+      <tr><th>$1/4$</th><td>$\approx 0.311$</td><td>$\approx 0.189$</td></tr>
+      <tr><th>$1/2$</th><td>$0$</td><td>$0$</td></tr>
+    </tbody>
+  </table>
+  <p>Asymmetry costs bits at every $D$ &middot; encoder loses one half of the test-channel symmetry.</p>
+  <div class="highlight">Output biased toward the &ldquo;safe&rdquo; symbol $0$ &middot; discrete preview of the Laplacian atom-at-zero (Lecture 2).</div>
+</div>
+
+<div class="slide">
+  <h2>Uniform Ternary — Setup</h2><div class="divider"></div>
+  <p>Source $U$ uniform on $\{0,1,2\}$ &middot; reproduction $V \in \{0,1,2\}$ &middot; Hamming distortion $d_H(u,v) = \mathbb{1}\{u\ne v\}$.</p>
+  <p>Cyclic group $\mathbb{Z}_3$ &middot; $\ominus$, $\oplus$ are subtraction and addition $\bmod\,3$ &middot; let $Z := U\ominus V$.</p>
+  <div class="math-block" style="margin: 6px 0;">$$Z = 0 \;\Longleftrightarrow\; U = V \;\Longrightarrow\; \Pr(Z\ne 0) \;=\; \Pr(U\ne V) \;=\; \mathbb{E}\,d_H(U,V).$$</div>
+  <div class="highlight"><strong>Plan:</strong> bound $I(U;V)$ in terms of $H(Z)$, then construct a joint that achieves equality.</div>
+</div>
+
+<div class="slide">
+  <h2>Uniform Ternary — Chain of Inequalities</h2><div class="divider"></div>
+  <div class="math-block" style="margin: 4px 0; padding: 6px 14px;">$$\begin{aligned}
+    I(U;V) &\stackrel{(\mathrm{i})}{=} H(U) - H(U\mid V) \\
+           &\stackrel{(\mathrm{ii})}{=} H(U) - H(U \ominus V \mid V) \\
+           &\stackrel{(\mathrm{iii})}{\ge} H(U) - H(U \ominus V) \\
+           &\stackrel{(\mathrm{iv})}{\ge} H(U) - \phi(D).
+  \end{aligned}$$</div>
+  <ul>
+    <li>(i) definition of mutual information.</li>
+    <li>(ii) given $V=v$, $u \mapsto u\ominus v$ is a bijection on $\{0,1,2\}$ &mdash; entropy invariant.</li>
+    <li>(iii) conditioning never increases entropy.</li>
+    <li>(iv) $Z = U\ominus V$ has $\Pr(Z\ne 0) \le D$, so it lies in the feasible set defining $\phi$.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Uniform Ternary — Shannon Lower Bound</h2><div class="divider"></div>
+  <p>Define</p>
+  <div class="math-block" style="margin: 6px 0;">$$\phi(D) \;:=\; \max_{\substack{Z \in \{0,1,2\} \\ \Pr(Z \ne 0)\,\le\,D}} H(Z).$$</div>
+  <p>The chain holds for <em>every</em> feasible joint $P_{U,V}$, so it persists under the infimum:</p>
+  <div class="math-block" style="margin: 6px 0;">$$R(D) \;\ge\; H(U) - \phi(D) \;=\; \log 3 - \phi(D).$$</div>
+  <div class="highlight">Converse without constructing a single test channel &mdash; this is the <strong>Shannon lower bound</strong> in discrete form.</div>
+</div>
+
+<div class="slide">
+  <h2>Uniform Ternary — Computing $\phi(D)$</h2><div class="divider"></div>
+  <p>Among ternary distributions with $\Pr(Z{=}0) \ge 1-D$, which maximizes $H(Z)$?</p>
+  <ul>
+    <li>Concavity $\Rightarrow$ push the constraint to the boundary: $\Pr(Z{=}0) = 1-D$.</li>
+    <li>Spread the remaining mass $D$ uniformly over $\{1,2\}$: $\Pr(Z{=}1) = \Pr(Z{=}2) = D/2$.</li>
+  </ul>
+  <div class="math-block" style="margin: 6px 0;">$$\phi(D) \;=\; -(1-D)\log(1-D) - 2 \cdot \tfrac{D}{2}\log\tfrac{D}{2} \;=\; H_b(D) + D.$$</div>
+  <div class="highlight">$H_b(D)$: bits to decide "error vs. no error" &middot; $+D$: bits to pick which non-zero symbol.</div>
+</div>
+
+<div class="slide">
+  <h2>Uniform Ternary — Achievability</h2><div class="divider"></div>
+  <p>Take $V$ uniform on $\{0,1,2\}$ and $Z_D \sim (1{-}D, D/2, D/2)$ independent &middot; set $U = V \oplus Z_D$.</p>
+  <ul>
+    <li>$U$ uniform: convolving uniform with anything on $\mathbb{Z}_3$ stays uniform.</li>
+    <li>$U \ominus V = Z_D$ is independent of $V$ $\Rightarrow$ <strong>(iii) tight</strong>.</li>
+    <li>$Z_D$ achieves the maximum in $\phi(D)$ $\Rightarrow$ <strong>(iv) tight</strong>.</li>
+  </ul>
+  <div class="math-block" style="margin: 6px 0;">$$R(D) \;=\; \begin{cases}\log 3 - H_b(D) - D, & 0 \le D \le 2/3, \\ 0, & D \ge 2/3.\end{cases}$$</div>
+  <div class="highlight">$D = 1/3$: $R \approx 1.585 - 0.918 - 0.333 = 0.334$ bits &middot; trivial regime at $D = 2/3$ (uniform-guess error rate).</div>
 </div>
 
 

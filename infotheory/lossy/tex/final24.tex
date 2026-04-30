@@ -1,0 +1,226 @@
+
+\documentclass[12pt]{article}
+\usepackage{it_hw}
+
+\excludeversion{problem}
+\includeversion{solution}
+\newcommand{\E}{\field{E}}
+\input{macro}
+
+\begin{document}
+
+\begin{center}
+{\bf Information Theory and Its Application in Deep Learning: Final\begin{solution}Solutions\end{solution}} \\ \medskip
+\begin{problem}Friday, June 14, 2024 \end{problem}
+\end{center}
+
+\begin{problem}
+\noindent 
+\begin{itemize}
+\item You can use previous parts of a problem even if you did not solve them.
+\item As throughout the course, entropy ($H$) and Mutual Information ($I$) are in bits.
+\item $\log$ is taken in base 2. 
+\item `prefix code' refers to a variable length code satisfying the prefix condition.  
+\end{itemize}
+\LeftFoot{Final}
+\end{problem}
+
+\begin{solution}
+\LeftFoot{Final Solution}
+\end{solution}
+
+\begin{problem}
+
+    \vskip .3in
+    {\bf ID : \underline{\hspace{6cm}}}\\
+    \vskip .3in
+    {\bf Name : \underline{\hspace{5.5cm}}}\\
+    ~
+    \vskip 2in
+    \begin{table}[h]
+        \Large
+        \begin{tabular}{c|c}
+           1 &\textcolor{white}{aaaaaaaa}/~25\\
+           2 &\textcolor{white}{aaaaaaaa}/~25 \\
+           3 &\textcolor{white}{aaaaaaaa}/~25 \\
+           4 &\textcolor{white}{aaaaaaaa}/~25 \\
+            \hline
+           Total &  \textcolor{white}{aaaaaaaa}/~100 \\
+        \end{tabular}
+    \end{table}
+    \newpage
+    {\bf extra sheet}
+    \newpage
+\end{problem}
+
+\begin{enumerate}
+
+
+
+% Problem 5: Rate distortion function with infinite distortion.
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .3in
+\item {\bf Rate distortion function with infinite distortion.}\\
+Find the rate distortion function $R(D) = \min_{p(\hat{x}|x) : \E[d(X,\hat{X})]\leq D} I(X; \hat{X} )$ for $X \sim \mbox{Bernoulli}(1/2)$ and distortion
+\begin{align*}
+d(x, \hat{x}) =\begin{cases}
+0,& x = \hat{x}\\
+1,& x = 1, \hat{x} = 0\\
+\infty,& x = 0, \hat{x} = 1
+\end{cases}
+\end{align*}
+where $x,\hat{x}\in\{0,1\}$, i.e., reconstructing a 0 by a 1 is not allowed.
+% Solution of Problem 5: Rate distortion function with infinite distortion.
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .2in
+\begin{solution}{\bf Solution: Rate distortion function with infinite distortion.}\\
+We wish to evaluate the rate distortion function
+\[R(D) = \min_{p(\hat{x}|x): \sum_{x,\hat{x}} p(x)p(\hat{x}|x)d(x,\hat{x})\leq D} I(X;\hat{X})\]
+Since $d(0, 1) = \infty$, we must have $p(0, 1) = 0$ for any finite distortion $D$. Thus, the distortion $D = p(1, 0)$, and hence we have the following joint distribution for $(X,\hat{X} )$
+(assuming $D \leq\frac{1}{2}$):
+\[ p(x,\hat{x}) = \left[ 
+\begin{array}{cc}
+\frac{1}{2} & 0 \\
+D & \frac{1}{2}-D  \end{array} \right]\] 
+The mutual information for this joint distribution is
+\begin{align*}
+R(D) &= I(X; \hat{X} )\\
+ &= H(X) - H(X|\hat{X} )\\
+&= H(0.5,0.5) - \left(\frac{1}{2}+D\right)H\left(\frac{1/2}{1/2+D},\frac{D}{1/2+D}\right)\\
+&=1+\frac{1}{2}\log\frac{1/2}{1/2+D}+D\log\frac{D}{1/2+D}
+\end{align*}
+which is the rate distortion function for this binary source if $0 \leq D \leq 1/2$. Since we can achieve $D = 1/2$ with zero rate (use $p(\hat{x} = 0) = 1$), we have $R(D) = 0$ for $D \geq 1/2$
+\end{solution}
+
+
+% Problem 2:  Rate distortion.
+%%%%%%%%%%%%%%%%%%%%%%%
+\begin{problem}
+    \newpage
+\end{problem}
+\begin{solution}
+\vskip .3in
+\end{solution}
+\item {\bf Rate distortion.}\\
+Let $d(x, \hat{x})$ be a distortion function. We have a source $X \sim p(x)$. Let $R(D)$ be the associated rate distortion function.
+\begin{enumerate}
+\item Find $\tilde{R}(D)$ in terms of $R(D)$, where $\tilde{R}(D)$ is the rate distortion function associated with the distortion $\tilde{d}(x, \hat{x}) = d(x, \hat{x}) + a$ for some constant $a > 0$. (They are not equal)
+\item Now suppose that $d(x, \hat{x}) \geq 0$ for all $x, \hat{x}$ and define a new distortion function $d^*(x, \hat{x}) = b\cdot d(x, \hat{x})$, where $b$ is some number $\geq 0$. Find the associated rate distortion function $R^*(D)$ in terms of $R(D)$.
+\item Let $X \sim \mathcal{N}(0, \sigma^2)$ and $d(x, \hat{x}) = 5(x - \hat{x})^2 + 3$. What is $R(D)$?
+\end{enumerate}
+
+% Solution of Problem 2:  Rate distortion.
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .2in
+\begin{solution}{\bf Solution: Rate distortion.}\\
+\begin{enumerate}
+\item
+\begin{align*}
+\tilde{R}(D) &= \inf_{p(\hat{x}|x):\E[\tilde{d}(x,\hat{x})]\leq D} I(X;\hat{X})\\
+&= \inf_{p(\hat{x}|x):\E[d(x,\hat{x})]+a\leq D} I(X;\hat{X})\\
+&= \inf_{p(\hat{x}|x):\E[d(x,\hat{x})]\leq D-a} I(X;\hat{X})\\
+&=R(D-a)
+\end{align*}
+\item
+\begin{align*}
+R^*(D) &= \inf_{p(\hat{x}|x):\E[d^*(x,\hat{x})]\leq D} I(X;\hat{X})\\
+&= \inf_{p(\hat{x}|x):\E[bd(x,\hat{x})]\leq D} I(X;\hat{X})\\
+&= \inf_{p(\hat{x}|x):\E[d(x,\hat{x})]\leq D/b} I(X;\hat{X})\\
+&=R(D/b)
+\end{align*}
+else if $b = 0$ then $d^* = 0$ and $R^*(D) = 0$.
+\item Let $R_{se}(D)$ be the rate distortion function associate with the distortion $d_{se}(x, \hat{x}) =(x - \hat{x})^2$. Then from previous parts, we have
+\[R(D) = R_{se}(\frac{D - 3}{5}).\]
+We know that
+\[R_{se}(D) =\begin{cases}
+\frac{1}{2}\log \frac{\sigma^2}{D},& 0\leq D\leq \sigma^2\\
+0,& D>\sigma^2
+\end{cases}\]
+Therefore, we have
+\[R(D) =\begin{cases}
+\frac{1}{2}\log \frac{5\sigma^2}{D-3},& 3\leq D\leq 5\sigma^2+3\\
+0,& D>5\sigma^2+3
+\end{cases}\]
+\end{enumerate}
+\end{solution}
+
+
+% Problem 3:  Adding a column to the distortion matrix
+%%%%%%%%%%%%%%%%%%%%%%%
+\begin{problem}
+    \newpage
+\end{problem}
+\begin{solution}
+\vskip .3in
+\end{solution}
+\item {\bf Adding a column to the distortion matrix}.\\
+Let $R(D)$ be the rate distortion function for an i.i.d. process with probability mass function $p(x)$ and distortion function $d(x,\hat{x})$, $x\in{\cal X}$, $\hat{x}\in\hat{\cal X}$. Now suppose that we add a new reproduction symbol $\hat{x}_0$ to $\hat{\cal X}$ with associated distortion $d(x,\hat{x}_0)$, $x\in{\cal X}$. Does this increase or decrease $R(D)$ and why?
+
+% Solution of Problem 3:  Adding a column to the distortion matrix
+%%%%%%%%%%%%%%%%%%%%%%%
+\vskip .2in
+\begin{solution}{\bf Solution: Adding a column}\\
+Let the new rate distortion function be denoted as $\tilde{R}(D)$, and note that we can still achieve $R(D)$ by restricting the support of $p(x,\hat{x})$, i.e., by simply ignoring the new symbol.  Thus, $\tilde{R}(D) \leq R(D)$.  
+
+
+\end{solution}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Problem 4Star shaped diffusion
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{problem}
+    \newpage
+\end{problem}
+\begin{solution}
+\vskip .3in
+\end{solution}
+\item Let $q$ be the forward process of star-diffusion model, which is given by
+\begin{align*}
+    q(X^{(1)}, \dots, X^{(N-1)}, X^{(N)}|X^{(0)}) =&  \prod_{n=1}^N q(X^{(n)}|X^{(0)})\\
+    q(X^{(n)}|X^{(0)}) \sim& \cN(\sqrt{\bar{\alpha}_n} X^{(0)}, (1-\bar{\alpha}_n)I).
+\end{align*}
+Since it is non-Markovian process, the reverse process is given by
+\begin{align*}
+    q(X^{(0)}, \dots, X^{(N)}) = q(X^{(N)}) \prod_{n=1}^N q(X^{(n-1)}|X^{(n)}, \dots, X^{(N)}),
+\end{align*}
+which we approximate by
+\begin{align*}
+    p_\theta(X^{(0)}, \dots, X^{(N)}) = p_\theta(X^{(N)}) \prod_{n=1}^N p_{\theta}(X^{(n-1)}|X^{(n)}, \dots, X^{(N)}).
+\end{align*}
+Consider the variational lower bound 
+\begin{align*}
+    \cL(\theta) \stackrel{def}{=} \fE_{q} \left[\log\frac{p_{\theta}(X^{(0)}, \dots, X^{(N)})}{q(X^{(1)}, \dots, X^{(N)}|X^{(0)})}\right].
+\end{align*}
+Show that
+\begin{align*}
+    \cL(\theta) =&
+    \fE_{q} \left[\log p_{\theta}(X^{(0)}|X^{(1)}, \dots, X^{(N)})\right]\nonumber\\
+    &-\fE_q[\sum_{n=2}^N D(q(X^{(n-1)}|X^{(0)})\| p_\theta(X^{(n-1)}|X^{(n)},\dots, X^{(N)}))]\nonumber\\
+    &-\fE_q[D(q(X^{(N)}|X^{(0)})\|p_\theta(X^{(N)}))].
+\end{align*}
+
+\begin{solution}
+\textbf{Solution.}\\
+\begin{align*}
+    \cL(\theta) =& \fE_{q} \left[\log\frac{p_{\theta}(X^{(0)}, \dots, X^{(N)})}{q(X^{(1)}, \dots, X^{(N)}|X^{(0)})}\right]\\
+    =& \fE_{q} \left[\log\frac{p_{\theta}(X^{(N)}) \prod_{n=1}^N p_{\theta}(X^{(n-1)}|X^{(n)}, \dots, X^{(N)})}{\prod_{n=1}^Nq(X^{(n)}|X^{(0)})}\right]\\
+    =&\fE_{q} \left[\log p_{\theta}(X^{(0)}|X^{(1)}, \dots, X^{(N)})\right]\nonumber\\
+    &-\sum_{n=2}^N \fE_q[\log \frac{q(X^{(n-1)}|X^{(0)})}{p_\theta(X^{(n-1)}|X^{(n)},\dots, X^{(N)}))}]\nonumber\\
+    &-\fE_q[\log \frac{q(X^{(N)}|X^{(0)})}{p_\theta(X^{(N)}))}]\\
+    =&\fE_{q} \left[\log p_{\theta}(X^{(0)}|X^{(1)}, \dots, X^{(N)})\right]\nonumber\\
+    &-\fE_q[\sum_{n=2}^N D(q(X^{(n-1)}|X^{(0)})\| p_\theta(X^{(n-1)}|X^{(n)},\dots, X^{(N)}))]\nonumber\\
+    &-\fE_q[D(q(X^{(N)}|X^{(0)})\|p_\theta(X^{(N)}))].
+\end{align*}
+\end{solution}
+
+
+
+
+\begin{problem}
+    \clearpage {\bf extra sheet.}\clearpage {\bf extra sheet.}
+\end{problem}
+
+
+\end{enumerate}
+
+\end{document}
