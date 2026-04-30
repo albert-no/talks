@@ -94,17 +94,31 @@
   <p class="subtitle">Bayes decomposition and the $\omega$-scaled reverse SDE</p>
 </div>
 
-<!-- SLIDE: Conditional motivation -->
+<!-- SLIDE: Why conditional generation matters -->
 <div class="slide">
-  <h2>Conditional Generation</h2>
+  <h2>Why Conditional Generation</h2>
   <div class="divider"></div>
-  <p>So far: sample from $P_{\mathbf{X}}$.</p>
-  <p>In practice: want $P_{\mathbf{X}\,|\,Y}$ for label or prompt $Y$.</p>
-  <p><strong>Naive:</strong> separate conditional score $s_\theta(\mathbf{x}\,|\,Y=y)$ per label.</p>
-  <p>Expensive; does not scale.</p>
+  <p>Real applications rarely want a sample from $P_{\mathbf{X}}$. They want a sample from $P_{\mathbf{X}\,|\,Y}$ for some signal $Y$:</p>
+  <ul>
+    <li><strong>Text-to-image</strong>: $Y$ is a prompt — "a cat in a spacesuit".</li>
+    <li><strong>Class-conditional</strong>: $Y$ is a label — generate a "dog".</li>
+    <li><strong>Inpainting / editing</strong>: $Y$ is a partial image, mask, or layout.</li>
+    <li><strong>Inverse problems</strong>: $Y$ is a measurement (low-res, noisy, blurred).</li>
+  </ul>
   <div class="highlight">
-    <p><strong>Classifier guidance:</strong> reuse pretrained unconditional score.</p>
-    <p>Steer with a small auxiliary classifier.</p>
+    <p>Unconditional generation is the warm-up. Controllability is the product.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Conditional motivation (approaches) -->
+<div class="slide">
+  <h2>Two Approaches</h2>
+  <div class="divider"></div>
+  <p><strong>Naive:</strong> train a separate conditional score $s_\theta(\mathbf{x}\,|\,Y=y)$ per condition.</p>
+  <p>Expensive; does not scale; needs paired $(X, Y)$ for every $Y$.</p>
+  <div class="highlight">
+    <p><strong>Classifier guidance:</strong> reuse a pretrained unconditional score.</p>
+    <p>Steer with a small auxiliary classifier on the noisy state.</p>
   </div>
   <div class="cite">Dhariwal &amp; Nichol, "Diffusion Models Beat GANs on Image Synthesis", NeurIPS 2021.</div>
 </div>
@@ -114,9 +128,9 @@
   <h2>Bayes Decomposition</h2>
   <div class="divider"></div>
   <p>Bayes' rule:</p>
-  <div class="math-block">$$P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) = \frac{P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x})\,P_{\mathbf{X}}(\mathbf{x})}{P_Y(y)}.$$</div>
+  <div class="math-block" style="margin: 8px 0;">$$P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) = \frac{P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x})\,P_{\mathbf{X}}(\mathbf{x})}{P_Y(y)}.$$</div>
   <p>Take $\nabla_{\mathbf{x}}\log$; the prior $P_Y(y)$ drops:</p>
-  <div class="math-block">$$\nabla_{\mathbf{x}} \log P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) \;=\; \nabla_{\mathbf{x}} \log P_{\mathbf{X}}(\mathbf{x}) \;+\; \nabla_{\mathbf{x}} \log P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x}).$$</div>
+  <div class="math-block" style="margin: 8px 0;">$$\nabla_{\mathbf{x}} \log P_{\mathbf{X}\,|\,Y}(\mathbf{x}\,|\,y) \;=\; \nabla_{\mathbf{x}} \log P_{\mathbf{X}}(\mathbf{x}) \;+\; \nabla_{\mathbf{x}} \log P_{Y\,|\,\mathbf{X}}(y\,|\,\mathbf{x}).$$</div>
   <div class="highlight">
     <p>Conditional score = unconditional score + classifier gradient.</p>
   </div>
@@ -155,26 +169,71 @@
   <p class="subtitle">Conditioning on a fixed subset of the signal</p>
 </div>
 
+<!-- SLIDE: Inpainting task -->
+<div class="slide">
+  <h2>What Is Inpainting?</h2>
+  <div class="divider"></div>
+  <p>Given an image with part of its pixels <strong>observed</strong> and the rest <strong>missing</strong>, fill in the missing region <em>coherently</em> with the rest.</p>
+  <ul>
+    <li>Photo restoration (scratches, occlusions).</li>
+    <li>Object removal / replacement.</li>
+    <li>Consistent edit propagation around a mask.</li>
+  </ul>
+  <div class="highlight">
+    <p>Goal: $X^{(0)}$ with $\Omega(X^{(0)}) = Y$ (observed pixels match) and the rest sampled from $p_{\text{data}}$.</p>
+  </div>
+</div>
+
 <!-- SLIDE: Inpainting setup -->
 <div class="slide">
   <h2>Setup</h2>
   <div class="divider"></div>
-  <p>$\Omega$: pixel-subsampling operator.</p>
-  <p>$Y = \Omega(X^{(0)})$: observed pixels.</p>
-  <p>$\bar{\Omega}$: complementary pixels to generate.</p>
-  <p>Let $Z^{(t)} = \bar{\Omega}(X^{(t)})$. The complement follows its own SDE:</p>
+  <ul>
+    <li>$\Omega$: pixel-subsampling operator (the mask).</li>
+    <li>$Y = \Omega(X^{(0)})$: observed pixels, fixed throughout.</li>
+    <li>$\bar{\Omega}$: complementary pixels — the unknowns.</li>
+    <li>$Z^{(t)} = \bar{\Omega}(X^{(t)})$ is the part we still diffuse.</li>
+  </ul>
+  <p>Brownian motion decomposes coordinate-wise; the complement obeys its own SDE:</p>
   <div class="math-block">$$dZ^{(t)} = \bar{\Omega}(f)\bigl(Z^{(t)}, t\bigr)\,dt + \bar{\Omega}(g)(t)\,d\bar{W}^{(t)}.$$</div>
-  <p>Brownian motion decomposes coordinate-wise.</p>
+</div>
+
+<!-- SLIDE: What we'd ideally compute -->
+<div class="slide">
+  <h2>The Ideal Conditional Score</h2>
+  <div class="divider"></div>
+  <p>For Anderson reverse on the unknowns, we need the conditional score:</p>
+  <div class="math-block">$$\nabla_{Z^{(t)}}\,\log p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr).$$</div>
+  <p>Conditions on $Y$ at the <strong>clean</strong> end of the chain ($t = 0$).</p>
+  <p>Score network only saw fully-noisy training pairs $(X^{(t)}, t)$. <strong>Mismatch.</strong></p>
+  <div class="highlight">
+    <p>Need a way to inject $Y$ that the existing score net can consume.</p>
+  </div>
 </div>
 
 <!-- SLIDE: Conditional score approximation -->
 <div class="slide">
   <h2>Approximating the Conditional Score</h2>
   <div class="divider"></div>
-  <p>Want $p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr)$.</p>
-  <p>Condition instead on a noised version of the observation:</p>
-  <div class="math-block">$$p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr) \;\approx\; p_t\bigl(Z^{(t)}\,|\,\hat{\Omega}(X^{(t)})\bigr).$$</div>
-  <p>$\hat{\Omega}(X^{(t)})$: forward process applied to $Y$ up to time $t$.</p>
+  <p>Replace the clean observation with a noised version at level $t$:</p>
+  <div class="math-block">$$p_t\bigl(Z^{(t)}\,|\,\Omega(X^{(0)}) = Y\bigr) \;\approx\; p_t\bigl(Z^{(t)}\,|\,\hat{\Omega}(X^{(t)}) = \zeta_t\bigr),$$</div>
+  <p>where $\zeta_t$ is the forward process applied to $Y$ up to time $t$:</p>
+  <div class="math-block">$$\zeta_t \;=\; \sqrt{\bar{\alpha}_t}\,Y \;+\; \sqrt{1-\bar{\alpha}_t}\,\eta_t,\qquad \eta_t \sim \mathcal{N}(0,I).$$</div>
+  <p>Both sides now live at noise level $t$ — score net is in-domain.</p>
+</div>
+
+<!-- SLIDE: Why the approximation works -->
+<div class="slide">
+  <h2>Why It Works</h2>
+  <div class="divider"></div>
+  <ul>
+    <li>Forward kernel is a known Gaussian — the noised $\zeta_t$ has the law of $\Omega(X^{(t)})$ for a true clean observation.</li>
+    <li>Score net sees the same input distribution it was trained on.</li>
+    <li>At $t = 0$: $\zeta_0 = Y$ — boundary recovers the true condition.</li>
+  </ul>
+  <div class="highlight">
+    <p>At each step, paste $\zeta_t$ into observed pixels, sample unknowns with the score net.</p>
+  </div>
 </div>
 
 <!-- SLIDE: Inpainting sampler -->
@@ -350,12 +409,13 @@
 <div class="slide">
   <h2>Reverse Rate Matrix</h2>
   <div class="divider"></div>
-  <p>For $x \ne y$, the reverse generator is:</p>
-  <div class="math-block">$$\overline{Q}_t(y, x) = \frac{p_t(y)}{p_t(x)}\,Q_t(x, y).$$</div>
+  <p>For $x \ne y$, the reverse generator:</p>
+  <div class="math-block" style="margin: 8px 0;">$$\overline{Q}_t(y, x) \;=\; \frac{p_t(y)}{p_t(x)}\,Q_t(x, y).$$</div>
   <p>Diagonal fixed by mass conservation:</p>
-  <div class="math-block">$$\overline{Q}_t(x, x) = -\sum_{y \ne x}\overline{Q}_t(y, x).$$</div>
-  <p>Novel quantity: the <strong>marginal ratio</strong> $p_t(y)/p_t(x)$.</p>
-  <p><strong>Exercise.</strong> Derive $\overline{Q}_t$ from the Bayes identity for $p_{t-\Delta t\,|\,t}$ as $\Delta t \to 0$.</p>
+  <div class="math-block" style="margin: 8px 0;">$$\overline{Q}_t(x, x) \;=\; -\sum_{y \ne x}\overline{Q}_t(y, x).$$</div>
+  <div class="highlight">
+    <p>Novel quantity: the <strong>marginal ratio</strong> $p_t(y)/p_t(x)$, the discrete analog of the score.</p>
+  </div>
 </div>
 
 <!-- SLIDE: Discrete score -->
@@ -393,7 +453,7 @@
   <p>Constant $C(a) = a(\log a - 1)$ makes the minimum zero.</p>
   <p>The $\log s_\theta$ term forces positivity.</p>
   <p><strong>Exercise.</strong> Show the minimizer satisfies $s_{\theta^\star}(x, t)_y = p_t(y)/p_t(x)$ when $w_{x,y} &gt; 0$.</p>
-  <div class="cite">Lou, Meng &amp; Ermon, "Discrete Diffusion Modeling by Estimating the Ratios of the Data Distribution", ICML 2024 (Best Paper).</div>
+  <div class="cite">Lou, Meng &amp; Ermon, "Discrete Diffusion by Estimating Ratios of the Data Distribution", ICML&nbsp;2024.</div>
 </div>
 
 <!-- SLIDE: Sequence-space note -->
@@ -431,7 +491,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 29</div>
+<div class="slide-num" id="slideNum">1 / 33</div>
 
 </div><!-- end deck -->
 

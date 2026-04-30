@@ -134,6 +134,22 @@
   </ul>
 </div>
 
+<!-- SLIDE: MGF definition -->
+<div class="slide">
+  <h2>Moment Generating Function</h2>
+  <div class="divider"></div>
+  <p>For random variable $X$,</p>
+  <div class="math-block">$$M_X(t) \;=\; \mathbb{E}\bigl[e^{tX}\bigr],\quad t \in \mathbb{R}.$$</div>
+  <ul>
+    <li><strong>Independence:</strong> $M_{X+Y}(t) = M_X(t)\,M_Y(t)$.</li>
+    <li><strong>Gaussian:</strong> $M_{\mathcal{N}(\mu,\sigma^2)}(t) = \exp\!\bigl(\mu t + \tfrac{1}{2}\sigma^2 t^2\bigr)$.</li>
+    <li><strong>Lévy continuity:</strong> $M_{X_n}(t) \to M_X(t)$ pointwise $\Rightarrow$ $X_n \xrightarrow{d} X$.</li>
+  </ul>
+  <div class="highlight">
+    <p>Strategy: show $M_{X^{(N)}}(t) \to e^{t^2/2}$ to conclude $X^{(N)} \xrightarrow{d} \mathcal{N}(0,1)$.</p>
+  </div>
+</div>
+
 <!-- SLIDE: MGF proof -->
 <div class="slide">
   <h2>Convergence: MGF Proof</h2>
@@ -297,14 +313,30 @@
 
 <!-- SLIDE: q(X^{n-1} | X^n, X^0) is Gaussian -->
 <div class="slide">
-  <h2>Target Posterior Is Gaussian</h2>
+  <h2>Target Posterior Is <strong>Exactly</strong> Gaussian</h2>
   <div class="divider"></div>
-  <p>Conditional forward marginal (closed form, from one-shot rule):</p>
+  <p>Forward chain given $X^{(0)}$ (closed form, from one-shot rule):</p>
   <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(0)}\bigr) \;=\; \mathcal{N}\bigl(\sqrt{\bar{\alpha}_n}\,X^{(0)},\; 1-\bar{\alpha}_n\bigr).$$</div>
-  <p>Hence the reverse posterior is also Gaussian:</p>
-  <div class="math-block">$$q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr) \;=\; \mathcal{N}\bigl(\mu_n(X^{(n)}, X^{(0)}),\; \beta_n\bigr),$$</div>
-  <p>where $\mu_n$ uses the <strong>conditional score</strong> $\partial_x \log q(X^{(n)}\,|\,X^{(0)})$.</p>
-  <p><strong>Exercise.</strong> Derive the posterior. <em>Hint:</em> all factors are Gaussian given $X^{(0)}$.</p>
+  <p>Then the reverse posterior conditioned on $X^{(0)}$ is</p>
+  <div class="math-block">$$q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr) \;=\; \mathcal{N}\bigl(\mu_n(X^{(n)}, X^{(0)}),\; \beta_n\bigr).$$</div>
+  <div class="highlight">
+    <p><strong>Exact</strong> equality — no small-$\beta_n$ approximation.</p>
+    <p>Conditioning on $X^{(0)}$ is what makes it Gaussian; $q(X^{(n-1)}\,|\,X^{(n)})$ alone is only approximately so.</p>
+  </div>
+</div>
+
+<!-- SLIDE: Bayes derivation of posterior -->
+<div class="slide">
+  <h2>Bayes Derivation</h2>
+  <div class="divider"></div>
+  <p>Conditioning on $X^{(0)}$ throughout, Bayes gives</p>
+  <div class="math-block">$$q\bigl(X^{(n-1)}\,|\,X^{(n)}, X^{(0)}\bigr) \;\propto\; q\bigl(X^{(n)}\,|\,X^{(n-1)}\bigr)\,\cdot\,q\bigl(X^{(n-1)}\,|\,X^{(0)}\bigr).$$</div>
+  <ul>
+    <li>$q(X^{(n)}\,|\,X^{(n-1)}) = \mathcal{N}\bigl(\sqrt{1-\beta_n}\,X^{(n-1)},\,\beta_n\bigr)$ — Gaussian in $X^{(n-1)}$.</li>
+    <li>$q(X^{(n-1)}\,|\,X^{(0)}) = \mathcal{N}\bigl(\sqrt{\bar{\alpha}_{n-1}}\,X^{(0)},\,1-\bar{\alpha}_{n-1}\bigr)$ — Gaussian in $X^{(n-1)}$.</li>
+    <li>Product of Gaussians in the same variable $\Rightarrow$ Gaussian.</li>
+  </ul>
+  <p>Complete the square in $X^{(n-1)}$ for mean $\mu_n(X^{(n)},X^{(0)})$ and variance $\beta_n$.</p>
 </div>
 
 <!-- SLIDE: KL between Gaussians + simplification -->
@@ -315,6 +347,41 @@
   <div class="math-block">$$L_{n-1} = \frac{1}{2\beta_n}\,\bigl\|\mu_n(X^{(n)}, X^{(0)}) - \mu_\theta(X^{(n)}, n)\bigr\|^2.$$</div>
   <p>Using $\partial_x \log q(X^{(n)}\,|\,X^{(0)}) = -(X^{(n)} - \sqrt{\bar{\alpha}_n}X^{(0)})/(1-\bar{\alpha}_n)$:</p>
   <div class="math-block">$$L_{n-1} = \frac{\beta_n}{2(1-\beta_n)}\left\|\frac{\partial}{\partial X^{(n)}}\log q(X^{(n)}\,|\,X^{(0)}) - s_\theta(X^{(n)}, n)\right\|^2.$$</div>
+</div>
+
+<!-- SLIDE: epsilon and score visual -->
+<div class="slide">
+  <h2>$\epsilon$ and Score: Same Information</h2>
+  <div class="divider"></div>
+
+  <div style="position: relative; max-width: 900px; margin: 8px auto 0;">
+    <svg viewBox="0 0 900 340" style="display: block; width: 100%;">
+      <defs>
+        <marker id="d2es-eps" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#003876"/></marker>
+        <marker id="d2es-sco" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e8b57"/></marker>
+      </defs>
+      <!-- Reference axis -->
+      <line x1="80" y1="170" x2="820" y2="170" stroke="#bbb" stroke-width="1.5" stroke-dasharray="6,5"/>
+      <!-- Two anchor dots -->
+      <circle cx="200" cy="170" r="9" fill="#003876"/>
+      <circle cx="700" cy="170" r="9" fill="#1a1a1a"/>
+      <!-- ε curve: arcs ABOVE from left dot to right dot -->
+      <path d="M 209,164 Q 450,55 691,164" stroke="#003876" stroke-width="3" fill="none" marker-end="url(#d2es-eps)"/>
+      <!-- Score curve: arcs BELOW from right dot back to left dot -->
+      <path d="M 691,176 Q 450,285 209,176" stroke="#2e8b57" stroke-width="3" fill="none" marker-end="url(#d2es-sco)"/>
+    </svg>
+    <!-- Dot labels (below each dot) -->
+    <span style="position: absolute; left: 22.2%; top: 58.5%; transform: translate(-50%, 0); font-size: 1.2rem; font-weight: 600;">$\sqrt{\bar{\alpha}_n}\,X^{(0)}$</span>
+    <span style="position: absolute; left: 77.8%; top: 58.5%; transform: translate(-50%, 0); font-size: 1.2rem; font-weight: 600;">$X^{(n)}$</span>
+    <!-- Top label (above ε arc) -->
+    <span style="position: absolute; left: 50%; top: 4%; transform: translate(-50%, 0); font-size: 1.15rem; color: var(--yonsei-blue); font-weight: 700;">noise &nbsp;$+\,\sqrt{1-\bar{\alpha}_n}\,\epsilon$</span>
+    <!-- Bottom label (below score arc) -->
+    <span style="position: absolute; left: 50%; top: 88%; transform: translate(-50%, 0); font-size: 1.15rem; color: var(--success); font-weight: 700;">score &nbsp;$-\,\epsilon\,/\,\sqrt{1-\bar{\alpha}_n}$</span>
+  </div>
+
+  <div class="math-block" style="max-width: 880px; margin: 0 auto;">$$\nabla\log q\bigl(X^{(n)}\,|\,X^{(0)}\bigr) \;=\; -\,\frac{X^{(n)}-\sqrt{\bar{\alpha}_n}\,X^{(0)}}{1-\bar{\alpha}_n} \;=\; -\,\frac{\epsilon}{\sqrt{1-\bar{\alpha}_n}}.$$</div>
+
+  <p style="text-align: center;"><strong>Same vector</strong> — anti-parallel, scaled by $\sqrt{1-\bar{\alpha}_n}$.</p>
 </div>
 
 <!-- SLIDE: epsilon-prediction final form -->
@@ -380,21 +447,69 @@
 <div class="slide">
   <h2>Three Approximation Errors</h2>
   <div class="divider"></div>
-  <div class="grid-3">
-    <div class="card" style="text-align:center;">
-      <h3>Gaussian reverse</h3>
-      <p>Requires small $\beta_n$.</p>
-      <p>Large steps break the approximation.</p>
+
+  <div style="position: relative; max-width: 1100px; margin: 22px auto 0; height: 380px;">
+    <!-- Forward chain -->
+    <div style="position: absolute; top: 6px; left: 0; right: 0; display: grid; grid-template-columns: 150px repeat(9, 1fr); align-items: center; font-size: 1.3rem;">
+      <span style="color: var(--gray-text); font-weight: 600;">Forward $q$:</span>
+      <span style="text-align: center;">$X^{(0)}$</span>
+      <span style="text-align: center;">$\to$</span>
+      <span style="text-align: center;">$X^{(1)}$</span>
+      <span style="text-align: center;">$\to$</span>
+      <span style="text-align: center; color: var(--gray-text);">$\cdots$</span>
+      <span style="text-align: center;">$\to$</span>
+      <span style="text-align: center;">$X^{(N-1)}$</span>
+      <span style="text-align: center;">$\to$</span>
+      <span style="text-align: center; color: var(--yonsei-blue); font-weight: 700;">$X^{(N)}$</span>
     </div>
-    <div class="card" style="text-align:center;">
-      <h3>Imperfect score</h3>
-      <p>$\epsilon_\theta$: finite capacity, finite data.</p>
-      <p>Errors compound over steps.</p>
+    <!-- Reverse chain (uses bar X) -->
+    <div style="position: absolute; top: 70px; left: 0; right: 0; display: grid; grid-template-columns: 150px repeat(9, 1fr); align-items: center; font-size: 1.3rem;">
+      <span style="color: var(--gray-text); font-weight: 600;">Reverse $p_\theta$:</span>
+      <span style="text-align: center;">$\bar{X}^{(0)}$</span>
+      <span style="text-align: center; color: var(--yonsei-blue);">$\leftarrow$</span>
+      <span style="text-align: center;">$\bar{X}^{(1)}$</span>
+      <span style="text-align: center; color: var(--yonsei-blue);">$\leftarrow$</span>
+      <span style="text-align: center; color: var(--gray-text);">$\cdots$</span>
+      <span style="text-align: center; color: var(--yonsei-blue);">$\leftarrow$</span>
+      <span style="text-align: center;">$\bar{X}^{(N-1)}$</span>
+      <span style="text-align: center; color: var(--yonsei-blue);">$\leftarrow$</span>
+      <span style="text-align: center;">$\bar{X}^{(N)}$</span>
     </div>
-    <div class="card" style="text-align:center;">
-      <h3>Prior mismatch</h3>
-      <p><strong>$X^{(N)} \to \mathcal{N}(0,1)$</strong> requires $\bar{\alpha}_N \to 0$.</p>
-      <p>Finite $N$: residual gap.</p>
+
+    <!-- SVG arrows from cards (below) up to chain positions (above) -->
+    <svg viewBox="0 0 1100 380" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+      <defs>
+        <marker id="d2err-mk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#003876"/>
+        </marker>
+      </defs>
+      <g stroke="#003876" stroke-width="2.4" fill="none" marker-end="url(#d2err-mk)">
+        <!-- card 1 (x≈175) → reverse arrow ← between bar X^(0) and bar X^(1) at (x≈309, y≈90) -->
+        <path d="M 175,232 Q 220,170 305,98"/>
+        <!-- card 2 (x≈550) → reverse arrow ← in middle (x≈525, y≈90) -->
+        <path d="M 550,232 Q 538,170 528,98"/>
+        <!-- card 3 (x≈925) → forward X^(N) at (x≈1046, y≈30) -->
+        <path d="M 925,232 Q 995,150 1042,38"/>
+      </g>
+    </svg>
+
+    <!-- Three labeled cards -->
+    <div style="position: absolute; top: 250px; left: 0; right: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 26px;">
+      <div class="card" style="text-align: center;">
+        <h3>Gaussian reverse</h3>
+        <p>Reverse step $\approx \mathcal{N}$.</p>
+        <p>Needs $\beta_n$ small.</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <h3>Imperfect score</h3>
+        <p>$\epsilon_\theta \neq \epsilon$ in practice.</p>
+        <p>Errors compound.</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <h3>Prior mismatch</h3>
+        <p>$X^{(N)} \not\sim \mathcal{N}(0,I)$.</p>
+        <p>Need $\bar{\alpha}_N \to 0$.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -419,7 +534,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 27</div>
+<div class="slide-num" id="slideNum">1 / 30</div>
 
 </div><!-- end deck -->
 

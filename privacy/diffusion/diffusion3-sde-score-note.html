@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diffusion 3 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+  body { max-width: 880px; margin: 40px auto; padding: 0 32px 80px; color: var(--charcoal); line-height: 1.55; }
+  h1 { color: var(--yonsei-blue); font-size: 2.2rem; border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+  h2 { color: var(--yonsei-blue); margin-top: 40px; font-size: 1.6rem; }
+  h3 { font-size: 1.2rem; margin-top: 20px; }
+  article { margin-bottom: 40px; }
+  .math-block { background: var(--light); padding: 12px 16px; border-radius: 8px; margin: 14px 0; overflow-x: auto; }
+  .key { background: #f4f6f9; border-left: 3px solid var(--yonsei-blue); padding: 10px 14px; margin: 14px 0; }
+  p, li { font-size: 1.05rem; }
+</style>
+</head>
+<body>
+
+<h1>Diffusion 3 — Companion Notes</h1>
+<p>Speaker's reading companion. Off-slide derivations and intuition for the SDE deck.</p>
+
+<!-- VE / VP SDE limit -->
+<article>
+  <h2>VE and VP as SDE limits</h2>
+
+  <h3>VE — full derivation</h3>
+  <p>Discrete VE: $X^{(n)} = X^{(n-1)} + \sqrt{\beta}\,Z^{(n)}$ with $Z^{(n)} \sim \mathcal{N}(0,1)$ i.i.d. We want a continuous-time analog.</p>
+  <p>Identify discrete index $n$ with continuous time $t = n\,\Delta t$. Without rescaling, summing $N = T/\Delta t$ independent unit-variance noises gives variance $N\beta \to \infty$ as $\Delta t \to 0$. We must rescale so total variance over $[0, T]$ is fixed at $T\beta$.</p>
+  <p>Set $Z^{(n)} \to \sqrt{\Delta t}\,Z$, $Z \sim \mathcal{N}(0,1)$. Then:</p>
+  <div class="math-block">$$X_{t+\Delta t} - X_t \;=\; \sqrt{\beta\,\Delta t}\,Z \;=\; \sqrt{\beta}\,\Delta W_t,\quad \Delta W_t \sim \mathcal{N}(0, \Delta t).$$</div>
+  <p>The $\Delta W_t$'s are increments of a Brownian motion (Wiener process). Taking $\Delta t \to 0$:</p>
+  <div class="math-block">$$dX_t = \sqrt{\beta}\,dW_t.$$</div>
+  <p>Itô integration gives $X_t = X_0 + \sqrt{\beta}\,W_t$ with $W_t \sim \mathcal{N}(0,t)$, matching the VE one-shot rule.</p>
+
+  <h3>VP — full derivation</h3>
+  <p>Discrete VP: $X^{(n)} = \sqrt{1-\beta_n}\,X^{(n-1)} + \sqrt{\beta_n}\,Z^{(n)}$. Set $\beta_n = \beta_t\,\Delta t$. Taylor: $\sqrt{1-\beta_t\Delta t} = 1 - \tfrac{1}{2}\beta_t\Delta t + O(\Delta t^2)$.</p>
+  <div class="math-block">$$X_{t+\Delta t} \;=\; \bigl(1 - \tfrac{1}{2}\beta_t\Delta t\bigr) X_t + \sqrt{\beta_t\Delta t}\,Z + O(\Delta t^2)\,X_t.$$</div>
+  <p>Subtract $X_t$:</p>
+  <div class="math-block">$$X_{t+\Delta t} - X_t \;=\; -\tfrac{1}{2}\beta_t\,X_t\,\Delta t + \sqrt{\beta_t\,\Delta t}\,Z + O(\Delta t^2).$$</div>
+  <p>Take $\Delta t \to 0$:</p>
+  <div class="math-block">$$dX_t = -\tfrac{1}{2}\beta_t X_t\,dt + \sqrt{\beta_t}\,dW_t.$$</div>
+  <p>This is the linear Ornstein–Uhlenbeck SDE with time-varying coefficients.</p>
+</article>
+
+<!-- Fokker-Planck -->
+<article>
+  <h2>Fokker–Planck — extended derivation</h2>
+
+  <h3>Why a test function</h3>
+  <p>We want a PDE for the density $p_t(x)$. Two routes to $\partial_t \mathbb{E}[\phi(X_t)]$:</p>
+  <ol>
+    <li>Differentiate $\int \phi(x)\,p_t(x)\,dx$ in $t$: get $\int \phi(x)\,\partial_t p_t(x)\,dx$.</li>
+    <li>Use the Euler approximation of $X_{t+\varepsilon}$ and Taylor-expand $\phi$: get $\int \phi(x)\,[\,-\partial_x(f p_t) + \tfrac{g^2}{2}\partial_x^2 p_t]\,dx$ after IBP.</li>
+  </ol>
+  <p>Equating and quantifying over all $\phi$ forces the integrands to match: this is FP.</p>
+
+  <h3>Step 1 — Taylor expansion</h3>
+  <p>From Euler $X_{t+\varepsilon} \approx X_t + \varepsilon f + \sqrt{\varepsilon}\,g\,Z$ with $Z \sim \mathcal{N}(0,1)$:</p>
+  <div class="math-block">$$\phi(X_{t+\varepsilon}) \approx \phi(X_t) + \phi'(X_t)\bigl(\varepsilon f + \sqrt{\varepsilon}gZ\bigr) + \tfrac{1}{2}\phi''(X_t)\bigl(\varepsilon f + \sqrt{\varepsilon}gZ\bigr)^2 + O(\varepsilon^{3/2}).$$</div>
+  <p>Expand the square: $(\varepsilon f)^2 = O(\varepsilon^2)$, $2\varepsilon^{3/2} f g Z = O(\varepsilon^{3/2})$, $\varepsilon g^2 Z^2$ survives.</p>
+
+  <h3>Step 2 — take expectation</h3>
+  <p>$\mathbb{E}[Z] = 0$ kills the $\sqrt{\varepsilon}\,gZ\,\phi'(X_t)$ term. $\mathbb{E}[Z^2] = 1$ leaves $\varepsilon\,\tfrac{g^2}{2}\,\phi''(X_t)$.</p>
+  <div class="math-block">$$\mathbb{E}[\phi(X_{t+\varepsilon}) - \phi(X_t)] = \varepsilon\,\mathbb{E}\!\left[\phi'(X_t)\,f + \tfrac{g^2}{2}\,\phi''(X_t)\right] + o(\varepsilon).$$</div>
+  <p>Divide by $\varepsilon$, let $\varepsilon \to 0$:</p>
+  <div class="math-block">$$\partial_t \mathbb{E}[\phi(X_t)] = \mathbb{E}_{X \sim p_t}\!\left[\phi'(X)\,f(X,t) + \tfrac{g^2(t)}{2}\,\phi''(X)\right].$$</div>
+
+  <h3>Step 3 — integrate by parts</h3>
+  <p>Boundary terms vanish since $\phi$ has compact support (so $p_t$ at the boundary doesn't matter; or $p_t(\pm\infty) = 0$ by integrability):</p>
+  <div class="math-block">$$\int \phi'(x) f\,p_t\,dx = -\int \phi(x)\,\partial_x(f\,p_t)\,dx,\quad \int \phi''(x)\,p_t\,dx = \int \phi(x)\,\partial_x^2 p_t\,dx.$$</div>
+  <p>Combine:</p>
+  <div class="math-block">$$\int \phi(x)\,\partial_t p_t(x)\,dx = \int \phi(x)\,\bigl[-\partial_x(f\,p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t\bigr]\,dx.$$</div>
+  <p>Holds for every $\phi$. Therefore the integrands agree pointwise (for continuous integrands): this is Fokker–Planck.</p>
+
+  <h3>Multi-D form</h3>
+  <p>For $\mathbf{X}_t \in \mathbb{R}^d$ with $d\mathbf{X}_t = f\,dt + g(t)\,d\mathbf{W}_t$ (isotropic diffusion):</p>
+  <div class="math-block">$$\partial_t p_t(\mathbf{x}) = -\nabla\!\cdot(f p_t) + \tfrac{g^2(t)}{2}\,\Delta p_t(\mathbf{x}).$$</div>
+  <p>Divergence $\nabla\cdot\mathbf{v} = \sum_i \partial_{x_i} v_i$; Laplacian $\Delta p = \sum_i \partial_{x_i}^2 p$.</p>
+</article>
+
+<!-- Anderson -->
+<article>
+  <h2>Anderson — full derivation with sign tracking</h2>
+
+  <h3>The intuition</h3>
+  <p>Forward SDE pushes mass from $p_0$ toward the prior. Naïve time reversal — replace $dt \to -dt$ in the drift — gives a process that drifts <em>away</em> from data: a pure undoing of $f$ ignores that diffusion has been smearing $p_t$. The score $\partial_x \log p_t$ corrects for this smearing: it points toward density, restoring the data structure that diffusion had blurred.</p>
+  <p>Anderson's claim: with drift $f - g^2 \partial_x \log p_t$ and the same diffusion $g$, the reverse SDE has the same marginals at every $t$. Same diffusion preserves Brownian roughness (variance scales correctly); only the drift changes.</p>
+
+  <h3>Strategy</h3>
+  <p>We don't directly compute the reverse SDE's law. Instead we (i) write the PDE that $\bar{p}_t$ (marginal of $\bar{X}_t$) must satisfy via Fokker–Planck applied to a forward-time version of the reverse SDE, then (ii) plug $\bar{p}_t = p_t$ and verify the PDE reduces to forward FP. Uniqueness gives equality of marginals.</p>
+
+  <h3>Step 1 — time reversal in detail</h3>
+  <p>The reverse SDE $d\bar{X}_t = (f - g^2 \partial_x \log p_t)\,dt + g\,d\bar{W}_t$ runs $t: T \to 0$. Define $Y_s = \bar{X}_{T-s}$, $s \in [0, T]$. By chain rule of stochastic time-change, $Y_s$ satisfies a forward-time SDE:</p>
+  <div class="math-block">$$dY_s = -\bigl(f(Y_s, T-s) - g^2(T-s)\,\partial_x \log p_{T-s}(Y_s)\bigr)\,ds + g(T-s)\,d\tilde{W}_s,$$</div>
+  <p>where $\tilde{W}_s$ is a standard Brownian motion (the time-reversed $\bar{W}$). Note the drift sign flip from reversing $dt$.</p>
+  <p>Apply forward FP to $Y_s$ with marginal $q_s$:</p>
+  <div class="math-block">$$\partial_s q_s = -\partial_y\!\bigl[-(f - g^2 \partial_y \log p_{T-s})\,q_s\bigr] + \tfrac{g^2(T-s)}{2}\,\partial_y^2 q_s.$$</div>
+  <p>Note $q_s = \bar{p}_{T-s}$. Map $t = T-s$ ($\partial_s = -\partial_t$):</p>
+  <div class="math-block">$$-\partial_t \bar{p}_t = \partial_x\!\bigl[(f - g^2 \partial_x \log p_t)\,\bar{p}_t\bigr] + \tfrac{g^2}{2}\,\partial_x^2 \bar{p}_t.$$</div>
+  <p>Equivalently:</p>
+  <div class="math-block">$$\partial_t \bar{p}_t = -\partial_x\!\bigl[(f - g^2 \partial_x \log p_t)\,\bar{p}_t\bigr] - \tfrac{g^2}{2}\,\partial_x^2 \bar{p}_t.$$</div>
+
+  <h3>Step 2 — plug in <span style="font-style: normal;">$p_t$</span></h3>
+  <p>Set $\bar{p}_t = p_t$ in the RHS. Use the identity $(\partial_x \log p_t)\,p_t = \partial_x p_t$:</p>
+  <div class="math-block">$$\begin{aligned}
+    \text{RHS} &= -\partial_x\!\bigl[(f - g^2 \partial_x \log p_t)\,p_t\bigr] - \tfrac{g^2}{2}\,\partial_x^2 p_t \\
+    &= -\partial_x(f\,p_t) + g^2\,\partial_x(\partial_x \log p_t \cdot p_t) - \tfrac{g^2}{2}\,\partial_x^2 p_t \\
+    &= -\partial_x(f\,p_t) + g^2\,\partial_x^2 p_t - \tfrac{g^2}{2}\,\partial_x^2 p_t \\
+    &= -\partial_x(f\,p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t.
+  \end{aligned}$$</div>
+  <p>This equals $\partial_t p_t$ by forward FP. Both sides agree, so $p_t$ solves the reverse PDE.</p>
+
+  <h3>Conclusion</h3>
+  <p>Forward marginal $p_t$ solves the same PDE as $\bar{p}_t$. Both have the same boundary at $t=T$ (we set $\bar{X}_T \sim p_T$). Uniqueness of FP solutions: $\bar{p}_t = p_t$ for all $t$.</p>
+</article>
+
+<!-- Score matching -->
+<article>
+  <h2>Score matching — extended derivation</h2>
+
+  <h3>The trick</h3>
+  <p>The intractable loss compares $s_\theta$ to $\partial_x \log p_t$, but we don't know $p_t$. The score-matching identity says: minimizing the marginal-score loss is equivalent (up to a $\theta$-independent constant) to minimizing the kernel-score loss. The kernel $p_{t \mid 0}$ is a known noise-injection kernel, so its score is a closed form.</p>
+
+  <h3>Step 1 — Bayes-weighted average</h3>
+  <p>Marginal: $p_t(X_t) = \int p_0(X_0)\,p_{t\mid 0}(X_t \mid X_0)\,dX_0$. Differentiate under the integral, divide by $p_t$, recognize Bayes:</p>
+  <div class="math-block">$$\begin{aligned}
+    \partial_{X_t} \log p_t(X_t) &= \frac{\int p_0(X_0)\,\partial_{X_t} p_{t\mid 0}(X_t\mid X_0)\,dX_0}{p_t(X_t)} \\
+    &= \int \partial_{X_t}\!\log p_{t\mid 0}(X_t \mid X_0)\,\frac{p_0(X_0)\,p_{t\mid 0}(X_t\mid X_0)}{p_t(X_t)}\,dX_0 \\
+    &= \mathbb{E}_{X_0 \mid X_t}\!\bigl[\partial_{X_t}\!\log p_{t\mid 0}(X_t \mid X_0)\bigr].
+  \end{aligned}$$</div>
+  <p>The marginal score is the Bayes-posterior average of the kernel scores. This is the lever we use to swap the intractable for the tractable.</p>
+
+  <h3>Step 2 — match cross terms</h3>
+  <p>Expand $\|s_\theta - \partial \log p_t\|^2 = \|s_\theta\|^2 - 2\,s_\theta \cdot \partial \log p_t + \|\partial \log p_t\|^2$. Take $\mathbb{E}_{X_t}$. The third term is constant in $\theta$ — absorb into $C$. The cross term:</p>
+  <div class="math-block">$$\mathbb{E}_{X_t}\!\bigl[s_\theta \cdot \partial \log p_t\bigr] = \mathbb{E}_{X_t}\!\bigl[s_\theta \cdot \mathbb{E}_{X_0\mid X_t}[\partial \log p_{t\mid 0}]\bigr] = \mathbb{E}_{X_0, X_t}\!\bigl[s_\theta \cdot \partial \log p_{t\mid 0}\bigr].$$</div>
+  <p>Used: tower $\mathbb{E}_{X_t}\,\mathbb{E}_{X_0\mid X_t}[\cdot] = \mathbb{E}_{X_0,X_t}[\cdot]$.</p>
+
+  <h3>Step 3 — reassemble</h3>
+  <p>Add and subtract $\mathbb{E}_{X_0,X_t}\bigl[\|\partial \log p_{t\mid 0}\|^2\bigr]$ (also constant in $\theta$):</p>
+  <div class="math-block">$$\mathbb{E}_{X_t}\!\bigl[\|s_\theta - \partial \log p_t\|^2\bigr] = \mathbb{E}_{X_0,X_t}\!\bigl[\|s_\theta - \partial \log p_{t\mid 0}\|^2\bigr] + C''.$$</div>
+  <p>Optimizing the LHS is equivalent to optimizing the RHS. The RHS uses only the noise kernel, available in closed form for VE/VP.</p>
+
+  <h3>VP kernel and ε-reparameterization</h3>
+  <p>For VP: $X_t \stackrel{(d)}{=} \gamma_t X_0 + \sigma_t \epsilon$ with $\epsilon \sim \mathcal{N}(0, I)$. The kernel score is $-\epsilon/\sigma_t$ (matches the $\epsilon$↔score relation derived in Lecture 2).</p>
+  <p>Substitute $s_\theta = -\epsilon_\theta/\sigma_t$ and the loss becomes plain noise regression:</p>
+  <div class="math-block">$$\tilde{\mathcal{L}}(\theta) = T\,\mathbb{E}\!\left[\frac{\lambda(t)}{\sigma_t^2}\,\|\epsilon_\theta(\gamma_t X_0 + \sigma_t \epsilon, t) - \epsilon\|^2\right].$$</div>
+</article>
+
+</body>
+</html>

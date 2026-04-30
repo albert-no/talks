@@ -153,10 +153,10 @@
 <div class="slide">
   <h2>Forward Conditional</h2>
   <div class="divider"></div>
-  <p>For $n = 0, \ldots, N-1$:</p>
-  <div class="math-block">$$q(X^{(n)}\,|\,X^{(n+1)}, X^{(0)}) = \mathcal{N}\!\left(\sqrt{\bar{\alpha}_n}\,X^{(0)} + \frac{\sqrt{1-\bar{\alpha}_n - \sigma_{n+1}^2}}{\sqrt{1-\bar{\alpha}_{n+1}}}\,\bigl(X^{(n+1)} - \sqrt{\bar{\alpha}_{n+1}}\,X^{(0)}\bigr),\;\sigma_{n+1}^2\,I\right).$$</div>
-  <p>The mean depends on <strong>both</strong> $X^{(n+1)}$ and $X^{(0)}$.</p>
-  <p>Conditioning on $X^{(0)}$ everywhere makes the chain non-Markovian in $X^{(n)}$ alone.</p>
+  <p>For $n = 0, \ldots, N-1$, define</p>
+  <div class="math-block">$$q\bigl(X^{(n)}\,|\,X^{(n+1)}, X^{(0)}\bigr) \;=\; \mathcal{N}\!\bigl(\mu_n,\;\sigma_{n+1}^2\,I\bigr),$$</div>
+  <div class="math-block">$$\mu_n \;=\; \sqrt{\bar{\alpha}_n}\,X^{(0)} \;+\; \sqrt{1-\bar{\alpha}_n-\sigma_{n+1}^2}\;\cdot\;\frac{X^{(n+1)} - \sqrt{\bar{\alpha}_{n+1}}\,X^{(0)}}{\sqrt{1-\bar{\alpha}_{n+1}}}.$$</div>
+  <p>Mean depends on <strong>both</strong> $X^{(n+1)}$ and $X^{(0)}$ — the chain is non-Markovian in $X^{(n)}$ alone.</p>
 </div>
 
 <!-- SLIDE: Marginal claim -->
@@ -229,6 +229,17 @@
   </div>
 </div>
 
+<!-- SLIDE: DDIM sampling overview -->
+<div class="slide">
+  <h2>DDIM Sampling — The Idea</h2>
+  <div class="divider"></div>
+  <p><strong>Goal at step $n+1 \to n$:</strong> sample $X^{(n)}$ using $X^{(n+1)}$ <em>and</em> $X^{(0)}$.</p>
+  <div class="math-block">$$X^{(n)} \;\sim\; q\bigl(X^{(n)}\,|\,X^{(n+1)}, X^{(0)}\bigr).$$</div>
+  <p>Problem: $X^{(0)}$ is unknown at sampling time.</p>
+  <p><strong>Fix:</strong> estimate it from the network — $\hat{X}^{(0)} = \hat{X}^{(0)}(X^{(n+1)}, \epsilon_\theta)$ — and plug in:</p>
+  <div class="math-block">$$X^{(n)} \;\sim\; q\bigl(X^{(n)}\,|\,X^{(n+1)},\; X^{(0)} = \hat{X}^{(0)}\bigr).$$</div>
+</div>
+
 <!-- SLIDE: Predicted clean signal -->
 <div class="slide">
   <h2>Predicted Clean Signal</h2>
@@ -268,16 +279,38 @@
   <p style="text-align:center;">$\sigma_n = 0$: skip step (b), generator is deterministic.</p>
 </div>
 
+<!-- SLIDE: Deterministic DDIM update -->
+<div class="slide">
+  <h2>Deterministic DDIM ($\sigma_n = 0$)</h2>
+  <div class="divider"></div>
+  <p>With $\sigma_n = 0$, the reverse step has no fresh noise:</p>
+  <div class="math-block">$$X^{(n)} \;=\; \sqrt{\bar{\alpha}_n}\,\hat{X}^{(0)} \;+\; \sqrt{1-\bar{\alpha}_n}\,\epsilon_\theta\bigl(X^{(n+1)},\,n+1\bigr).$$</div>
+  <p>Substitute $\hat{X}^{(0)} = (X^{(n+1)} - \sqrt{1-\bar{\alpha}_{n+1}}\,\epsilon_\theta)/\sqrt{\bar{\alpha}_{n+1}}$.</p>
+  <p>The update becomes a&nbsp;<strong>deterministic map</strong>&nbsp;from&nbsp;$X^{(n+1)}$&nbsp;to&nbsp;$X^{(n)}$.</p>
+</div>
+
+<!-- SLIDE: From DDIM to ODE -->
+<div class="slide">
+  <h2>Continuous-Time Limit</h2>
+  <div class="divider"></div>
+  <p>Re-arrange the σ=0 update around the rescaled state $X^{(n)}/\sqrt{\bar{\alpha}_n}$:</p>
+  <div class="math-block">$$\frac{X^{(n)}}{\sqrt{\bar{\alpha}_n}} \;-\; \frac{X^{(n+1)}}{\sqrt{\bar{\alpha}_{n+1}}} \;=\; \Bigl(\sqrt{\tfrac{1-\bar{\alpha}_n}{\bar{\alpha}_n}} \;-\; \sqrt{\tfrac{1-\bar{\alpha}_{n+1}}{\bar{\alpha}_{n+1}}}\Bigr)\,\epsilon_\theta.$$</div>
+  <p>Set $\tau_t = \sqrt{(1-\bar{\alpha}_t)/\bar{\alpha}_t}$. Index step $\to dt$:</p>
+  <div class="math-block">$$d\!\left(\frac{X_t}{\sqrt{\bar{\alpha}_t}}\right) \;=\; d\tau_t \cdot \epsilon_\theta(X_t, t).$$</div>
+</div>
+
 <!-- SLIDE: Probability-flow ODE -->
 <div class="slide">
   <h2>Probability-Flow ODE</h2>
   <div class="divider"></div>
-  <p>At $\sigma_n \equiv 0$, the reverse step is deterministic. Continuous-time limit:</p>
-  <div class="math-block">$$\frac{dX_t}{dt} = f(X_t, t) - \tfrac{1}{2}g^2(t)\,\nabla_{\mathbf{x}} \log p_t(X_t).$$</div>
-  <p>Same marginals $\{p_t\}$ as the forward SDE. DDIM at $\sigma_n=0$ is a discretization for VP diffusion.</p>
-  <div class="highlight">
-    <p>Stochastic forward, deterministic generator. Score does all the work.</p>
-  </div>
+  <p>Convert $\epsilon_\theta = -\sqrt{1-\bar{\alpha}_t}\,s_\theta$ and unwind the change of variable to recover the standard form:</p>
+  <div class="math-block">$$\frac{dX_t}{dt} \;=\; f(X_t, t) \;-\; \tfrac{1}{2}\,g^2(t)\,\nabla\log p_t(X_t).$$</div>
+  <ul>
+    <li>Same drift $f$ as the forward SDE.</li>
+    <li><strong>Half</strong> the score correction of Anderson's reverse SDE.</li>
+    <li>Same marginals $\{p_t\}$ — deterministic flow with stochastic equivalents.</li>
+  </ul>
+  <div class="cite">Song et al., "Score-Based Generative Modeling through SDEs," ICLR 2021.</div>
 </div>
 
 <!-- ====================================================================
@@ -292,26 +325,28 @@
 
 <!-- SLIDE: Three benefits -->
 <div class="slide">
-  <h2>Three Benefits</h2>
+  <h2>Three Benefits of Determinism</h2>
   <div class="divider"></div>
   <div class="grid-3">
     <div class="card" style="text-align:center;">
       <h3>Fewer steps</h3>
-      <p>Large strides on the index axis.</p>
-      <p>50 steps match 1000-step DDPM.</p>
+      <p><em>ODE flow: coarse Euler still tracks.</em></p>
+      <p>$\sim 50$ steps match $1000$-step DDPM.</p>
     </div>
     <div class="card" style="text-align:center;">
       <h3>Inversion</h3>
-      <p>Run the generator <strong>backwards</strong>.</p>
-      <p>Recover latent noise from an image.</p>
+      <p><em>$X^{(N)} \mapsto X^{(0)}$ is a function.</em></p>
+      <p>Run backwards: image $\to$ latent.</p>
     </div>
     <div class="card" style="text-align:center;">
-      <h3>Latent interpolation</h3>
-      <p>Smooth paths in image space.</p>
-      <p>From interpolated noise latents.</p>
+      <h3>Interpolation</h3>
+      <p><em>Smooth latent space.</em></p>
+      <p>Interpolate $X^{(N)}$, get smooth $X^{(0)}$.</p>
     </div>
   </div>
-  <p>All three rely on $X^{(0)}$ being a deterministic function of $X^{(N)}$.</p>
+  <div class="highlight">
+    <p>Common cause: $X^{(0)}$ is a deterministic function of $X^{(N)}$.</p>
+  </div>
 </div>
 
 <!-- SLIDE: DDPM vs DDIM table -->
@@ -353,7 +388,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 24</div>
+<div class="slide-num" id="slideNum">1 / 27</div>
 
 </div><!-- end deck -->
 

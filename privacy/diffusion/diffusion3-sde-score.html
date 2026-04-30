@@ -80,23 +80,25 @@
 <div class="slide">
   <h2>VE as an SDE</h2>
   <div class="divider"></div>
-  <p>Step size $\Delta t \to 0$ in $X_{t} = X_{t-\Delta t} + \sqrt{\beta}\,Z_t$ with $Z_t \sim \mathcal{N}(0,\Delta t)$:</p>
-  <div class="math-block">$$dX_t = \sqrt{\beta}\,dZ_t.$$</div>
-  <p>$dZ_t$: standard Brownian increment, variance $\Delta t$.</p>
-  <p>Integrated form $X_t = X_0 + \sqrt{\beta}\,Z_t$ matches VE single-step corruption.</p>
+  <p>Discrete VE: $X^{(n)} = X^{(n-1)} + \sqrt{\beta}\,Z^{(n)}$, $\;Z^{(n)} \sim \mathcal{N}(0,1)$ i.i.d.</p>
+  <p>Let each step span time $\Delta t$. Rescale noise so total variance over $[0,T]$ stays fixed: $Z^{(n)} \to \sqrt{\Delta t}\,Z$.</p>
+  <div class="math-block">$$X_{t+\Delta t} - X_t \;=\; \sqrt{\beta\,\Delta t}\,Z \;=\; \sqrt{\beta}\,\Delta W_t,\qquad \Delta W_t \sim \mathcal{N}(0,\Delta t).$$</div>
+  <p>Take $\Delta t \to 0$:</p>
+  <div class="math-block">$$dX_t \;=\; \sqrt{\beta}\,dW_t.$$</div>
 </div>
 
 <!-- SLIDE: VP as SDE limit -->
 <div class="slide">
   <h2>VP as an SDE</h2>
   <div class="divider"></div>
-  <p>VP recursion with $\beta_n = \beta_t\,dt$ and $\sqrt{1-\beta_t\,dt} \approx 1 - \tfrac{\beta_t\,dt}{2}$:</p>
-  <div class="math-block">$$dX_t = -\frac{\beta_t}{2}\,X_t\,dt + \sqrt{\beta_t}\,dZ_t.$$</div>
-  <p>Linear <strong>Ornstein–Uhlenbeck</strong> SDE.</p>
-  <p>Drift pulls toward zero; Brownian noise injects variance.</p>
-  <div class="highlight">
-    <p>Continuous-time DDPM.</p>
-  </div>
+  <p>Discrete VP, step span $\Delta t$, schedule $\beta_n = \beta_t\,\Delta t$:</p>
+  <div class="math-block">$$\begin{aligned}
+    X_{t+\Delta t} &= \sqrt{1-\beta_t\,\Delta t}\,X_t \;+\; \sqrt{\beta_t\,\Delta t}\,Z \\
+                   &\approx \bigl(1 - \tfrac{1}{2}\beta_t\,\Delta t\bigr)\,X_t \;+\; \sqrt{\beta_t\,\Delta t}\,Z.
+  \end{aligned}$$</div>
+  <p>Subtract $X_t$ and let $\Delta t \to 0$:</p>
+  <div class="math-block">$$dX_t \;=\; -\tfrac{\beta_t}{2}\,X_t\,dt + \sqrt{\beta_t}\,dW_t.$$</div>
+  <p>Linear <strong>Ornstein–Uhlenbeck</strong> SDE — drift pulls toward $0$; noise injects variance $\beta_t$.</p>
 </div>
 
 <!-- SLIDE: General SDE form -->
@@ -148,16 +150,26 @@
     <p>For $dX_t = f(X_t, t)\,dt + g(t)\,dZ_t$, the marginal $p_t(x)$ satisfies:</p>
     <div class="math-block">$$\partial_t\,p_t(x) = -\partial_x\bigl(f(x,t)\,p_t(x)\bigr) + \frac{g^2(t)}{2}\,\partial_x^2\,p_t(x).$$</div>
   </div>
-  <p>Deterministic PDE for the density.</p>
-  <p>Drift advects mass; diffusion spreads it.</p>
+  <div class="grid-2">
+    <div>
+      <h3>SDE — single particle</h3>
+      <p>Random trajectory $X_t$.</p>
+      <p>Different sample path each run.</p>
+    </div>
+    <div>
+      <h3>FP — distribution</h3>
+      <p>Deterministic PDE for $p_t$.</p>
+      <p>One density evolves through time.</p>
+    </div>
+  </div>
 </div>
 
 <!-- SLIDE: FP proof setup -->
 <div class="slide">
-  <h2>Proof Setup</h2>
+  <h2>Proof Setup — Why a Test Function</h2>
   <div class="divider"></div>
-  <p>Let $\phi$ be smooth with compact support.</p>
-  <p>Track $\partial_t \mathbb{E}[\phi(X_t)]$ via two routes; equate them.</p>
+  <p><strong>Test function $\phi$:</strong> smooth, compactly supported. A probe to interrogate $p_t$ without writing it down.</p>
+  <p>Bridge SDE $\to$ PDE via $\mathbb{E}[\phi(X_t)] = \int \phi(x)\,p_t(x)\,dx$. Track $\partial_t\,\mathbb{E}[\phi(X_t)]$ from both sides; equate.</p>
   <p>Small-step Euler approximation:</p>
   <div class="math-block">$$X_{t+\varepsilon} \approx X_t + \varepsilon\,f(X_t,t) + \sqrt{\varepsilon}\,g(t)\,Z,\qquad Z\sim\mathcal{N}(0,1).$$</div>
 </div>
@@ -166,8 +178,9 @@
 <div class="slide">
   <h2>Proof Outline</h2>
   <div class="divider"></div>
-  <p>Target identity (holds for every test $\phi$):</p>
-  <div class="math-block">$$\int \phi(x)\,\partial_t p_t(x)\,dx = \int \phi(x)\bigl[-\partial_x(f p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t\bigr]\,dx.$$</div>
+  <p>Target — equality must hold for <strong>every</strong> test $\phi$:</p>
+  <div class="math-block">$$\int \phi(x)\,\partial_t p_t(x)\,dx = \int \phi(x)\bigl[-\partial_x(f\,p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t\bigr]\,dx.$$</div>
+  <p>"For all $\phi$" forces the integrands to match $\Rightarrow$ pointwise FP.</p>
   <ol>
     <li><strong>Step 1.</strong> Taylor-expand $\phi(X_{t+\varepsilon})$ to second order.</li>
     <li><strong>Step 2.</strong> Take expectation; collect surviving terms.</li>
@@ -209,14 +222,28 @@
 <div class="slide">
   <h2>Proof Recap</h2>
   <div class="divider"></div>
-  <p>Single chain, test-function side:</p>
+  <p>From SDE to PDE via the test function:</p>
   <div class="math-block">$$\begin{aligned}
-    \partial_t\,\mathbb{E}[\phi(X_t)]
-      &\stackrel{(1)}{=}\; \mathbb{E}\!\left[\phi'(X_t)\,(\varepsilon f + \sqrt{\varepsilon}gZ) + \tfrac{1}{2}\phi''(X_t)\,\varepsilon g^2 Z^2\right]\big/\varepsilon \\
+    \int \phi(x)\,\partial_t p_t(x)\,dx
+      &\;=\; \partial_t\,\mathbb{E}[\phi(X_t)] \\
+      &\stackrel{(1)}{=}\; \mathbb{E}\!\left[\phi'(X_t)\,(\varepsilon f + \sqrt{\varepsilon}gZ) + \tfrac{1}{2}\phi''(X_t)\,\varepsilon g^2 Z^2\right]\!\big/\varepsilon \\
       &\stackrel{(2)}{=}\; \mathbb{E}_{X\sim p_t}\!\left[\phi'(X)\,f + \tfrac{g^2}{2}\,\phi''(X)\right] \\
-      &\stackrel{(3)}{=}\; \int \phi(x)\bigl[-\partial_x(fp_t) + \tfrac{g^2}{2}\partial_x^2 p_t\bigr]\,dx \\
-      &\stackrel{(\ast)}{=}\; \int \phi(x)\,\partial_t p_t(x)\,dx.
+      &\stackrel{(3)}{=}\; \int \phi(x)\bigl[-\partial_x(f\,p_t) + \tfrac{g^2}{2}\,\partial_x^2 p_t\bigr]\,dx.
   \end{aligned}$$</div>
+  <p>Identity in $\phi$ $\Rightarrow$ Fokker–Planck holds pointwise.</p>
+</div>
+
+<!-- SLIDE: FP in vector form -->
+<div class="slide">
+  <h2>Vector Form (Multi-D)</h2>
+  <div class="divider"></div>
+  <p>For $\mathbf{X}_t \in \mathbb{R}^d$ with $d\mathbf{X}_t = f(\mathbf{X}_t,t)\,dt + g(t)\,d\mathbf{W}_t$:</p>
+  <div class="math-block">$$\partial_t\,p_t(\mathbf{x}) \;=\; -\nabla\!\cdot\!\bigl(f(\mathbf{x},t)\,p_t(\mathbf{x})\bigr) \;+\; \frac{g^2(t)}{2}\,\Delta\,p_t(\mathbf{x}).$$</div>
+  <ul>
+    <li><strong>Divergence</strong> $\nabla\cdot\mathbf{v} \;=\; \sum_{i=1}^{d} \partial_{x_i} v_i$.</li>
+    <li><strong>Laplacian</strong> $\Delta\,p \;=\; \sum_{i=1}^{d} \partial_{x_i}^2\,p \;=\; \mathrm{tr}(\nabla^2 p)$.</li>
+  </ul>
+  <p>Drift advects mass; diffusion spreads via the Laplacian (sum of second partials).</p>
 </div>
 
 <!-- ====================================================================
@@ -243,14 +270,54 @@
   <div class="cite">Anderson, "Reverse-time diffusion equation models," Stochastic Processes and their Applications 1982.</div>
 </div>
 
+<!-- SLIDE: Forward / reverse diagram with shared marginals -->
+<div class="slide">
+  <h2>Two SDEs, Same Marginals</h2>
+  <div class="divider"></div>
+
+  <div style="max-width: 1080px; margin: 22px auto 0;">
+    <!-- Forward chain -->
+    <div style="display: grid; grid-template-columns: 130px repeat(5, 1fr); align-items: center; font-size: 1.4rem; padding: 6px 0;">
+      <span style="color: var(--gray-text); font-weight: 600;">Forward:</span>
+      <span style="text-align: center;">$X_0$</span>
+      <span style="text-align: center;">$\to$</span>
+      <span style="text-align: center;">$X_t$</span>
+      <span style="text-align: center;">$\to$</span>
+      <span style="text-align: center;">$X_T$</span>
+    </div>
+    <p style="text-align: center; font-size: 1.15rem; color: var(--gray-text); margin: 2px 0 0;">$dX_t = f(X_t,t)\,dt + g(t)\,dW_t$</p>
+
+    <!-- Equality bar -->
+    <div style="text-align: center; padding: 16px 0; color: var(--success); font-size: 1.3rem; font-weight: 700;">$X_t \;\stackrel{(d)}{=}\; \bar{X}_t$ for every $t \in [0,T]$ &nbsp;(same marginal $p_t$)</div>
+
+    <!-- Reverse chain -->
+    <div style="display: grid; grid-template-columns: 130px repeat(5, 1fr); align-items: center; font-size: 1.4rem; padding: 6px 0;">
+      <span style="color: var(--gray-text); font-weight: 600;">Reverse:</span>
+      <span style="text-align: center;">$\bar{X}_0$</span>
+      <span style="text-align: center; color: var(--yonsei-blue);">$\leftarrow$</span>
+      <span style="text-align: center;">$\bar{X}_t$</span>
+      <span style="text-align: center; color: var(--yonsei-blue);">$\leftarrow$</span>
+      <span style="text-align: center;">$\bar{X}_T$</span>
+    </div>
+    <p style="text-align: center; font-size: 1.15rem; color: var(--gray-text); margin: 2px 0 0;">$d\bar{X}_t = \bigl(f(\bar{X}_t,t) - g^2(t)\,\partial_x\log p_t(\bar{X}_t)\bigr)\,dt + g(t)\,d\bar{W}_t$</p>
+  </div>
+
+  <div class="highlight" style="margin-top: 22px;">
+    <p>Same diffusion $g$; reverse drift adds the score correction $-g^2\,\partial_x\log p_t$.</p>
+  </div>
+</div>
+
 <!-- SLIDE: Anderson proof setup -->
 <div class="slide">
   <h2>Proof Setup</h2>
   <div class="divider"></div>
-  <p>Let $\bar{p}_t$ be the marginal of $\bar{X}_t$.</p>
-  <p>Strategy: write the PDE that $\bar{p}_t$ must satisfy (Fokker–Planck applied to the reverse SDE, with time reversal).</p>
-  <p>Then check that the forward marginal $p_t$ solves it.</p>
-  <p>Uniqueness gives $\bar{p}_t = p_t$.</p>
+  <p><strong>Strategy.</strong> Let $\bar{p}_t$ be the marginal of $\bar{X}_t$. We will:</p>
+  <ol>
+    <li>Write the PDE that $\bar{p}_t$ must satisfy — Fokker–Planck applied to the reverse SDE, with time reversal.</li>
+    <li>Check that the forward marginal $p_t$ solves the same PDE.</li>
+    <li>Conclude $\bar{p}_t = p_t$ by uniqueness of solutions.</li>
+  </ol>
+  <p>Two PDEs match $\Rightarrow$ same marginal $\Rightarrow$ same SDE in distribution.</p>
 </div>
 
 <!-- SLIDE: Anderson outline -->
@@ -270,9 +337,11 @@
 <div class="slide">
   <h2>Step 1: Reverse-Time FP</h2>
   <div class="divider"></div>
-  <p>Let $Y_t = \bar{X}_{T-t}$ run forward in $t$. Apply Fokker–Planck to $Y_t$:</p>
-  <div class="math-block">$$\partial_t q_t(y) = \partial_y\!\Bigl[\bigl(f(y, T{-}t) - g^2(T{-}t)\,\partial_y \log p_{T{-}t}(y)\bigr)\,q_t(y)\Bigr] + \tfrac{g^2(T{-}t)}{2}\,\partial_y^2 q_t(y).$$</div>
-  <p>Change of variable $t \mapsto T - t$ gives the PDE for $\bar{p}_t$.</p>
+  <p>Reverse SDE runs $t: T \to 0$. To use FP we need a forward-time process: set $Y_s = \bar{X}_{T-s}$, $s \in [0,T]$.</p>
+  <p>Apply Fokker–Planck to $Y_s$ with marginal $q_s = \bar{p}_{T-s}$:</p>
+  <div class="math-block">$$\partial_s q_s(y) = \partial_y\!\Bigl[\bigl(f(y, T{-}s) - g^2(T{-}s)\,\partial_y \log p_{T{-}s}(y)\bigr)\,q_s(y)\Bigr] + \tfrac{g^2(T{-}s)}{2}\,\partial_y^2 q_s(y).$$</div>
+  <p>Map $s \mapsto T-s$ to express the PDE in original time $t$ for $\bar{p}_t$.</p>
+  <p style="font-size: 1.15rem; color: var(--gray-text);">See note file for the full sign-tracking through the time-reversal.</p>
 </div>
 
 <!-- SLIDE: Anderson step 2 -->
@@ -306,11 +375,21 @@
 <div class="slide">
   <h2>Why Anderson Matters</h2>
   <div class="divider"></div>
-  <p>Continuous-time analog of Lecture 1's Bayes-based reverse step.</p>
-  <p>Reverse drift uses the <strong>score</strong> $\partial_x \log p_t$.</p>
+  <p>With the <strong>true score</strong> $\partial_x\log p_t$, the reverse SDE is <strong>exact</strong> — same marginals as forward at every $t$, no per-step approximation.</p>
+  <div class="grid-2">
+    <div>
+      <h3>DDPM (discrete)</h3>
+      <p>Reverse step assumed Gaussian.</p>
+      <p>Valid only for small $\beta_n$.</p>
+    </div>
+    <div>
+      <h3>Anderson (continuous)</h3>
+      <p>Reverse SDE matches forward law.</p>
+      <p>Only residual: $\bar{X}_T \sim \mathcal{N}(0,I)$ vs $X_T \sim p_T$.</p>
+    </div>
+  </div>
   <div class="highlight">
-    <p><strong>Generation recipe.</strong> Sample $\bar{X}_T \sim p_T$. Run reverse SDE with drift $f - g^2 s_\theta$ and diffusion $g$.</p>
-    <p>DDPM sampling is the Euler–Maruyama discretization.</p>
+    <p>Generation: sample $\bar{X}_T \sim \mathcal{N}(0,I)$, run reverse SDE with $s_\theta \approx \partial_x\log p_t$.</p>
   </div>
 </div>
 
@@ -321,7 +400,29 @@
   <div class="section-num">04</div>
   <h1>Score Matching</h1>
   <div class="divider"></div>
-  <p class="subtitle">Learning the score without knowing the marginals</p>
+  <p class="subtitle">Train $s_\theta \approx \partial_x \log p_t$ — no Gaussian-step approximation, no discretization</p>
+</div>
+
+<!-- SLIDE: Motivation -->
+<div class="slide">
+  <h2>Why Learn the Score</h2>
+  <div class="divider"></div>
+  <p>Anderson: with the true score, reverse SDE is exact. <strong>Train a network to learn it.</strong></p>
+  <div class="grid-2">
+    <div>
+      <h3>DDPM</h3>
+      <p>Learn Gaussian-step parameters.</p>
+      <p>Inherits discretization + Gaussian-step error.</p>
+    </div>
+    <div>
+      <h3>Score-based</h3>
+      <p>Learn the score field $s_\theta(X_t, t)$.</p>
+      <p>Plug into reverse SDE; exact in the score-perfect limit.</p>
+    </div>
+  </div>
+  <div class="highlight">
+    <p>Goal: a tractable loss whose minimizer recovers $\partial_x\log p_t$.</p>
+  </div>
 </div>
 
 <!-- SLIDE: Why score matching is needed -->
@@ -330,8 +431,8 @@
   <div class="divider"></div>
   <p>Match $s_\theta$ against the true score at every $t$:</p>
   <div class="math-block">$$\mathcal{L}(\theta) = \int_0^T \lambda(t)\,\mathbb{E}_{X_t}\!\left[\bigl\|s_\theta(X_t, t) - \partial_x \log p_t(X_t)\bigr\|^2\right]dt.$$</div>
-  <p>Forward sampling gives $X_t \sim p_t$ for free.</p>
-  <p>The marginal density $p_t$ and its gradient are not available.</p>
+  <p>Forward sampling: $X_t \sim p_t$ free.</p>
+  <p>Marginal $p_t$ and its gradient: <strong>not available</strong>.</p>
 </div>
 
 <!-- SLIDE: Score matching theorem -->
@@ -376,7 +477,8 @@
 <div class="slide">
   <h2>Step 1: Score as Conditional Expectation</h2>
   <div class="divider"></div>
-  <p>Differentiate the marginal under the integral; apply log-derivative; recognize Bayes:</p>
+  <p><strong>Key identity:</strong> marginal score = Bayes-weighted average of kernel scores.</p>
+  <p>Differentiate the marginal under the integral; apply log-derivative; recognize the Bayes posterior:</p>
   <div class="math-block">$$\begin{aligned}
     \partial_{X_t}\log p_t(X_t)
     &= \frac{\partial_{X_t}\,p_t(X_t)}{p_t(X_t)} \\
@@ -486,7 +588,7 @@
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 38</div>
+<div class="slide-num" id="slideNum">1 / 41</div>
 
 </div><!-- end deck -->
 
