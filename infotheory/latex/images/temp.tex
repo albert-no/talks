@@ -1,0 +1,105 @@
+\documentclass{article}
+\usepackage{amsmath,amsfonts}
+\usepackage{fullpage}
+
+\title{Lecture Note: Variational Estimation of Mutual Information}
+\author{Prof. Albert No}
+\date{May 30, 2024}
+
+\begin{document}
+\maketitle
+
+\section*{1. Review of Mutual Information}
+
+Let $(X,Y)$ be jointly distributed. The mutual information is:
+\[
+I(X;Y) = H(Y) - H(Y|X) = \mathbb{E}_{p(x,y)} \left[ \log \frac{p(y|x)}{p(y)} \right] = D_{KL}(p(x,y)\|p(x)p(y)).
+\]
+
+\section*{2. Intractability in High Dimensions}
+
+For high-dimensional data (e.g. images), direct estimation of $p(x)$, $p(y)$, or $p(x,y)$ is intractable. Thus, variational approaches are used.
+
+\section*{3. Barber-Agakov Variational Bounds}
+
+\subsection*{Upper Bound}
+For any distribution $q(y)$:
+\[
+I(X;Y) \leq \mathbb{E}_{p(x)} \left[ D_{KL}(p(y|x) \| q(y)) \right].
+\]
+
+\subsection*{Lower Bound}
+For any variational distribution $q(x|y)$:
+\[
+I(X;Y) \geq \mathbb{E}_{p(x,y)} \left[ \log q(x|y) \right] + H(X).
+\]
+
+\section*{4. Unnormalized Barber-Agakov (UBA)}
+
+Define:
+\[
+q(x|y) = \frac{p(x) e^{f(x,y)}}{Z(y)}, \quad Z(y) = \mathbb{E}_{p(x)} \left[ e^{f(x,y)} \right].
+\]
+
+Then:
+\[
+I_{UBA}(X;Y) = \mathbb{E}_{p(x,y)}[f(x,y)] - \mathbb{E}_{p(y)}[\log Z(y)].
+\]
+
+\section*{5. Donsker-Varadhan Bound (DV)}
+
+Use Jensen’s inequality:
+\[
+I_{DV}(X;Y) = \mathbb{E}_{p(x,y)}[f(x,y)] - \log \mathbb{E}_{p(x)p(y)}[e^{f(x,y)}].
+\]
+
+\section*{6. Tractable UBA (tUBA or "CUBA")}
+
+Introduce auxiliary function $a(y)$ and use upper bound:
+\[
+\log Z(y) \leq \frac{Z(y)}{a(y)} + \log a(y) - 1.
+\]
+
+Plug into:
+\[
+I_{CUBA}(X;Y) = \mathbb{E}_{p(x,y)}[f(x,y)] - \mathbb{E}_{p(y)} \left[ \frac{Z(y)}{a(y)} + \log a(y) - 1 \right].
+\]
+
+\section*{7. NWJ Bound}
+
+Set $a(y) = e$, then:
+\[
+I_{NWJ}(X;Y) = \mathbb{E}_{p(x,y)}[f(x,y)] - \mathbb{E}_{p(x)p(y)}[e^{f(x,y)}] + 1.
+\]
+
+\section*{8. InfoNCE Bound}
+
+Let $\{(x_i, y_i)\}_{i=1}^K$ be a batch from $p(x,y)$. Define:
+\[
+I_{InfoNCE}(X;Y) = \frac{1}{K} \sum_{i=1}^K \log \frac{e^{f(x_i, y_i)}}{\sum_{j=1}^K e^{f(x_j, y_i)}}.
+\]
+
+\subsection*{Properties}
+- Upper bound: $I_{InfoNCE}(X;Y) \leq \log K$.
+- Equality holds when $f(x,y) = \log p(y|x) + c(y)$.
+
+\section*{9. Practical Estimation}
+
+Train a neural network $f_\theta(x,y)$ to maximize InfoNCE:
+\[
+\max_\theta I_{InfoNCE}(X;Y; f_\theta).
+\]
+
+\section*{10. CLIP Objective (Symmetric InfoNCE)}
+
+\[
+\mathcal{L}_{CLIP} = \frac{1}{2K} \sum_{i=1}^K \left[ 
+\log \frac{e^{f(x_i, y_i)}}{\sum_j e^{f(x_i, y_j)}} +
+\log \frac{e^{f(x_i, y_i)}}{\sum_j e^{f(x_j, y_i)}}
+\right].
+\]
+
+Where $f(x, y) = g(x)^\top h(y)$ is a separable critic with shared embedding dimension.
+
+\end{document}
+1

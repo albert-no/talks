@@ -1,0 +1,289 @@
+
+
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+\newcommand{\Bern}{{\mbox{Bern}}}
+\newcommand{\Lap}{{\mbox{Lap}}}
+% \newcommand{\bX}{{\bf X}}
+\newcommand{\bXt}{\tilde{\bf X}}
+\newcommand{\bXh}{\hat{\bf X}}
+\newcommand{\bNsup}[1]{{\bf N}^{(#1)}}
+\newcommand{\bNtsup}[1]{\tilde{\bf N}^{(#1)}}
+\newcommand{\bZsup}[1]{{\bf Z}^{(#1)}}
+\newcommand{\bZtsup}[1]{\tilde{\bf Z}^{(#1)}}
+\newcommand{\bXhsup}[1]{\hat{\bf X}^{(#1)}}
+\newcommand{\bXtsup}[1]{\tilde{\bf X}^{(#1)}}
+\newcommand{\bzerod}{{\bf 0}_d}
+\newcommand{\boned}{{\bf 1}_d}
+
+\newcommand{\SpLap}{{\mbox{SpLap}}}
+\newcommand{\sgn}{{\mbox{sign}}}
+\newcommand{\iid}{\stackrel{iid}{\sim}}
+\newcommand{\deq}{\stackrel{(d)}{=}}
+
+\newcommand{\equalto}[2]{\underset{\scriptstyle\overset{\mkern4mu\verteq}{#2}}{#1}}
+\newcommand{\verteq}{\rotatebox{90}{$\,=$}}
+
+
+
+%% some caligraphic symbols
+\newcommand{\cA}{{\cal A}}
+\newcommand{\cB}{{\cal B}}
+\newcommand{\cC}{{\cal C}}
+\newcommand{\cD}{{\cal D}}
+\newcommand{\cE}{{\cal E}}
+\newcommand{\cF}{{\cal F}}
+\newcommand{\cG}{{\cal G}}
+\newcommand{\cH}{{\cal H}}
+\newcommand{\cI}{{\cal I}}
+\newcommand{\cJ}{{\cal J}}
+\newcommand{\cK}{{\cal K}}
+\newcommand{\cL}{{\cal L}}
+\newcommand{\cM}{{\cal M}}
+\newcommand{\cN}{{\cal N}}
+\newcommand{\cO}{{\cal O}}
+\newcommand{\cP}{{\cal P}}
+\newcommand{\cQ}{{\cal Q}}
+\newcommand{\cR}{{\cal R}}
+\newcommand{\cS}{{\cal S}}
+\newcommand{\cT}{{\cal T}}
+\newcommand{\cU}{{\cal U}}
+\newcommand{\cV}{{\cal V}}
+\newcommand{\cW}{{\cal W}}
+\newcommand{\cX}{{\cal X}}
+\newcommand{\cY}{{\cal Y}}
+\newcommand{\cZ}{{\cal Z}}
+
+\DeclareMathAlphabet{\pazocal}{OMS}{zplm}{m}{n}
+\newcommand{\calD}{{\pazocal {D}}}
+\newcommand{\calG}{{\pazocal {G}}}
+
+
+%% some bold symbols
+\newcommand{\ba}{{\bf a}}
+\newcommand{\bb}{{\bf b}}
+\newcommand{\bc}{{\bf c}}
+\newcommand{\bd}{{\bf d}}
+\newcommand{\be}{{\bf e}}
+%\newcommand{\bf}{{\bf f}}
+\newcommand{\bg}{{\bf g}}
+\newcommand{\bh}{{\bf h}}
+\newcommand{\bj}{{\bf j}}
+\newcommand{\bk}{{\bf k}}
+\newcommand{\bl}{{\bf l}}
+\newcommand{\bm}{{\bf m}}
+\newcommand{\bn}{{\bf n}}
+\newcommand{\bo}{{\bf o}}
+\newcommand{\bp}{{\bf p}}
+\newcommand{\bq}{{\bf q}}
+\newcommand{\br}{{\bf r}}
+\newcommand{\bs}{{\bf s}}
+\newcommand{\bt}{{\bf t}}
+\newcommand{\bu}{{\bf u}}
+\newcommand{\bv}{{\bf v}}
+\newcommand{\bw}{{\bf w}}
+\newcommand{\bx}{{\bf x}}
+\newcommand{\by}{{\bf y}}
+\newcommand{\bz}{{\bf z}}
+
+\newcommand{\bA}{{\bf A}}
+\newcommand{\bB}{{\bf B}}
+\newcommand{\bC}{{\bf C}}
+\newcommand{\bD}{{\bf D}}
+\newcommand{\bE}{{\bf E}}
+\newcommand{\bF}{{\bf F}}
+\newcommand{\bG}{{\bf G}}
+\newcommand{\bH}{{\bf H}}
+\newcommand{\bI}{{\bf I}}
+\newcommand{\bJ}{{\bf J}}
+\newcommand{\bK}{{\bf K}}
+\newcommand{\bL}{{\bf L}}
+\newcommand{\bM}{{\bf M}}
+\newcommand{\bN}{{\bf N}}
+\newcommand{\bO}{{\bf O}}
+\newcommand{\bP}{{\bf P}}
+\newcommand{\bQ}{{\bf Q}}
+\newcommand{\bR}{{\bf R}}
+\newcommand{\bS}{{\bf S}}
+\newcommand{\bT}{{\bf T}}
+\newcommand{\bU}{{\bf U}}
+\newcommand{\bV}{{\bf V}}
+\newcommand{\bW}{{\bf W}}
+\newcommand{\bX}{{\bf X}}
+\newcommand{\bY}{{\bf Y}}
+\newcommand{\bZ}{{\bf Z}}
+
+
+\newcommand{\tA}{\tilde{A}}
+\newcommand{\tB}{\tilde{B}}
+\newcommand{\tC}{\tilde{C}}
+\newcommand{\tD}{\tilde{D}}
+\newcommand{\tE}{\tilde{E}}
+\newcommand{\tF}{\tilde{F}}
+\newcommand{\tG}{\tilde{G}}
+\newcommand{\tH}{\tilde{H}}
+\newcommand{\tI}{\tilde{I}}
+\newcommand{\tJ}{\tilde{J}}
+\newcommand{\tK}{\tilde{K}}
+\newcommand{\tL}{\tilde{L}}
+\newcommand{\tM}{\tilde{M}}
+\newcommand{\tN}{\tilde{N}}
+\newcommand{\tO}{\tilde{O}}
+\newcommand{\tP}{\tilde{P}}
+\newcommand{\tQ}{\tilde{Q}}
+\newcommand{\tR}{\tilde{R}}
+\newcommand{\tS}{\tilde{S}}
+\newcommand{\tT}{\tilde{T}}
+\newcommand{\tU}{\tilde{U}}
+\newcommand{\tV}{\tilde{V}}
+\newcommand{\tX}{\tilde{X}}
+\newcommand{\tY}{\tilde{Y}}
+\newcommand{\tZ}{\tilde{Z}}
+
+\newcommand{\tu}{\tilde{u}}
+\newcommand{\tx}{\tilde{x}}
+\newcommand{\ty}{\tilde{y}}
+\newcommand{\tgamma}{\tilde{\gamma}}
+%\newcommand{\ta}{\tilde{a}}
+
+\newcommand{\field}[1]{\mathbb{#1}}
+\newcommand{\fC}{\field{C}} 
+\newcommand{\fE}{\field{E}} 
+\newcommand{\fN}{\field{N}} % natural numbers
+\newcommand{\fR}{\field{R}} % real numbers
+\newcommand{\fS}{\field{S}}
+\newcommand{\fZ}{\field{Z}} % integers
+
+\newcommand{\uh}{\hat{u}}
+\newcommand{\vh}{\hat{v}}
+\newcommand{\xh}{\hat{x}}
+\newcommand{\yh}{\hat{y}}
+\newcommand{\zh}{\hat{z}}
+\newcommand{\Uh}{\hat{U}}
+\newcommand{\Xh}{\hat{X}}
+\newcommand{\Yh}{\hat{Y}}
+\newcommand{\Zh}{\hat{Z}}
+\newcommand{\cXh}{\hat{\cX}}
+\newcommand{\bUh}{\hat{\bU}}
+\newcommand{\cYh}{\hat{\cY}}
+\newcommand{\cZh}{\hat{\cZ}}
+
+\newcommand{\bQstar}{\bQ^{\star}}
+\newcommand{\Astar}{A^{\star}}
+\newcommand{\Bstar}{B^{\star}}
+\newcommand{\Qstar}{Q^{\star}}
+
+\newcommand{\tsnr}{{\text{snr}}}
+\newcommand{\tvar}{{\text{Var}}}
+\newcommand{\cmle}{\text{\rm cmle}}
+\newcommand{\cmse}{\text{\rm cmse}}
+\newcommand{\mmse}{\text{\rm mmse}}
+\newcommand{\mmle}{\text{\rm mmle}}
+\newcommand{\minimax}{\text{\rm minimax}}
+\newcommand{\mse}{\text{\rm mse}}
+\newcommand{\mle}{\text{\rm mle}}
+
+\newcommand{\diag}{\mbox{diag}}
+\newcommand{\JSD}{\mbox{JSD}}
+\newcommand{\conv}{\text{\rm conv}}
+
+\newcommand{\mathify}[1]{\ifmmode{#1}\else\mbox{$#1$}\fi}
+\newcommand{\Expec}[1]{\mathify{\mathbb{E}\left[#1\right]}}
+\newcommand{\Var}[1]{\mathify{{\rm VAR}\left[#1\right]}}
+\newcommand{\Cov}{\mathify{{\rm Cov}}}
+
+% \newcommand{\Esubs}[2]{\mathify{\mathbb{E}_{#1}\left[#2\right]}}
+
+\newcommand{\Err}{\mathrm{Err}}
+
+
+%% bold symbols and some other symbols for ratless paper
+\newcommand{\mathUO}{{\rm Unif}(\mathcal{O}(n))}
+\newcommand{\Xb}[1]{{\bf X^{(#1)}}}
+\newcommand{\Bb}[1]{{\bf B^{(#1)}}}
+\newcommand{\Xe}[1]{ X^{(#1)}}
+\newcommand{\Be}[1]{ B^{(#1)}}
+\newcommand{\Zb}[1]{{\bf Z^{(#1)}}}
+\newcommand{\Ze}[1]{ Z^{(#1)}}
+\newcommand{\Yb}[1]{{\bf Y^{(#1)}}}
+\newcommand{\Ye}[1]{ Y^{(#1)}}
+\newcommand{\Ub}[1]{{\bf U^{(#1)}}}
+\newcommand{\Ue}[1]{ U^{(#1)}}
+\newcommand{\Vb}[1]{{\bf V^{(#1)}}}
+\newcommand{\Ve}[1]{ V^{(#1)}}
+\newcommand{\Wb}[1]{{\bf W^{(#1)}}}
+\newcommand{\We}[1]{ W^{(#1)}}
+\newcommand{\Wbtilde}[1]{{\bf \widetilde{W}^{(#1)}}}
+\newcommand{\Wetilde}[1]{ \widetilde{W}^{(#1)}}
+\newcommand{\Ah}{\hat{A}}
+\newcommand{\Ab}{{\bf A}}
+
+\newcommand{\Qb}{{\bf Q}}
+\newcommand{\Xbhat}{{\bf \hat{X}}}
+\newcommand{\Xbh}[1]{{\bf \hat{X}^{(#1)}}}
+\newcommand{\mb}[1]{{\bf m^{(#1)}}}
+\newcommand{\me}[1]{ m^{(#1)}}
+\newcommand{\mbhat}[1]{{\bf \hat{m}^{(#1)}}}
+\newcommand{\mehat}[1]{{\hat{m}^{(#1)}}}
+
+\usepackage{tikz}
+\usepackage{pstricks}
+\usetikzlibrary{arrows,shapes}
+\usetikzlibrary{fit}
+
+%% math operators
+\newcommand\argmin{\mathop{\mbox{{\rm argmin}}}\limits}
+\newcommand\argmax{\mathop{\mbox{{\rm argmax}}}\limits}
+\newcommand\maximize{\mathop{\mbox{{\rm maximize}}}\limits}
+\newcommand\minimize{\mathop{\mbox{{\rm minimize}}}\limits}
+\newcommand{\bea}{\begin{eqnarray}}
+\newcommand{\eea}{\end{eqnarray}}
+\newcommand{\beas}{\begin{eqnarray*}}
+\newcommand{\eeas}{\end{eqnarray*}}
+\usepackage{amsfonts}
+\newcommand{\Espace}{{\tilde{\mathcal{F}}[0,T]}}
+\newcommand{\suchthat}{\;\ifnum\currentgrouptype=16 \middle\fi|\;}
+\newcommand{\dbar}{\;\ifnum\currentgrouptype=16 \middle \fi\|\;}
+
+
+\allowdisplaybreaks
+
+% if you use cleveref..
+\usepackage[capitalize,noabbrev]{cleveref}
+
+
+% Todonotes is useful during development; simply uncomment the next line
+%    and comment out the line below the next line to turn off comments
+%\usepackage[disable,textsize=tiny]{todonotes}
+\usepackage[textsize=tiny]{todonotes}
+
+
+
+
+\newcommand{\noa}[1]{{\color{red}\textbf{AN}: #1}}
+\newcommand{\berivan}[1]{{\color{orange}\textbf{BI}: #1}}
+\newcommand{\wn}[1]{{\color{green}\textbf{WN}: #1}}
+
+
+%%%%%%%%%%%%%%%%%%% ADDED BY WEI-NING %%%%%%%%%%%%%%%
+\newcommand{\lp}{\left(}
+\newcommand{\rp}{\right)}
+\newcommand{\lb}{\left[}
+\newcommand{\rb}{\right]}
+\newcommand{\lbp}{\left\{}
+\newcommand{\rbp}{\right\}}
+\newcommand{\lba}{\left\lvert}
+\newcommand{\rba}{\right\rvert}
+\newcommand{\lV}{\left\lVert}
+\newcommand{\rV}{\right\rVert}
+\newcommand{\mv}{\middle\vert}
+\newcommand{\lan}{\langle}
+\newcommand{\ran}{\rangle}
+\newcommand{\ra}{\rightarrow}
+\newcommand{\eqDef}{\coloneqq}
+\newcommand{\mcal}{\mathcal}
+
+\newcommand{\diid}{\overset{\text{i.i.d.}}{\sim}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\punif}{P_{\text{unif}}}

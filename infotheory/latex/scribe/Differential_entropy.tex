@@ -1,0 +1,138 @@
+\subsection{Mutual Information for Continuous Random Variables}
+
+In the discrete setting, entropy is maximized by the uniform distribution: as the number of possible outcomes grows, so does the discrete entropy.  Extending this notion to continuous variables requires care, so we define mutual information via the Kullback–Leibler divergence:
+
+\[
+I(X;Y)
+=\mathbb{E}\!\biggl[\log\frac{f_{X,Y}(X,Y)}{\,f_X(X)\,f_Y(Y)\,}\biggr]
+= D\bigl(f_{X,Y}\,\|\,f_X\,f_Y\bigr).
+\]
+
+Equivalently, if we discretize $X$ and $Y$ into bins of width $\Delta$, obtaining $X^\Delta,Y^\Delta$, then
+\[
+I(X^\Delta;Y^\Delta)
+=\mathbb{E}\!\Bigl[\log\frac{\Delta^2\,f_{X,Y}(X,Y)}{\Delta\,f_X(X)\,\Delta\,f_Y(Y)}\Bigr]
+=\mathbb{E}\!\Bigl[\log\frac{f_{X,Y}(X,Y)}{f_X(X)\,f_Y(Y)}\Bigr],
+\]
+and letting $\Delta\to0$ recovers the continuous definition.
+
+\subsection{Basic Properties of Continuous Mutual Information}
+
+\begin{itemize}
+  
+  \item \textbf{Nonnegativity:}  
+    \[    I(X;Y)\;=\;D\bigl(f_{X,Y}\,\|\,f_Xf_Y\bigr)\;\ge\;0,
+    \]
+    with equality iff $X$ and $Y$ are independent.
+  \item \textbf{Symmetry:}  $I(X;Y)=I(Y;X)$.
+  \item \textbf{Data processing inequality:}  
+    If $X\to Y\to Z$ is a Markov chain, then
+    \[
+      I(X;Z)\le I(X;Y).
+    \]
+\end{itemize}
+
+
+
+
+\subsection{Differential Entropy}
+
+The \emph{differential entropy} of a continuous random variable $X$ with density $f_X(x)$ is
+\[
+h(X) = -\int f_X(x)\,\log f_X(x)\,\mathrm{d}x.
+\]
+If we discretize $X$ into bins of width $\Delta$, its discrete entropy satisfies
+\[
+H(X^\Delta)
+=-\sum_i P\bigl(X\in[i,i+\Delta)\bigr)\log P\bigl(X\in[i,i+\Delta)\bigr)
+= h(X) + \log\frac1\Delta + o(1),
+\]
+so $H(X^\Delta)\to\infty$ as $\Delta\to0$.
+
+Unlike discrete entropy, differential entropy is not invariant under one-to-one maps.  In particular, for a nonzero scalar $a$,
+\[
+h(aX)=h(X)+\log|a|.
+\]
+
+It can even be negative. For example, the uniform distribution $U(0,1/2)$ has negative differential entropy;
+
+$$\int_{0}^{1/2}-2\log2\,dx=-\log2<0.$$
+Thus, differential entropy does not share desirable properties of discrete entropy. So, we generally use KL divergence or mutual information instead.
+
+\subsection{Joint and Conditional Differential Entropy}
+
+For a pair $(X_1,X_2)$ with joint density $f_{X_1,X_2}$, define
+\[
+h(X_1,X_2)
+=-\iint f_{X_1,X_2}(x_1,x_2)\,\log f_{X_1,X_2}(x_1,x_2)\,\mathrm{d}x_1\mathrm{d}x_2,
+\]
+and the conditional entropy
+\[
+h(X_1\mid X_2)
+=-\iint f_{X_1,X_2}(x_1,x_2)\,\log f_{X_1\mid X_2}(x_1\mid x_2)\,\mathrm{d}x_1\mathrm{d}x_2.
+\]
+These satisfy the chain rule:
+\[
+h(X_1,X_2)=h(X_2)+h(X_1\mid X_2).
+\]
+
+\subsubsection*{Invariance of mutual information}
+Although $h(X)$ shifts under scaling, mutual information remains unchanged:
+    \[
+    I(aX;Y)
+    = h(aX)-h(aX\mid Y)
+    = \bigl(h(X)+\log|a|\bigr)-\bigl(h(X\mid Y)+\log|a|\bigr)
+    = I(X;Y).
+    \]
+
+\subsection{Maximum Differential Entropy Under a Variance Constraint}
+
+Just as the uniform distribution maximizes discrete entropy on a finite set, the Gaussian maximizes differential entropy among all densities with a given second moment.
+
+\begin{theorem}
+  If $\mathbb{E}[X^2]\le P$, then the Gaussian $\mathcal{N}(0,P)$ achieves the largest $h(X)$.
+\end{theorem}
+
+\begin{proof}
+Let \(g(x)\) be a Gaussian PDF with mean \(\mu\) and variance \(P\) and
+\(f(x)\) an arbitrary PDF with the same variance.  
+(Since differential entropy is translation-invariant, we may assume that
+\(f(x)\) has the same mean \(\mu\) as \(g(x)\).)
+
+\medskip
+\noindent
+Consider the KL divergence between the two distributions:
+\[
+0 \;\le\; D_{KL}(f\|g)
+      = \int_{-\infty}^{\infty} f(x)\,
+        \log\!\Bigl(\frac{f(x)}{g(x)}\Bigr)\,dx
+      = -h(f)-\int_{-\infty}^{\infty} f(x)\,\log(g(x))\,dx.
+\]
+
+\medskip
+\noindent
+Now note that
+\begin{align*}
+\int_{-\infty}^{\infty} f(x)\,\log(g(x))\,dx
+&=\int_{-\infty}^{\infty}
+  f(x)\,\log\!\Bigl(
+    \frac{1}{\sqrt{2\pi P}}\,
+    e^{-\frac{(x-\mu)^2}{2P}}
+  \Bigr)dx \\[4pt]
+&=\int_{-\infty}^{\infty}
+  f(x)\,\log\frac{1}{\sqrt{2\pi P}}\,dx
+  \;+\;\log(e)\int_{-\infty}^{\infty}
+  f(x)\Bigl(-\frac{(x-\mu)^2}{2P}\Bigr)dx \\[4pt]
+&=-\frac12\log(2\pi P)\;-\;\log(e)\,
+      \frac{P}{2P} \\[4pt]
+&=-\frac12\log(2\pi e P) \;=\; -\,h(g),
+\end{align*}
+because the result depends on \(f\) only through the common variance \(P\).
+\medskip
+\noindent
+Combining the two results yields
+\[
+h(g)-h(f)\;\ge\;0,
+\]
+with equality when \(f(x)=g(x)\).
+\end{proof}

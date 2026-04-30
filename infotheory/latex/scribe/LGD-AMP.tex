@@ -1,0 +1,345 @@
+
+\documentclass{article}
+\usepackage{lgd}
+\input{macro}
+
+\begin{document}
+\lecturetitle{3}{Information Theory}{Albert No}{03/18/2024}
+
+
+%%% Cross Etnropy Loss
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Cross Entropy Loss} \label{sec:intro-cross}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.3\textwidth]{images/classification.png}
+    \caption{Classifier $f$}
+\end{figure}
+
+Consider a classification problem where data input $x\in\cX$ is from the set of possible inputs (such as $\fR^n$)
+and the corresponding label is $y\in [M] = \{1, 2, \dots, M\}$.
+A classifier $f:\cX \rightarrow \cM$ produces the probability distribution $f(x) = (f(x)_1, \dots, f(x)_M)$ 
+where $f(i)$ indicates the ``the probability of $x$ corresponds to label $i$.''
+Note that $\cM$ is a set of probability measures on set of labels.
+The cross entropy is defined by
+\begin{align}
+    \ell(f(x), y) = \log \frac{1}{f(x)_y}
+\end{align}
+
+
+In one hand, it is weird looking function:
+1) it is not clear why we are using $\log$ function,
+2) it is not clear why we are using reciprocal.
+Of course, the definition make sense, since ``if your model assigns the higher value to the true label, the loss value is lower.''
+However, such property holds for any decreasing function, it does not have to be $\log 1/f(y)$.
+
+Some of you may already know that the cross entropy can be derived from the Kullback-Leibler (KL) divergence.
+For two probability distributions $P, Q\in \cM$, 
+KL divergence is defined by (we will cover KL divergence more thoroughly later)
+\begin{align*}
+    D(P\| Q) = \sum_{i} P(i) \log \frac{P(i)}{Q(i)}
+\end{align*}
+
+It measures a ``distance'' between two probability distribution\footnote{strictly speaking
+it is not a distance since it is not symmetric.}.
+Let $y^{(o)}\in\fR^M$ is an one-hot vector represents ground truth, i.e.,
+\begin{align}
+    y^{(o)}(i) = \begin{cases}
+        1 &\mbox{ if $y=i$}\\
+        0 &\mbox{ otherwise}
+    \end{cases}    
+\end{align}
+The one-hot vector $y^{(o)}$ can be viewed as a ground truth distribution of input $x$,
+which is deterministically pointing the true label $y$.
+Then, it is natural to consider the ``distance'' between the true distribution $y^{(o)}$ and the output of classifier $f(x)$
+to measure the performance.
+
+The KL divergence between $f(x)$ and $y^{(o)}$ is
+\begin{align}
+    D(y^{(o)}\| f(x)) 
+    =&  \sum_{i=1}^M y^{(o)}_i \log \frac{f(x)_i}{y^{(o)}_i}\\
+    =& \log \frac{1}{f(x)_y}\\ 
+    =& \ell(f(x),y).
+\end{align}
+In other words, the KL divergence is equivalent to cross entropy,
+which justifies the usage of the cross entropy loss function.
+
+However, the concern remains.
+The KL divergence is also weird looking.
+Why are we measuring ``distance'' between distributions in such way?
+Is there another way of measuring ``distance''?
+Why is it called divergence? instead of ``distance''?
+
+To answer these questions, we need to understand the basic information measures in information theory
+from entropy, mutual information, to KL divergence (or often called relative entropy).
+
+
+\begin{remark}
+    We will see later, KL divergence plays a crucial role in Generative Adversarial Networks (GAN).
+\end{remark}
+
+\subsection{Notation} \label{subsec:notation}
+We denote upper case $X$ to indicate the (discrete) random variable,
+where its support is finite $X\in\{1, \dots, M\}$.
+For its realization, we use lower case $x$.
+The probability mass function is $P_X(x) = \Pr{X= x}$.
+In most cases, the logarithm function is base 2 otherwise specified.
+
+%%% Entropy
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Entropy} \label{sec:entropy}
+For discrete random variable $X\in\{1, \dots, M\}$,
+we define suprisal.
+\begin{definition}
+    Surprisal of $X$ at $x$ is given by
+    \begin{align}
+        S(x) = \log \frac{1}{P_X(x)}.
+    \end{align}
+\end{definition}
+This is natural definition since if rare events happens (where $P_X(x)$ is small), then it is ``surprising''.
+
+The entropy would be an expected suprisal of random variable $X$.
+\begin{definition}
+    Entropy of random variable $X$ is given by
+    \begin{align}
+        H(X) =& \Expec{S(X)}\\
+        =& \Expec{-\log P_X(X)}\\
+        =& \sum_{x=1}^M P_X(x) \log \frac{1}{P_X(x)}.
+    \end{align}
+\end{definition}
+
+\begin{example}
+    Let $X\in\{1, 2\}$ be a binary random variable where $P_X(1) = 0.01$ and $P_X(2) = 0.99$, then
+    \begin{align}
+        H(X) = 0.01 \log \frac{1}{0.01} + 0.99 \log \frac{1}{0.99}.
+    \end{align}
+\end{example}
+
+%%% Properties of Entropy
+\subsection{Properties of Entropy}
+\begin{theorem}[Property of Entropy 1]
+    Entropy is non-negative, and it is 0 if and only if $X$ is deterministic.
+\end{theorem}
+\begin{proof}
+    Since the probability is always $0\leq P_X(x)\leq 1$, we have
+    \begin{align}
+        H(X) =& \Expec{\log \frac{1}{P_{X}(X)}}\\
+        \geq & \Expec{\log 1}\\
+        =& 0.
+    \end{align}
+    The equality holds if and only if $P_X(x)\log P_X(x) = 0$ for all $x$,
+    which is true only if $X$ is deterministic.
+    Note that $0\log 0 = 0$.
+\end{proof}
+
+\begin{theorem}[Jensen's Inequality]
+Let $f$ be a concave function, then
+\begin{align}
+    \Expec{f(X)} \leq f(\Expec{X}).
+\end{align}
+\end{theorem}
+Since the definition of concave function is that
+\begin{align}
+    \lambda f(x) + (1-\lambda) f(y) \leq f(\lambda x + (1-\lambda) y)
+\end{align}
+for all $x, y$ and $0\leq \lambda \leq 1$,
+in other words, weighted average of $f$ is smaller or equal to $f$ at weighted averaged input.
+Then, Jensen's inequality is a generalized version of it,
+where $\Expec{f(X)}$ is weighted average of $f$ and $f(\Expec{X})$ is a function value at weighted average input.
+For strictly concave function $f$, Jensen's inequality holds with equality if and only if $f(x)$ is constant.
+
+\begin{theorem}[Property of Entropy 2]
+    The maximum entropy is $\log M$.
+\end{theorem}
+\begin{proof}
+Since $\log$ is a concave function, by Jensen's inequality
+\begin{align}
+    H(X) =& \Expec{\log \frac{1}{P_X(X)}}\\
+    \leq& \log \Expec{\frac{1}{P_X(X)}}\\
+    =& \log \sum_{x=1}^M P_X(x) \frac{1}{P_{X}(x)}\\
+    =& \log M.
+\end{align}
+\end{proof}
+
+Equality of the above inequality holds if and only if $\frac{1}{P_X(x)}$ is constant,
+which implies $X$ is uniform on $\{1,\dots,M\}$, i.e., $P_X(x) = 1/M$ for all $x$.
+
+\begin{remark}
+    Entropy can also be viewed as an ``amount of information''.
+    It is also natural since surprising (rare) event contains more information.
+    This will become even more clear when we discuss lossless compression.
+\end{remark}
+\begin{definition}[Joint Entropy]
+    For jointly distributed random variables $X_1$ and $X_2$ with joint probability mass function $P_{X_1, X_2}(x_1, x_2)$.
+    The joint entropy is given by
+    \begin{align}
+        H(X_1, X_2) = \sum_{x_1, x_2} P_{X_1, X_2} (x_1, x_2) \frac{1}{P_{X_1, X_2} (x_1, x_2)}.
+    \end{align}
+\end{definition}
+Note that $X_1$ and $X_2$ may have different support, i.e., $X_1\in[M] = \{1, \dots,M\}$ and $X_2 \in [N] = \{1, \dots, N\}$.
+
+
+\begin{theorem}[Property of Entropy 3]
+    If $X_1$ and $X_2$ are independent,
+    \begin{align}
+        H(X_1, X_2) = H(X_1) + H(X_2).
+    \end{align}
+\end{theorem}
+\begin{proof}
+If $X_1$ and $X_2$ are independent, then $P_{X_1, X_2} (x_1, x_2) = P_{X_1}(x_1) P_{X_2}(x_2)$ for all $x_1, x_2$.
+\begin{align}
+    H(X_1, X_2) =& \sum_{x_1, x_2} P_{X_1, X_2} (x_1, x_2) \log \frac{1}{P_{X_1}(x_1)P_{X_2}(x_2)}\\
+    =& \sum_{x_1, x_2} P_{X_1, X_2} (x_1, x_2) \log \frac{1}{P_{X_1}(x_1)}
+    + \sum_{x_1, x_2} P_{X_1, X_2} (x_1, x_2) \log \frac{1}{P_{X_2}(x_2)}\\
+    =& \sum_{x_1}  \log \frac{1}{P_{X_1}(x_1)}\sum_{x_2}P_{X_1, X_2} (x_1, x_2)
+    + \sum_{x_2} \log \frac{1}{P_{X_2}(x_2)}\sum_{x_1} P_{X_1, X_2} (x_1, x_2) \\
+    =& \sum_{x_1}  \log \frac{1}{P_{X_1}(x_1)} P_{X_1} (x_1)
+    + \sum_{x_2} \log \frac{1}{P_{X_2}(x_2)} P_{X_2} (x_2) \\
+    =& H(X_1)+H(X_2).
+\end{align}
+\end{proof}
+It is clear that if $X_1$ and $X_2$ are highly correlated,
+the amount of information that we obtain from $(X_1, X_2)$ should be similar to
+the amount of information from $X_1$.
+
+\begin{exercise}
+    If $H(X_1, X_2)=H(X_1) +H(X_2)$, then does this imply independence?
+\end{exercise}
+
+The Property 3 can be generalized to multi variables.
+If $X_1, \dots, X_n$ are independent, i.e., $P_{X_1,\dots, X_n}(x_1,\dots, x_n) = \prod_{i=1}^n P_{X_i}(x_i)$ ,then
+\begin{align}
+    H(X_1,\dots, X_n) = \sum_{i=1}^n H(X_i).
+\end{align}
+
+\begin{theorem}[Property of Entropy 4]
+For ``wrong'' probability mass function $Q(x)$,
+\begin{align}
+    H(X) \leq \Expec{\log \frac{1}{Q(X)}} = \sum_{x} P_X(x) \log \frac{1}{Q(x)}.
+\end{align}
+\end{theorem}
+\begin{example}
+    Let $X$ be the same binary distribution $P_X(1) = 0.01$ and $P_X(2) = 0.99$ where $Q(1) = 0.1$ and $Q(2) = 0.9$, then the right hand side would be
+    \begin{align}
+        \Expec{\log \frac{1}{Q(X)}} = 0.01 \log \frac{1}{0.1} + 0.99 \log\frac{1}{0.9}.
+    \end{align}
+\end{example}
+\begin{proof}
+    Since $\log$ is concave function, by Jensen's inequality~\cite{jensen1906fonctions},
+    \begin{align}
+        H(X) - \Expec{\log \frac{1}{Q(X)}} =& \Expec{\log \frac{Q(X)}{P_X(X)}}\\
+        \leq& \log \Expec{\frac{Q(X)}{P_X(X)}}\\
+        =& \log \sum_x P_X(x)\frac{Q(x)}{P_X(x)}\\
+        =& \log \sum_x Q(x)\\
+        =& \log 1 =0.
+    \end{align}
+    Equality holds if and only if $\frac{Q(x)}{P_X(x)}$ is constant, which implies $Q = P_X$.
+\end{proof}
+
+\begin{remark}
+    From the above proof, we have
+    \begin{align}
+        \Expec{\log \frac{P_X(X)}{Q(X)}} = \sum_{x} P_X(x) \log\frac{P_X(x)}{Q(x)}\geq 0
+    \end{align}
+    which implies
+    \begin{align}
+        D(P_X\|Q) \geq 0.
+    \end{align}
+    In other words, the KL divergence is always non-negative and 0 if and only if $P_X=Q$.
+\end{remark}
+
+\begin{remark}
+    The above proof is indeed incomplete since there is an edge case where $P_X(x) = 0$ for some $x$.
+    The rigorous proof is
+    \begin{align}
+        H(X) - \Expec{\log \frac{1}{Q(X)}} =& \sum_{x}P_X(x)\log \frac{Q(x)}{P_X(x)}\\
+        =& \sum_{x: P_X(x) > 0} P_X(x)\log \frac{Q(x)}{P_X(x)}\\
+        \leq& \log \sum_{x:P_X(x) > 0} P_X(x)\frac{Q(x)}{P_X(x)}\\
+        =& \log \sum_{x:P_X(x) > 0} Q(x)\\
+        \leq & \log 1 =0.
+    \end{align}
+    To achieve equality, both the first (Jensen) and the second ($\sum_{x:P_X(x)>0} Q(x) \leq 1$) inequality should hold with equality.
+    In other words, 1) $Q(x)/P_X(x)=c$ is constant for all $x$ and 2) $Q(x) = 0$ if $P_X(x) = 0$.
+    This can only be true if $Q = P_X$.
+\end{remark}
+
+\begin{definition}
+    The right hand side of the above property is called ``cross entropy,''
+    where we happen to use wrong pmf $Q(x)$ instead of true pmf $P_X(x)$.
+\end{definition}
+
+\subsection{Cross Entropy Loss Revisited}
+Recall that
+\begin{align}
+    KL(P_X\|Q) =& \sum_{x} P_X(x) \log \frac{P_X(x)}{Q(x)}\\
+    =& -\sum_{x} P_X(x) \log \frac{1}{P_X(x)} + \sum_x \log\frac{1}{Q(x)}\\
+    =& -H(P_X) +\sum_x \log P_X(x)\frac{1}{Q(x)}
+\end{align}
+where the second term is called cross entropy which coincides with the cross entropy loss
+\begin{align}
+    CE(y^{(o)}\|f(x)) = \sum_m y^{(o)}_m \log \frac{1}{f(x)_m}.
+\end{align}
+This is the reason why we call it ``cross entropy loss.''
+Thus, even when the true label is ``soft'' distribution (instead of one-hot), we have
+\begin{align}
+    KL(y^{(soft)} \| f(x)) = -H( y^{(soft)}) + CE(y^{(soft)} \| f(x)).
+\end{align}
+Since the true label is given and fixed, minimizing KL divergence is equivalent to minimizing cross entropy loss.
+
+
+\begin{remark}
+    We often abuse the notation $H(X) = H(P_X)$.
+\end{remark}
+
+
+%%% Mutual Information
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mutual Information}
+\begin{definition}
+   Let $X$ and $Y$ be jointly distributed random variables, then the conditional entropy is given by
+   \begin{align}
+       H(X|Y) =& \Expec{\log\frac{1}{P_{X|Y}(X|Y)}}\\
+       =& \sum_{x, y} P_{X, Y}(x, y) \log\frac{1}{P_{X|Y}(x|y)}\\
+       =& \sum_{y} P_{Y}(y)\sum_x P_{X|Y}(x|y) \log\frac{1}{P_{X|Y}(x|y)}\\
+       =& \sum_{y} P_{Y}(y) H(X|Y=y)
+   \end{align}
+\end{definition}
+Note that $H(X|Y=y)$ is remaining uncertainty of $X$ when $Y$ is known to be $y$.
+On the other hand, $H(X|Y)$ is (expected) remaining uncertainty of $X$ when $Y$ is provided (thus average over $H(X|Y=y)$).
+Intuitively, some $y$ might be informative while some $y$ are not.
+
+\begin{definition}
+    Mutual information between $X$ and $Y$ is given by
+    \begin{align}
+        I(X;Y) = H(X) - H(X|Y).
+    \end{align}
+\end{definition}
+Mutual information is difference between ``uncertainty of $X$'' and ``remaining uncertainty of $X$ given $Y$,''
+and therefore it implies the amount information that $Y$ providing about $X$.
+
+\begin{lemma}
+    Mutual information is symmetric
+    \begin{align}
+        I(X;Y) = I(Y;X)
+    \end{align}
+\end{lemma}
+
+Also, we can re-write the mutual information using KL divergence
+\begin{align}
+    I(X;Y) = D(P_{X, Y} \| P_X P_Y)
+\end{align}
+\begin{proof}
+\begin{align}
+    I(X;Y) =& \Expec{\frac{1}{P_{X}(X)} - \frac{1}{P_{X|Y}{X|Y}}}\\
+=& \Expec{\frac{P_{X|Y}(X|Y)}{P_{X}(X)}}\\
+=& \Expec{\frac{P_{X,Y}(X,Y)}{P_{X}(X)P_{Y}(Y)}}\\
+=& D(P_{X,Y}\|P_X P_Y).
+\end{align}
+\end{proof}
+This implies that the mutual information is a ``distance'' between joint distribution and product of marginal (as if $X$ and $Y$ are independent) distributions.
+Thus, it is also a measure of ``how $X$ and $Y$ are correlated.''
+
+
+\bibliographystyle{abbrv}
+\bibliography{scribe-ref}
+\end{document}

@@ -1,0 +1,76 @@
+\subsection{Motivation}
+We learned that mutual information quantifies the amount of information obtained about one random variable by observing the other random variable.
+So, maximizing mutual information encourages the model to learn representations that capture all the shared, predictive structure between modalities-e.g., images $X$ and captions $Y$. Conversely, minimizing mutual information forces the model to discard spurious or redundant correlations, yielding more compact, task-focused representations. Mutual information is given by 
+\[I(X;Y)=D(P_{X,Y}\,\|\,P_XP_Y)=\mathbb{E}\left[\log\frac{p(X,Y)}{p(X)p(Y)}\right],\] requiring the distributions $p(x),\,p(y)$ and $p(x,y)$. But in reality, we do not have access to the true distributions. Also, as the sample spaces are very large, naive approaches such as Monte Carlo estimation are impractical. In this section, we will learn several variational techniques for mutual information.
+\subsection{Upper Bound}
+We have \[
+\begin{aligned}
+    I(X;Y)&=\mathbb{E}\left[\log\frac{p(Y|X)}{p(Y)}\right]\\&=\mathbb{E}\left[\log\frac{p(Y|X)}{q(Y)}\right]-\mathbb{E}\left[\log\frac{p(Y)}{q(Y)}\right]\\&=\mathbb{E}\left[\log\frac{p(Y|X)}{q(Y)}\right]-D(p_Y\,\|\,q_Y)\\&\leq \mathbb{E}\left[\log\frac{p(Y|X)}{q(Y)}\right]\\&=\mathbb{E}_{p(x)}\left[D(p_{Y|X}\,\|\,q_Y)\right].
+\end{aligned}
+\]
+So, given pairs of observations $(x_1,y_1),\,(x_2,y_2),\,...,\,(x_N,y_N)\sim p_{X,Y},$ we can train a neural network so that 
+\[
+\underset{\theta}{\min}\frac{1}{N}\sum_{i=1}^N \log\frac{p(y_i|x_i)}{q_{\theta}(y_i)}\approx\underset{\theta}{\min}\,\mathbb{E}\left[\log\frac{p(Y|X)}{q_{\theta}(Y)}\right]
+\]
+minimizes the upper bound of the mutual information. Since the optimal $q_{\theta}$ is $p_Y$(why?), given the sufficient capacity of the neural network, this upper bound is the consistent estimator.
+
+\subsection{Lower Bound}
+We also have
+\[
+\begin{aligned}
+    I(X;Y) &= \mathbb{E}\left[\log\frac{p(X|Y)}{p(X)}\right]\\
+    &= \mathbb{E}\left[\log\frac{q(X|Y)}{p(X)}\right]+\mathbb{E}\left[\log\frac{p(X|Y)}{q(X|Y)}\right]\\&=\mathbb{E}_{p(x,y)}\left[\log q(X|Y)\right]+H(p_X)+D(p_{X|Y}\,\|\,q_{X|Y})\\&\geq\mathbb{E}_{p(x,y)}\left[\log q(X|Y)\right]+H(p_X) := I_{\text{BA}}.\end{aligned}
+\]
+Given observations $(x_1,y_1),\,(x_2,y_2),\,...,\,(x_N,y_N)\sim p_{X,Y},$ we can train a neural network so that 
+\[
+\underset{\theta}{\max}\frac{1}{N}\sum_{i=1}^N\log q_{\theta}(x_i|y_i)\approx\underset{\theta}{\max}\,\mathbb{E}[\log q_{\theta}(X|Y)]
+\]
+maximizes the lower bound of the mutual information. The optimal $q_{\theta}$ is also $p_{X|Y}$; this lower bound is the consistent estimator given the sufficient capacity.
+
+\subsection{Lower Bound with Unnormalized Distribution}
+Computing normalized distributions is generally difficult. Thus, it is important to find a lower bound for an unnormalized distribution. Let us define unnormalized $q(x|y)$ as
+\[
+q(x|y)=\frac{p(x)e^{f(x,y)}}{\int p(x')e^{f(x',y)}dx'}=\frac{p(x)e^{f(x,y)}}{Z(y)},
+\]
+where $Z(y)$ is the normalizing factor. We call $f(x,y)$ as \emph{critic function}. Then from above,
+\[
+\begin{aligned}
+    I(X;Y)&\geq\mathbb{E}\left[\log\frac{q(X|Y)}{p(X)}\right]\\&=\mathbb{E}\left[\log\frac{e^{f(X,Y)}}{Z(Y)}\right]\\&=\mathbb{E}_{p_{X,Y}}[f(X,Y)]-\mathbb{E}_{p_Y}[\log Z(Y)]:=I_{\text{UBA}}.
+\end{aligned}
+\]
+Applying Jensen's inequality once more,
+\[
+    \begin{aligned}
+    I_{\text{UBA}} &= \mathbb{E}_{p_{X,Y}}[f(X,Y)]-\mathbb{E}_{p_Y}[\log Z(Y)]\\
+    &\geq \mathbb{E}_{p_{X,Y}}[f(X,Y)]-\log\mathbb{E}_{p_Y}[Z(Y)]\\&=\mathbb{E}_{p_{X,Y}}[f(X,Y)]-\log\mathbb{E}_{p_Y}\left[\mathbb{E}_{p_X}\left[e^{f(X,Y)}\right]\right] \\ &= \mathbb{E}_{p_{X,Y}}[f(X,Y)]-\log\mathbb{E}_{p_Xp_Y}\left[e^{f(X,Y)}\right] :=I_{\text{DV}}.
+    \end{aligned}
+\]
+The Donsker-Varadhan representation is general variational representation of KL divergence, from which we applied it to the mutual information. The optimal $f$ achieves mutual information.\\\\ 
+The second term $\mathbb{E}_{p_Y}[\log Z(Y)]$ in the $I_{\text{UBA}}$ is hard to compute from general sampling strategy since it has log-sum-exp structure. Approximating the inner term $\hat{Z}(y) = \frac{1}{N}\sum_{i=1}^Ne^{f(x_i,y)}$ and applying log has negative bias, since $\mathbb{E}[\log \hat{Z}(y)]\leq \log\mathbb{E}[\hat{Z}(y)]=\log Z(y).$ thus, it gives upper bound of $I_{\text{UBA}}$, making it neither lower bound or upper bound for mutual information. Thus, to make it tractable, from $\log x\leq \frac{x}{a}+\log a-1,$ we have
+\[
+\begin{aligned}
+    I_{\text{UBA}}&\geq \mathbb{E}_{p_{X,Y}}[f(X,Y)]-\mathbb{E}_{p_Y}\left[\frac{f(X,Y)}{a(Y)}+\log a(Y)-1\right] := I_{\text{TUBA}}
+\end{aligned}
+\]
+for any $a(y) >0.$ letting $a(y)\equiv e$, we get
+\[
+\mathbb{E}_{p_{X,Y}}[f(X,Y)]-e^{-1}\mathbb{E}_{p_Y}\left[f(X,Y)\right]:=I_{\text{NWJ}}. 
+\]
+With optimal $f^*=1+\log\frac{p(x|y)}{p(x)},\,\,I_{\text{NJW}}$ achieves mutual information.
+\subsection{InfoNCE Bound and the CLIP}
+The CLIP encoder maps images and text into the same embedding space such that related image–text pairs have high similarity, while unrelated pairs are kept distant. To train this encoder, CLIP uses the InfoNCE loss, which can be viewed as maximizing a variational lower bound on the mutual information between image and text embeddings.
+Given sample pairs $(x_1,y_1),\,(x_2,y_2),\,...,\,(x_N,y_N)\sim p_{X,Y},$ let the critic function $f=1+\log\frac{e^{f_1(x_1,\,y_1)}}{\frac{1}{N}\sum_{i=1}^Ne^{f_1(x_i,\,y_1)}}$. The second term can be treated as softmax-form log probability $\log q_{\theta}(x_1|y_1)$, while the other are unmatched samples. Then we have
+\[
+\begin{aligned}
+I(X;Y)=I(X_1;Y_1)&=I(X_1,...\,X_N;Y_1)\\&\geq\mathbb{E}_{p_{X^N,Y_1}}[f(x_1,\,...,\,x_N,\,y_1)]-\log\mathbb{E}_{p_{X^N}p_{Y_1}}[e^{f(x_1,\,...,\,x_N,\,y)}]\\&=\mathbb{E}_{p_{X^N,Y_1}}\left[1+\log\frac{e^{f_1(x_1,\,y_1)}}{\frac{1}{N}\sum_{i=1}^Ne^{f_1(x_i,\,y_1)}}\right]-\log\mathbb{E}_{p_{X^N}p_{Y_1}}\left[e\cdot\frac{e^{f_1(x_1,\,y_1)}}{\frac{1}{N}\sum_{i=1}^Ne^{f_1(x_i,\,y_1)}}\right]\\&=\mathbb{E}_{p_{X^N,Y_1}}\left[\log\frac{e^{f_1(x_1,\,y_1)}}{\frac{1}{N}\sum_{i=1}^Ne^{f_1(x_i,\,y_1)}}\right]\\&=\mathbb{E}_{p_{X^N,Y^N}}\left[\frac{1}{N}\sum_{j=1}^N\log\frac{e^{f_1(x_j,\,y_j)}}{\frac{1}{N}\sum_{i=1}^Ne^{f_1(x_i,\,y_j)}}\right]:=I_{\text{InfoNCE}},
+\end{aligned}
+\]
+Where the fourth line holds since the expectation of the fraction $\frac{e^{f_1(x_k,y_1)}}{\frac{1}{N}\sum_{i=1}^N e^{f_1(x_i,y_1)}}$ over the product of marginals $p_{X^N}p_{Y_1}$ is equal to 1 due to the symmetry among the i.i.d. samples $\{x_i\}_{i=1}^N$.
+The optimal $f_1^*(x,y) = \log p(x|y) + c(y)$, where the $I_{\text{InfoNCE}}$ achieves mutual information. So we parametrize $f_1$ with $f_{\theta}$ and optimize with respect to $\theta$ to  maximize $I_{\text{InfoNCE}}(\theta)$. Note that 
+\[I_{\text{InfoNCE}}=\log N+\mathbb{E}_{p_{X^N,Y^N}}\left[\frac{1}{N}\sum_{j=1}^N\log\frac{e^{f_1(x_j,\,y_j)}}{\sum_{i=1}^Ne^{f_1(x_i,\,y_j)}}\right]\leq \log N,\] 
+which means that the higher the target mutual information, the more samples we need.\\\\
+Since it requires $O(N^2)$ computations to compute $f_{\theta}$ for all sample pairs, we use \emph{separable critic function} instead. It is defined as $f_1(x,y)=g(x)^{\top}h(y)$, where $g:\mathcal{X}\to\mathbb{R}^d$ and $h:\mathcal{Y}\to\mathbb{R}^d$, requiring $O(N)$ computations only. So we parametrize the image encoder and the caption encoder separately as $g_{\mu}$ and $h_{\phi}$. As $d$ sufficiently large, it effectively approximates original critic function.
+So, the CLIP loss is finally parametrized as
+\[
+\frac12\left[\frac1N\sum_{j=1}^N\log\frac{e^{g_{\mu}(x_j)^{\top}h_{\phi}(y_j)}}{\frac1N\sum_{i=1}^Ne^{g_{\mu}(x_j)^{\top}h_{\phi}(y_i)}}+\frac1N\sum_{j=1}^N\log\frac{e^{g_{\mu}(x_j)^{\top}h_{\phi}(y_j)}}{\frac1N\sum_{i=1}^Ne^{g_{\mu}(x_i)^{\top}h_{\phi}(y_j)}}\right],\]
+with symmetrization. This symmetric loss enforces a bidirectional alignment between the image and text embedding spaces. By training the model to predict the correct text from an image and simultaneously predict the correct image from a text, it learns a more robust and generalizable shared representation, improving performance on retrieval tasks in both directions.

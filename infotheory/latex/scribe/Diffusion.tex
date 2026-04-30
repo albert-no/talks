@@ -1,0 +1,235 @@
+\subsection{Variational Inference and the Variational Autoencoder}
+Generative model wants to generate $x\sim p_X$. In general, it is impossible to find $p_X$ exactly, forcing us to search for a good approximation, $p_{\theta}$. Since there are not many explicitly parametrized distribution families, we consider implicitly parametrized probability distributions:
+\begin{itemize}
+    \item First, define a simple distribution $p(z)$ over a latent variable $Z$. Usually a normal distribution or a uniform distribution suffices.
+    \item Next, define a family of complicated functions $f_{\theta}$(e.g., neural networks) parametrized by $\theta$.
+    \item Finally, define a way to convert any $f_{\theta}(z)$ into a distribution over the observable random variable $X$.
+\end{itemize}
+This defines a family of joint distributions $p_{\theta}$ over $(X,Z)$.
+Now, our objective is to optimize $p_{\theta}$. A representative method is the Maximum Likelihood Estimation (MLE), which is defined as
+\[\theta^*=\underset{\theta}{\arg\max}\,\mathbb{E}_{ p_X}\left[p_{\theta}(X)\right]=\underset{\theta}{\arg\min}\,\mathbb{E}_{ p_X}\left[-\log p_{\theta}(X)\right]\approx\underset{\theta}{\arg\min}\frac{1}{N}\sum_{i=1}^N-\log p_{\theta}(x_i).\] That is, we want to find a probability distribution that is the most likely to give the current training data. Let $N=1$ for simplicity. 
+We have 
+\[
+\log p_{\theta}(x) = \log\int p_{\theta}(x,z)dz= \log\int p_{\theta}(x|z)p(z)dz.
+\]
+In general, it is impossible to perform the integral, forcing us to perform another approximation. By Bayes' rule, $p_{\theta}(x)=\frac{p_{\theta}(x|z)p(z)}{p_{\theta}(z|x)}$, so it suffices to find a good approximation of $p_{\theta}(z|x)$. Let us define another distribution family $q_{\phi}(z|x)$ and use it to approximate $p_{\theta}(z|x)$. Then
+\[\begin{aligned}
+    \log\int p_{\theta}(x|z)p(z)dz &=\log \int \frac{p_{\theta}(x,z)}{q_{\phi}(z|x)}q_{\phi}(z|x)dz\\&=\log\mathbb{E}_{z\sim q_{\phi}}\left[\frac{p_{\theta}(x,z)}{q_{\phi}(z|x)}\right]\\&\geq \mathbb{E}_{z\sim q_{\phi}}\left[\log\frac{p_{\theta}(x,z)}{q_{\phi}(z|x)}\right]:=\text{ELBO}.
+\end{aligned}\]
+Thus, maximizing the ELBO means maximizing the lower bound of the likelihood.   
+It can be further decomposed as follows:
+\[
+\begin{aligned}
+    \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x, z)}{q_\phi(z|x)} \right]
+    &= \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x|z)\, p(z)}{q_\phi(z|x)} \right] \\
+    &= \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z)]
+    + \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p(z)}{q_\phi(z|x)} \right] \\
+    &= \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z)]
+    - D\big(q_\phi(z|x)\,\|\,p(z)\big).
+\end{aligned}
+\]
+This is the interpretation from the perspective of the Variational Autoencoder (VAE). VAE train both $p_{\theta}(x|z)$ and $q_{\phi}(z|x)$ with two neural networks; which means that not only do we want to maximize the likelihood of the decoding distribution $p_{\theta}(x|z)$, but also regularize the encoding distribution $q_{\phi}(z|x)$ to closely follow the predefined (standard normal) prior, to avoid overfitting on specific sample. VAE models both encoder and decoder as Gaussian; \[q_{\phi}(z|x)\sim\mathcal{N}(\mu_{\phi}(x),\,\sigma^2_{\phi}(x)I),\quad p_{\theta}(x|z)\sim\mathcal{N}(\mu_{\theta}(z),\,\sigma^2I),\]
+which is a natural assumption for image data to get advantage from simple loss calculation.
+
+\paragraph{Another derivation.}
+The ELBO can be derived as follows:
+\[
+\begin{aligned}
+    \log p_\theta(x) 
+    &= \log p_\theta(x) \int q_\phi(z|x) \, dz \\
+    &= \int q_\phi(z|x) \, (\log p_\theta(x)) \, dz \\
+    &= \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x)] \\
+    &= \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x, z)}{p_\theta(z|x)} \right] \\
+    &= \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x, z)\, q_\phi(z|x)}{p_\theta(z|x)\, q_\phi(z|x)} \right] \\
+    &= \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x, z)}{q_\phi(z|x)} \right] 
+     + \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{q_\phi(z|x)}{p_\theta(z|x)} \right] \\
+    &= \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x, z)}{q_\phi(z|x)} \right] 
+     + D\left(q_\phi(z|x) \,\|\, p_\theta(z|x)\right) \\
+    &\geq \mathbb{E}_{q_\phi(z|x)} \left[ \log \frac{p_\theta(x, z)}{q_\phi(z|x)}. \right]
+\end{aligned}
+\]
+It means if we perfectly learn $q_{\phi}(z|x)$ (KL term $0$), the ELBO exactly matches the likelihood.
+
+\subsection{Diffusion Model}
+The diffusion model learns the process of denoising the noise-corrupted image to the original image. It can be interpreted as a type of VAE, but the encoding process takes place sequentially for time $t$, the late dimension is the same as the original data, and the final stage is pre-defined to be standard Gaussian rather than the encoding process being learned. This is called a \emph{forward process} defined as follows:
+\[q(x_{1:T}\,|\,x_0) = \prod_{t=1}^T q(x_t\,|\,x_{t-1}), \quad
+q(x_t\,|\,x_{t-1}) = \mathcal{N}(x_t;\,\sqrt{\alpha_t}x_{t-1},\, (1-\alpha_t)I),\quad0<\alpha_t<1.\] Thus $X_t=\sqrt{\bar{\alpha}_t}X_0+(\sqrt{1-\bar{\alpha}_t})\epsilon$, where $\epsilon\sim\mathcal{N}(0,I)$. $\bar{\alpha}_t=\alpha_1\alpha_2\cdots\to0$ as $t\to\infty$, so the very last $x_T$ nearly follows standard normal. The ELBO can be interpreted using the Markov property of the forward process:
+\[
+q(x_t\,|\,x_{t-1}) = q(x_t\,|\,x_{t-1},\,x_0)
+= \frac{q(x_{t-1}\,|\,x_t,\,x_0)\;q(x_t\,|\,x_0)}{q(x_{t-1}\,|\,x_0)}.
+\]
+\[\begin{aligned}
+\log p_\theta(x) &\geq \mathbb{E}_{q(x_{1:T} \,|\, x_0)} \left[ \log \frac{p_{\theta}(x_{0:T})}{q(x_{1:T} \,|\, x_0)} \right] \\
+&= \mathbb{E}_{q(x_{1:T} \,|\, x_0)} \left[ \log \frac{p(x_T) \prod_{t=1}^{T} p_\theta(x_{t-1} \,|\, x_t)}{\prod_{t=1}^{T} q(x_t \,|\, x_{t-1})} \right] \\
+&= \mathbb{E}_{q(x_{1:T} \,|\, x_0)} \left[ \log \frac{p(x_T) p_\theta(x_0 \,|\, x_1) \prod_{t=2}^{T} p_\theta(x_{t-1} \,|\, x_t)}{q(x_1 \,|\, x_0) \prod_{t=2}^{T} q(x_t \,|\, x_{t-1}, x_0)} \right] \\
+&= \mathbb{E}_{q(x_{1:T} \,|\, x_0)} \left[ \log \frac{p(x_T) p_\theta(x_0 \,|\, x_1)}{q(x_T \,|\, x_0)} + \sum_{t=2}^{T} \log \frac{p_\theta(x_{t-1} \,|\, x_t)}{q(x_{t-1} \,|\, x_t, x_0)} \right] \\
+&= \mathbb{E}_{q(x_{1:T} \,|\, x_0)} \left[ \log p_\theta(x_0 \,|\, x_1) + \log \frac{p(x_T)}{q(x_T \,|\, x_0)} + \sum_{t=2}^{T} \log \frac{p_\theta(x_{t-1} \,|\, x_t)}{q(x_{t-1} \,|\, x_t, x_0)} \right] \\
+&= \mathbb{E}_{q(x_1 \,|\, x_0)} [\log p_\theta(x_0 \,|\, x_1)] + \mathbb{E}_{q(x_T \,|\, x_0)} \left[ \log \frac{p(x_T)}{q(x_T \,|\, x_0)} \right] \\
+&\quad + \sum_{t=2}^{T} \mathbb{E}_{q(x_{t-1}, x_t \,|\, x_0)} \left[ \log \frac{p_\theta(x_{t-1} \,|\, x_t)}{q(x_{t-1} \,|\, x_t, x_0)} \right] \\
+&= \mathbb{E}_{q(x_1 \,|\, x_0)} [\log p_\theta(x_0 \,|\, x_1)] - D(q(x_T \,|\, x_0) \| p(x_T)) \\
+&\quad - \sum_{t=2}^{T} \mathbb{E}_{q(x_t \,|\, x_0)} \left[ D(q(x_{t-1} \,|\, x_t, x_0) \| p_\theta(x_{t-1} \,|\, x_t)) \right] \\
+&= L_0 - L_T - \sum_{t=1}^{T-1} L_t.
+\end{aligned}
+\]
+In other words, the denoising process should similarly restore the distribution of the original data. Also, the forward process should converge to the Gaussian, and the ground-truth denoising step and the learned denoising step must match.
+The denoising distribution of the dominant term $L_t$ is tractable to Gaussian using the following lemma.
+\begin{lemma}
+Suppose \(X\) has a \(\mathcal{N}(\mu,\Sigma)\) distribution, partitioned as
+\[
+X \;=\; \begin{bmatrix} X_{1} \\ X_{2} \end{bmatrix}\sim\mathcal{N}\left(\begin{bmatrix} \mu_{1} \\ \mu_{2} \end{bmatrix},\,
+\begin{bmatrix}
+\Sigma_{11} & \Sigma_{12} \\
+\Sigma_{21} & \Sigma_{22}
+\end{bmatrix}\right).
+\]
+Then the conditional distribution of \(X_{1}\) given \(X_{2}\) is
+\[
+X_{1} \,|\, X_{2}
+\;\sim\;
+\mathcal{N}\!\bigl(\,\mu_{1} \;+\; \Sigma_{12}\,\Sigma_{22}^{-1}(X_{2} - \mu_{2})\,,\;
+\Sigma_{11} \;-\; \Sigma_{12}\,\Sigma_{22}^{-1}\,\Sigma_{21}\bigr).
+\]
+\end{lemma}
+\noindent Applying this lemma to the diffusion process,
+\[
+\begin{bmatrix}
+x_{t-1} \\[6pt]
+x_{t}
+\end{bmatrix}
+\Bigm|\;x_{0}
+\;\sim\;
+\mathcal{N}\!\Biggl(
+\begin{bmatrix}
+\sqrt{\bar\alpha_{\,t-1}}\,x_{0} \\[6pt]
+\sqrt{\bar\alpha_{\,t}}\,x_{0}
+\end{bmatrix}
+,
+\;
+\begin{bmatrix}
+(1 - \bar\alpha_{\,t-1})\,I 
+& \sqrt{\alpha_{t}}\,\bigl(1 - \bar\alpha_{\,t-1}\bigr)\,I \\[8pt]
+\sqrt{\alpha_{t}}\,\bigl(1 - \bar\alpha_{\,t-1}\bigr)\,I 
+& (1 - \bar\alpha_{\,t})\,I
+\end{bmatrix}
+\Biggr),
+\]
+We get 
+\[
+q\bigl(x_{t-1} \mid x_{t},\,x_{0}\bigr)
+\;=\;
+\mathcal{N}\Bigl(
+x_{t-1};\;
+\underbrace{\frac{\sqrt{\bar\alpha_{\,t-1}}\,(1 - \alpha_{t})}{\,1 - \bar\alpha_{\,t}\,}\,x_{0}
+ \;+\;
+ \frac{\sqrt{\alpha_{t}}\,(1 - \bar\alpha_{\,t-1})}{\,1 - \bar\alpha_{\,t}\,}\,x_{t}}_{\mu_q(x_{t}, x_{0})}\,,\;
+\underbrace{\frac{(1 - \bar\alpha_{\,t-1})(1 - \alpha_{t})}{\,1 - \bar\alpha_{\,t}\,}\,I}_{\Sigma_q(t)}
+\Bigr).
+\]
+In this case, $\Sigma_q(t)$ is known as a function of the variance parameter and is simply represented as $\sigma^2_tI$. Thus, all we need is the estimation of $x_0$ given $x_t$. So the training and the generation process is defined as follows.
+\paragraph{Training Process.}
+\begin{enumerate}
+    \item Sample \(X_{0} \sim q_{\mathrm{data}}(X_{0})\). (Given data)
+    \item Sample timestep \(t \sim \mathrm{Uniform}\{1,\dots,T\}\).
+    \item Sample noise \(\epsilon \sim \mathcal{N}(0,\,I)\).
+    \item Define
+    \[
+        \bar{\alpha}_{\,t} \;=\; \prod_{s=1}^{t} \alpha_{s}, 
+        \qquad
+        X_{t} \;=\; \sqrt{\bar{\alpha}_{\,t}}\,X_{0} \;+\; \sqrt{\,1 - \bar{\alpha}_{\,t}\,}\,\epsilon.
+    \]
+    \item Minimize the loss
+    \[
+        L(\theta)
+        \;=\;
+        \mathbb{E}_{\,X_{0},\,t,\,\epsilon}
+        \Bigl[\,
+            \bigl\lVert\,X_{0} - X_{\theta}(X_{t},\,t)\bigr\rVert^{2}
+        \Bigr].
+    \]
+\end{enumerate}
+
+\paragraph{Generation Process.}
+\begin{enumerate}
+    \item Initialize by sampling
+    \[
+        X_{T} \;\sim\; \mathcal{N}(0,\,I).
+    \]
+    \item For \(t = T,\,T-1,\,\dots,\,1\):
+    \begin{enumerate}
+        \item Compute 
+        \(
+          \bar{\alpha}_{\,t} = \prod_{s=1}^{t} \alpha_{s},
+          \quad
+          \bar{\alpha}_{\,t-1} = \prod_{s=1}^{t-1} \alpha_{s}.
+        \)
+        \item Let the network predict \(X_{0}\)-estimate:
+        \[
+            \widehat{X}_{0} 
+            = X_{\theta}(X_{t},\,t).
+        \]
+        \item Compute coefficients
+        \[
+            c_{t,0}
+            = \frac{\sqrt{\bar{\alpha}_{\,t-1}}\,(1 - \alpha_{t})}{\,1 - \bar{\alpha}_{\,t}\,},
+            \qquad
+            c_{t,t}
+            = \frac{\sqrt{\alpha_{t}}\,(1 - \bar{\alpha}_{\,t-1})}{\,1 - \bar{\alpha}_{\,t}\,},
+        \]
+        \[
+            \tilde{\beta}_{t}
+            = \frac{(\,1 - \bar{\alpha}_{\,t-1}\,)\,(1 - \alpha_{t})}{\,1 - \bar{\alpha}_{\,t}\,}.
+        \]
+        \item Form the reverse mean
+        \[
+            \mu_{\theta}(X_{t},\,t)
+            = c_{t,0}\,\widehat{X}_{0} \;+\; c_{t,t}\,X_{t},
+        \]
+        and sample
+        \[
+            X_{\,t-1} \;\sim\; 
+            \mathcal{N}\bigl(
+                X_{\,t-1};\,
+                \mu_{\theta}(X_{t},\,t),\,
+                \tilde{\beta}_{t}\,I
+            \bigr).
+        \]
+    \end{enumerate}
+\end{enumerate}
+
+\subsubsection*{Another Interpretation: Score Matching}
+The network output \(X_{\theta}(X_{t},\,t)\) that minimizes
+\(\bigl\lVert X_{0} - X_{\theta}(X_{t},\,t)\bigr\rVert^{2}\) 
+is given by $\mathbb{E}\bigl[X_{0}\,|\,X_{t}\bigr]$. (Why?)
+\begin{lemma}[Tweedie’s Formula]
+Let \(X\) be a random vector in \(\mathbb{R}^d\) with (unknown) prior density \(p_X(x)\).  Suppose we observe
+\[
+Y \;=\; X \;+\; \sigma\,Z,
+\qquad
+Z \sim \mathcal{N}(0,\,I),
+\]
+independently of \(X\). Denote by \(p_Y(y)\) the marginal density of \(Y\).  Then, for every \(y\in\mathbb{R}^d\),
+\[
+\mathbb{E}[\,X \mid Y=y\,]
+\;=\;
+y \;+\; \sigma^{2}\,\nabla_{y}\log p_Y(y).
+\]
+\end{lemma}
+\noindent By Tweedie's formula,
+\[
+\mathbb{E}[X_0|X_t=x_t]=\frac{1}{\sqrt{\bar{\alpha}_t}}(x_t+(1-\bar{\alpha}_t)\nabla_{x_t}\log p(x_t)).
+\]
+Substituting into $\mu_q(x_{t}, x_{0})$, 
+\[{\mu}_q(x_t, x_0)=\frac{1}{\sqrt{\alpha_t}}x_t+\frac{1-\alpha_t}{\sqrt{\alpha_t}}\nabla_{x_t}\log p(x_t).\]
+Now all we need is the \emph{score function} $\nabla_{x_t}\log p(x_t)\approx s_{\theta}(x_t,t)$. So, the $x_0$ estimation and the score estimation is the equivalent problem using just another parametrization.
+
+\subsubsection*{Another Interpretation: Noise Prediction}
+Using the fact that $x_0=\frac{x_t-\sqrt{1-\bar{\alpha}_t}\epsilon}{\sqrt{\bar{\alpha}_t}},\,\, \mu_q(x_{t}, x_{0})$ can be reparametrized as 
+\[\mu_q(x_t, x_0)=\frac{1}{\sqrt{\alpha_t}}x_t-\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}\sqrt{\alpha_t}}\epsilon.\] Thus, we can just predict the source noise $\epsilon \approx \epsilon_{\theta}(x_t,\,t)$, and the score function $\nabla_{x_t}\log p(x_t)=-\frac{1}{\sqrt{1-\bar{\alpha}_t}}\epsilon.$
+
+
+
+
+
+
+
+
