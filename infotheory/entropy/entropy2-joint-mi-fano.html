@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entropy 2 — Joint, Conditional, Mutual Information</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.e2-table { margin: 8px auto; border-collapse: collapse; }
+.e2-table th, .e2-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.4rem; }
+.e2-table th { background: var(--light); font-weight: 700; }
+.e2-venn { display:flex; justify-content:center; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Entropy &middot; Lecture 2 of 2</div>
+  <h1>Joint, Conditional,<br>Mutual Information</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Chain rules, data processing, Fano</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Joint and conditional</div>
+      <div class="toc-sub">$H(X,Y)$, $H(X\mid Y)$, chain rule</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Mutual information</div>
+      <div class="toc-sub">Definition, Venn picture, examples</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Conditional MI &amp; DPI</div>
+      <div class="toc-sub">Markov chains, data processing</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Fano's inequality</div>
+      <div class="toc-sub">Error lower bound, applications</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Joint and Conditional</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Two random variables, one notion of uncertainty</p>
+</div>
+
+<div class="slide">
+  <h2>Joint Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For $(X,Y)$ with joint pmf $p_{X,Y}$ on $\mathcal{X}\times\mathcal{Y}$,</p>
+    <div class="math-block">$$H(X,Y) \;=\; \sum_{x,y} p_{X,Y}(x,y)\,\log\frac{1}{p_{X,Y}(x,y)} \;=\; \mathbb{E}\bigl[-\log p_{X,Y}(X,Y)\bigr].$$</div>
+  </div>
+  <p>Just the entropy of the pair $(X,Y)$ as a single random variable on $\mathcal{X}\times\mathcal{Y}$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Two Coin Flips</h2><div class="divider"></div>
+  <p>Independent fair coins:</p>
+  <div class="math-block">$$p_{X,Y}(x,y) = 1/4 \text{ for all } (x,y)\in\{0,1\}^2.$$</div>
+  <p>$H(X,Y) = \log 4 = 2$ bits $= H(X) + H(Y)$.</p>
+  <p>Now consider $Y = X$ (perfect correlation). Joint pmf places $1/2$ on $(0,0)$ and $(1,1)$:</p>
+  <div class="math-block">$$H(X,Y) \;=\; \tfrac{1}{2}\log 2 + \tfrac{1}{2}\log 2 \;=\; 1 \text{ bit}.$$</div>
+  <p>$H(X,Y) = 1 \ne 2 = H(X) + H(Y)$ &mdash; correlation reduces joint uncertainty.</p>
+</div>
+
+<div class="slide">
+  <h2>Conditional Entropy &mdash; Two Definitions</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For each fixed $y$ with $p_Y(y) > 0$,</p>
+    <div class="math-block">$$H(X\mid Y=y) \;=\; \sum_x p_{X\mid Y}(x\mid y)\,\log\frac{1}{p_{X\mid Y}(x\mid y)}.$$</div>
+    <p>Average over $y$:</p>
+    <div class="math-block">$$H(X\mid Y) \;=\; \sum_y p_Y(y)\, H(X\mid Y=y) \;=\; \mathbb{E}\bigl[-\log p_{X\mid Y}(X\mid Y)\bigr].$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Reading the Definition</h2><div class="divider"></div>
+  <ul>
+    <li><strong>$H(X\mid Y)$ is an average</strong> &middot; it is <em>not</em> the entropy of $X$ on a particular outcome of $Y$.</li>
+    <li><strong>$H(X\mid Y=y)$</strong> can exceed $H(X)$ for some $y$, but <strong>$H(X\mid Y)\le H(X)$</strong> on average.</li>
+    <li><strong>$H(X\mid X) = 0$</strong> &middot; once we know $X$, no surprise remains.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Chain Rule</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <div class="math-block">$$H(X,Y) \;=\; H(Y) + H(X\mid Y) \;=\; H(X) + H(Y\mid X).$$</div>
+    <p>More generally, for $X^n = (X_1,\dots,X_n)$:</p>
+    <div class="math-block">$$H(X^n) \;=\; \sum_{i=1}^n H(X_i \mid X_1, \dots, X_{i-1}).$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Chain Rule</h2><div class="divider"></div>
+  <p>Use $p_{X,Y}(x,y) = p_Y(y)\,p_{X\mid Y}(x\mid y)$ inside the expectation:</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X,Y) &= \mathbb{E}\bigl[-\log p_{X,Y}(X,Y)\bigr] \\
+           &= \mathbb{E}\bigl[-\log p_Y(Y)\bigr] + \mathbb{E}\bigl[-\log p_{X\mid Y}(X\mid Y)\bigr] \\
+           &= H(Y) + H(X\mid Y).
+  \end{aligned}$$</div>
+  <p>The $n$-variable form follows by induction with $p(X^n) = \prod_i p(X_i\mid X^{i-1})$. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Two Correlated Coins</h2><div class="divider"></div>
+  <p>$p_{X,Y}$ given as a $2\times 2$ table (rows $X$, columns $Y$):</p>
+  <table class="e2-table">
+    <tr><th></th><th>$Y=0$</th><th>$Y=1$</th><th>row</th></tr>
+    <tr><th>$X=0$</th><td>$1/2$</td><td>$1/4$</td><td>$3/4$</td></tr>
+    <tr><th>$X=1$</th><td>$0$</td><td>$1/4$</td><td>$1/4$</td></tr>
+    <tr><th>col</th><td>$1/2$</td><td>$1/2$</td><td></td></tr>
+  </table>
+  <ul>
+    <li>$H(X) = H_b(1/4) \approx 0.811$ &middot; $H(Y) = 1$</li>
+    <li>$H(X,Y) = -\sum p\log p = \tfrac{3}{2}$</li>
+    <li>$H(X\mid Y) = H(X,Y) - H(Y) = 0.5$ &middot; $H(Y\mid X) \approx 0.689$</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Conditioning Reduces Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <div class="math-block">$$H(X\mid Y) \;\le\; H(X),$$</div>
+    <p>with equality iff $X$ and $Y$ are independent.</p>
+  </div>
+  <p><strong>"On average, knowing $Y$ never hurts."</strong></p>
+  <p><em>Caveat:</em> $H(X\mid Y=y)$ can exceed $H(X)$ for a particular $y$ &mdash; only the average is monotone.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Conditioning Reduces Entropy</h2><div class="divider"></div>
+  <p>Write the difference as a KL divergence:</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X) - H(X\mid Y)
+      &= \sum_{x,y} p_{X,Y}(x,y) \log\frac{p_{X\mid Y}(x\mid y)}{p_X(x)} \\
+      &= \sum_{x,y} p_{X,Y}(x,y) \log\frac{p_{X,Y}(x,y)}{p_X(x)\,p_Y(y)} \\
+      &= D\bigl(p_{X,Y} \,\|\, p_X p_Y\bigr) \;\ge\; 0,
+  \end{aligned}$$</div>
+  <p>by Gibbs. Equality iff $p_{X,Y} = p_X p_Y$, i.e. $X \perp Y$. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>$H(X\mid Y=y) > H(X)$ &mdash; Concrete Case</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Unif}\{1,2,3,4\}$ independent of $B\sim\mathrm{Bern}(1/2)$, and $Y = X\cdot B$.</p>
+  <ul>
+    <li>$Y = 0$ when $B=0$ &middot; $Y = X$ when $B = 1$.</li>
+    <li>$\Pr(Y=0) = 1/2$ &middot; $\Pr(Y=k) = 1/8$ for $k \in \{1,2,3,4\}$.</li>
+  </ul>
+  <p>$H(X\mid Y=0) = H(X) = 2$ (no info), but $H(X\mid Y=k) = 0$ for $k\ne 0$.</p>
+  <div class="math-block">$$H(X\mid Y) \;=\; \tfrac{1}{2}\cdot 2 + \tfrac{1}{2}\cdot 0 \;=\; 1 \;<\; 2 \;=\; H(X). \;\checkmark$$</div>
+</div>
+
+<div class="slide">
+  <h2>Functional Dependence</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma.</h3>
+    <p>$H(X\mid Y) = 0$ if and only if $X = g(Y)$ a.s. for some function $g$.</p>
+  </div>
+  <p><strong>Proof.</strong> $H(X\mid Y) = \sum_y p_Y(y) H(X\mid Y=y) = 0$ requires $H(X\mid Y=y) = 0$ for every $y$ in the support, which forces $p_{X\mid Y}(\cdot\mid y)$ to be a point mass &mdash; that is, $X$ is a deterministic function of $Y$. $\square$</p>
+  <p>Conversely, if $X = g(Y)$ then $p_{X\mid Y}(g(y)\mid y) = 1$, so each conditional entropy vanishes.</p>
+</div>
+
+<div class="slide">
+  <h2>Subadditivity &mdash; A Useful Bound</h2><div class="divider"></div>
+  <p>From the chain rule and "conditioning reduces entropy":</p>
+  <div class="math-block">$$H(X^n) \;=\; \sum_{i=1}^n H(X_i \mid X^{i-1}) \;\le\; \sum_{i=1}^n H(X_i).$$</div>
+  <p>Equality iff $X_1, \dots, X_n$ are mutually independent.</p>
+  <p><strong>Independence is the entropy-maximizing joint structure.</strong></p>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Mutual Information</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Shared bits between $X$ and $Y$</p>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; Mutual Information</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <div class="math-block">$$I(X;Y) \;=\; H(X) - H(X\mid Y) \;=\; H(Y) - H(Y\mid X).$$</div>
+    <p>Equivalently, as a KL divergence:</p>
+    <div class="math-block">$$I(X;Y) \;=\; D\bigl(p_{X,Y} \,\|\, p_X p_Y\bigr) \;=\; \sum_{x,y} p_{X,Y}(x,y)\,\log\frac{p_{X,Y}(x,y)}{p_X(x)\,p_Y(y)}.$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Reading the Definition</h2><div class="divider"></div>
+  <ul>
+    <li><strong>"Reduction in uncertainty about $X$ from observing $Y$."</strong></li>
+    <li><strong>Symmetric:</strong> $I(X;Y) = I(Y;X)$.</li>
+    <li><strong>Non-negative:</strong> $I(X;Y) = D(p_{X,Y}\,\|\,p_Xp_Y) \ge 0$ by Gibbs.</li>
+    <li><strong>Self-information:</strong> $I(X;X) = H(X) - 0 = H(X)$.</li>
+  </ul>
+  <div class="highlight">$I(X;Y) = 0 \iff X \perp Y.$</div>
+</div>
+
+<div class="slide">
+  <h2>Venn Picture</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Identities visible at a glance:</p>
+      <ul>
+        <li>$H(X,Y) = H(X) + H(Y) - I(X;Y)$</li>
+        <li>$H(X) = H(X\mid Y) + I(X;Y)$</li>
+        <li>$H(Y) = H(Y\mid X) + I(X;Y)$</li>
+      </ul>
+    </div>
+    <div>
+      <svg viewBox="0 0 300 220" width="100%" style="background:var(--light); border-radius:8px;">
+        <circle cx="115" cy="110" r="80" fill="#003876" fill-opacity="0.18" stroke="#003876" stroke-width="2"/>
+        <circle cx="195" cy="110" r="80" fill="#1a5296" fill-opacity="0.18" stroke="#1a5296" stroke-width="2"/>
+        <text x="60" y="115" font-size="14" fill="#003876" font-weight="700">H(X|Y)</text>
+        <text x="220" y="115" font-size="14" fill="#1a5296" font-weight="700">H(Y|X)</text>
+        <text x="142" y="115" font-size="13" fill="#1a1a1a" font-weight="700">I(X;Y)</text>
+        <text x="80" y="42" font-size="14" fill="#003876" font-weight="700">H(X)</text>
+        <text x="200" y="42" font-size="14" fill="#1a5296" font-weight="700">H(Y)</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Bernoulli Pair</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Bern}(1/2)$ and $Y = X \oplus N$ with $N\sim\mathrm{Bern}(p)$, $X\perp N$.</p>
+  <p>This is the <strong>binary symmetric channel (BSC)</strong> with crossover $p$.</p>
+  <ul>
+    <li>$H(X) = 1$ &middot; $H(Y) = 1$ (output also $\mathrm{Bern}(1/2)$)</li>
+    <li>$H(Y\mid X) = H_b(p)$ &middot; given $X$, $Y$ flips with prob $p$</li>
+  </ul>
+  <div class="math-block">$$I(X;Y) \;=\; H(Y) - H(Y\mid X) \;=\; 1 - H_b(p).$$</div>
+  <p>$p=1/2$: $I = 0$ (channel destroys info). $\;p \to 0$: $I\to 1$ (perfect channel).</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Erasure Channel</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Bern}(1/2)$. Output $Y = X$ with prob $1-\alpha$, $Y = e$ (erased) with prob $\alpha$.</p>
+  <p>Joint pmf places mass $(1-\alpha)/2$ on $(0,0)$ and $(1,1)$, and $\alpha/2$ on $(0,e)$ and $(1,e)$.</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X\mid Y=0) &= 0,\quad H(X\mid Y=1) = 0,\quad H(X\mid Y=e) = 1.
+  \end{aligned}$$</div>
+  <div class="math-block">$$I(X;Y) \;=\; H(X) - H(X\mid Y) \;=\; 1 - \alpha.$$</div>
+  <p>Each erasure costs exactly one bit on average.</p>
+</div>
+
+<div class="slide">
+  <h2>Bounds on Mutual Information</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <div class="math-block">$$0 \;\le\; I(X;Y) \;\le\; \min\bigl\{H(X),\; H(Y)\bigr\}.$$</div>
+  </div>
+  <p>Lower bound: Gibbs. Upper bound: $I(X;Y) = H(X) - H(X\mid Y) \le H(X)$ since $H(X\mid Y)\ge 0$, similarly bounded by $H(Y)$.</p>
+  <p>Equality $I(X;Y) = H(X)$ iff $X = g(Y)$ a.s. (i.e. $H(X\mid Y) = 0$).</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Chain Rule for MI</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <div class="math-block">$$I(X^n;Y) \;=\; \sum_{i=1}^n I(X_i; Y \mid X^{i-1}).$$</div>
+  </div>
+  <p><strong>Proof.</strong> Apply the chain rule for entropy to both $H(X^n)$ and $H(X^n\mid Y)$:</p>
+  <div class="math-block">$$\begin{aligned}
+    I(X^n;Y) &= H(X^n) - H(X^n\mid Y) \\
+             &= \textstyle\sum_i \bigl[H(X_i\mid X^{i-1}) - H(X_i\mid X^{i-1}, Y)\bigr] \\
+             &= \textstyle\sum_i I(X_i; Y\mid X^{i-1}). \quad\square
+  \end{aligned}$$</div>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Conditional MI &amp; DPI</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Markov chains, the data processing inequality</p>
+</div>
+
+<div class="slide">
+  <h2>Conditional Mutual Information</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <div class="math-block">$$I(X;Y\mid Z) \;=\; H(X\mid Z) - H(X\mid Y, Z).$$</div>
+    <p>Equivalently,</p>
+    <div class="math-block">$$I(X;Y\mid Z) \;=\; \mathbb{E}_{Z}\bigl[\,D(p_{X,Y\mid Z=z} \,\|\, p_{X\mid Z=z}\,p_{Y\mid Z=z})\bigr] \;\ge\; 0.$$</div>
+  </div>
+  <p>Average reduction in uncertainty about $X$ given $Y$, averaged over a known $Z$.</p>
+</div>
+
+<div class="slide">
+  <h2>Beware &mdash; Conditioning Can Increase MI</h2><div class="divider"></div>
+  <p>Unlike entropy ($H(X\mid Y)\le H(X)$), conditioning can <strong>increase</strong> mutual information:</p>
+  <p>Let $X, Z\sim\mathrm{Bern}(1/2)$ independent, &nbsp;$Y = X\oplus Z$.</p>
+  <ul>
+    <li>$X\perp Z$, so $I(X;Z) = 0$.</li>
+    <li>Given $Y$, $X$ determines $Z$: $Z = X\oplus Y$, hence $H(Z\mid X,Y) = 0$.</li>
+    <li>$H(Z\mid Y) = H(Z) = 1$ (still uniform).</li>
+  </ul>
+  <div class="math-block">$$I(X;Z\mid Y) \;=\; H(Z\mid Y) - H(Z\mid X,Y) \;=\; 1 - 0 \;=\; 1 \text{ bit}.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Markov Chains</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>$X \to Y \to Z$ is a <strong>Markov chain</strong> if</p>
+    <div class="math-block">$$p_{Z\mid X,Y}(z\mid x, y) \;=\; p_{Z\mid Y}(z\mid y),$$</div>
+    <p>i.e. given $Y$, $Z$ is conditionally independent of $X$.</p>
+  </div>
+  <ul>
+    <li>$X \to Y \to Z \;\Leftrightarrow\; Z \to Y \to X$ (Markov is symmetric).</li>
+    <li>$Z = g(Y)$ implies $X\to Y \to Z$ for any $X$.</li>
+    <li>$X\to Y\to Z \;\Rightarrow\; I(X;Z\mid Y) = 0$.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Data Processing Inequality</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (DPI).</h3>
+    <p>If $X\to Y\to Z$ is a Markov chain, then</p>
+    <div class="math-block">$$I(X;Z) \;\le\; I(X;Y).$$</div>
+    <p>Equality iff $X \to Z \to Y$ is also Markov (i.e., $Y$ is a sufficient statistic for $X$ from $Z$).</p>
+  </div>
+  <div class="highlight"><strong>"Processing data cannot create information about $X$."</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; DPI</h2><div class="divider"></div>
+  <p>Two-step expansion of $I(X;Y,Z)$:</p>
+  <div class="math-block">$$\begin{aligned}
+    I(X;Y,Z) &= I(X;Z) + I(X;Y\mid Z) \\
+             &= I(X;Y) + I(X;Z\mid Y).
+  \end{aligned}$$</div>
+  <p>By the Markov assumption $I(X;Z\mid Y) = 0$, hence</p>
+  <div class="math-block">$$I(X;Z) + I(X;Y\mid Z) \;=\; I(X;Y).$$</div>
+  <p>Since $I(X;Y\mid Z) \ge 0$, we get $I(X;Z)\le I(X;Y)$. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Corollary &mdash; Function of $Y$</h2><div class="divider"></div>
+  <p>If $Z = g(Y)$, then $X\to Y\to Z$ holds for any $X$, hence</p>
+  <div class="math-block">$$I(X; g(Y)) \;\le\; I(X; Y).$$</div>
+  <p>Examples:</p>
+  <ul>
+    <li>$Y$: full image &middot; $g(Y)$: 8&times; downsample &middot; less info about labels.</li>
+    <li>$Y$: noisy measurement &middot; $g(Y)$: any post-processed estimate &middot; bounded by $I(X;Y)$.</li>
+    <li>$Y$: gradient on full data &middot; $g(Y)$: clipped + noised gradient (DP-SGD) &middot; lower MI by design.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Cascade of BSCs</h2><div class="divider"></div>
+  <p>$X\to Y\to Z$: each transition is a BSC with crossover $p$. Combined channel $X\to Z$ has crossover $p' = 2p(1-p)$.</p>
+  <p>$X\sim\mathrm{Bern}(1/2)$ &middot;</p>
+  <ul>
+    <li>$I(X;Y) = 1 - H_b(p)$</li>
+    <li>$I(X;Z) = 1 - H_b(2p(1-p))$</li>
+  </ul>
+  <p>For $p = 0.1$: $I(X;Y) \approx 0.531$, $I(X;Z) \approx 1 - H_b(0.18) \approx 0.320$.</p>
+  <div class="highlight">$0.320 \le 0.531$ &middot; DPI confirmed.</div>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Fano's Inequality</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Lower bounds on the probability of error</p>
+</div>
+
+<div class="slide">
+  <h2>Setup &mdash; Inferring $X$ from $Y$</h2><div class="divider"></div>
+  <ul>
+    <li>$X \in \mathcal{X}$ is the unknown &middot; $|\mathcal{X}| = M$.</li>
+    <li>$Y$ is observed &middot; $X\to Y\to \widehat X$ where $\widehat X = g(Y)$ is an estimate.</li>
+    <li>Error event: $E = \mathbb{1}\{\widehat X \ne X\}$, with $P_e = \Pr(E = 1)$.</li>
+  </ul>
+  <p>Question: how small can $P_e$ be, given how much info $Y$ carries about $X$?</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Fano</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Fano, 1961).</h3>
+    <p>For any estimator $\widehat X = g(Y)$ with error probability $P_e$,</p>
+    <div class="math-block">$$H(X\mid Y) \;\le\; H_b(P_e) + P_e \log(|\mathcal{X}| - 1).$$</div>
+    <p>Looser but cleaner form:</p>
+    <div class="math-block">$$P_e \;\ge\; \frac{H(X\mid Y) - 1}{\log|\mathcal{X}|}.$$</div>
+  </div>
+  <div class="cite">Fano, <em>Transmission of Information</em>, MIT Press 1961.</div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Fano (Step 1)</h2><div class="divider"></div>
+  <p>Define error indicator $E = \mathbb{1}\{\widehat X \ne X\}$. Apply chain rule two ways:</p>
+  <div class="math-block">$$\begin{aligned}
+    H(E, X \mid \widehat X)
+      &= H(X\mid \widehat X) + \underbrace{H(E\mid X, \widehat X)}_{=\,0} \\
+      &= H(E\mid \widehat X) + H(X\mid E, \widehat X).
+  \end{aligned}$$</div>
+  <p>$E$ is a function of $(X, \widehat X)$, so $H(E\mid X, \widehat X) = 0$. Hence</p>
+  <div class="math-block">$$H(X\mid \widehat X) \;=\; H(E\mid\widehat X) + H(X\mid E, \widehat X).$$</div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Fano (Step 2)</h2><div class="divider"></div>
+  <p>Bound each term:</p>
+  <div class="math-block">$$\begin{aligned}
+    H(E\mid\widehat X) &\;\le\; H(E) \;=\; H_b(P_e) \\
+    H(X\mid E, \widehat X) &= \Pr(E=0)\cdot 0 + \Pr(E=1)\cdot H(X\mid E=1, \widehat X) \\
+                           &\;\le\; P_e \cdot \log(|\mathcal{X}| - 1).
+  \end{aligned}$$</div>
+  <p>(When $E=0$, $X = \widehat X$ a.s., zero entropy. When $E=1$, $X$ ranges over $\mathcal{X}\setminus\{\widehat X\}$ &middot; at most $|\mathcal{X}|-1$ outcomes.)</p>
+  <p>Then $H(X\mid Y)\le H(X\mid\widehat X)$ by DPI on $X\to Y\to\widehat X$. Combine. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Application &mdash; Channel Coding Converse</h2><div class="divider"></div>
+  <p>Send message $W\sim\mathrm{Unif}\{1,\dots,M\}$ over channel, decoder outputs $\widehat W = g(Y^n)$.</p>
+  <ul>
+    <li>$H(W) = \log M$.</li>
+    <li>By Fano: $H(W\mid Y^n) \le 1 + P_e\log M$.</li>
+    <li>$I(W; Y^n) = H(W) - H(W\mid Y^n) \ge \log M - 1 - P_e\log M$.</li>
+  </ul>
+  <div class="math-block">$$P_e \;\ge\; 1 - \frac{I(W;Y^n) + 1}{\log M}.$$</div>
+  <p>If $\log M$ outpaces $I(W;Y^n)$, error is bounded away from zero.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Binary Estimation</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Bern}(1/2)$, $Y$ noisy with $I(X;Y) = 0.3$ bits.</p>
+  <ul>
+    <li>$H(X\mid Y) = H(X) - I(X;Y) = 0.7$.</li>
+    <li>Fano: $0.7 \le H_b(P_e)$ (since $|\mathcal{X}|-1 = 1$, $\log(|\mathcal{X}|-1) = 0$).</li>
+    <li>Solve $H_b(P_e) \ge 0.7$ &middot; $P_e \ge 0.189$.</li>
+  </ul>
+  <p>No estimator can drive error below $\approx 18.9\%$ on this channel.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; $M$-ary Hypothesis Testing</h2><div class="divider"></div>
+  <p>Distinguish among $M = 1024$ hypotheses with $H(X\mid Y) = 4$ bits.</p>
+  <p>Loose Fano:</p>
+  <div class="math-block">$$P_e \;\ge\; \frac{H(X\mid Y) - 1}{\log M} \;=\; \frac{4 - 1}{10} \;=\; 0.3.$$</div>
+  <p>At least 30% of estimates must be wrong, regardless of the algorithm.</p>
+  <div class="highlight">Fano gives an <strong>unconditional</strong> lower bound &mdash; no assumption on the estimator.</div>
+</div>
+
+<div class="slide">
+  <h2>Equality in Fano</h2><div class="divider"></div>
+  <p>Fano is tight. Construct a $Y$ such that:</p>
+  <ul>
+    <li>With prob $1-P_e$: $Y$ reveals $X$ exactly (so $\widehat X = X$).</li>
+    <li>With prob $P_e$: $Y$ leaves $X$ uniformly distributed on $\mathcal{X}\setminus\{\widehat X\}$.</li>
+  </ul>
+  <p>Then $H(X\mid Y) = H_b(P_e) + P_e\log(M-1)$ exactly. Both terms in Fano are individually saturated.</p>
+</div>
+
+<div class="slide">
+  <h2>Recap &mdash; The Whole Identity Web</h2><div class="divider"></div>
+  <div class="math-block">$$\begin{aligned}
+    H(X,Y) &= H(X) + H(Y\mid X) \;=\; H(Y) + H(X\mid Y) \\
+    I(X;Y) &= H(X) - H(X\mid Y) \;=\; H(X) + H(Y) - H(X,Y) \\
+    I(X;Y) &= D(p_{X,Y}\,\|\,p_X p_Y)
+  \end{aligned}$$</div>
+  <ul>
+    <li>Conditioning reduces entropy &middot; $I(X;Y) \ge 0$</li>
+    <li>DPI: $X\to Y\to Z \Rightarrow I(X;Z) \le I(X;Y)$</li>
+    <li>Fano: $H(X\mid Y)\le H_b(P_e) + P_e\log(M-1)$</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Where We Go Next</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Lossless compression</strong> &middot; entropy as the operational limit.</li>
+    <li><strong>Differential entropy</strong> &middot; continuous-domain analogue.</li>
+    <li><strong>Channel capacity</strong> &middot; $\sup_{p_X} I(X;Y)$ over inputs.</li>
+    <li><strong>Rate-distortion</strong> &middot; tradeoff between bits and fidelity.</li>
+  </ul>
+  <div class="highlight">Every later theorem leans on Gibbs &amp; the chain rules introduced here.</div>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

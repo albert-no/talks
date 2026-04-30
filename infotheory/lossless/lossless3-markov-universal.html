@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lossless 3 — Markov Sources and Universal Coding</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.lu-table { margin: 8px auto; border-collapse: collapse; }
+.lu-table th, .lu-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.4rem; }
+.lu-table th { background: var(--light); font-weight: 700; }
+.lu-mono { font-family: 'Menlo','Consolas','Courier New', monospace; font-weight: 600; letter-spacing: 0.04em; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lossless Compression &middot; Lecture 3 of 3</div>
+  <h1>Markov Sources and<br>Universal Coding</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Entropy rate, LZ78, learning the distribution</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Sources with memory</div>
+      <div class="toc-sub">Markov chains, stationarity</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Entropy rate</div>
+      <div class="toc-sub">$H(\mathscr{X}) = \lim \tfrac{1}{n} H(X^n)$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Universal coding</div>
+      <div class="toc-sub">Two-pass schemes, redundancy</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Lempel&ndash;Ziv</div>
+      <div class="toc-sub">LZ78, optimality</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Sources with Memory</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Real text and images are correlated</p>
+</div>
+
+<div class="slide">
+  <h2>i.i.d. Is Not Enough</h2><div class="divider"></div>
+  <p>English text: letter frequencies give $H \approx 4.1$ bits/letter, but real English compresses to $\approx 1.3$ bits/letter.</p>
+  <p>Reason: <strong>"q" is almost always followed by "u"</strong>; "th" is hugely overrepresented; etc.</p>
+  <p>Per-letter entropy $H(X) \gg$ conditional $H(X_t \mid X_1^{t-1})$ for $t$ large &mdash; correlation reduces uncertainty.</p>
+</div>
+
+<div class="slide">
+  <h2>First-Order Markov Process</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>A sequence $X_1, X_2, \dots$ is a <strong>first-order Markov chain</strong> if for every $i \ge 2$:</p>
+    <div class="math-block">$$p_{X_i\mid X_1^{i-1}}(x_i \mid x_1, \dots, x_{i-1}) \;=\; p_{X_i\mid X_{i-1}}(x_i\mid x_{i-1}).$$</div>
+  </div>
+  <p>The future depends on the past only through the current state.</p>
+  <p>Joint factors as $p(x^n) = p(x_1)\prod_{i=2}^n p(x_i\mid x_{i-1})$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Two-State Chain</h2><div class="divider"></div>
+  <p>$\mathcal{X} = \{0, 1\}$. Transition matrix</p>
+  <div class="math-block">$$P = \begin{pmatrix} 1-\alpha & \alpha \\ \beta & 1-\beta \end{pmatrix}, \qquad P_{ij} = \Pr(X_{t+1} = j \mid X_t = i).$$</div>
+  <p>Stationary distribution $\pi = (\pi_0, \pi_1)$ satisfies $\pi P = \pi$:</p>
+  <div class="math-block">$$\pi_0 = \frac{\beta}{\alpha+\beta}, \qquad \pi_1 = \frac{\alpha}{\alpha+\beta}.$$</div>
+  <p>If we start with $X_1\sim\pi$, the chain is <strong>stationary</strong>.</p>
+</div>
+
+<div class="slide">
+  <h2>Joint Entropy of Markov Chain</h2><div class="divider"></div>
+  <p>Apply the chain rule to $p(x^n) = p(x_1)\prod p(x_i\mid x_{i-1})$:</p>
+  <div class="math-block">$$H(X^n) \;=\; H(X_1) + \sum_{i=2}^n H(X_i \mid X_{i-1}).$$</div>
+  <p>For a <strong>stationary</strong> Markov chain, every conditional $H(X_i\mid X_{i-1})$ equals $H(X_2\mid X_1)$:</p>
+  <div class="math-block">$$H(X^n) \;=\; H(X_1) + (n-1)\,H(X_2\mid X_1).$$</div>
+</div>
+
+<div class="slide">
+  <h2>$k$-th Order Markov</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>$\{X_i\}$ is $k$-th order Markov if</p>
+    <div class="math-block">$$p_{X_i\mid X_1^{i-1}}(x_i\mid x_1^{i-1}) \;=\; p_{X_i\mid X_{i-k}^{i-1}}(x_i\mid x_{i-k}^{i-1}).$$</div>
+  </div>
+  <p>Joint:</p>
+  <div class="math-block">$$p(x^n) \;=\; p(x_1^k) \prod_{i=k+1}^n p(x_i\mid x_{i-k}^{i-1}).$$</div>
+  <p>Common in language modeling: $n$-gram models are $(n-1)$-th order Markov approximations to text.</p>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Entropy Rate</h1>
+  <div class="divider"></div>
+  <p class="subtitle">The fundamental limit for sources with memory</p>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; Entropy Rate</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For a stationary process $\mathscr{X} = \{X_i\}_{i=1}^\infty$, the <strong>entropy rate</strong> is</p>
+    <div class="math-block">$$H(\mathscr{X}) \;=\; \lim_{n\to\infty} \frac{1}{n} H(X_1, \dots, X_n).$$</div>
+    <p>An equivalent form (when the limit exists):</p>
+    <div class="math-block">$$H'(\mathscr{X}) \;=\; \lim_{n\to\infty} H(X_n \mid X_1, \dots, X_{n-1}).$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Limits Exist and Agree</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>For any stationary process,</p>
+    <div class="math-block">$$H(\mathscr{X}) \;=\; H'(\mathscr{X}).$$</div>
+    <p>Both limits exist (possibly $+\infty$).</p>
+  </div>
+  <p>Sketch: stationarity gives $H(X_n\mid X_1^{n-1}) \le H(X_n\mid X_2^{n-1}) = H(X_{n-1}\mid X_1^{n-2})$, so the conditional sequence is monotone non-increasing &middot; bounded below by 0 &middot; converges. Cesàro averaging gives the equality.</p>
+</div>
+
+<div class="slide">
+  <h2>Stationary Markov &mdash; Closed Form</h2><div class="divider"></div>
+  <p>For a stationary first-order Markov chain:</p>
+  <div class="math-block">$$\frac{1}{n}H(X^n) \;=\; \frac{H(X_1) + (n-1) H(X_2\mid X_1)}{n} \;\to\; H(X_2\mid X_1).$$</div>
+  <p>Hence</p>
+  <div class="math-block">$$H(\mathscr{X}) \;=\; H(X_2\mid X_1) \;=\; \sum_x \pi(x)\,H(P(\cdot\mid x)),$$</div>
+  <p>where $\pi$ is the stationary distribution.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Two-State Chain</h2><div class="divider"></div>
+  <p>$\alpha = 0.1$, $\beta = 0.4$. $\pi = (\beta/(\alpha+\beta), \alpha/(\alpha+\beta)) = (0.8, 0.2)$.</p>
+  <ul>
+    <li>$H(X_2\mid X_1 = 0) = H_b(0.1) \approx 0.469$</li>
+    <li>$H(X_2\mid X_1 = 1) = H_b(0.4) \approx 0.971$</li>
+  </ul>
+  <div class="math-block">$$H(\mathscr{X}) \;=\; 0.8 \cdot 0.469 + 0.2\cdot 0.971 \;\approx\; 0.569 \text{ bits/sym}.$$</div>
+  <p>Compare $H(X_1) = H_b(0.2) \approx 0.722$. Memory reduces entropy by $\sim 0.15$ bits/sym.</p>
+</div>
+
+<div class="slide">
+  <h2>Coding a Markov Source</h2><div class="divider"></div>
+  <p>Arithmetic coding works for any sequential model: at each step, partition the current interval according to $p(\cdot\mid x_1^{t-1})$.</p>
+  <p>For a stationary first-order Markov chain:</p>
+  <div class="math-block">$$\mathbb{E}[\ell(X^n)] \;\le\; \log\tfrac{1}{p(X^n)} + 2 \;=\; H(X^n) + 2.$$</div>
+  <p>Per-symbol rate</p>
+  <div class="math-block">$$\frac{\mathbb{E}[\ell(X^n)]}{n} \;\to\; H(\mathscr{X}) \;=\; H(X_2\mid X_1).$$</div>
+  <p><strong>Markov entropy rate is the operational limit.</strong></p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Universal Coding</h1>
+  <div class="divider"></div>
+  <p class="subtitle">When the source distribution is unknown</p>
+</div>
+
+<div class="slide">
+  <h2>The Universal Problem</h2><div class="divider"></div>
+  <p>Setup: $X_1, \dots, X_n$ i.i.d. from <strong>unknown</strong> $P_X\in\mathcal{P}$ where $\mathcal{P}$ is a known class.</p>
+  <p>A <strong>universal code</strong> is a single sequence of codes $f_n$ achieving</p>
+  <div class="math-block">$$\frac{\mathbb{E}_P[\ell(X^n)]}{n} \;\to\; H(P) \quad\text{for every } P\in\mathcal{P}.$$</div>
+  <p>The redundancy:</p>
+  <div class="math-block">$$R_n(P) \;=\; \frac{\mathbb{E}_P[\ell(X^n)]}{n} - H(P).$$</div>
+</div>
+
+<div class="slide">
+  <h2>Two-Pass Scheme</h2><div class="divider"></div>
+  <p>Simple template (works for i.i.d.):</p>
+  <ol>
+    <li>Examine first $m$ symbols, encode with a fixed sub-optimal code.</li>
+    <li>Both encoder &amp; decoder estimate $\hat P_X$ from $X_1^m$.</li>
+    <li>Build a Shannon/arithmetic code from $\hat P_X$.</li>
+    <li>Encode $X_{m+1}, \dots, X_n$ with that code.</li>
+  </ol>
+  <p>Tradeoff: large $m$ $\Rightarrow$ accurate $\hat P$ but more bits wasted up front. Tune $m = O(\sqrt{n})$ or $O(\log n)$.</p>
+</div>
+
+<div class="slide">
+  <h2>Redundancy &mdash; The Mismatch Cost</h2><div class="divider"></div>
+  <p>Encoding the tail $X_{m+1}^n$ for true $P$ using code designed for $\hat P$:</p>
+  <div class="math-block">$$\frac{1}{n - m}\mathbb{E}[\ell(X_{m+1}^n)] \;\approx\; H(P) + D(P\,\|\,\hat P).$$</div>
+  <p>Empirical $\hat P$ converges to $P$ at rate $\|\hat P - P\| = O(1/\sqrt{m})$, so $D(P\,\|\,\hat P) = O(1/m)$.</p>
+  <p>Total redundancy: $O(1/m) + (m \cdot c)/n = O(1/\sqrt{n})$ for $m = \sqrt{n}$.</p>
+</div>
+
+<div class="slide">
+  <h2>Lower Bound on Redundancy</h2><div class="divider"></div>
+  <p>For the class $\mathcal{P}$ of all i.i.d. distributions on $|\mathcal{X}| = k$ symbols:</p>
+  <div class="math-block">$$\inf_{f_n}\;\sup_{P\in\mathcal{P}}\; n R_n(P) \;\ge\; \frac{k-1}{2}\log n - O(1).$$</div>
+  <p>Optimal universal codes (e.g., Krichevsky&ndash;Trofimov mixture, Context Tree Weighting) match this rate.</p>
+  <p>Universal coding pays only a $\log n$-style overhead &mdash; vanishing per-symbol redundancy.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Lempel&ndash;Ziv</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Learn while you encode</p>
+</div>
+
+<div class="slide">
+  <h2>The LZ Idea</h2><div class="divider"></div>
+  <p>Two-pass schemes separate <em>learning</em> from <em>encoding</em>. Lempel&ndash;Ziv does both at once:</p>
+  <ul>
+    <li>Build a <strong>dictionary</strong> of phrases seen so far.</li>
+    <li>Each new phrase = (existing phrase, extension symbol).</li>
+    <li>Send <strong>indices into the dictionary</strong>, not raw symbols.</li>
+  </ul>
+  <p>Frequent contexts grow the dictionary &middot; fewer bits per phrase as the file grows.</p>
+  <div class="cite">Ziv and Lempel, "Compression of individual sequences via variable-rate coding", IEEE Trans. Inf. Theory 1978.</div>
+</div>
+
+<div class="slide">
+  <h2>LZ78 &mdash; The Algorithm</h2><div class="divider"></div>
+  <ol>
+    <li>Initialize dictionary $\mathcal{D} = \{\varepsilon\}$ (empty string at index 0).</li>
+    <li>Find the <strong>longest prefix</strong> $w$ of the unread input that lies in $\mathcal{D}$.</li>
+    <li>Let $a$ be the symbol after $w$. Output the pair $(\mathrm{idx}(w), a)$.</li>
+    <li>Add $wa$ to $\mathcal{D}$ at the next free index.</li>
+    <li>Advance past $wa$. Repeat until end of input.</li>
+  </ol>
+</div>
+
+<div class="slide">
+  <h2>Worked Example &mdash; "ABBABABAA..."</h2><div class="divider"></div>
+  <table class="lu-table">
+    <tr><th>step</th><th>$w$</th><th>$a$</th><th>output</th><th>new entry</th></tr>
+    <tr><td>1</td><td>$\varepsilon$</td><td>A</td><td>(0, A)</td><td>1: A</td></tr>
+    <tr><td>2</td><td>$\varepsilon$</td><td>B</td><td>(0, B)</td><td>2: B</td></tr>
+    <tr><td>3</td><td>B</td><td>A</td><td>(2, A)</td><td>3: BA</td></tr>
+    <tr><td>4</td><td>BA</td><td>B</td><td>(3, B)</td><td>4: BAB</td></tr>
+    <tr><td>5</td><td>A</td><td>A</td><td>(1, A)</td><td>5: AA</td></tr>
+  </table>
+  <p>5 phrases &middot; bits per pair $\approx \lceil\log_2 5\rceil + \lceil\log_2|\mathcal{X}|\rceil$. Improves as the dictionary grows.</p>
+</div>
+
+<div class="slide">
+  <h2>Asymptotic Optimality</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Ziv&ndash;Lempel, 1978).</h3>
+    <p>For any stationary ergodic source $\mathscr{X}$ with entropy rate $H(\mathscr{X})$, LZ78 satisfies</p>
+    <div class="math-block">$$\frac{\ell_{\mathrm{LZ}}(X_1^n)}{n} \;\xrightarrow{\;n\to\infty\;}\; H(\mathscr{X}) \quad \text{a.s.}$$</div>
+  </div>
+  <p>No prior knowledge of the source &mdash; the algorithm learns the optimal model online.</p>
+  <p>LZ77 (sliding-window variant) underlies <code>gzip</code>, <code>zlib</code>, PNG, ZIP &middot; LZMA underlies <code>xz</code>.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof Idea &mdash; LZ78</h2><div class="divider"></div>
+  <p>Let $c(n)$ = number of distinct phrases parsed from $X_1^n$. Each phrase is encoded with $\log c(n) + \log|\mathcal{X}|$ bits, so</p>
+  <div class="math-block">$$\ell_{\mathrm{LZ}}(X_1^n) \;\le\; c(n)\bigl(\log c(n) + \log|\mathcal{X}|\bigr).$$</div>
+  <p>Two key facts:</p>
+  <ol>
+    <li>$c(n) \le n / \log_{|\mathcal{X}|} n$ (Ziv inequality &middot; phrases grow super-logarithmically).</li>
+    <li>$c(n) \log c(n) / n \to H(\mathscr{X})$ a.s. (using ergodic theory).</li>
+  </ol>
+  <p>Combine to get the rate. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Practical Note &mdash; What Real Codecs Do</h2><div class="divider"></div>
+  <ul>
+    <li><strong>gzip / zlib / PNG</strong> &middot; LZ77 + Huffman on phrase indices</li>
+    <li><strong>xz / lzma</strong> &middot; LZ + range (arithmetic) coding</li>
+    <li><strong>bzip2</strong> &middot; Burrows&ndash;Wheeler transform + Huffman, not LZ</li>
+    <li><strong>Brotli, Zstandard</strong> &middot; LZ + arithmetic + dictionary preset</li>
+    <li><strong>Modern LLM tokenizers</strong> &middot; byte-pair encoding inherits the dictionary spirit</li>
+  </ul>
+  <p>All asymptotically achieve $H(\mathscr{X})$ &middot; differences are constants and engineering.</p>
+</div>
+
+<div class="slide">
+  <h2>Recap &mdash; Lossless Compression Series</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Single-symbol codes:</strong> Kraft, Shannon, Huffman &middot; $L \in [H, H+1)$.</li>
+    <li><strong>AEP &amp; block codes:</strong> $R > H$ achievable, $R < H$ impossible.</li>
+    <li><strong>Arithmetic coding:</strong> $L \le \log(1/p) + 2$, no codebook.</li>
+    <li><strong>Markov sources:</strong> entropy rate $H(\mathscr{X})$ is the limit.</li>
+    <li><strong>Universal coding:</strong> achieve $H(P)$ without knowing $P$ &middot; LZ78.</li>
+  </ul>
+  <div class="highlight">Across the board: <strong>entropy is the operational limit</strong>, achievable by an algorithm.</div>
+</div>
+
+<div class="slide">
+  <h2>Where We Go Next</h2><div class="divider"></div>
+  <p>Continuous sources require new tools:</p>
+  <ul>
+    <li>Differential entropy &middot; not the same as $H$</li>
+    <li>Mutual information for continuous random variables</li>
+    <li>Maximum-entropy distributions under constraints</li>
+    <li>The Gaussian channel and Shannon&ndash;Hartley</li>
+  </ul>
+  <p>$\to$ <strong>Differential Entropy series</strong>.</p>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

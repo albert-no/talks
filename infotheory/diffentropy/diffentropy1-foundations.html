@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Differential Entropy 1 — Foundations</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.dh-table { margin: 8px auto; border-collapse: collapse; }
+.dh-table th, .dh-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.4rem; }
+.dh-table th { background: var(--light); font-weight: 700; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Differential Entropy &middot; Lecture 1 of 3</div>
+  <h1>Differential Entropy:<br>Foundations</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Definition, examples, scaling, joint and conditional</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Definition</div>
+      <div class="toc-sub">Continuous-domain analogue</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Examples</div>
+      <div class="toc-sub">Uniform, Gaussian, Laplace, Exponential</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Properties</div>
+      <div class="toc-sub">Scaling, can be negative</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Joint &amp; conditional</div>
+      <div class="toc-sub">Chain rule, KL divergence</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>From Discrete to Continuous</h1>
+  <div class="divider"></div>
+  <p class="subtitle">What needs to change?</p>
+</div>
+
+<div class="slide">
+  <h2>Why a New Definition?</h2><div class="divider"></div>
+  <p>For continuous $X$, the discrete entropy is infinite:</p>
+  <ul>
+    <li>Each individual outcome has probability $0$.</li>
+    <li>$H(X) = \mathbb{E}[-\log p_X(X)]$ blows up if interpreted with a density &mdash; densities can exceed $1$.</li>
+  </ul>
+  <p>We need a quantity that:</p>
+  <ul>
+    <li>Reduces to $H(X)$ for fine discretizations (up to a known offset).</li>
+    <li>Plays well with KL divergence and mutual information.</li>
+    <li>Makes "Gaussian is special" precise.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; Differential Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For a continuous random variable $X$ with density $f_X$,</p>
+    <div class="math-block">$$h(X) \;=\; -\int_{-\infty}^{\infty} f_X(x)\,\log f_X(x)\,\mathrm{d}x \;=\; \mathbb{E}\bigl[-\log f_X(X)\bigr].$$</div>
+    <p>(Whenever the integral exists. Convention: $0\log 0 = 0$.)</p>
+  </div>
+  <p>Lowercase $h$ to distinguish from the discrete $H$.</p>
+</div>
+
+<div class="slide">
+  <h2>Discretization Bridge</h2><div class="divider"></div>
+  <p>Bin $X$ to width $\Delta$: $X^\Delta = i$ if $X\in [i\Delta, (i+1)\Delta)$. Then</p>
+  <div class="math-block">$$\Pr(X^\Delta = i) \;=\; \int_{i\Delta}^{(i+1)\Delta} f_X(x)\,dx \;\approx\; \Delta\, f_X(x_i)$$</div>
+  <p>for some $x_i\in [i\Delta, (i+1)\Delta)$. The discrete entropy:</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X^\Delta) &\;\approx\; -\sum_i \Delta f_X(x_i) \log\bigl(\Delta f_X(x_i)\bigr) \\
+                &\;=\; h(X) + \log\tfrac{1}{\Delta} + o(1).
+  \end{aligned}$$</div>
+  <p><strong>$H(X^\Delta) \to \infty$</strong> as $\Delta\to 0$. The $\log(1/\Delta)$ term diverges.</p>
+</div>
+
+<div class="slide">
+  <h2>Reading the Bridge</h2><div class="divider"></div>
+  <ul>
+    <li><strong>$h(X)$ is the part of $H(X^\Delta)$ that does not depend on $\Delta$.</strong></li>
+    <li>The $\log(1/\Delta)$ term is the bits needed to specify position to precision $\Delta$.</li>
+    <li>Differences such as $h(X) - h(Y)$ and $I(X;Y)$ <em>do</em> have invariant meaning.</li>
+    <li>$h(X)$ alone has no operational meaning &mdash; only differences and divergences.</li>
+  </ul>
+  <div class="highlight"><strong>Differential entropy is a relative quantity.</strong></div>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Examples</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Compute $h(X)$ for the standard families</p>
+</div>
+
+<div class="slide">
+  <h2>Uniform on $[a, b]$</h2><div class="divider"></div>
+  <p>$f_X(x) = 1/(b-a)$ on $[a, b]$, zero elsewhere.</p>
+  <div class="math-block">$$h(X) \;=\; -\int_a^b \frac{1}{b-a}\log\frac{1}{b-a}\,dx \;=\; \log(b-a).$$</div>
+  <ul>
+    <li>$b - a = 1$: $h = 0$.</li>
+    <li>$b - a = 1/2$: $h = -1$. <strong>Negative differential entropy.</strong></li>
+    <li>$b - a = 2$: $h = 1$.</li>
+  </ul>
+  <p>Negative $h$ is fine &mdash; recall, $h$ is relative.</p>
+</div>
+
+<div class="slide">
+  <h2>Gaussian $\mathcal{N}(\mu, \sigma^2)$</h2><div class="divider"></div>
+  <p>$f_X(x) = (2\pi\sigma^2)^{-1/2}\exp(-(x-\mu)^2/(2\sigma^2))$.</p>
+  <div class="math-block">$$\begin{aligned}
+    h(X) &= -\mathbb{E}[\log f_X(X)] \\
+         &= \mathbb{E}\!\left[\tfrac{1}{2}\log(2\pi\sigma^2) + \tfrac{(X-\mu)^2}{2\sigma^2}\log e\right] \\
+         &= \tfrac{1}{2}\log(2\pi\sigma^2) + \tfrac{1}{2}\log e \\
+         &= \tfrac{1}{2}\log(2\pi e \sigma^2).
+  \end{aligned}$$</div>
+  <p>$\sigma = 1$: $h \approx 2.047$ bits. &middot; $\sigma = 1/(\sqrt{2\pi e})$: $h = 0$.</p>
+</div>
+
+<div class="slide">
+  <h2>Exponential, Rate $\lambda$</h2><div class="divider"></div>
+  <p>$f_X(x) = \lambda e^{-\lambda x}$ for $x\ge 0$. Mean $1/\lambda$.</p>
+  <div class="math-block">$$\begin{aligned}
+    h(X) &= -\int_0^\infty \lambda e^{-\lambda x}\bigl(\log\lambda - \lambda x\log e\bigr) dx \\
+         &= -\log\lambda + \log e \\
+         &= \log\frac{e}{\lambda}.
+  \end{aligned}$$</div>
+  <p>$\lambda = 1$: $h = \log e \approx 1.443$ bits.</p>
+</div>
+
+<div class="slide">
+  <h2>Laplace, Scale $b$</h2><div class="divider"></div>
+  <p>$f_X(x) = \tfrac{1}{2b}\exp(-|x|/b)$. Variance $2b^2$.</p>
+  <div class="math-block">$$\begin{aligned}
+    h(X) &= -\mathbb{E}\!\left[-\log(2b) - |X|/b \cdot \log e\right] \\
+         &= \log(2b) + b\,\log e / b \\
+         &= \log(2eb).
+  \end{aligned}$$</div>
+  <p>$b = 1$: $h = \log(2e) \approx 2.443$ bits.</p>
+  <p><em>Heavier-tailed than Gaussian of the same variance, hence higher $h$ relative to a Gaussian comparison.</em></p>
+</div>
+
+<div class="slide">
+  <h2>Cauchy</h2><div class="divider"></div>
+  <p>$f_X(x) = \tfrac{1}{\pi}\tfrac{\gamma}{x^2 + \gamma^2}$. Mean undefined, infinite variance.</p>
+  <div class="math-block">$$h(X) \;=\; \log(4\pi\gamma).$$</div>
+  <p><strong>Exercise.</strong> Verify by computing $\mathbb{E}[\log(x^2 + \gamma^2)] = 2\log(2\gamma)$ via complex analysis (or by recognizing the integral $\int \log(1+u^2)/(1+u^2)\,du = 2\pi\log 2$).</p>
+  <p>Cauchy is the maximum-entropy distribution on $\mathbb{R}$ subject to a constraint of the form $\mathbb{E}[\log(1+(X/\gamma)^2)]\le c$ &mdash; an unusual constraint, but worth knowing.</p>
+</div>
+
+<div class="slide">
+  <h2>Multivariate Gaussian</h2><div class="divider"></div>
+  <p>$\mathbf{X}\sim\mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ on $\mathbb{R}^d$.</p>
+  <div class="math-block">$$h(\mathbf{X}) \;=\; \tfrac{1}{2}\log\bigl((2\pi e)^d \det\boldsymbol{\Sigma}\bigr).$$</div>
+  <p>Special cases:</p>
+  <ul>
+    <li>$\boldsymbol{\Sigma} = \sigma^2 I$: $h = \tfrac{d}{2}\log(2\pi e \sigma^2)$.</li>
+    <li>$\boldsymbol{\Sigma}$ diagonal: $h = \sum_i \tfrac{1}{2}\log(2\pi e \sigma_i^2) = \sum_i h(X_i)$.</li>
+  </ul>
+  <p>$\det\boldsymbol{\Sigma}$ encodes the volume of the concentration ellipsoid.</p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Properties</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Scaling, translation, the negativity issue</p>
+</div>
+
+<div class="slide">
+  <h2>Translation Invariance</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma.</h3>
+    <p>For any constant $c$,</p>
+    <div class="math-block">$$h(X + c) \;=\; h(X).$$</div>
+  </div>
+  <p>Density $f_{X+c}(y) = f_X(y - c)$. Substitute $y\to y - c$ in the integral &mdash; Jacobian is $1$, density values are the same. $\square$</p>
+  <p>Same as discrete: relabeling does not change uncertainty.</p>
+</div>
+
+<div class="slide">
+  <h2>Scaling &mdash; The Crucial Difference</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma.</h3>
+    <p>For nonzero $a\in\mathbb{R}$,</p>
+    <div class="math-block">$$h(aX) \;=\; h(X) + \log|a|.$$</div>
+  </div>
+  <p><strong>Proof.</strong> If $Y = aX$, the density is $f_Y(y) = f_X(y/a)/|a|$. Then</p>
+  <div class="math-block">$$h(Y) \;=\; -\int f_Y(y)\log f_Y(y)\,dy \;=\; h(X) + \log|a|. \qquad\square$$</div>
+  <p>Discrete entropy is unchanged by a relabeling like $aX$ &mdash; differential entropy is not.</p>
+</div>
+
+<div class="slide">
+  <h2>Linear Transformation in $\mathbb{R}^d$</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma.</h3>
+    <p>For invertible $A\in\mathbb{R}^{d\times d}$ and $\mathbf{X}\in\mathbb{R}^d$,</p>
+    <div class="math-block">$$h(A\mathbf{X}) \;=\; h(\mathbf{X}) + \log|\det A|.$$</div>
+  </div>
+  <p>Linear map stretches volume by $|\det A|$ &middot; differential entropy gains $\log$ of that factor.</p>
+  <p>Consequence: $h$ is <strong>not</strong> invariant under $L^2$-isometries with $|\det A|\ne 1$ &mdash; e.g. dilation. Invariant under <em>orthogonal</em> transforms ($|\det| = 1$).</p>
+</div>
+
+<div class="slide">
+  <h2>Differential Entropy Can Be Negative</h2><div class="divider"></div>
+  <p>$X\sim\mathrm{Unif}[0, 1/2]$:</p>
+  <div class="math-block">$$h(X) \;=\; \log(1/2) \;=\; -1 \text{ bit}.$$</div>
+  <p>And as $b - a \to 0$ for $\mathrm{Unif}[a, b]$: $h \to -\infty$.</p>
+  <div class="highlight">Negative $h$ means the density concentrates: per the bridge, the discretization $H(X^\Delta) = h(X) + \log(1/\Delta)$ is still positive (large $1/\Delta$ wins).</div>
+</div>
+
+<div class="slide">
+  <h2>So What Quantities <em>Are</em> Meaningful?</h2><div class="divider"></div>
+  <p>Even though $h(X)$ alone is base/scale-dependent, the following are <strong>invariant</strong> and <strong>operational</strong>:</p>
+  <ul>
+    <li>$D(f \| g) \;=\; \int f\log(f/g)$ &middot; KL divergence.</li>
+    <li>$I(X; Y) \;=\; D(f_{X,Y} \| f_X f_Y)$ &middot; mutual information.</li>
+    <li>$h(X) - h(X\mid Y) \;=\; I(X;Y)$ &middot; reduction.</li>
+  </ul>
+  <p>All three are non-negative, scaling-invariant (Lecture 3), and reduce to the discrete versions in the bin-width limit.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Joint and Conditional</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Chain rule, KL, all the same identities</p>
+</div>
+
+<div class="slide">
+  <h2>Joint Differential Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For $(X, Y)$ with joint density $f_{X,Y}$,</p>
+    <div class="math-block">$$h(X, Y) \;=\; -\iint f_{X,Y}(x,y)\,\log f_{X,Y}(x,y)\,dx\,dy.$$</div>
+  </div>
+  <p>Just $h$ of the random vector $(X,Y)$. Same definition extends to any dimension.</p>
+</div>
+
+<div class="slide">
+  <h2>Conditional Differential Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <div class="math-block">$$h(X\mid Y) \;=\; -\iint f_{X,Y}(x,y)\,\log f_{X\mid Y}(x\mid y)\,dx\,dy.$$</div>
+    <p>Equivalently, $h(X\mid Y) = \mathbb{E}_Y[h(X\mid Y = y)]$ where</p>
+    <div class="math-block">$$h(X\mid Y=y) \;=\; -\int f_{X\mid Y}(x\mid y)\,\log f_{X\mid Y}(x\mid y)\,dx.$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Chain Rule</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <div class="math-block">$$h(X, Y) \;=\; h(Y) + h(X\mid Y) \;=\; h(X) + h(Y\mid X).$$</div>
+  </div>
+  <p>Proof identical to the discrete case: substitute $f_{X,Y} = f_Y \cdot f_{X\mid Y}$ in $\log f_{X,Y} = \log f_Y + \log f_{X\mid Y}$ and integrate. $\square$</p>
+  <p>Multivariable chain rule: $h(X^n) = \sum_i h(X_i\mid X_1, \dots, X_{i-1})$.</p>
+</div>
+
+<div class="slide">
+  <h2>KL Divergence (Continuous)</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For densities $f, g$ on $\mathbb{R}^d$ with $g(x) > 0$ wherever $f(x) > 0$,</p>
+    <div class="math-block">$$D(f\|g) \;=\; \int f(x)\log\frac{f(x)}{g(x)}\,dx \;=\; \mathbb{E}_f\!\left[\log\frac{f(X)}{g(X)}\right].$$</div>
+  </div>
+  <p>Same form as the discrete case. Gibbs inequality, log-sum, joint convexity all transfer (proof via Jensen, identical).</p>
+  <div class="math-block">$$D(f\|g) \;\ge\; 0 \text{ with equality iff } f = g \text{ a.e.}$$</div>
+</div>
+
+<div class="slide">
+  <h2>Why KL Is Scale-Invariant</h2><div class="divider"></div>
+  <p>Apply the same change of variables $y = ax$ to both $f$ and $g$:</p>
+  <div class="math-block">$$\begin{aligned}
+    D(f\,\|\,g) &= \int f(x)\log\frac{f(x)}{g(x)}\,dx \\
+                &= \int \frac{f(y/a)}{|a|}\log\frac{f(y/a)/|a|}{g(y/a)/|a|}\,dy \\
+                &= D(\tilde f \,\|\, \tilde g) \quad \text{where } \tilde f(y) = f(y/a)/|a|.
+  \end{aligned}$$</div>
+  <p>The $|a|$ Jacobians cancel inside the log. <strong>KL has no $\log|a|$ shift.</strong></p>
+</div>
+
+<div class="slide">
+  <h2>Why $h(X\mid Y) \le h(X)$ Still Holds</h2><div class="divider"></div>
+  <p>Same as discrete:</p>
+  <div class="math-block">$$h(X) - h(X\mid Y) \;=\; D(f_{X,Y}\,\|\,f_X f_Y) \;\ge\; 0.$$</div>
+  <p>Equality iff $X\perp Y$.</p>
+  <p><strong>Caveat:</strong> $h(X\mid Y = y)$ for a particular $y$ can exceed $h(X)$ &mdash; only the average is monotone. Identical to the discrete situation.</p>
+</div>
+
+<div class="slide">
+  <h2>Mutual Information &mdash; Definition</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <div class="math-block">$$I(X;Y) \;=\; D(f_{X,Y}\,\|\,f_X f_Y) \;=\; h(X) - h(X\mid Y) \;=\; h(Y) - h(Y\mid X).$$</div>
+  </div>
+  <p>Same identities as discrete &middot; same Venn picture.</p>
+  <p><strong>$I$ is the right object</strong>: not affected by scaling, not affected by binning, not affected by relabeling. Negative $h$ does not break it.</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Invariance of MI Under Scaling</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>For nonzero $a$,</p>
+    <div class="math-block">$$I(aX; Y) \;=\; I(X; Y).$$</div>
+  </div>
+  <p><strong>Proof.</strong></p>
+  <div class="math-block">$$\begin{aligned}
+    I(aX; Y) &= h(aX) - h(aX\mid Y) \\
+             &= \bigl(h(X) + \log|a|\bigr) - \bigl(h(X\mid Y) + \log|a|\bigr) \\
+             &= I(X; Y). \qquad\square
+  \end{aligned}$$</div>
+  <p>Both terms shift by $\log|a|$ and cancel. MI sees only relative structure.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Independent Gaussians</h2><div class="divider"></div>
+  <p>$X\sim\mathcal{N}(0, \sigma_X^2)$, $Y\sim\mathcal{N}(0, \sigma_Y^2)$, independent.</p>
+  <ul>
+    <li>$h(X, Y) = \tfrac{1}{2}\log(2\pi e\sigma_X^2) + \tfrac{1}{2}\log(2\pi e\sigma_Y^2)$.</li>
+    <li>$h(X) + h(Y) = $ same value &mdash; independence is additive.</li>
+    <li>$I(X; Y) = h(X) + h(Y) - h(X, Y) = 0$. $\;\checkmark$</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Correlated Gaussians</h2><div class="divider"></div>
+  <p>$(X, Y)\sim\mathcal{N}(\mathbf{0}, \boldsymbol{\Sigma})$ with $\boldsymbol{\Sigma} = \begin{pmatrix} 1 & \rho \\ \rho & 1 \end{pmatrix}$, $|\rho| < 1$.</p>
+  <p>$\det\boldsymbol{\Sigma} = 1 - \rho^2$, so $h(X, Y) = \tfrac{1}{2}\log\bigl((2\pi e)^2(1-\rho^2)\bigr)$.</p>
+  <p>$h(X) = h(Y) = \tfrac{1}{2}\log(2\pi e)$. Hence:</p>
+  <div class="math-block">$$I(X; Y) \;=\; h(X) + h(Y) - h(X, Y) \;=\; -\tfrac{1}{2}\log(1 - \rho^2).$$</div>
+  <p>$\rho = 0$: $I = 0$. &middot; $\rho \to 1$: $I \to \infty$ (perfect determinism).</p>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Definition:</strong> $h(X) = -\int f\log f$ &middot; can be negative.</li>
+    <li><strong>Bridge:</strong> $H(X^\Delta) = h(X) + \log(1/\Delta) + o(1)$.</li>
+    <li><strong>Scaling:</strong> $h(aX) = h(X) + \log|a|$ &middot; <em>not</em> invariant.</li>
+    <li><strong>Linear map:</strong> $h(A\mathbf{X}) = h(\mathbf{X}) + \log|\det A|$.</li>
+    <li><strong>Chain rule, KL, MI:</strong> identical form to discrete &middot; KL and MI <em>are</em> invariant.</li>
+    <li><strong>Use $D$ and $I$, not $h$ alone.</strong></li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Next Lecture</h2><div class="divider"></div>
+  <ul>
+    <li>Maximum-entropy distributions &middot; Gaussian under variance.</li>
+    <li>Lagrangian view of "max entropy s.t. moment constraints".</li>
+    <li>Multivariate Gaussian, entropy power inequality.</li>
+  </ul>
+  <div class="highlight">Theme: Gaussians maximize entropy for fixed second moment &middot; this drives nearly every continuous-domain inequality.</div>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

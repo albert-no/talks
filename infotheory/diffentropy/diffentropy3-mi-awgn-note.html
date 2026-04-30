@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diff Entropy 3 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Differential Entropy 3 &mdash; Companion Notes</h1>
+
+<article>
+<h2>MI &mdash; Why It "Just Works" Continuously</h2>
+<p>For any joint distribution $P_{XY}$ (continuous, discrete, or mixed), the MI</p>
+<div class="math-block">$$I(X;Y) = D(P_{XY}\|P_X\otimes P_Y)$$</div>
+<p>is well-defined whenever $P_{XY}\ll P_X\otimes P_Y$. KL is invariant under measure-preserving maps and absolutely-continuous reparameterizations.</p>
+<p>Operationally: given $n$ samples from $P_{XY}$ versus $P_X\otimes P_Y$, the optimal hypothesis-test exponent is exactly $I(X;Y)$ (Stein's lemma).</p>
+</article>
+
+<article>
+<h2>AWGN Capacity &mdash; Full Proof Outline</h2>
+<p>The single-letter calculation gives $\max_{p_X} I(X; X+Z) = \tfrac{1}{2}\log(1 + P/\sigma^2)$ when $\mathbb{E}[X^2]\le P$. To extend to a coding theorem requires:</p>
+<ol>
+  <li><strong>Random coding.</strong> Generate a codebook of $2^{nR}$ codewords i.i.d. from $\mathcal{N}(0, P)^n$. Decode by joint typicality.</li>
+  <li><strong>Power constraint handling.</strong> Truncate codewords with norm $> n(P+\delta)$; loss is $o(1)$.</li>
+  <li><strong>Achievability:</strong> for $R < C$, error probability $\to 0$ as $n\to\infty$.</li>
+  <li><strong>Converse:</strong> Fano + per-letter MI bound $I(X_i; Y_i)\le \tfrac{1}{2}\log(1 + P_i/\sigma^2)$, then concavity of $\log$.</li>
+</ol>
+<p>Detailed proof in Cover &amp; Thomas, Chapter 9.</p>
+</article>
+
+<article>
+<h2>Bandwidth-Limited Capacity &mdash; Continuous-Time Form</h2>
+<p>For a channel with bandwidth $W$ Hz, the Nyquist sampling theorem gives $2W$ orthogonal samples per second. Each sample is an AWGN channel with power $P/(2W)$ and noise variance $N_0/2 \cdot (2W) = N_0 W$ (after scaling).</p>
+<p>Capacity per sample: $\tfrac{1}{2}\log(1 + (P/2W)/((N_0/2))) = \tfrac{1}{2}\log(1 + P/(N_0 W))$. Times $2W$ samples per second:</p>
+<div class="math-block">$$C = W\log\!\left(1 + \frac{P}{N_0 W}\right) \text{ bits/sec}.$$</div>
+<p>$W\to\infty$ limit: $\lim W\log(1 + P/(N_0 W)) = P/N_0 \cdot \log e \approx 1.443\,P/N_0$ bits/sec. This is the Shannon limit on energy efficiency.</p>
+</article>
+
+<article>
+<h2>Water-Filling &mdash; KKT Derivation</h2>
+<p>Lagrangian for parallel-AWGN capacity:</p>
+<div class="math-block">$$\mathcal{L}(\{P_i\}, \nu) = \sum_i \tfrac{1}{2}\log\!\left(1 + \tfrac{P_i}{\sigma_i^2}\right) - \nu\!\left(\sum_i P_i - P\right).$$</div>
+<p>Stationarity: $\frac{1}{2(P_i + \sigma_i^2)\ln 2} = \nu \Rightarrow P_i = (1/(2\nu\ln 2)) - \sigma_i^2$.</p>
+<p>With non-negativity constraint $P_i \ge 0$, solution is $P_i = (\nu' - \sigma_i^2)^+$ where $\nu' = 1/(2\nu\ln 2)$. Sum-power constraint determines $\nu'$.</p>
+</article>
+
+<article>
+<h2>I-MMSE — Sketch of Proof</h2>
+<p>Differentiate $I(X; Y_t) = h(Y_t) - h(Y_t\mid X) = h(Y_t) - h(Z)$ in $t$ where $Y_t = \sqrt{t}X + Z$, $Z\sim\mathcal{N}(0,1)$. By de Bruijn,</p>
+<div class="math-block">$$\frac{d}{dt}h(Y_t) = \tfrac{1}{2}J(Y_t),$$</div>
+<p>where $J$ is Fisher information. By the Cramér&ndash;Rao identity (or direct computation), $J(Y_t) = 1 - t\,\mathrm{mmse}(t)$ when $Z\sim\mathcal{N}(0,1)$. After change of variables to $\mathrm{snr} = t$ (well, $t = \mathrm{snr}$ in this scaling), one gets</p>
+<div class="math-block">$$\frac{dI}{d\,\mathrm{snr}} = \tfrac{1}{2}\,\mathrm{mmse}(\mathrm{snr}).$$</div>
+<p>Detailed derivation in Guo, Shamai, Verdú (2005).</p>
+</article>
+
+<article>
+<h2>de Bruijn — Heat-Equation View</h2>
+<p>$Y_t = X + \sqrt{t}Z$ has density $f_{Y_t}(y) = (f_X * \varphi_t)(y)$ where $\varphi_t$ is the Gaussian pdf with variance $t$. Then $f_{Y_t}$ satisfies the heat equation</p>
+<div class="math-block">$$\partial_t f_{Y_t}(y) = \tfrac{1}{2}\partial_y^2 f_{Y_t}(y).$$</div>
+<p>Differentiating $h(Y_t) = -\int f_{Y_t}\log f_{Y_t}$ in $t$ and integrating by parts:</p>
+<div class="math-block">$$\partial_t h(Y_t) = -\int (\partial_t f_{Y_t})(\log f_{Y_t} + 1) = \tfrac{1}{2}\int \frac{(\partial_y f_{Y_t})^2}{f_{Y_t}} = \tfrac{1}{2}J(Y_t).$$</div>
+<p>This is the de Bruijn identity in its cleanest form.</p>
+</article>
+
+<article>
+<h2>Diffusion Models — Information-Theoretic Loss</h2>
+<p>For a diffusion model with forward $X^{(t)} = \sqrt{\bar\alpha_t}X^{(0)} + \sqrt{1-\bar\alpha_t}Z$, the ELBO can be expressed as</p>
+<div class="math-block">$$-\log p(X^{(0)}) \le \sum_t \tfrac{1}{2}\,\mathrm{mmse}(\mathrm{snr}_t)\,d\mathrm{snr}_t + \text{const}$$</div>
+<p>(Kingma et al., 2021). The integrand is exactly the I-MMSE derivative; the ELBO accumulates the loss in mutual information across noise levels.</p>
+<p>This connects diffusion training to Bayesian estimation under additive-Gaussian noise — see <code>privacy/diffusion/diffusion3-sde-score.html</code> and <code>infotheory/diffusion/diff3-parameterizations.html</code>.</p>
+</article>
+
+</body>
+</html>

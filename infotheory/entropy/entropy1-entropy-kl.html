@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entropy 1 — Entropy and KL Divergence</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.e1-table { margin: 8px auto; border-collapse: collapse; }
+.e1-table th, .e1-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.45rem; }
+.e1-table th { background: var(--light); font-weight: 700; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Entropy &middot; Lecture 1 of 2</div>
+  <h1>Entropy and<br>KL Divergence</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Self-information, entropy, divergence, basic inequalities</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Entropy</div>
+      <div class="toc-sub">Self-information, definition, examples</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Properties</div>
+      <div class="toc-sub">Bounds, concavity, maximum at uniform</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Binary entropy</div>
+      <div class="toc-sub">$H_b(p)$, computations, plot</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">KL divergence</div>
+      <div class="toc-sub">Definition, Gibbs, log-sum, examples</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Entropy</h1>
+  <div class="divider"></div>
+  <p class="subtitle">From surprise to expected surprise</p>
+</div>
+
+<div class="slide">
+  <h2>What Should "Information" Mean?</h2><div class="divider"></div>
+  <p>Three intuitive desiderata for an information measure of an event $E$ with probability $p$:</p>
+  <ul>
+    <li><strong>Rare events carry more information</strong> &middot; smaller $p$ $\Rightarrow$ more bits.</li>
+    <li><strong>Certain events carry zero</strong> &middot; $p=1 \Rightarrow$ $0$ bits.</li>
+    <li><strong>Independent events add</strong> &middot; if $E_1\perp E_2$ then $i(E_1\cap E_2) = i(E_1)+i(E_2)$.</li>
+  </ul>
+  <div class="highlight">Only $i(E) = -\log P(E)$ (up to a base) satisfies all three.</div>
+</div>
+
+<div class="slide">
+  <h2>Self-Information</h2><div class="divider"></div>
+  <p>For an event $\{X = x\}$ with probability $p_X(x)$, define</p>
+  <div class="math-block">$$i_X(x) \;=\; -\log p_X(x) \;=\; \log\frac{1}{p_X(x)}.$$</div>
+  <p>Units depend on the base:</p>
+  <ul>
+    <li>$\log_2$ &middot; bits</li>
+    <li>$\log_e = \ln$ &middot; nats &nbsp;($1$ nat $= 1/\ln 2 \approx 1.443$ bits)</li>
+    <li>$\log_{10}$ &middot; dits</li>
+  </ul>
+  <p>Throughout, $\log = \log_2$ unless stated.</p>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition (Shannon, 1948).</h3>
+    <p>Let $X$ take values in a finite or countable alphabet $\mathcal{X}$ with pmf $p_X$. The <strong>entropy</strong> of $X$ is the expected self-information:</p>
+    <div class="math-block">$$H(X) \;=\; \mathbb{E}\bigl[-\log p_X(X)\bigr] \;=\; \sum_{x\in\mathcal{X}} p_X(x)\,\log\frac{1}{p_X(x)}.$$</div>
+    <p>By convention $0\,\log(1/0) = 0$ (continuity: $\lim_{p\to 0^+} p\log(1/p) = 0$).</p>
+  </div>
+  <div class="cite">Shannon, "A Mathematical Theory of Communication", Bell System Technical Journal 1948.</div>
+</div>
+
+<div class="slide">
+  <h2>Reading the Definition</h2><div class="divider"></div>
+  <ul>
+    <li><strong>$H(X)$ depends only on the pmf</strong> &middot; not the labels of $\mathcal{X}$.</li>
+    <li><strong>$H(X) = \mathbb{E}[i_X(X)]$</strong> &middot; average bits of surprise per draw.</li>
+    <li><strong>Operational meaning (preview):</strong> the minimum bits per symbol needed to losslessly compress an i.i.d. source $X_1, X_2, \dots$ approaches $H(X)$.</li>
+  </ul>
+  <div class="highlight">Entropy is the unique measure of average surprise consistent with the three desiderata.</div>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Bernoulli($p$)</h2><div class="divider"></div>
+  <p>$X \in \{0,1\}$ with $\Pr(X=1) = p$, $\Pr(X=0) = 1-p$.</p>
+  <div class="math-block">$$H(X) \;=\; p\log\frac{1}{p} + (1-p)\log\frac{1}{1-p} \;\eqqcolon\; H_b(p).$$</div>
+  <table class="e1-table">
+    <tr><th>$p$</th><td>$0$</td><td>$0.1$</td><td>$0.25$</td><td>$0.5$</td><td>$0.9$</td><td>$1$</td></tr>
+    <tr><th>$H_b(p)$</th><td>$0$</td><td>$0.469$</td><td>$0.811$</td><td>$1$</td><td>$0.469$</td><td>$0$</td></tr>
+  </table>
+  <p>Symmetric: $H_b(p) = H_b(1-p)$. Maximum $1$ bit at $p=1/2$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Uniform on $n$ Symbols</h2><div class="divider"></div>
+  <p>$X \sim \mathrm{Unif}(\{1,\dots,n\})$, so $p_X(x) = 1/n$ for all $x$.</p>
+  <div class="math-block">$$H(X) \;=\; \sum_{x=1}^n \frac{1}{n}\log n \;=\; \log n.$$</div>
+  <ul>
+    <li>$n=2$ &middot; $H = 1$ bit (fair coin)</li>
+    <li>$n=6$ &middot; $H = \log_2 6 \approx 2.585$ bits (fair die)</li>
+    <li>$n=52$ &middot; $H = \log_2 52 \approx 5.700$ bits (random card)</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Geometric($p$)</h2><div class="divider"></div>
+  <p>$X \in \{1, 2, 3, \dots\}$ with $\Pr(X=k) = (1-p)^{k-1} p$. Mean: $\mathbb{E}[X] = 1/p$.</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X) &= -\sum_{k=1}^\infty (1-p)^{k-1}p\,\bigl[\log p + (k-1)\log(1-p)\bigr] \\
+         &= -\log p - \log(1-p)\,\frac{1-p}{p} \;=\; \frac{H_b(p)}{p}.
+  \end{aligned}$$</div>
+  <p>Used the identity $\sum_{k\ge 1} (k-1)(1-p)^{k-1}p = (1-p)/p$.</p>
+  <p>$p = 1/2$ &middot; $H = 2$ bits. &nbsp;$p \to 0$ &middot; $H \to \infty$ (heavy tail).</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Three-Symbol Source</h2><div class="divider"></div>
+  <p>$\mathcal{X} = \{a, b, c\}$ with $p_X(a) = 1/2$, $p_X(b) = 1/4$, $p_X(c) = 1/4$.</p>
+  <div class="math-block">$$H(X) \;=\; \tfrac{1}{2}\cdot 1 + \tfrac{1}{4}\cdot 2 + \tfrac{1}{4}\cdot 2 \;=\; 1.5 \text{ bits}.$$</div>
+  <p>Compare with $\log_2 3 \approx 1.585$ bits (uniform). Non-uniform $\Rightarrow$ less surprise on average.</p>
+  <p><strong>Exercise.</strong> Verify that the four-symbol pmf $(1/2, 1/4, 1/8, 1/8)$ has $H = 1.75$ bits.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Dyadic vs Nearby</h2><div class="divider"></div>
+  <p>Tiny perturbations of dyadic probabilities barely change $H$:</p>
+  <table class="e1-table">
+    <tr><th>$p_X$</th><th>$H(X)$</th></tr>
+    <tr><td>$(1/2, 1/4, 1/4)$</td><td>$1.500$</td></tr>
+    <tr><td>$(0.50, 0.30, 0.20)$</td><td>$1.485$</td></tr>
+    <tr><td>$(0.40, 0.35, 0.25)$</td><td>$1.559$</td></tr>
+    <tr><td>$(1/3, 1/3, 1/3)$</td><td>$1.585$</td></tr>
+  </table>
+  <p>Entropy is <em>continuous</em> in the pmf &mdash; a small change in $p_X$ gives a small change in $H$.</p>
+</div>
+
+<div class="slide">
+  <h2>Why $\log$? &mdash; Additivity for Independence</h2><div class="divider"></div>
+  <p>If $X \perp Y$, then $p_{X,Y}(x,y) = p_X(x)\,p_Y(y)$, so</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X,Y) &= \mathbb{E}\bigl[-\log p_X(X) p_Y(Y)\bigr] \\
+           &= \mathbb{E}[-\log p_X(X)] + \mathbb{E}[-\log p_Y(Y)] \;=\; H(X) + H(Y).
+  \end{aligned}$$</div>
+  <div class="highlight"><strong>Independent draws add their information.</strong> The logarithm is the only measurable function turning products into sums.</div>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Basic Properties</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Bounds, concavity, maximum at uniform</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Non-Negativity</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>For any pmf $p_X$ on a discrete alphabet,</p>
+    <div class="math-block">$$0 \;\le\; H(X) \;\le\; \log|\mathcal{X}|.$$</div>
+    <p>The lower bound is attained iff $X$ is deterministic. The upper bound is attained iff $X$ is uniform on $\mathcal{X}$.</p>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; $H(X) \ge 0$</h2><div class="divider"></div>
+  <p>Each $p_X(x) \in [0,1]$, hence $-\log p_X(x) \ge 0$. The sum of non-negative numbers is non-negative:</p>
+  <div class="math-block">$$H(X) \;=\; \sum_{x} p_X(x)\,\log\frac{1}{p_X(x)} \;\ge\; 0.$$</div>
+  <p>Equality requires each term to vanish, i.e. $p_X(x)\log(1/p_X(x)) = 0$ for all $x$.</p>
+  <p>This forces $p_X(x) \in \{0,1\}$ &mdash; one symbol has all the mass. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Recall &mdash; Jensen's Inequality</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma (Jensen).</h3>
+    <p>If $\varphi: I \to \mathbb{R}$ is convex on the interval $I$ and $X$ is a random variable on $I$, then</p>
+    <div class="math-block">$$\varphi\bigl(\mathbb{E}[X]\bigr) \;\le\; \mathbb{E}[\varphi(X)].$$</div>
+    <p>Reverse inequality if $\varphi$ is concave. Equality iff $X$ is constant a.s. or $\varphi$ is affine on the support.</p>
+  </div>
+  <p>$\log$ is concave on $(0,\infty)$ &middot; $-\log$ is convex.</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; $H(X) \le \log|\mathcal{X}|$</h2><div class="divider"></div>
+  <p>Apply Jensen's inequality with the concave function $\log(\cdot)$:</p>
+  <div class="math-block">$$\begin{aligned}
+    H(X) &= \sum_{x} p_X(x)\,\log\frac{1}{p_X(x)} \\
+         &\;\stackrel{\text{Jensen}}{\le}\; \log\!\left(\sum_x p_X(x) \cdot \frac{1}{p_X(x)}\right) \\
+         &= \log|\mathcal{X}|.
+  \end{aligned}$$</div>
+  <p>Equality iff $1/p_X(x)$ is constant on the support &mdash; i.e. $p_X$ is uniform. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Concavity of Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>$H(p)$ is a concave function of the pmf $p$. For pmfs $p, q$ on $\mathcal{X}$ and $\lambda \in [0,1]$,</p>
+    <div class="math-block">$$H\bigl(\lambda p + (1-\lambda) q\bigr) \;\ge\; \lambda H(p) + (1-\lambda) H(q).$$</div>
+  </div>
+  <p>Mixing two distributions <strong>increases</strong> uncertainty.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Concavity</h2><div class="divider"></div>
+  <p>Let $T \sim \mathrm{Bern}(\lambda)$, and define $X \mid T=1 \sim p$, $X \mid T=0 \sim q$. The marginal pmf of $X$ is $\lambda p + (1-\lambda) q$.</p>
+  <p>From "conditioning reduces entropy" (Lecture 2), for any pair $(X,T)$:</p>
+  <div class="math-block">$$H(X) \;\ge\; H(X\mid T) \;=\; \lambda H(X\mid T=1) + (1-\lambda) H(X\mid T=0).$$</div>
+  <p>Substitute $H(X\mid T=1) = H(p)$, $H(X\mid T=0) = H(q)$. $\square$</p>
+  <p><em>(A direct second-derivative argument also works &mdash; see notes.)</em></p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Mixing Two Coins</h2><div class="divider"></div>
+  <p>$p = \mathrm{Bern}(0.1)$ &middot; $q = \mathrm{Bern}(0.9)$. Mix $\lambda = 1/2$:</p>
+  <div class="math-block">$$\tfrac{1}{2}p + \tfrac{1}{2} q \;=\; \mathrm{Bern}(0.5).$$</div>
+  <ul>
+    <li>$H(p) = H_b(0.1) \approx 0.469$ bits</li>
+    <li>$H(q) = H_b(0.9) \approx 0.469$ bits</li>
+    <li>$H(\tfrac{1}{2}p+\tfrac{1}{2}q) = H_b(0.5) = 1$ bit</li>
+  </ul>
+  <p>$1 \;\ge\; \tfrac{1}{2}(0.469) + \tfrac{1}{2}(0.469) = 0.469$. $\;\checkmark$</p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Binary Entropy</h1>
+  <div class="divider"></div>
+  <p class="subtitle">$H_b(p)$ as the building block</p>
+</div>
+
+<div class="slide">
+  <h2>Binary Entropy Function</h2><div class="divider"></div>
+  <div class="math-block">$$H_b(p) \;=\; -p\log p - (1-p)\log(1-p), \qquad p \in [0,1].$$</div>
+  <div class="cols">
+    <div>
+      <ul>
+        <li>$H_b(0) = H_b(1) = 0$</li>
+        <li>Symmetric: $H_b(p) = H_b(1-p)$</li>
+        <li>Concave on $[0,1]$</li>
+        <li>Max at $p=1/2$ &middot; $H_b(1/2) = 1$</li>
+      </ul>
+    </div>
+    <div>
+      <svg viewBox="0 0 280 200" width="100%" style="background:var(--light); border-radius:8px;">
+        <line x1="30" y1="170" x2="260" y2="170" stroke="#888"/>
+        <line x1="30" y1="170" x2="30" y2="20" stroke="#888"/>
+        <text x="248" y="188" font-size="13" fill="#1a1a1a">p</text>
+        <text x="14" y="26" font-size="13" fill="#1a1a1a">$H_b$</text>
+        <text x="142" y="188" font-size="11" fill="#888">0.5</text>
+        <text x="252" y="188" font-size="11" fill="#888">1</text>
+        <text x="20" y="34" font-size="11" fill="#888">1</text>
+        <line x1="30" y1="30" x2="34" y2="30" stroke="#888"/>
+        <line x1="145" y1="170" x2="145" y2="174" stroke="#888"/>
+        <path d="M 30 170 Q 87 30 145 30 Q 203 30 260 170" fill="none" stroke="#003876" stroke-width="3"/>
+        <circle cx="145" cy="30" r="4" fill="#003876"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Concavity from $H_b''(p)$</h2><div class="divider"></div>
+  <p>Differentiate $H_b(p) = -p\log p - (1-p)\log(1-p)$ twice:</p>
+  <div class="math-block">$$H_b'(p) \;=\; \log\frac{1-p}{p}, \qquad H_b''(p) \;=\; -\frac{1}{p(1-p)\ln 2}.$$</div>
+  <p>$H_b''(p) &lt; 0$ on $(0,1)$ &middot; $H_b$ strictly concave.</p>
+  <p>$H_b'(1/2) = 0$ confirms the maximum at $p = 1/2$.</p>
+</div>
+
+<div class="slide">
+  <h2>Worked Values</h2><div class="divider"></div>
+  <p>By hand for selected $p$:</p>
+  <div class="math-block">$$\begin{aligned}
+    H_b(1/4) &= \tfrac{1}{4}\log 4 + \tfrac{3}{4}\log\tfrac{4}{3} \;=\; \tfrac{1}{2} + \tfrac{3}{4}(2 - \log 3) \\
+             &= 2 - \tfrac{3}{4}\log 3 \;\approx\; 0.811.
+  \end{aligned}$$</div>
+  <p>Useful approximations for small $p$:</p>
+  <div class="math-block">$$H_b(p) \;\approx\; p\log\frac{e}{p} \quad (p\to 0).$$</div>
+  <p>$H_b(0.01)\approx 0.0808$ &middot; $H_b(0.001) \approx 0.01141$.</p>
+</div>
+
+<div class="slide">
+  <h2>Aside &mdash; Binary $\to$ General</h2><div class="divider"></div>
+  <p>Any pmf $p$ on $\{1,\dots,n\}$ can be built by repeated "split" operations:</p>
+  <div class="math-block">$$H(p_1,\dots,p_n) \;=\; H_b(p_1) + (1-p_1)\,H\!\left(\frac{p_2}{1-p_1},\dots,\frac{p_n}{1-p_1}\right).$$</div>
+  <p>Recursive identity &middot; $H_b$ is the atom from which entropy is built.</p>
+  <p>Verify: $H(1/2, 1/4, 1/4) = H_b(1/2) + \tfrac{1}{2}\,H_b(1/2) = 1 + 1/2 = 1.5$. $\;\checkmark$</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>KL Divergence</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Distance between distributions</p>
+</div>
+
+<div class="slide">
+  <h2>Motivation</h2><div class="divider"></div>
+  <p>How different are two distributions $p$ and $q$ on the same alphabet?</p>
+  <ul>
+    <li>$p$ &middot; the <strong>true</strong> source</li>
+    <li>$q$ &middot; a <strong>model</strong> we use to encode</li>
+  </ul>
+  <p>Want a measure that:</p>
+  <ul>
+    <li>Vanishes iff $p = q$</li>
+    <li>Is non-negative</li>
+    <li>Has an operational meaning &mdash; e.g. excess bits per symbol</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; KL Divergence</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For pmfs $p, q$ on the same alphabet $\mathcal{X}$, the <strong>Kullback&ndash;Leibler divergence</strong> of $p$ from $q$ is</p>
+    <div class="math-block">$$D(p\,\|\,q) \;=\; \sum_{x\in\mathcal{X}} p(x)\log\frac{p(x)}{q(x)} \;=\; \mathbb{E}_p\!\left[\log\frac{p(X)}{q(X)}\right].$$</div>
+    <p>Conventions: $0\log\tfrac{0}{q} = 0$, &nbsp;$p\log\tfrac{p}{0} = +\infty$ if $p>0$.</p>
+  </div>
+  <div class="cite">Kullback and Leibler, "On Information and Sufficiency", Ann. Math. Stat. 1951.</div>
+</div>
+
+<div class="slide">
+  <h2>Reading the Definition</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Asymmetric.</strong> &nbsp;$D(p\,\|\,q) \ne D(q\,\|\,p)$ in general &mdash; not a metric.</li>
+    <li><strong>Support condition.</strong> $D(p\,\|\,q) = \infty$ if $\exists\, x$ with $p(x) > 0$ but $q(x) = 0$.</li>
+    <li><strong>Reference role.</strong> $q$ is the "code" or "prior"; $p$ is the truth.</li>
+  </ul>
+  <p>Equivalent rewriting in terms of entropy and cross-entropy:</p>
+  <div class="math-block">$$D(p\,\|\,q) \;=\; \underbrace{\textstyle\sum p\log\tfrac{1}{q}}_{\text{cross-entropy } H(p,q)} \;-\; \underbrace{\textstyle\sum p\log\tfrac{1}{p}}_{H(p)}.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Gibbs' Inequality</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>For all pmfs $p, q$ on $\mathcal{X}$,</p>
+    <div class="math-block">$$D(p\,\|\,q) \;\ge\; 0,$$</div>
+    <p>with equality if and only if $p(x) = q(x)$ for all $x \in \mathcal{X}$.</p>
+  </div>
+  <p>Cornerstone result &mdash; almost every information inequality flows from this.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Gibbs via Jensen</h2><div class="divider"></div>
+  <p>$\log$ is concave, so $-\log$ is convex. Apply Jensen on the random variable $\frac{q(X)}{p(X)}$ under $p$:</p>
+  <div class="math-block">$$\begin{aligned}
+    -D(p\,\|\,q) &= \mathbb{E}_p\!\left[\log\frac{q(X)}{p(X)}\right] \\
+                 &\;\stackrel{\text{Jensen}}{\le}\; \log\!\left(\mathbb{E}_p\!\left[\frac{q(X)}{p(X)}\right]\right) \\
+                 &= \log\!\Bigl(\textstyle\sum_x q(x)\Bigr) \;=\; \log 1 \;=\; 0.
+  \end{aligned}$$</div>
+  <p>Equality iff $q/p$ is constant on the support of $p$ &middot; iff $p = q$. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Corollary &mdash; Maximum Entropy</h2><div class="divider"></div>
+  <p>Take $q = \mathrm{Unif}(\mathcal{X})$, so $q(x) = 1/|\mathcal{X}|$:</p>
+  <div class="math-block">$$\begin{aligned}
+    0 \;\le\; D(p\,\|\,q) &= \sum_x p(x)\log\frac{p(x)}{1/|\mathcal{X}|} \\
+                          &= \log|\mathcal{X}| - H(p).
+  \end{aligned}$$</div>
+  <p>Hence $H(p) \le \log|\mathcal{X}|$, with equality iff $p$ is uniform. <strong>Same theorem from a different angle.</strong></p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Two Bernoullis</h2><div class="divider"></div>
+  <p>$p = \mathrm{Bern}(1/2)$, &nbsp;$q = \mathrm{Bern}(1/4)$.</p>
+  <div class="math-block">$$\begin{aligned}
+    D(p\,\|\,q) &= \tfrac{1}{2}\log\tfrac{1/2}{1/4} + \tfrac{1}{2}\log\tfrac{1/2}{3/4} \\
+                &= \tfrac{1}{2}\log 2 + \tfrac{1}{2}\log\tfrac{2}{3} \;=\; 1 - \tfrac{1}{2}\log 3 \;\approx\; 0.208.
+  \end{aligned}$$</div>
+  <p>Reverse direction:</p>
+  <div class="math-block">$$D(q\,\|\,p) \;=\; \tfrac{1}{4}\log\tfrac{1}{2} + \tfrac{3}{4}\log\tfrac{3}{2} \;\approx\; 0.189.$$</div>
+  <p>Confirms $D(p\,\|\,q) \ne D(q\,\|\,p)$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Mismatch Cost in Coding</h2><div class="divider"></div>
+  <p>Encode source $X \sim p$ with codeword lengths $\ell(x) = \log\tfrac{1}{q(x)}$:</p>
+  <div class="math-block">$$\begin{aligned}
+    \mathbb{E}_p[\ell(X)] &= \sum_x p(x)\log\tfrac{1}{q(x)} \\
+                          &= \sum_x p(x)\log\tfrac{p(x)}{q(x)} + \sum_x p(x)\log\tfrac{1}{p(x)} \\
+                          &= D(p\,\|\,q) + H(p).
+  \end{aligned}$$</div>
+  <div class="highlight"><strong>Mismatch penalty:</strong> $D(p\,\|\,q)$ extra bits per symbol vs the optimal $H(p)$.</div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Log-Sum Inequality</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>For non-negative $a_1, \dots, a_n$ and positive $b_1, \dots, b_n$,</p>
+    <div class="math-block">$$\sum_{i=1}^n a_i \log\frac{a_i}{b_i} \;\ge\; \Bigl(\textstyle\sum_i a_i\Bigr) \log\frac{\sum_i a_i}{\sum_i b_i},$$</div>
+    <p>with equality iff $a_i / b_i$ is constant in $i$.</p>
+  </div>
+  <p>Generalization of Jensen for the function $f(t) = t\log t$.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Log-Sum</h2><div class="divider"></div>
+  <p>Set $A = \sum_i a_i$, $B = \sum_i b_i$, &nbsp;$\lambda_i = b_i / B$, &nbsp;$t_i = a_i / b_i$ (defined when $a_i > 0$).</p>
+  <p>Then $\sum_i \lambda_i = 1$, &nbsp;$\sum_i \lambda_i t_i = A/B$. Apply Jensen to the convex $f(t) = t\log t$:</p>
+  <div class="math-block">$$f\!\Bigl(\sum_i \lambda_i t_i\Bigr) \;\le\; \sum_i \lambda_i f(t_i).$$</div>
+  <p>Multiply both sides by $B$:</p>
+  <div class="math-block">$$A\log\tfrac{A}{B} \;\le\; \sum_i b_i \cdot \tfrac{a_i}{b_i} \log\tfrac{a_i}{b_i} \;=\; \sum_i a_i\log\tfrac{a_i}{b_i}. \qquad\square$$</div>
+</div>
+
+<div class="slide">
+  <h2>Corollary &mdash; Convexity of KL</h2><div class="divider"></div>
+  <p>Apply log-sum coordinate-wise to $a_i = \lambda p_1(i) + (1-\lambda) p_2(i)$ vs $b_i = \lambda q_1(i) + (1-\lambda) q_2(i)$:</p>
+  <div class="math-block">$$D\bigl(\lambda p_1 + (1-\lambda) p_2 \,\|\, \lambda q_1 + (1-\lambda) q_2\bigr) \;\le\; \lambda D(p_1\,\|\,q_1) + (1-\lambda) D(p_2\,\|\,q_2).$$</div>
+  <p><strong>$D(\cdot\,\|\,\cdot)$ is jointly convex in its two arguments.</strong></p>
+  <p>Used heavily in convex-optimization views of MLE and channel capacity.</p>
+</div>
+
+<div class="slide">
+  <h2>Pinsker's Inequality (statement)</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Pinsker).</h3>
+    <p>For any pmfs $p, q$ on $\mathcal{X}$,</p>
+    <div class="math-block">$$\| p - q\|_{\mathrm{TV}} \;=\; \tfrac{1}{2}\sum_x |p(x) - q(x)| \;\le\; \sqrt{\tfrac{1}{2}\,D(p\,\|\,q)\,\ln 2}.$$</div>
+  </div>
+  <p>Small KL $\Rightarrow$ small total-variation distance. The bound is tight (Bernoulli example saturates up to a factor).</p>
+  <p>Proof sketch in companion notes.</p>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <div class="math-block">$$\begin{aligned}
+    H(X) &\;\eqdef\; \mathbb{E}\bigl[-\log p_X(X)\bigr] \in [0, \log|\mathcal{X}|] \\
+    H_b(p) &\;=\; -p\log p - (1-p)\log(1-p) \\
+    D(p\,\|\,q) &\;\eqdef\; \mathbb{E}_p\bigl[\log\tfrac{p}{q}\bigr] \;\ge\; 0
+  \end{aligned}$$</div>
+  <ul>
+    <li>Entropy: expected surprise &middot; max at uniform &middot; concave</li>
+    <li>KL: divergence "from $q$ to $p$" &middot; mismatch penalty in coding</li>
+    <li>Gibbs &amp; log-sum: workhorses for every later inequality</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Next Lecture</h2><div class="divider"></div>
+  <p>Move from one variable to many:</p>
+  <ul>
+    <li>Joint entropy $H(X,Y)$ &middot; conditional $H(X\mid Y)$</li>
+    <li>Chain rules &middot; conditioning reduces entropy</li>
+    <li>Mutual information $I(X;Y)$ &middot; data processing</li>
+    <li>Fano's inequality &middot; lower bounds on error</li>
+  </ul>
+  <div class="highlight">All built on Gibbs.</div>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

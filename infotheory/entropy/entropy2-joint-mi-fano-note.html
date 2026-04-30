@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Entropy 2 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Entropy 2 &mdash; Companion Notes</h1>
+<p><em>Long-form derivations and asides for the deck.</em></p>
+
+<article>
+<h2>Joint Entropy &mdash; All Equivalent Formulas</h2>
+<p>Three forms of $H(X,Y)$:</p>
+<div class="math-block">$$\begin{aligned}
+H(X,Y) &= -\sum_{x,y} p_{X,Y}(x,y)\log p_{X,Y}(x,y) \\
+       &= H(X) + H(Y\mid X) \\
+       &= H(Y) + H(X\mid Y).
+\end{aligned}$$</div>
+<p>The bottom two are the chain rule. They are useful in opposite directions: when computing $H(X,Y)$ from a parametric model where $p_{Y\mid X}$ is simple (e.g. a noisy-channel model), use the second form; when one marginal is simple (e.g. a coin flip), use the third.</p>
+</article>
+
+<article>
+<h2>Two Correlated Coins &mdash; Full Numbers</h2>
+<p>From the joint table, $H(X,Y) = -\tfrac{1}{2}\log\tfrac{1}{2} - \tfrac{1}{4}\log\tfrac{1}{4} - \tfrac{1}{4}\log\tfrac{1}{4} = \tfrac{1}{2} + \tfrac{1}{2} + \tfrac{1}{2} = \tfrac{3}{2}$.</p>
+<p>Marginals: $p_X(0) = 3/4$, $p_X(1) = 1/4$, so $H(X) = H_b(1/4) \approx 0.811$. Similarly $p_Y(0) = p_Y(1) = 1/2$, so $H(Y) = 1$.</p>
+<p>$H(X\mid Y=0) = 0$ (only $X=0$ possible), $H(X\mid Y=1) = H_b(1/2) = 1$. Average: $H(X\mid Y) = \tfrac{1}{2}(0) + \tfrac{1}{2}(1) = 0.5$.</p>
+<p>$H(Y\mid X=0) = H_b(1/3) \approx 0.918$ (since $\Pr(Y=0\mid X=0) = (1/2)/(3/4) = 2/3$), $H(Y\mid X=1) = 0$ (only $Y=1$). Average: $H(Y\mid X) = (3/4)(0.918) + (1/4)(0) \approx 0.689$.</p>
+<p>Check chain rule: $H(X) + H(Y\mid X) = 0.811 + 0.689 = 1.500 = H(X,Y)$. $\checkmark$</p>
+<p>Mutual information: $I(X;Y) = H(X) - H(X\mid Y) = 0.811 - 0.5 = 0.311$ bits. Or $H(Y) - H(Y\mid X) = 1 - 0.689 = 0.311$. $\checkmark$</p>
+</article>
+
+<article>
+<h2>$H(X\mid Y=y) > H(X)$ &mdash; Why It Can Happen</h2>
+<p>The "obvious" reading "knowing $Y$ never increases uncertainty about $X$" applies only on average. A particular outcome $y$ can be uninformative or even <em>misleading</em>: if $Y$ tells us nothing in some realizations and everything in others, the high-uncertainty realizations can exceed the unconditional entropy because they are reweighted by $p_Y(y)$ on the average.</p>
+<p>In the slide example, $Y=0$ tells us only that $B=0$ (which we did not condition on); $X$ remains uniform over $\{1,2,3,4\}$, so $H(X\mid Y=0) = 2 = H(X)$. But $Y=k$ for $k\ne 0$ pins $X = k$, so $H(X\mid Y=k) = 0 < H(X)$.</p>
+</article>
+
+<article>
+<h2>Subadditivity &mdash; Independence Bound</h2>
+<p>Equality in $H(X^n) \le \sum_i H(X_i)$ requires equality at every step of the chain $H(X_i \mid X^{i-1}) = H(X_i)$, which by Gibbs requires $X_i \perp X^{i-1}$ for every $i$ &mdash; equivalent to mutual independence.</p>
+<p>The general inequality $H(X^n) - \sum_i H(X_i) = -\sum_i I(X_i; X^{i-1})$ is sometimes called the "total correlation" or "multi-information" of $X^n$; it measures how far $X^n$ is from being mutually independent.</p>
+</article>
+
+<article>
+<h2>Mutual Information &mdash; Three Faces</h2>
+<p>Three equivalent definitions are commonly seen in the literature:</p>
+<ol>
+  <li><strong>Reduction in entropy:</strong> $I(X;Y) = H(X) - H(X\mid Y)$.</li>
+  <li><strong>KL between joint and product of marginals:</strong> $I(X;Y) = D(p_{X,Y}\,\|\,p_X p_Y)$.</li>
+  <li><strong>Donsker&ndash;Varadhan variational form:</strong> $I(X;Y) = \sup_T \mathbb{E}_{p_{XY}}[T] - \log\mathbb{E}_{p_X p_Y}[e^T]$.</li>
+</ol>
+<p>The first is the operational reading; the second is invariant-looking and used for proofs; the third is the basis for neural mutual-information estimators (MINE, InfoNCE, etc.). See <code>infotheory/mi/mi1-bounds.html</code> for the variational story.</p>
+</article>
+
+<article>
+<h2>Erasure Channel Computation</h2>
+<p>The erasure channel is the canonical example for "a bit comes through cleanly or is lost entirely". The fact that $I(X;Y) = (1-\alpha)$ when $X\sim\mathrm{Bern}(1/2)$ generalizes: for any input $p_X$, we have $I(X;Y) = (1-\alpha)H(X)$, since on the non-erased fraction the output reveals $X$ exactly.</p>
+<p>Hence the capacity of the binary erasure channel is $C = 1 - \alpha$ bits/use, achieved by $p_X = \mathrm{Bern}(1/2)$.</p>
+</article>
+
+<article>
+<h2>Conditional MI &mdash; XOR Example Detail</h2>
+<p>$X, Z\sim\mathrm{Bern}(1/2)$ independent, $Y = X\oplus Z$. The joint $(X,Y,Z)$:</p>
+<div class="math-block">$$\Pr(X=x, Z=z, Y=x\oplus z) = 1/4 \quad \forall (x,z)\in\{0,1\}^2.$$</div>
+<p>Marginals: $X, Y, Z$ are each $\mathrm{Bern}(1/2)$.</p>
+<p>$I(X;Z) = 0$ by construction. But $I(X;Z\mid Y)$ asks how much $Z$ tells us about $X$ once $Y$ is known. Given $Y = y$, $Z = X\oplus y$, so $Z$ is a deterministic function of $X$ &mdash; $H(X\mid Y, Z) = 0$ but $H(X\mid Y) = 1$. Hence $I(X;Z\mid Y) = 1$.</p>
+<p>This is the ur-example showing that "conditioning can create dependence" &mdash; a phenomenon called <em>collider bias</em> in causal inference (Berkson's paradox).</p>
+</article>
+
+<article>
+<h2>DPI &mdash; Equality Condition</h2>
+<p>$I(X;Z) = I(X;Y)$ iff $I(X;Y\mid Z) = 0$ (from the proof). This means $X$ and $Y$ are conditionally independent given $Z$, i.e. $X\to Z\to Y$ is also a Markov chain.</p>
+<p>Combined with the original $X\to Y\to Z$, this is exactly the condition that $Y$ is a <strong>sufficient statistic</strong> for the family $\{p_{Y\mid X}: X\in\mathcal{X}\}$ &mdash; observing $Z$ in addition to $Y$ adds nothing about $X$.</p>
+</article>
+
+<article>
+<h2>Cascade BSC &mdash; Why Crossover Composes</h2>
+<p>If $X\to Y\to Z$ via two BSCs with crossovers $p_1, p_2$, then $Z = X\oplus N_1 \oplus N_2$ with $N_1\sim\mathrm{Bern}(p_1)$, $N_2\sim\mathrm{Bern}(p_2)$ independent. The error $N_1\oplus N_2 \sim \mathrm{Bern}(p_1(1-p_2) + (1-p_1)p_2)$.</p>
+<p>For $p_1 = p_2 = p$: combined crossover $2p(1-p)$. As $p$ grows, the cascade becomes less informative; at $p = 1/2$, $Z$ is independent of $X$ and the crossover is also $1/2$.</p>
+</article>
+
+<article>
+<h2>Fano &mdash; Both Forms</h2>
+<p>The tight form $H(X\mid Y) \le H_b(P_e) + P_e \log(M-1)$ is achievable. The looser form $P_e \ge (H(X\mid Y) - 1)/\log M$ comes from $H_b(P_e)\le 1$ and $\log(M-1)\le\log M$, then solving for $P_e$. The looser form is more often quoted because it is linear in $P_e$.</p>
+</article>
+
+<article>
+<h2>Channel Coding Converse Sketch</h2>
+<p>Standard converse for memoryless channel of capacity $C$: if rate $R = (\log M)/n > C$, then $P_e\not\to 0$ as $n\to\infty$.</p>
+<p>From Fano: $P_e \ge 1 - (I(W; Y^n) + 1)/\log M$. By the chain rule and DPI, $I(W;Y^n) \le \sum_i I(W; Y_i \mid Y^{i-1}) \le \sum_i I(X_i; Y_i)$ (where $X_i$ is the $i$-th channel input chosen as a function of $W$); each summand is $\le C$, so $I(W;Y^n) \le nC$.</p>
+<p>Hence $P_e \ge 1 - (nC+1)/(nR) = 1 - C/R - 1/(nR)\to 1 - C/R > 0$ as $n\to\infty$. The error is bounded away from zero whenever $R > C$.</p>
+</article>
+
+<article>
+<h2>Application &mdash; Statistical Estimation</h2>
+<p>Fano is the basis of <em>minimax lower bounds</em> in statistics. Suppose we want to estimate a parameter $\theta$ from data $D$ drawn from $P_\theta$. Pick $M$ well-separated parameter values $\theta_1,\dots,\theta_M$, set $\theta = \theta_W$ with $W\sim\mathrm{Unif}\{1,\dots,M\}$, and apply Fano to lower-bound the probability of confusing two values:</p>
+<div class="math-block">$$\inf_{\hat W} \Pr(\hat W \ne W) \ge 1 - \frac{I(W; D) + \log 2}{\log M}.$$</div>
+<p>Bounding $I(W;D)$ by $\max_{i,j} D(P_{\theta_i}\,\|\,P_{\theta_j})$ (Yang&ndash;Barron / Tsybakov) yields lower bounds on the minimax estimation error.</p>
+</article>
+
+<article>
+<h2>Connection to the Next Lecture(s)</h2>
+<p>This deck is the toolkit for everything that follows:</p>
+<ul>
+  <li><strong>Lossless compression</strong> uses entropy as the rate floor and the chain rule to handle Markov sources.</li>
+  <li><strong>Differential entropy</strong> uses the same chain rules with integrals replacing sums.</li>
+  <li><strong>Channel capacity</strong> applies DPI in the converse and a maximization of $I(X;Y)$ in the achievability.</li>
+  <li><strong>Estimation/MIA</strong> uses Fano-style bounds on adversary success.</li>
+</ul>
+</article>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossless 2 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossless 2 &mdash; Companion Notes</h1>
+
+<article>
+<h2>AEP &mdash; Stronger Statements</h2>
+<p>The slide states the weak AEP: convergence in probability. Stronger versions:</p>
+<ul>
+  <li><strong>Strong AEP (Birkhoff/Shannon–McMillan–Breiman):</strong> for any stationary ergodic source, $-(1/n)\log p(X^n) \to H(\mathscr{X})$ <em>almost surely</em>. This requires the ergodic theorem rather than the weak law.</li>
+  <li><strong>Method of types:</strong> for finite alphabets, the typical set can be replaced by the "type class" $T(\hat p)$ of sequences with empirical distribution $\hat p$. Sanov's theorem gives $|T(\hat p)|\doteq 2^{nH(\hat p)}$ and $\Pr(T(\hat p))\doteq 2^{-nD(\hat p\,\|\,p)}$.</li>
+</ul>
+</article>
+
+<article>
+<h2>Why "Equipartition"?</h2>
+<p>In the typical set, every sequence has probability $\approx 2^{-nH(X)}$ &mdash; the mass is "equally partitioned" across the $\approx 2^{nH(X)}$ typical sequences, even though their individual probabilities differ at the $2^{n\varepsilon}$ scale.</p>
+<p>Outside the typical set: probability mass is large (a single sequence may have prob much larger than $2^{-nH}$ when $X$ is highly skewed) but the <em>total</em> probability of atypical sequences vanishes.</p>
+</article>
+
+<article>
+<h2>Bernoulli Example &mdash; Numbers</h2>
+<p>$X_i\sim\mathrm{Bern}(0.1)$, $n=100$. By Hoeffding, $\Pr(|\hat p - 0.1| > \varepsilon) \le 2 e^{-2 n\varepsilon^2}$. For $\varepsilon = 0.04$, this is $2 e^{-0.32}\approx 1.45$ — useless. Need $\varepsilon \ge 1/\sqrt{2n} \approx 0.07$.</p>
+<p>Hence at $n=100$ the "typical set" still contains sequences with empirical $p$ ranging from $\sim 0.03$ to $\sim 0.17$. AEP becomes operationally tight only at $n\gtrsim 10^4$ for binary sources.</p>
+</article>
+
+<article>
+<h2>Source Coding Theorem &mdash; Both Directions</h2>
+<p><strong>Achievability</strong> uses random partitioning of $\mathcal{X}^n$ into $2^{nR}$ buckets via the typical-set construction. The encoder sends the bucket index; the decoder uses the typical-set membership to recover.</p>
+<p><strong>Converse</strong> uses Fano-style accounting: $H(X^n) \le H(W) + H(X^n\mid W)\le \log|\mathrm{range}(f)| + 1 + P_e \cdot n\log|\mathcal{X}|$, where $W = f(X^n)$. Rearrange to get $P_e \ge 1 - R/H(X) - 1/(n\log|\mathcal{X}|)$, bounded away from 0 when $R < H$.</p>
+</article>
+
+<article>
+<h2>Arithmetic Coding &mdash; Why Length $\le \log 1/p + 2$?</h2>
+<p>The binary expansion of any $z\in[L_n, H_n)$ to $K$ bits satisfies $\hat z\in[\hat z, \hat z + 2^{-K})$. We need this $K$-bit window to fit inside $[L_n, H_n)$. The window has length $2^{-K}$; if $2^{-K} \le \tfrac{1}{2}(H_n - L_n)$, then there exists a window inside $[L_n, H_n)$.</p>
+<p>The condition $2^{-K} \le \tfrac{1}{2}p(x^n)$ gives $K \ge \log(2/p(x^n)) = \log(1/p) + 1$. The proof in the slide gets the bound $K \le \log(1/p) + 2$ via a slightly looser analysis around the "smallest such $K$" requirement.</p>
+</article>
+
+<article>
+<h2>Arithmetic Coding &mdash; Practical Issues</h2>
+<p>Real implementations face two issues:</p>
+<ol>
+  <li><strong>Floating-point precision.</strong> The interval $[L_n, H_n)$ shrinks geometrically; a 64-bit float overflows after ~50 symbols. Real codecs use integer arithmetic with renormalization: emit prefix bits as the interval becomes determined, shifting the integer state.</li>
+  <li><strong>Patents (historical).</strong> Most arithmetic-coding patents expired after 2010; <em>range coding</em> (a near-equivalent variant) was used to skirt them. Modern codecs use range coding or arithmetic coding interchangeably.</li>
+</ol>
+</article>
+
+<article>
+<h2>Connection to Universal Coding (Lecture 3)</h2>
+<p>Arithmetic coding is the workhorse: any sequential probability model $q(x_t\mid x_1^{t-1})$ plugs in directly. The achieved rate is $H(p) + D(p\,\|\,q)$, with $D \to 0$ as the model improves. In modern LLM-based compression, $q$ is the LLM's next-token distribution, achieving compression rates near the entropy of the source distribution as estimated by the LLM.</p>
+</article>
+
+</body>
+</html>

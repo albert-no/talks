@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diff Entropy 2 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Differential Entropy 2 &mdash; Companion Notes</h1>
+
+<article>
+<h2>Lagrangian — Why Variational Calculus Works</h2>
+<p>Strictly, the variational derivative argument is informal: $f$ ranges over an infinite-dimensional space. The standard rigorous approach: the MaxEnt problem is convex (negative entropy is convex, constraints are linear), so KKT conditions are necessary and sufficient. The exponential-family form is the unique stationary point.</p>
+<p>For non-compact support (e.g., $\mathbb{R}$), one must verify integrability. For variance-constrained MaxEnt on $\mathbb{R}$, the answer (Gaussian) is integrable; for unconstrained MaxEnt on $\mathbb{R}$, no finite-entropy maximizer exists.</p>
+</article>
+
+<article>
+<h2>Why Gaussian for Variance — The KL Trick Generalized</h2>
+<p>The KL-based proof generalizes to any exponential-family MaxEnt: if the constraints are $\mathbb{E}[T_k(X)] = \alpha_k$ and the candidate density is $g \propto \exp(-\sum_k\lambda_k T_k(x))$, then for any $f$ with the same moments,</p>
+<div class="math-block">$$D(f\|g) = -h(f) - \int f\log g = -h(f) + \log Z + \sum_k \lambda_k \alpha_k = -h(f) + h(g),$$</div>
+<p>using $\log g = -\log Z - \sum \lambda_k T_k$ and $\mathbb{E}_f[T_k] = \alpha_k = \mathbb{E}_g[T_k]$. Hence $h(f)\le h(g)$ for all $f$ matching the moments, with equality iff $f = g$.</p>
+</article>
+
+<article>
+<h2>Hadamard's Inequality &mdash; Direct vs Information-Theoretic Proofs</h2>
+<p>The direct proof uses Cholesky / Schur complements: write $K = LL^\top$ for lower-triangular $L$, then $\det K = \prod L_{ii}^2 \le \prod K_{ii}$ since $L_{ii}^2 \le K_{ii}$ (column $i$ of $L$ has Euclidean norm $\le$ that of $K$'s column $i$).</p>
+<p>The information-theoretic proof on the slide is cleaner: $h(\mathbf{X})\le \sum_i h(X_i)$ for any random vector, with equality iff independent. Plugging in the Gaussian formula yields the inequality with equality iff $K$ is diagonal.</p>
+</article>
+
+<article>
+<h2>Conditioning Gaussians — Schur Complement</h2>
+<p>For $(X, Y)$ jointly Gaussian with covariance $K = \begin{pmatrix} K_{XX} & K_{XY} \\ K_{XY}^\top & K_{YY} \end{pmatrix}$:</p>
+<ul>
+  <li>Conditional mean: $\mu_{X\mid Y=y} = K_{XY} K_{YY}^{-1} y$.</li>
+  <li>Conditional covariance: $K_{X\mid Y} = K_{XX} - K_{XY} K_{YY}^{-1} K_{XY}^\top$ (Schur complement).</li>
+</ul>
+<p>The conditional density is again Gaussian — a key fact used throughout signal processing, Kalman filtering, and Bayesian inference.</p>
+<p>From this:</p>
+<div class="math-block">$$\det K = \det K_{YY} \cdot \det(K_{XX} - K_{XY} K_{YY}^{-1} K_{XY}^\top).$$</div>
+<p>Hence $I(X;Y) = h(X) + h(Y) - h(X,Y) = \tfrac{1}{2}\log\bigl(\det K_{XX}\det K_{YY} / \det K\bigr)$.</p>
+</article>
+
+<article>
+<h2>EPI &mdash; Proof Sketch (Stam)</h2>
+<p>Define $X_t = X + \sqrt{t}Z$ where $Z\sim\mathcal{N}(0,I)$. By de Bruijn,</p>
+<div class="math-block">$$\frac{d}{dt}h(X_t) = \tfrac{1}{2}J(X_t),$$</div>
+<p>where $J$ is Fisher information. Stam proved that the entropy power $N(X)$ along the heat semigroup satisfies $\frac{d}{dt}N(X_t) = N(X_t) J(X_t)/d$.</p>
+<p>The EPI then reduces to an inequality between Fisher informations of independent sums &mdash; the Fisher information form: $1/J(X+Y)\ge 1/J(X) + 1/J(Y)$ (Stam, 1959).</p>
+<p>Modern proofs (Verdú &amp; Guo, 2006) use the I-MMSE relation directly.</p>
+</article>
+
+<article>
+<h2>Why EPI Implies Gaussian-Hardest-Channel</h2>
+<p>For AWGN $Y = X + Z$ with $Z\sim\mathcal{N}(0, \sigma^2 I)$, EPI gives</p>
+<div class="math-block">$$N(Y) = N(X + Z) \ge N(X) + N(Z) = N(X) + \sigma^2.$$</div>
+<p>So $h(Y) \ge \tfrac{d}{2}\log(2\pi e (N(X) + \sigma^2))$. Combined with $h(Y\mid X) = h(Z) = \tfrac{d}{2}\log(2\pi e\sigma^2)$:</p>
+<div class="math-block">$$I(X;Y) = h(Y) - h(Y\mid X) \ge \tfrac{d}{2}\log\!\left(1 + \tfrac{N(X)}{\sigma^2}\right).$$</div>
+<p>Since $N(X) \le \mathrm{Var}(X)/d$ for any $X$ with given variance (actually $N(X)\le \mathbb{E}[\|X-\mathbb{E}X\|^2]/d$), the Gaussian saturates this bound.</p>
+</article>
+
+<article>
+<h2>Application — Vector Gaussian Channel Capacity</h2>
+<p>For MIMO AWGN $\mathbf{Y} = H\mathbf{X} + \mathbf{Z}$ with $\mathbf{Z}\sim\mathcal{N}(0, \sigma^2 I)$ and power constraint $\mathrm{tr}(\mathrm{Cov}(\mathbf{X}))\le P$:</p>
+<div class="math-block">$$C = \max_{Q:\,\mathrm{tr}(Q)\le P} \tfrac{1}{2}\log\det\!\left(I + \tfrac{1}{\sigma^2}HQH^\top\right).$$</div>
+<p>Solved by SVD: $H = U\Sigma V^\top$, then optimal $Q = V\,\mathrm{diag}(P_1,\dots)\,V^\top$ with water-filling on the singular values $\sigma_i$.</p>
+<p>This is the basis of all modern wireless communication.</p>
+</article>
+
+</body>
+</html>

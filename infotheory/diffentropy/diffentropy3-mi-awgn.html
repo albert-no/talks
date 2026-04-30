@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Differential Entropy 3 — MI and the AWGN Channel</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.dc-table { margin: 8px auto; border-collapse: collapse; }
+.dc-table th, .dc-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.4rem; }
+.dc-table th { background: var(--light); font-weight: 700; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Differential Entropy &middot; Lecture 3 of 3</div>
+  <h1>Mutual Information<br>and the AWGN Channel</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Continuous MI, Shannon&ndash;Hartley, parallel channels</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Continuous MI</div>
+      <div class="toc-sub">Definition, properties, examples</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">AWGN channel</div>
+      <div class="toc-sub">Capacity = $\tfrac{1}{2}\log(1 + \mathrm{SNR})$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Parallel channels</div>
+      <div class="toc-sub">Water-filling</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Connections</div>
+      <div class="toc-sub">Estimation, MMSE, I-MMSE</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Continuous Mutual Information</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Why $I$ "just works" in the continuous domain</p>
+</div>
+
+<div class="slide">
+  <h2>Recap &mdash; Definition</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>For $(X, Y)$ with joint density $f_{X,Y}$,</p>
+    <div class="math-block">$$I(X; Y) \;=\; D(f_{X,Y}\,\|\,f_X f_Y) \;=\; \mathbb{E}\!\left[\log\frac{f_{X,Y}(X,Y)}{f_X(X) f_Y(Y)}\right].$$</div>
+    <p>Equivalent forms:</p>
+    <div class="math-block">$$I(X;Y) \;=\; h(X) - h(X\mid Y) \;=\; h(Y) - h(Y\mid X).$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Discretization Bridge for MI</h2><div class="divider"></div>
+  <p>Bin both $X$ and $Y$ to width $\Delta$:</p>
+  <div class="math-block">$$\begin{aligned}
+    I(X^\Delta; Y^\Delta)
+      &\;\approx\; \mathbb{E}\!\left[\log\frac{\Delta^2 f_{X,Y}(X,Y)}{\Delta f_X(X) \cdot \Delta f_Y(Y)}\right] \\
+      &\;=\; \mathbb{E}\!\left[\log\frac{f_{X,Y}}{f_X f_Y}\right] \;=\; I(X; Y).
+  \end{aligned}$$</div>
+  <p>The $\log\Delta$ factors <strong>cancel</strong>. Hence $I(X^\Delta; Y^\Delta) \to I(X; Y)$ <em>without</em> a $\log(1/\Delta)$ divergence.</p>
+  <div class="highlight"><strong>$I$ is a true continuous-domain quantity.</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Properties &mdash; All Inherited</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Non-negative:</strong> $I(X;Y)\ge 0$ from $D\ge 0$. Equality iff $X\perp Y$.</li>
+    <li><strong>Symmetric:</strong> $I(X;Y) = I(Y;X)$.</li>
+    <li><strong>Scale-invariant:</strong> $I(aX; bY) = I(X; Y)$.</li>
+    <li><strong>Diffeo-invariant:</strong> $I(g(X); h(Y)) = I(X;Y)$ for invertible smooth $g, h$.</li>
+    <li><strong>DPI:</strong> $X\to Y\to Z\Rightarrow I(X;Z)\le I(X;Y)$.</li>
+    <li><strong>Chain rule:</strong> $I(X^n; Y) = \sum_i I(X_i; Y\mid X^{i-1})$.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Bivariate Gaussian</h2><div class="divider"></div>
+  <p>$(X, Y)$ jointly Gaussian, correlation $\rho$. From Lecture 1:</p>
+  <div class="math-block">$$I(X;Y) \;=\; -\tfrac{1}{2}\log(1 - \rho^2).$$</div>
+  <table class="dc-table">
+    <tr><th>$\rho$</th><td>$0$</td><td>$0.5$</td><td>$0.9$</td><td>$0.99$</td></tr>
+    <tr><th>$I$ (bits)</th><td>$0$</td><td>$0.208$</td><td>$1.198$</td><td>$2.819$</td></tr>
+  </table>
+  <p>Exponential growth as $|\rho|\to 1$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Additive Gaussian Noise</h2><div class="divider"></div>
+  <p>$Y = X + Z$, $Z\sim\mathcal{N}(0, \sigma^2)$ independent of $X$. Pose $\mathbb{E}[X^2] \le P$. Then:</p>
+  <div class="math-block">$$h(Y\mid X) \;=\; h(X + Z\mid X) \;=\; h(Z) \;=\; \tfrac{1}{2}\log(2\pi e\sigma^2).$$</div>
+  <p>And $h(Y)$ is maximized when $Y$ is Gaussian, hence when $X$ is Gaussian:</p>
+  <div class="math-block">$$h(Y) \;\le\; \tfrac{1}{2}\log(2\pi e (P + \sigma^2)).$$</div>
+  <p>Combining:</p>
+  <div class="math-block">$$I(X;Y) \;\le\; \tfrac{1}{2}\log\!\left(1 + \tfrac{P}{\sigma^2}\right).$$</div>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>The AWGN Channel</h1>
+  <div class="divider"></div>
+  <p class="subtitle">$Y = X + Z$, the canonical continuous channel</p>
+</div>
+
+<div class="slide">
+  <h2>Setup</h2><div class="divider"></div>
+  <p>Continuous-input, continuous-output channel:</p>
+  <div class="math-block">$$Y_t \;=\; X_t + Z_t, \qquad Z_t \;\stackrel{\mathrm{iid}}{\sim}\; \mathcal{N}(0, \sigma^2).$$</div>
+  <ul>
+    <li>$n$ uses of the channel: $Y^n = X^n + Z^n$.</li>
+    <li>Power constraint: $\tfrac{1}{n}\sum_i X_i^2 \le P$.</li>
+    <li>SNR $= P/\sigma^2$.</li>
+  </ul>
+  <p><strong>Goal:</strong> compute the maximum mutual information per channel use.</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Shannon&ndash;Hartley</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Shannon, 1948).</h3>
+    <p>The capacity of the AWGN channel with input power $P$ and noise variance $\sigma^2$ is</p>
+    <div class="math-block">$$C \;=\; \max_{p_X:\,\mathbb{E}[X^2]\le P} I(X; X + Z) \;=\; \tfrac{1}{2}\log\!\left(1 + \tfrac{P}{\sigma^2}\right) \quad\text{bits/channel use}.$$</div>
+    <p>Achieved by $X\sim\mathcal{N}(0, P)$.</p>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Achievability (Single Letter)</h2><div class="divider"></div>
+  <p>Choose $X\sim\mathcal{N}(0, P)$. Then $Y = X + Z\sim\mathcal{N}(0, P + \sigma^2)$.</p>
+  <div class="math-block">$$\begin{aligned}
+    I(X; Y) &= h(Y) - h(Y\mid X) \\
+            &= \tfrac{1}{2}\log(2\pi e (P + \sigma^2)) - \tfrac{1}{2}\log(2\pi e\sigma^2) \\
+            &= \tfrac{1}{2}\log\!\left(1 + \tfrac{P}{\sigma^2}\right).
+  \end{aligned}$$</div>
+  <p>This is the single-letter rate. The full coding theorem extends to block codes via random Gaussian codebooks &mdash; details in companion notes. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Converse (Single Letter)</h2><div class="divider"></div>
+  <p>For any input distribution with $\mathbb{E}[X^2]\le P$:</p>
+  <div class="math-block">$$\begin{aligned}
+    \mathrm{Var}(Y) &= \mathbb{E}[X^2] + \sigma^2 \;\le\; P + \sigma^2 \\
+    h(Y) &\;\le\; \tfrac{1}{2}\log(2\pi e (P + \sigma^2)) \quad\text{(Gaussian MaxEnt)} \\
+    h(Y\mid X) &= h(Z) \;=\; \tfrac{1}{2}\log(2\pi e \sigma^2) \\
+    I(X;Y) &\;\le\; \tfrac{1}{2}\log\!\left(1 + \tfrac{P}{\sigma^2}\right).
+  \end{aligned}$$</div>
+  <p>Equality iff $Y$ is Gaussian iff $X$ is Gaussian. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Numerical Examples</h2><div class="divider"></div>
+  <table class="dc-table">
+    <tr><th>SNR</th><th>SNR (dB)</th><th>$C$ (bits/use)</th></tr>
+    <tr><td>$1$</td><td>$0$</td><td>$0.5$</td></tr>
+    <tr><td>$3$</td><td>$4.77$</td><td>$1.0$</td></tr>
+    <tr><td>$15$</td><td>$11.76$</td><td>$2.0$</td></tr>
+    <tr><td>$1023$</td><td>$30.1$</td><td>$5.0$</td></tr>
+  </table>
+  <p>At high SNR: $C \approx \tfrac{1}{2}\log(\mathrm{SNR})$ &middot; each $6$ dB $\to$ $1$ extra bit.</p>
+  <p>At low SNR: $C \approx \tfrac{P}{2\sigma^2 \ln 2}$ &middot; linear in SNR.</p>
+</div>
+
+<div class="slide">
+  <h2>Bandwidth-Limited Form</h2><div class="divider"></div>
+  <p>For a continuous-time AWGN channel of bandwidth $W$ Hz and noise PSD $N_0/2$:</p>
+  <div class="math-block">$$C \;=\; W\,\log_2\!\left(1 + \frac{P}{N_0 W}\right) \quad \text{bits/sec}.$$</div>
+  <p>Limits:</p>
+  <ul>
+    <li>Power-limited ($W\to\infty$): $C\to (P/N_0)\log_2 e \approx 1.443\,P/N_0$ bits/sec.</li>
+    <li>Bandwidth-limited ($W$ small): linear in $W$.</li>
+  </ul>
+  <p>Foundational result for cellular networks, satellite, optical fiber.</p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Parallel Channels</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Power allocation across $d$ independent AWGN sub-channels</p>
+</div>
+
+<div class="slide">
+  <h2>Setup &mdash; Parallel AWGN</h2><div class="divider"></div>
+  <p>$d$ independent sub-channels:</p>
+  <div class="math-block">$$Y_i \;=\; X_i + Z_i, \quad Z_i\sim\mathcal{N}(0, \sigma_i^2), \quad i = 1, \dots, d.$$</div>
+  <p>Total power constraint: $\sum_i \mathbb{E}[X_i^2] \le P$.</p>
+  <p>Question: how to allocate $P_i = \mathbb{E}[X_i^2]$ to maximize $\sum_i I(X_i; Y_i)$?</p>
+</div>
+
+<div class="slide">
+  <h2>Optimization Problem</h2><div class="divider"></div>
+  <p>By single-letter capacity, optimal $X_i\sim\mathcal{N}(0, P_i)$:</p>
+  <div class="math-block">$$\max_{P_1, \dots, P_d \ge 0}\; \sum_{i=1}^d \tfrac{1}{2}\log\!\left(1 + \tfrac{P_i}{\sigma_i^2}\right) \quad\text{s.t. } \sum_i P_i \le P.$$</div>
+  <p>Concave in $P_i$ &middot; subject to linear constraint &middot; KKT gives the solution.</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Water-Filling</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>The optimal power allocation is</p>
+    <div class="math-block">$$P_i^\star \;=\; \bigl(\nu - \sigma_i^2\bigr)^+,$$</div>
+    <p>where $\nu$ is chosen so $\sum_i P_i^\star = P$.</p>
+  </div>
+  <ul>
+    <li>Sub-channels with $\sigma_i^2 < \nu$ get power $\nu - \sigma_i^2$.</li>
+    <li>Sub-channels with $\sigma_i^2 \ge \nu$ get zero power &mdash; "too noisy to use".</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Water-Filling &mdash; Picture</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>Plot $\sigma_i^2$ as bars. Pour "water" to level $\nu$. The power on each sub-channel is the depth above the bar.</p>
+      <p>Sub-channels with bar $\ge\nu$: dry &mdash; no power.</p>
+      <p>$\nu$ is the "water level" set by the total budget $P$.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 220" width="100%" style="background:var(--light); border-radius:8px;">
+        <line x1="20" y1="180" x2="300" y2="180" stroke="#666"/>
+        <rect x="40" y="100" width="40" height="80" fill="#888" stroke="#444"/>
+        <rect x="100" y="60" width="40" height="120" fill="#888" stroke="#444"/>
+        <rect x="160" y="140" width="40" height="40" fill="#888" stroke="#444"/>
+        <rect x="220" y="80" width="40" height="100" fill="#888" stroke="#444"/>
+        <rect x="40" y="60" width="40" height="40" fill="#003876" fill-opacity="0.5"/>
+        <rect x="160" y="60" width="40" height="80" fill="#003876" fill-opacity="0.5"/>
+        <rect x="220" y="60" width="40" height="20" fill="#003876" fill-opacity="0.5"/>
+        <line x1="20" y1="60" x2="300" y2="60" stroke="#003876" stroke-width="2" stroke-dasharray="6 3"/>
+        <text x="304" y="64" font-size="13" fill="#003876" font-weight="700">$\nu$</text>
+        <text x="60" y="195" font-size="12" fill="#666" text-anchor="middle">$\sigma_1^2$</text>
+        <text x="120" y="195" font-size="12" fill="#666" text-anchor="middle">$\sigma_2^2$</text>
+        <text x="180" y="195" font-size="12" fill="#666" text-anchor="middle">$\sigma_3^2$</text>
+        <text x="240" y="195" font-size="12" fill="#666" text-anchor="middle">$\sigma_4^2$</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Three Sub-Channels</h2><div class="divider"></div>
+  <p>$\sigma_1^2 = 1$, $\sigma_2^2 = 2$, $\sigma_3^2 = 5$. Total $P = 6$.</p>
+  <p>Try $\nu = 4$: $P_1 = 3, P_2 = 2, P_3 = 0$. Sum $= 5\ne 6$.</p>
+  <p>Try $\nu = 4.5$: $P_1 = 3.5, P_2 = 2.5, P_3 = 0$. Sum $= 6$. $\;\checkmark$</p>
+  <p>Capacity:</p>
+  <div class="math-block">$$C \;=\; \tfrac{1}{2}\log(4.5) + \tfrac{1}{2}\log(2.25) + 0 \;\approx\; 1.085 + 0.585 \;=\; 1.670 \text{ bits/use}.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Application &mdash; Frequency-Selective Channels</h2><div class="divider"></div>
+  <p>OFDM: split bandwidth $W$ into $d$ narrow sub-bands. Each sub-band has its own SNR (frequency-selective fading). Apply water-filling.</p>
+  <p>Used in WiFi, LTE, 5G, DSL. Modern adaptive coding pushes near capacity per sub-band.</p>
+  <p><strong>Same idea also appears in:</strong> SVD on a MIMO channel (parallel singular-value sub-channels), eigen-decomposition of correlated noise.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Connections</h1>
+  <div class="divider"></div>
+  <p class="subtitle">MI and estimation</p>
+</div>
+
+<div class="slide">
+  <h2>MMSE</h2><div class="divider"></div>
+  <p>For $X\sim p_X$ and observation $Y$, the <strong>minimum mean-square error</strong> estimator is the conditional expectation:</p>
+  <div class="math-block">$$\hat X(Y) \;=\; \mathbb{E}[X\mid Y], \qquad \mathrm{mmse}(X\mid Y) \;=\; \mathbb{E}\bigl[(X - \mathbb{E}[X\mid Y])^2\bigr].$$</div>
+  <p>For AWGN $Y = \sqrt{\mathrm{snr}}\,X + Z$, $Z\sim\mathcal{N}(0, 1)$:</p>
+  <div class="math-block">$$\mathrm{mmse}(\mathrm{snr}) \;=\; \mathbb{E}\bigl[(X - \hat X(Y))^2\bigr].$$</div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; I-MMSE</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Guo, Shamai, Verdú, 2005).</h3>
+    <p>For $Y = \sqrt{\mathrm{snr}}\,X + Z$ with $Z\sim\mathcal{N}(0,1)$ independent of $X$:</p>
+    <div class="math-block">$$\frac{d}{d\,\mathrm{snr}}\;I(X; Y) \;=\; \tfrac{1}{2}\,\mathrm{mmse}(\mathrm{snr}).$$</div>
+  </div>
+  <div class="cite">Guo, Shamai, Verdú, "Mutual Information and Minimum Mean-Square Error in Gaussian Channels", IEEE Trans. Inf. Theory 2005.</div>
+  <p>Mutual information increases at rate equal to half the MMSE.</p>
+</div>
+
+<div class="slide">
+  <h2>Sanity Check &mdash; Gaussian Input</h2><div class="divider"></div>
+  <p>$X\sim\mathcal{N}(0, 1)$, $Y = \sqrt{\mathrm{snr}}\, X + Z$.</p>
+  <ul>
+    <li>$I(X; Y) = \tfrac{1}{2}\log(1 + \mathrm{snr})$.</li>
+    <li>$\frac{d}{d\,\mathrm{snr}} I = \frac{1}{2(1 + \mathrm{snr})\ln 2}\cdot \ln 2 = \frac{1}{2(1 + \mathrm{snr})}$ (in nats per snr).</li>
+    <li>$\mathrm{mmse}(\mathrm{snr}) = \frac{1}{1 + \mathrm{snr}}$ (linear MMSE = exact MMSE for Gaussian).</li>
+  </ul>
+  <div class="math-block">$$\tfrac{1}{2}\,\mathrm{mmse} \;=\; \tfrac{1}{2(1 + \mathrm{snr})} \;=\; \tfrac{d I}{d\,\mathrm{snr}}. \;\checkmark$$</div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; de Bruijn's Identity</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>Let $Y_t = X + \sqrt{t}\,Z$ with $Z\sim\mathcal{N}(0, 1)$ independent of $X$. Then</p>
+    <div class="math-block">$$\frac{d}{dt}\,h(Y_t) \;=\; \tfrac{1}{2}\,J(Y_t),$$</div>
+    <p>where $J(Y) = \mathbb{E}[(\partial_y \log f_Y(Y))^2]$ is the <strong>Fisher information</strong> of $Y$ at $0$ shift.</p>
+  </div>
+  <p>Connects entropy, MMSE, and Fisher information &mdash; the core triad of information-theoretic estimation.</p>
+</div>
+
+<div class="slide">
+  <h2>Application &mdash; Diffusion Models</h2><div class="divider"></div>
+  <p>Diffusion adds Gaussian noise: $X^{(t)} = \sqrt{\bar\alpha_t}\, X^{(0)} + \sqrt{1 - \bar\alpha_t}\, Z$.</p>
+  <p>Score function $s(x, t) = \nabla_x\log f_{X^{(t)}}(x)$ relates to MMSE via Tweedie:</p>
+  <div class="math-block">$$\mathbb{E}[X^{(0)}\mid X^{(t)} = x] \;=\; \frac{x + (1 - \bar\alpha_t)\, s(x, t)}{\sqrt{\bar\alpha_t}}.$$</div>
+  <p>I-MMSE / de Bruijn give the entropy and KL of the diffusion at any time.</p>
+  <p>See <code>infotheory/diffusion/</code> and <code>privacy/diffusion/</code> for the full story.</p>
+</div>
+
+<div class="slide">
+  <h2>Recap &mdash; Continuous Information Theory</h2><div class="divider"></div>
+  <ul>
+    <li><strong>$h$ is relative.</strong> Use $D, I$ for invariant operational meaning.</li>
+    <li><strong>Gaussian = MaxEnt</strong> for fixed variance &middot; cornerstone inequality.</li>
+    <li><strong>EPI:</strong> entropy power is super-additive under convolution.</li>
+    <li><strong>AWGN:</strong> $C = \tfrac{1}{2}\log(1 + \mathrm{SNR})$ &middot; achieved by Gaussian input.</li>
+    <li><strong>Water-filling:</strong> optimal power allocation across parallel sub-channels.</li>
+    <li><strong>I-MMSE / de Bruijn:</strong> derivative of entropy is MMSE (or Fisher information).</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Where the Series Connects</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Lossy compression:</strong> Gaussian R(D) = $\tfrac{1}{2}\log(\sigma^2/D)$ &mdash; uses Shannon LB and MaxEnt.</li>
+    <li><strong>MI estimation:</strong> variational bounds (Donsker&ndash;Varadhan, MINE) &mdash; rely on the KL definition of MI.</li>
+    <li><strong>Diffusion models:</strong> de Bruijn / I-MMSE compute the ELBO.</li>
+    <li><strong>Privacy (DP):</strong> AWGN is the exact channel of Gaussian DP.</li>
+  </ul>
+  <div class="highlight">Continuous information theory is the language of modern ML. This series gives you the toolkit.</div>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

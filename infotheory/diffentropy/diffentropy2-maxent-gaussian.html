@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Differential Entropy 2 — Maximum Entropy and the Gaussian</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.dm-table { margin: 8px auto; border-collapse: collapse; }
+.dm-table th, .dm-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.4rem; }
+.dm-table th { background: var(--light); font-weight: 700; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Differential Entropy &middot; Lecture 2 of 3</div>
+  <h1>Maximum Entropy<br>and the Gaussian</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Variance-constrained max, multivariate, EPI</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">MaxEnt principle</div>
+      <div class="toc-sub">Lagrangian, exponential family</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Gaussian = MaxEnt</div>
+      <div class="toc-sub">Variance constraint $\Rightarrow \mathcal{N}$</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Multivariate Gaussian</div>
+      <div class="toc-sub">Hadamard, covariance constraint</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">EPI</div>
+      <div class="toc-sub">Entropy power inequality, applications</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>Maximum-Entropy Principle</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Among all densities matching given moments, which is "maximally agnostic"?</p>
+</div>
+
+<div class="slide">
+  <h2>The MaxEnt Question</h2><div class="divider"></div>
+  <p>Given moment constraints $\mathbb{E}[T_k(X)] = \alpha_k$ for $k = 1, \dots, m$, find the density</p>
+  <div class="math-block">$$f^\star \;=\; \arg\max_{f}\; h(f) \;=\; -\int f\log f\,dx,$$</div>
+  <p>subject to $f\ge 0$, $\int f = 1$, $\int f T_k = \alpha_k$.</p>
+  <p>Reading: among all densities consistent with the data we have, $f^\star$ assumes <em>no extra structure</em>.</p>
+</div>
+
+<div class="slide">
+  <h2>Lagrangian</h2><div class="divider"></div>
+  <p>Lagrangian (with multipliers $\lambda_0$ for normalization, $\lambda_k$ for moments):</p>
+  <div class="math-block">$$\mathcal{L}[f] \;=\; -\int f\log f \;-\; \lambda_0\!\left(\int f - 1\right) \;-\; \sum_{k=1}^m \lambda_k\!\left(\int f T_k - \alpha_k\right).$$</div>
+  <p>Variational derivative:</p>
+  <div class="math-block">$$\frac{\delta\mathcal{L}}{\delta f}(x) \;=\; -\log f(x) - 1 - \lambda_0 - \sum_k \lambda_k T_k(x) \;=\; 0.$$</div>
+</div>
+
+<div class="slide">
+  <h2>The MaxEnt Density</h2><div class="divider"></div>
+  <p>Solve for $f$:</p>
+  <div class="math-block">$$f^\star(x) \;=\; \exp\!\left(-1 - \lambda_0 - \sum_k \lambda_k T_k(x)\right) \;=\; \frac{1}{Z}\exp\!\left(-\textstyle\sum_k \lambda_k T_k(x)\right).$$</div>
+  <p>$Z = e^{1+\lambda_0}$ is the normalizing constant. The multipliers $\lambda_k$ are tuned so that $\mathbb{E}[T_k] = \alpha_k$.</p>
+  <div class="highlight">MaxEnt distributions are <strong>exponential families</strong> with sufficient statistics $T_k$.</div>
+</div>
+
+<div class="slide">
+  <h2>Catalogue &mdash; Three Constraint Types</h2><div class="divider"></div>
+  <table class="dm-table">
+    <tr><th>support</th><th>constraint</th><th>MaxEnt density</th></tr>
+    <tr><td>$[a, b]$</td><td>(none)</td><td>$\mathrm{Unif}(a, b)$</td></tr>
+    <tr><td>$[0, \infty)$</td><td>$\mathbb{E}[X] = \mu$</td><td>$\mathrm{Exp}(1/\mu)$</td></tr>
+    <tr><td>$\mathbb{R}$</td><td>$\mathrm{Var}(X) \le \sigma^2$</td><td>$\mathcal{N}(0, \sigma^2)$</td></tr>
+    <tr><td>$\mathbb{R}^d$</td><td>$\mathrm{Cov}(X) = K$</td><td>$\mathcal{N}(0, K)$</td></tr>
+    <tr><td>$\mathbb{R}$</td><td>$\mathbb{E}[|X|] \le b$</td><td>$\mathrm{Lap}(b)$</td></tr>
+  </table>
+  <p>All four follow from the exponential-family form.</p>
+</div>
+
+<div class="slide">
+  <h2>Why MaxEnt Is Useful</h2><div class="divider"></div>
+  <ul>
+    <li><strong>Modeling principle.</strong> Default to MaxEnt unless additional structure justifies otherwise.</li>
+    <li><strong>Conjugate inequalities.</strong> "Gaussian is hardest" for any squared-error problem with Gaussian-like constraints.</li>
+    <li><strong>Hypothesis testing.</strong> The least favorable prior (worst case) is often MaxEnt.</li>
+    <li><strong>Channel coding.</strong> Capacity-achieving inputs match the constraints.</li>
+  </ul>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Gaussian = MaxEnt</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Variance constraint $\Rightarrow$ Gaussian</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Gaussian Maximum Entropy</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>Among all densities on $\mathbb{R}$ with $\mathbb{E}[X^2] \le P$,</p>
+    <div class="math-block">$$h(X) \;\le\; \tfrac{1}{2}\log(2\pi e P),$$</div>
+    <p>with equality if and only if $X\sim\mathcal{N}(0, P)$.</p>
+  </div>
+  <p>Three proofs follow: KL inequality, Lagrangian, EPI corollary (later).</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; KL Inequality (Setup)</h2><div class="divider"></div>
+  <p>Let $g$ be the density of $\mathcal{N}(0, P)$ and $f$ any density with $\int x^2 f(x)\,dx \le P$. Translation-invariance: WLOG $\mathbb{E}_f[X] = 0$.</p>
+  <p>Use $D(f\,\|\,g) \ge 0$:</p>
+  <div class="math-block">$$0 \;\le\; D(f\,\|\,g) \;=\; -h(f) \;-\; \int f(x)\log g(x)\,dx.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; KL Inequality (Cross-Term)</h2><div class="divider"></div>
+  <p>Compute the cross-entropy term:</p>
+  <div class="math-block">$$\begin{aligned}
+    -\int f\log g\,dx
+      &= -\int f(x)\!\left[-\tfrac{1}{2}\log(2\pi P) - \tfrac{x^2}{2P}\log e\right]\!dx \\
+      &= \tfrac{1}{2}\log(2\pi P) + \frac{\log e}{2P}\,\mathbb{E}_f[X^2] \\
+      &\le \tfrac{1}{2}\log(2\pi P) + \tfrac{1}{2}\log e \\
+      &= \tfrac{1}{2}\log(2\pi e P) \;=\; h(g).
+  \end{aligned}$$</div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Combining</h2><div class="divider"></div>
+  <p>Plug back:</p>
+  <div class="math-block">$$\begin{aligned}
+    0 &\;\le\; D(f\,\|\,g) \;=\; -h(f) + (-\int f\log g) \;\le\; -h(f) + h(g).
+  \end{aligned}$$</div>
+  <p>Hence $h(f) \le h(g) = \tfrac{1}{2}\log(2\pi e P)$.</p>
+  <p>Equality iff $D(f\,\|\,g) = 0$, i.e. $f = g$ &mdash; the Gaussian. $\square$</p>
+  <p><strong>Trick:</strong> the cross-entropy of any density with the Gaussian depends only on the second moment.</p>
+</div>
+
+<div class="slide">
+  <h2>Proof Variant &mdash; Lagrangian</h2><div class="divider"></div>
+  <p>Constraints: $\int f = 1$, $\int x f = 0$, $\int x^2 f = P$. The MaxEnt template:</p>
+  <div class="math-block">$$f^\star(x) \;\propto\; \exp\!\bigl(-\lambda_0 - \lambda_1 x - \lambda_2 x^2\bigr).$$</div>
+  <p>This is a Gaussian: complete the square. Solving for $\lambda_1, \lambda_2$ to match $0$ mean and variance $P$ gives</p>
+  <div class="math-block">$$\lambda_1 = 0, \quad \lambda_2 = \frac{1}{2P\ln 2}, \quad f^\star = \mathcal{N}(0, P).$$</div>
+  <p>Same answer. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Numerical Examples</h2><div class="divider"></div>
+  <table class="dm-table">
+    <tr><th>distribution</th><th>$\mathrm{Var}$</th><th>$h$ (bits)</th></tr>
+    <tr><td>$\mathcal{N}(0, 1)$</td><td>$1$</td><td>$2.047$</td></tr>
+    <tr><td>$\mathrm{Lap}(1/\sqrt 2)$</td><td>$1$</td><td>$\log(2e/\sqrt 2)\approx 1.943$</td></tr>
+    <tr><td>$\mathrm{Unif}(-\sqrt 3, \sqrt 3)$</td><td>$1$</td><td>$\log(2\sqrt 3)\approx 1.792$</td></tr>
+    <tr><td>$\tfrac{1}{2}\delta_{-1} + \tfrac{1}{2}\delta_1$</td><td>$1$</td><td>$-\infty$ (atomic)</td></tr>
+  </table>
+  <p>All have variance $1$. Gaussian has the largest $h$.</p>
+</div>
+
+<div class="slide">
+  <h2>Corollary &mdash; Hadamard's Inequality</h2><div class="divider"></div>
+  <p>For any positive-definite $K\in\mathbb{R}^{d\times d}$:</p>
+  <div class="math-block">$$\det K \;\le\; \prod_{i=1}^d K_{ii}.$$</div>
+  <p><strong>Proof via maxent.</strong> Let $\mathbf{X}\sim\mathcal{N}(0, K)$. Then $h(\mathbf{X}) = \tfrac{1}{2}\log\bigl((2\pi e)^d\det K\bigr)$. Apply chain rule and "conditioning reduces entropy":</p>
+  <div class="math-block">$$h(\mathbf{X}) \;\le\; \sum_i h(X_i) \;=\; \sum_i \tfrac{1}{2}\log(2\pi e K_{ii}).$$</div>
+  <p>Exponentiate to get $\det K \le \prod K_{ii}$. $\square$</p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Multivariate Gaussian</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Covariance constraint, Hadamard, conditioning</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Multivariate MaxEnt</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>Among all densities on $\mathbb{R}^d$ with covariance matrix $\preceq K$,</p>
+    <div class="math-block">$$h(\mathbf{X}) \;\le\; \tfrac{1}{2}\log\bigl((2\pi e)^d \det K\bigr),$$</div>
+    <p>with equality iff $\mathbf{X}\sim\mathcal{N}(\boldsymbol{\mu}, K)$ for some $\boldsymbol{\mu}$.</p>
+  </div>
+  <p>Proof: identical to scalar case, using the multivariate KL with cross-entropy depending on covariance only.</p>
+</div>
+
+<div class="slide">
+  <h2>Conditioning Gaussians</h2><div class="divider"></div>
+  <p>$(X, Y)\sim\mathcal{N}(\mathbf{0}, K)$ with $K = \begin{pmatrix} K_{XX} & K_{XY} \\ K_{XY}^\top & K_{YY} \end{pmatrix}$.</p>
+  <p>The conditional $X\mid Y = y$ is Gaussian with</p>
+  <div class="math-block">$$\mathbb{E}[X\mid Y = y] \;=\; K_{XY} K_{YY}^{-1} y, \qquad \mathrm{Cov}(X\mid Y) \;=\; K_{XX} - K_{XY} K_{YY}^{-1} K_{XY}^\top.$$</div>
+  <p>Hence</p>
+  <div class="math-block">$$h(X\mid Y) \;=\; \tfrac{1}{2}\log\bigl((2\pi e)^{d_X} \det(K_{XX} - K_{XY} K_{YY}^{-1} K_{XY}^\top)\bigr).$$</div>
+</div>
+
+<div class="slide">
+  <h2>Mutual Information for Gaussians</h2><div class="divider"></div>
+  <p>For jointly Gaussian $(X, Y)$:</p>
+  <div class="math-block">$$\begin{aligned}
+    I(X; Y) &= h(X) - h(X\mid Y) \\
+            &= \tfrac{1}{2}\log\frac{\det K_{XX}}{\det(K_{XX} - K_{XY} K_{YY}^{-1} K_{XY}^\top)} \\
+            &= \tfrac{1}{2}\log\frac{\det K_{XX}\det K_{YY}}{\det K}.
+  \end{aligned}$$</div>
+  <p>Scalar: $I(X;Y) = -\tfrac{1}{2}\log(1 - \rho^2)$ where $\rho$ is the correlation.</p>
+</div>
+
+<div class="slide">
+  <h2>Translation Invariance Revisited</h2><div class="divider"></div>
+  <p>Let $\mathbf{Y} = A\mathbf{X} + \mathbf{b}$ for invertible $A$. Then</p>
+  <div class="math-block">$$h(\mathbf{Y}) \;=\; h(\mathbf{X}) + \log|\det A|.$$</div>
+  <p>Application: orthogonal transformations ($|\det A| = 1$) preserve $h$. Examples:</p>
+  <ul>
+    <li>Rotations of $\mathbb{R}^d$.</li>
+    <li>Discrete Fourier transform (unitary).</li>
+    <li>Hadamard / Walsh transforms.</li>
+  </ul>
+  <p>Used heavily in lossy compression (QUIP#, TURBOQUANT) to "Gaussianize" weights without changing entropy.</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Entropy Power Inequality</h1>
+  <div class="divider"></div>
+  <p class="subtitle">How entropies add for sums of independent RVs</p>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; Entropy Power</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition.</h3>
+    <p>The <strong>entropy power</strong> of $\mathbf{X}\in\mathbb{R}^d$ is</p>
+    <div class="math-block">$$N(\mathbf{X}) \;=\; \frac{1}{2\pi e}\,\exp\!\left(\frac{2}{d}\,h(\mathbf{X})\right).$$</div>
+  </div>
+  <ul>
+    <li>For $\mathcal{N}(0, \sigma^2 I)$: $N = \sigma^2$ &mdash; "the variance of an equivalent isotropic Gaussian".</li>
+    <li>$N$ is non-negative, scaling: $N(a\mathbf{X}) = a^2 N(\mathbf{X})$ (matches variance scaling).</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Entropy Power Inequality</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Shannon, 1948; Stam, 1959).</h3>
+    <p>For independent $\mathbf{X}, \mathbf{Y}\in\mathbb{R}^d$,</p>
+    <div class="math-block">$$N(\mathbf{X} + \mathbf{Y}) \;\ge\; N(\mathbf{X}) + N(\mathbf{Y}),$$</div>
+    <p>with equality iff $\mathbf{X}, \mathbf{Y}$ are Gaussians with proportional covariances.</p>
+  </div>
+  <div class="cite">Stam, "Some inequalities satisfied by the quantities of information of Fisher and Shannon", Information and Control 1959.</div>
+</div>
+
+<div class="slide">
+  <h2>Equivalent Form</h2><div class="divider"></div>
+  <p>Taking $\log$:</p>
+  <div class="math-block">$$\exp\!\left(\tfrac{2}{d}h(\mathbf{X} + \mathbf{Y})\right) \;\ge\; \exp\!\left(\tfrac{2}{d}h(\mathbf{X})\right) + \exp\!\left(\tfrac{2}{d}h(\mathbf{Y})\right).$$</div>
+  <p>Or: <strong>"the entropy power of a sum is at least the sum of entropy powers"</strong>.</p>
+  <p>Proof is classical but technical &mdash; uses Fisher information and the heat semigroup. Sketch in companion notes.</p>
+</div>
+
+<div class="slide">
+  <h2>Special Case &mdash; Both Gaussian</h2><div class="divider"></div>
+  <p>$\mathbf{X}\sim\mathcal{N}(0, \sigma_X^2 I)$, $\mathbf{Y}\sim\mathcal{N}(0, \sigma_Y^2 I)$, independent.</p>
+  <ul>
+    <li>$\mathbf{X} + \mathbf{Y}\sim\mathcal{N}(0, (\sigma_X^2 + \sigma_Y^2) I)$.</li>
+    <li>$N(\mathbf{X} + \mathbf{Y}) = \sigma_X^2 + \sigma_Y^2 = N(\mathbf{X}) + N(\mathbf{Y})$.</li>
+  </ul>
+  <p>Equality &mdash; the EPI is saturated when both are isotropic Gaussians.</p>
+</div>
+
+<div class="slide">
+  <h2>EPI &mdash; Why "Gaussians Are Hardest"</h2><div class="divider"></div>
+  <p>For variance $\sigma^2$, the maximum-entropy density is the Gaussian. For an entropy budget, the minimum-variance density is the Gaussian.</p>
+  <p>EPI sharpens this: under <em>convolution</em> (sums), Gaussianity is preserved, and any deviation strictly increases the entropy power gap.</p>
+  <div class="highlight"><strong>Among inputs to a noise-adding channel, Gaussian input + Gaussian noise is the worst-case rate.</strong> Used in the AWGN converse (Lecture 3).</div>
+</div>
+
+<div class="slide">
+  <h2>Application &mdash; AWGN Capacity Converse Sketch</h2><div class="divider"></div>
+  <p>AWGN: $Y = X + Z$, $Z\sim\mathcal{N}(0, \sigma^2)$, $\mathbb{E}[X^2] \le P$.</p>
+  <p>For any input distribution:</p>
+  <div class="math-block">$$\begin{aligned}
+    h(Y) &\;\le\; \tfrac{1}{2}\log(2\pi e (P + \sigma^2)) \quad\text{(MaxEnt for variance } \le P+\sigma^2\text{)} \\
+    h(Y\mid X) &\;=\; h(Z) \;=\; \tfrac{1}{2}\log(2\pi e \sigma^2) \\
+    I(X;Y) &= h(Y) - h(Y\mid X) \;\le\; \tfrac{1}{2}\log\!\left(1 + \tfrac{P}{\sigma^2}\right).
+  \end{aligned}$$</div>
+  <p>Equality with $X\sim\mathcal{N}(0, P)$. <strong>Shannon&ndash;Hartley capacity.</strong></p>
+</div>
+
+<div class="slide">
+  <h2>Application &mdash; CLT-Style Result</h2><div class="divider"></div>
+  <p>For i.i.d. $X_1, \dots, X_n$ with finite variance,</p>
+  <div class="math-block">$$\bar X_n \;=\; \tfrac{1}{n}\sum_i X_i \;\xrightarrow{d}\; \mathcal{N}(\mu, \sigma^2/n).$$</div>
+  <p>EPI gives a related entropy-monotonicity result: $h(\bar X_n)$ <em>increases</em> with $n$ (when normalized properly), reflecting the fact that the sum is "more Gaussian" than its summands.</p>
+  <p>The <strong>monotonicity of entropy along the CLT</strong> (Artstein&ndash;Ball&ndash;Barthe&ndash;Naor 2004) makes this rigorous.</p>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>MaxEnt:</strong> $f^\star \propto \exp(-\sum \lambda_k T_k)$ &middot; exponential family.</li>
+    <li><strong>Gaussian:</strong> max $h$ for fixed variance &middot; bound $\tfrac{1}{2}\log(2\pi e P)$.</li>
+    <li><strong>Multivariate:</strong> MaxEnt under covariance $K$ is $\mathcal{N}(0, K)$.</li>
+    <li><strong>Hadamard:</strong> $\det K\le\prod K_{ii}$ from MaxEnt + chain rule.</li>
+    <li><strong>EPI:</strong> $N(\mathbf{X}+\mathbf{Y})\ge N(\mathbf{X}) + N(\mathbf{Y})$.</li>
+  </ul>
+  <div class="highlight">Gaussian is the "extremal" object &mdash; the central object in continuous information theory.</div>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

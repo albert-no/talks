@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossless 3 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossless 3 &mdash; Companion Notes</h1>
+
+<article>
+<h2>Stationarity vs Ergodicity</h2>
+<p>A process is <strong>stationary</strong> if $\Pr(X_{i_1}\in A_1,\dots,X_{i_k}\in A_k) = \Pr(X_{i_1+t}\in A_1, \dots, X_{i_k+t}\in A_k)$ for all $t$. It is <strong>ergodic</strong> if every shift-invariant event has probability $0$ or $1$.</p>
+<p>For a Markov chain, stationary $+$ irreducible $+$ aperiodic $\Rightarrow$ ergodic. Most slides assume stationary i.i.d. or stationary ergodic Markov; both are routinely satisfied in language modeling.</p>
+</article>
+
+<article>
+<h2>Entropy Rate &mdash; Two Limits Agree (Detail)</h2>
+<p>Define $H_n = H(X_n\mid X_1^{n-1})$ and $\bar H_n = H(X^n)/n$. By the chain rule, $\bar H_n = (1/n)\sum_{i=1}^n H_i$, so $\bar H_n$ is the Cesàro average of $H_i$.</p>
+<p><strong>Monotonicity of $H_n$.</strong> Stationarity gives $H(X_n\mid X_1^{n-1}) = H(X_{n-1}\mid X_0, X_1^{n-2}) \le H(X_{n-1}\mid X_1^{n-2}) = H_{n-1}$. So $H_n$ is non-increasing, bounded below by $0$, hence $\lim H_n = H'$.</p>
+<p><strong>Cesàro lemma.</strong> If $H_n \to H'$, then $\bar H_n \to H'$. Hence $H = H'$.</p>
+</article>
+
+<article>
+<h2>Two-State Chain &mdash; Verifying $\pi$</h2>
+<p>For the example $\alpha = 0.1$, $\beta = 0.4$:</p>
+<div class="math-block">$$\pi P = (\pi_0, \pi_1)\begin{pmatrix} 0.9 & 0.1 \\ 0.4 & 0.6 \end{pmatrix} = (0.9\pi_0 + 0.4\pi_1,\; 0.1\pi_0 + 0.6\pi_1).$$</div>
+<p>Equating to $(\pi_0, \pi_1) = (0.8, 0.2)$: $0.9(0.8) + 0.4(0.2) = 0.72 + 0.08 = 0.80$. $\checkmark$</p>
+</article>
+
+<article>
+<h2>Universal Coding &mdash; Krichevsky–Trofimov</h2>
+<p>The KT mixture estimator for an i.i.d. source with $|\mathcal{X}| = k$:</p>
+<div class="math-block">$$\hat p_{\mathrm{KT}}(x_t = a \mid x_1^{t-1}) = \frac{n_a(x_1^{t-1}) + 1/2}{t - 1 + k/2},$$</div>
+<p>where $n_a$ is the empirical count of symbol $a$ in $x_1^{t-1}$. Adding the Laplace-style $1/2$ pseudocount yields a Bayesian mixture against the Dirichlet$(1/2,\dots,1/2)$ prior.</p>
+<p>Plug into arithmetic coding to get a universal code with redundancy $((k-1)/2)\log n + O(1)$ — matching the lower bound up to $O(1)$.</p>
+</article>
+
+<article>
+<h2>Context Tree Weighting</h2>
+<p>For Markov sources of unknown order, CTW (Willems–Shtarkov–Tjalkens 1995) maintains a weighted mixture of all KT estimators on all binary contexts up to depth $D$. Achieves redundancy $O(\Gamma\log n / n)$ where $\Gamma$ is the number of leaves in the optimal context tree.</p>
+<p>CTW is provably optimal among "tree models" and is competitive with finite-state Markov models when the depth $D$ is large enough.</p>
+</article>
+
+<article>
+<h2>LZ78 &mdash; Why $c(n)\log c(n)/n \to H$</h2>
+<p>Sketch from Cover &amp; Thomas, Theorem 13.5.3:</p>
+<ol>
+  <li>Group the LZ78 phrases by length. Phrases of length $\ell$ correspond to depth-$\ell$ leaves in the parsing tree.</li>
+  <li>Each phrase is the deepest match plus one extension symbol; by the prefix-tree structure, no phrase is repeated.</li>
+  <li>For a stationary ergodic source: the empirical phrase frequencies converge to the true marginals of $X^\ell$, giving $\sum_\ell c_\ell \log c_\ell / n \to H(\mathscr{X})$.</li>
+</ol>
+<p>The standard proof actually uses a tighter argument via the conditional probabilities of suffixes: each LZ78 phrase, on a stationary ergodic source, has self-information $\approx -\log p(\text{phrase}) \approx \ell H$.</p>
+</article>
+
+<article>
+<h2>LZ77 vs LZ78 &mdash; Practical Difference</h2>
+<p><strong>LZ78</strong> builds an explicit dictionary; output is (index, symbol). Used in compress, GIF (with LZW variant).</p>
+<p><strong>LZ77</strong> uses a sliding window: output is (offset, length, symbol), pointing back into the recent history. Used in gzip, deflate, zstd.</p>
+<p>LZ77 is much more practical for decompressing on demand — no dictionary state to rebuild. Both are asymptotically optimal.</p>
+</article>
+
+<article>
+<h2>Modern: LLM-Based Compression</h2>
+<p>An LLM provides $q(x_t\mid x_1^{t-1})$ for any prefix. Plug into arithmetic coding $\Rightarrow$ rate $H(p) + D(p\,\|\,q)$. As $q\to p$, rate $\to H(p)$.</p>
+<p>Recent results (DeepMind 2023, ICML; Delétang et al.) show that large language models compress text better than gzip and even bzip2 — they have learned a more accurate sequential model than classical universal coders. The compression-rate metric is now a standard probe of language model quality.</p>
+</article>
+
+</body>
+</html>

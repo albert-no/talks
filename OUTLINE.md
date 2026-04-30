@@ -8,6 +8,9 @@ Each topic folder has its own `OUTLINE.md`. Leaf subfolders have detailed per-de
 
 - **`dllm/`** — Diffusion LLMs: invited talk on masked-discrete diffusion (Rainbow Padding, A2D, dgMARK, Reversal Curse, DAPD). 1 deck, no notes.
 - **`infotheory/`** — Information-theory lecture series (paired decks + `-note.html` companions):
+  - `entropy/` — Foundations: entropy, KL, joint/conditional MI, DPI, Fano (2 lectures)
+  - `lossless/` — Codes/Kraft/Huffman, AEP/arithmetic, Markov/LZ (3 lectures)
+  - `diffentropy/` — Differential entropy, MaxEnt/Gaussian/EPI, AWGN/water-filling/I-MMSE (3 lectures)
   - `diffusion/` — Diffusion as hierarchical VAE (3 lectures)
   - `lossy/` — Rate–distortion + LLM compression (4 lectures)
   - `mi/` — Variational MI bounds, InfoNCE/CLIP (2 lectures)
@@ -20,6 +23,15 @@ Each topic folder has its own `OUTLINE.md`. Leaf subfolders have detailed per-de
 
 | Topic | Location |
 |---|---|
+| Entropy definition / Gibbs / log-sum | `infotheory/entropy/entropy1-entropy-kl.html:97, :379, :437` |
+| Chain rule / DPI / Fano | `infotheory/entropy/entropy2-joint-mi-fano.html:118, :368, :438` |
+| Mutual information (discrete) | `infotheory/entropy/entropy2-joint-mi-fano.html:227` |
+| Kraft / Kraft–McMillan / Shannon / Huffman | `infotheory/lossless/lossless1-codes.html:157, :198, :268, :413` |
+| AEP / source coding theorem / arithmetic coding | `infotheory/lossless/lossless2-aep-arithmetic.html:84, :204, :405` |
+| Markov entropy rate / LZ78 | `infotheory/lossless/lossless3-markov-universal.html:188, :355` |
+| Differential entropy + bin discretization | `infotheory/diffentropy/diffentropy1-foundations.html:84, :96` |
+| Gaussian MaxEnt / Hadamard / EPI | `infotheory/diffentropy/diffentropy2-maxent-gaussian.html:165, :248, :367` |
+| Shannon–Hartley / water-filling / I-MMSE | `infotheory/diffentropy/diffentropy3-mi-awgn.html:177, :293, :385` |
 | Score function / Tweedie's formula | `privacy/diffusion/diffusion1-foundations.html:362-425`; theorem at `infotheory/diffusion/diff3-parameterizations.html:121` |
 | DDPM forward + VLB derivation | `privacy/diffusion/diffusion2-ddpm.html:189-333`; `infotheory/diffusion/diff2-diffusion.html:153-212` |
 | SDE / Fokker–Planck / Anderson reverse | `privacy/diffusion/diffusion3-sde-score.html` (FP `:148`, Anderson `:234`, score matching `:339`) |

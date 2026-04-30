@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lossless 1 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lossless 1 &mdash; Companion Notes</h1>
+
+<article>
+<h2>Uniquely Decodable vs Prefix-Free</h2>
+<p>Every prefix-free code is uniquely decodable, but not every UD code is prefix-free. Example: the code $f(A) = 0$, $f(B) = 01$, $f(C) = 011$ is uniquely decodable (decode by reverse-parsing — "$0$" can only end a codeword) but not prefix-free.</p>
+<p>By the Kraft–McMillan theorem, however, any UD code can be replaced by a prefix-free code with the same length distribution. So restricting to prefix-free codes loses no rate, only flexibility.</p>
+</article>
+
+<article>
+<h2>Kraft Sufficiency &mdash; Greedy Construction</h2>
+<p>Sort lengths $\ell_1\le\ell_2\le\dots\le\ell_n$. Walk a depth-$\ell_n$ binary tree from left to right; at each step, claim the next available leaf at depth $\ell_i$, and prune the subtree above it.</p>
+<p>The leaf-budget at step $i$ is $2^{\ell_n} - \sum_{j&lt;i} 2^{\ell_n - \ell_j}$. By Kraft, $\sum_j 2^{-\ell_j}\le 1$, so this is $\ge 2^{\ell_n - \ell_i}$, which is exactly the number of depth-$\ell_n$ leaves under any node at depth $\ell_i$. Hence the greedy step succeeds.</p>
+</article>
+
+<article>
+<h2>Kraft–McMillan &mdash; Why $T^k$?</h2>
+<p>The trick is to consider <em>$k$-fold extensions</em>: encode $k$ source symbols at once. The encoded bit string has length between $k$ and $k\ell_{\max}$. Unique decodability of the original code implies unique decodability of the $k$-fold extension, so distinct $k$-tuples have distinct bit strings.</p>
+<p>Counting: $A_m \le 2^m$ (binary strings of length $m$). Hence $T^k = \sum_m A_m 2^{-m} \le k\ell_{\max}$. Since this holds for every $k$, $T \le 1$ (or else $T^k$ would grow exponentially).</p>
+</article>
+
+<article>
+<h2>Entropy Bound on UD Codes</h2>
+<p>The cleaner derivation: define $q_i = 2^{-\ell_i}/T$ where $T = \sum_j 2^{-\ell_j} \le 1$. Then $q$ is a pmf and</p>
+<div class="math-block">$$L - H = \sum_i p_i \ell_i + \sum_i p_i \log p_i = \sum_i p_i \log\frac{p_i}{2^{-\ell_i}} = D(p\,\|\,q) - \log T \ge 0,$$</div>
+<p>since $D \ge 0$ and $\log T \le 0$.</p>
+</article>
+
+<article>
+<h2>Shannon Code &mdash; Worst Case</h2>
+<p>Shannon code length $\lceil \log 1/p \rceil$ can exceed $\log 1/p$ by up to nearly $1$ bit per symbol for skewed distributions. Worst case: $p = (1-\epsilon, \epsilon)$ for small $\epsilon$. Shannon assigns $\ell = (1, \lceil\log 1/\epsilon\rceil)$, giving $L \approx 1$ but $H \approx \epsilon\log(1/\epsilon)\to 0$. Gap $\approx 1$ bit.</p>
+<p>Huffman fixes this: it would assign $\ell = (1,1)$, giving $L = 1$, but with the same gap $\approx 1$ from $H$. Both codes hit the $1$-bit gap; only block coding bridges it.</p>
+</article>
+
+<article>
+<h2>Mismatch Cost &mdash; Operational Reading</h2>
+<p>$L_{\hat p}(p) = H(p) + D(p\,\|\,\hat p)$ is the rate when we encode with code designed for $\hat p$ but the truth is $p$. Two important readings:</p>
+<ul>
+  <li><strong>Universal coding:</strong> if $\hat p$ is an estimate of $p$, the redundancy is $D(p\,\|\,\hat p)$, going to 0 as $\hat p \to p$.</li>
+  <li><strong>Cross-entropy as training loss:</strong> in language modeling, the negative log-likelihood under the model $\hat p$ averaged over the true data $p$ is exactly $H(p) + D(p\,\|\,\hat p)$. Minimizing this over $\hat p$ minimizes $D(p\,\|\,\hat p)$ — the model's compression rate gap from optimal.</li>
+</ul>
+</article>
+
+<article>
+<h2>Huffman &mdash; Optimality Proof Detail</h2>
+<p>Lemma 1 (probability/length monotone) is proven by exchange: swap codewords of any pair $(x,x')$ with $p(x)>p(x')$ and $\ell(x)>\ell(x')$, decreasing $L$ by $(p(x)-p(x'))(\ell(x)-\ell(x')) > 0$.</p>
+<p>Lemma 2 (least-probable two are siblings): if the two least-probable symbols $a_{n-1}, a_n$ sit at maximum depth $\ell_{\max}$ but are not siblings, $a_n$'s sibling slot is unused. Detach $a_n$, attach it as $a_{n-1}$'s sibling. The new code remains prefix-free and has $a_n$'s length unchanged or decreased — never worse.</p>
+<p>Inductive step: merging $a_{n-1}, a_n$ into a single super-symbol $a^*$ with $p(a^*) = p(a_{n-1}) + p(a_n)$ reduces alphabet to size $n-1$. The resulting smaller-alphabet problem has a unique optimal solution by induction; lift it back by splitting $a^*$ into siblings.</p>
+</article>
+
+<article>
+<h2>Block Coding — How Block Length Trades Off</h2>
+<p>Encoding $X^n$ as a single super-symbol with Shannon code: $L(X^n) \le H(X^n) + 1 = nH(X) + 1$ (i.i.d.). Per-symbol rate $\le H(X) + 1/n$.</p>
+<p>Block coding cost: codebook size $|\mathcal{X}|^n$ (exponential), encoding/decoding lookup table grows exponentially. Hence Huffman blocks are impractical beyond $n \approx 6\ldots 8$ for $|\mathcal{X}|\sim 100$. Arithmetic coding (Lecture 2) achieves the same bound without storing a codebook.</p>
+</article>
+
+</body>
+</html>

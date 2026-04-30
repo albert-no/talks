@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Entropy 1 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+.aside { background: #fff8e1; border-left: 3px solid #d4a017; padding: 10px 14px; border-radius: 6px; margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<h1>Entropy 1 &mdash; Companion Notes</h1>
+<p><em>Long-form derivations and asides for the deck. Section headers match slide titles.</em></p>
+
+<article>
+<h2>What Should "Information" Mean?</h2>
+<p>Khinchin's axiomatic characterization (1957) makes the three desiderata precise. He asks for a function $H(p_1,\dots,p_n)$ that is:</p>
+<ol>
+  <li>continuous in each $p_i$;</li>
+  <li>maximized at the uniform distribution $(1/n,\dots,1/n)$;</li>
+  <li>invariant under appending a zero-probability outcome (extensible);</li>
+  <li>satisfies the grouping axiom $H(p_1,\dots,p_n) = H(p_1+p_2, p_3,\dots,p_n) + (p_1+p_2) H\!\left(\tfrac{p_1}{p_1+p_2}, \tfrac{p_2}{p_1+p_2}\right)$.</li>
+</ol>
+<p>The Shannon entropy is the unique function (up to a multiplicative constant) satisfying these axioms. The base of the logarithm fixes the constant: bits ($\log_2$), nats ($\ln$), or dits ($\log_{10}$).</p>
+</article>
+
+<article>
+<h2>Self-Information</h2>
+<p>The function $i(E) = -\log P(E)$ is sometimes called the <em>information content</em> or <em>surprisal</em> of event $E$. The choice of $-\log p$ (rather than, say, $1 - p$) is forced by the additivity requirement: any continuous function $\varphi:(0,1]\to\mathbb{R}_{\ge 0}$ satisfying $\varphi(p_1 p_2) = \varphi(p_1) + \varphi(p_2)$, $\varphi(1)=0$, must be of the form $-c\log p$ for some $c > 0$.</p>
+</article>
+
+<article>
+<h2>Definition &mdash; Entropy</h2>
+<p>The convention $0 \log 0 = 0$ is justified by continuity: $\lim_{p\to 0^+} p\log(1/p) = 0$ (de l'Hôpital, or just $p\log(1/p) = -p\ln p / \ln 2$). The expectation form $H(X) = \mathbb{E}[-\log p_X(X)]$ then makes sense even for distributions with countable support, provided the sum converges.</p>
+<p>For countable $\mathcal{X}$, $H$ may be infinite; the geometric distribution example shows it can also be finite even on countable support.</p>
+</article>
+
+<article>
+<h2>Example &mdash; Geometric($p$)</h2>
+<p>Verifying the identity $\sum_{k\ge 1} (k-1)(1-p)^{k-1} p = (1-p)/p$. Let $S = \sum_{k\ge 1}(k-1)(1-p)^{k-1}p$. Note $S$ is the mean of $X-1$ where $X\sim\mathrm{Geom}(p)$, so $S = \mathbb{E}[X] - 1 = 1/p - 1 = (1-p)/p$. Done.</p>
+<p>Alternative direct computation: differentiate $\sum_{k\ge 0} q^k = 1/(1-q)$ with $q = 1-p$ to get $\sum_{k\ge 1} k q^{k-1} = 1/(1-q)^2 = 1/p^2$. Then $\sum_{k\ge 1} (k-1) q^{k-1} = 1/p^2 - 1/p$. Multiply by $p$ to recover $1/p - 1$.</p>
+</article>
+
+<article>
+<h2>Why $\log$? &mdash; Additivity</h2>
+<p>This is sometimes called the <em>Cauchy functional equation</em> in disguise. The additivity requirement plus measurability fixes $-\log$ uniquely up to base. Without measurability, pathological solutions exist (Hamel-basis monstrosities), but they are nowhere measurable.</p>
+</article>
+
+<article>
+<h2>Concavity &mdash; Direct Second-Derivative Argument</h2>
+<p>$H(p)$ is a function on the probability simplex $\Delta_n = \{p\in\mathbb{R}_{\ge 0}^n : \sum p_i = 1\}$. Treating it as a function of the unconstrained $p_1,\dots,p_n > 0$ with $\sum p_i = 1$ as a constraint, the Hessian on the tangent space is</p>
+<div class="math-block">$$\partial_i \partial_j (-p_i\log p_i) = -\frac{\delta_{ij}}{p_i\ln 2}.$$</div>
+<p>This is negative-definite, so $H$ is strictly concave on the open simplex. The "conditioning reduces entropy" route used on the slide is shorter; the second-derivative route is more direct but uses calculus on the simplex.</p>
+</article>
+
+<article>
+<h2>Worked Values for $H_b$</h2>
+<p>Computation of $H_b(1/4)$:</p>
+<div class="math-block">$$H_b(\tfrac{1}{4}) = \tfrac{1}{4}\log 4 + \tfrac{3}{4}\log\tfrac{4}{3} = \tfrac{1}{2} + \tfrac{3}{4}(\log 4 - \log 3) = \tfrac{1}{2} + \tfrac{3}{2} - \tfrac{3}{4}\log 3 = 2 - \tfrac{3}{4}\log 3.$$</div>
+<p>Using $\log_2 3 \approx 1.585$, $H_b(1/4) \approx 2 - 1.189 = 0.811$.</p>
+<p>Small-$p$ asymptotic: $H_b(p) \approx p \log(1/p) + p\log e + O(p^2)$ for small $p$, since $-(1-p)\log(1-p) = (1-p)\sum_{k\ge 1} p^k/(k\ln 2) = p/\ln 2 - p^2/(2\ln 2) - \cdots$</p>
+</article>
+
+<article>
+<h2>Recursive Identity for Entropy</h2>
+<p>The "splitting" identity</p>
+<div class="math-block">$$H(p_1,\dots,p_n) = H_b(p_1) + (1-p_1)\,H\!\left(\tfrac{p_2}{1-p_1}, \dots, \tfrac{p_n}{1-p_1}\right)$$</div>
+<p>follows from the chain rule: introduce the binary indicator $E = \mathbb{1}\{X = x_1\}$. Then $H(X) = H(E) + H(X\mid E) = H_b(p_1) + (1-p_1)\,H(p_2/(1-p_1),\dots,p_n/(1-p_1))$.</p>
+<p>This identity gives a quick recursive algorithm to compute $H$ for any pmf.</p>
+</article>
+
+<article>
+<h2>KL Divergence &mdash; Asymmetry</h2>
+<p>The asymmetry of $D(p\,\|\,q)$ has operational consequences. In coding (Lecture: Lossless 1), $D(p\,\|\,q)$ is the <em>excess rate</em> when the true distribution is $p$ but the code was designed for $q$. The reverse $D(q\,\|\,p)$ is the excess rate in the dual problem (true $q$, code for $p$).</p>
+<p>In hypothesis testing, $D(p\,\|\,q)$ is the Stein exponent: the asymptotic rate at which type-II error decays under the null $p$ when type-I error is fixed at any level $\alpha\in(0,1)$.</p>
+</article>
+
+<article>
+<h2>Proof &mdash; Gibbs via Jensen</h2>
+<p>The proof on the slide uses Jensen on $\log$ (concave). An equivalent route uses the elementary inequality $\ln t \le t - 1$ for $t > 0$, with equality iff $t = 1$:</p>
+<div class="math-block">$$-D(p\,\|\,q)\ln 2 = \sum_x p(x)\ln\frac{q(x)}{p(x)} \le \sum_x p(x)\!\left(\frac{q(x)}{p(x)} - 1\right) = \sum_x q(x) - \sum_x p(x) = 0.$$</div>
+<p>Equality iff $q(x)/p(x) = 1$ on the support of $p$.</p>
+</article>
+
+<article>
+<h2>Mismatch Cost &mdash; Cross-Entropy</h2>
+<p>The decomposition $\mathbb{E}_p[\ell(X)] = D(p\,\|\,q) + H(p)$ uses ideal codeword lengths $\ell(x) = -\log q(x)$. In practice, codeword lengths are integers, giving an additional $\le 1$ bit-per-symbol overhead (Shannon code). Arithmetic coding asymptotically achieves $\mathbb{E}_p[\ell(X^n)/n] \to H(p) + D(p\,\|\,q)$, eliminating the integer overhead per block.</p>
+</article>
+
+<article>
+<h2>Log-Sum &mdash; Why Useful</h2>
+<p>The log-sum inequality is the workhorse for proving:</p>
+<ul>
+  <li>Joint convexity of $D(p\,\|\,q)$.</li>
+  <li>Concavity of $H(p)$ in $p$.</li>
+  <li>Convexity of $I(X;Y) = D(p_{X,Y}\,\|\,p_X p_Y)$ in $p_{Y\mid X}$ for fixed $p_X$, and concavity in $p_X$ for fixed $p_{Y\mid X}$.</li>
+  <li>Channel capacity is achieved by a unique $p_X^\star$ (when the channel input is continuously parameterized).</li>
+</ul>
+</article>
+
+<article>
+<h2>Pinsker's Inequality &mdash; Proof Sketch</h2>
+<p>For Bernoullis, the inequality reduces to verifying $H_b(p) - H_b(p+\Delta) \ge (\ln 2) \cdot 2\Delta^2$ for $|\Delta|$ small enough &mdash; equivalently $-H_b''(p)\ge 4/\ln 2$ which fails (the actual proof is more subtle). The standard Csiszár proof reduces to Bernoullis via the data-processing inequality applied to the indicator of any subset $S\subseteq\mathcal{X}$:</p>
+<div class="math-block">$$D(p\,\|\,q) \ge D\bigl(\mathrm{Bern}(p(S))\,\|\,\mathrm{Bern}(q(S))\bigr) \ge 2(\ln 2)\bigl(p(S) - q(S)\bigr)^2.$$</div>
+<p>Choosing $S = \{x : p(x) \ge q(x)\}$ gives $|p(S) - q(S)| = \|p-q\|_{\mathrm{TV}}$.</p>
+</article>
+
+<article>
+<h2>Connection to the Next Lecture</h2>
+<p>The chain rule, Gibbs, and the log-sum inequality are the only ingredients needed to derive the joint, conditional, and mutual-information identities of Lecture 2. Read the next deck with these three tools in hand &mdash; every theorem reduces to applying one of them.</p>
+</article>
+
+</body>
+</html>

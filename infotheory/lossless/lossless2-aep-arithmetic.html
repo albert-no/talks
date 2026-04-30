@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lossless 2 — AEP and Arithmetic Coding</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="../../reference/deck.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+.la-table { margin: 8px auto; border-collapse: collapse; }
+.la-table th, .la-table td { padding: 6px 18px; text-align: center; border: 1px solid var(--slate); font-size: 1.4rem; }
+.la-table th { background: var(--light); font-weight: 700; }
+.la-mono { font-family: 'Menlo','Consolas','Courier New', monospace; font-weight: 600; letter-spacing: 0.04em; }
+</style>
+</head>
+<body data-brand-logo="../../reference/kor-eng2.png">
+
+<div class="deck" id="deck">
+
+<!-- TITLE -->
+<div class="slide title-slide active">
+  <img class="title-logo" src="../../reference/kor-eng2.png" alt="Yonsei University">
+  <div class="pill pill-fill" style="margin-bottom:28px;">Lossless Compression &middot; Lecture 2 of 3</div>
+  <h1>AEP and<br>Arithmetic Coding</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Typical sets, source coding theorem, asymptotic optimality</p>
+  <p style="font-weight:500;">Albert No &nbsp;&middot;&nbsp; Yonsei University</p>
+  <p style="margin-top:6px;">Information Theory &middot; 2026</p>
+</div>
+
+<!-- TOC -->
+<div class="slide">
+  <h2>Contents</h2><div class="divider"></div>
+  <div class="toc-list">
+    <div class="toc-item">
+      <div class="toc-num">01</div><div class="toc-rule"></div>
+      <div><div class="toc-label">AEP</div>
+      <div class="toc-sub">Asymptotic equipartition, typical sets</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">02</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Source coding theorem</div>
+      <div class="toc-sub">Achievability, converse</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">03</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Arithmetic coding</div>
+      <div class="toc-sub">Map sequence to interval</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">04</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Optimality</div>
+      <div class="toc-sub">$L \le H + 2$ per block</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ PART 01 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">01</div>
+  <h1>AEP</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Almost all long sequences look the same</p>
+</div>
+
+<div class="slide">
+  <h2>Motivation</h2><div class="divider"></div>
+  <p>$X_1, X_2, \dots$ i.i.d. from $p_X$ on $\mathcal{X}$. There are $|\mathcal{X}|^n$ possible sequences, but most have negligible probability.</p>
+  <p><strong>Empirical observation.</strong> A "long" sequence almost always has empirical frequency $\hat{p}(a)\approx p(a)$ for each $a\in\mathcal{X}$, hence</p>
+  <div class="math-block">$$\log p(x^n) \;=\; \sum_a n\hat{p}(a)\log p(a) \;\approx\; -nH(X).$$</div>
+  <div class="highlight"><strong>"Almost all sequences are equally probable, with probability $\approx 2^{-nH(X)}$."</strong></div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; AEP</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Shannon&ndash;McMillan, 1948).</h3>
+    <p>If $X_1, X_2, \dots$ are i.i.d. with finite entropy $H(X)$,</p>
+    <div class="math-block">$$-\frac{1}{n}\log p(X_1, \dots, X_n) \;\xrightarrow{\;\text{prob}\;}\; H(X).$$</div>
+  </div>
+  <p><strong>Proof.</strong> $-\tfrac{1}{n}\log p(X^n) = \tfrac{1}{n}\sum_i (-\log p(X_i))$ is an empirical average of i.i.d. terms with mean $H(X)$. Apply the weak law of large numbers. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Definition &mdash; Typical Set</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Definition ($\varepsilon$-typical sequence).</h3>
+    <div class="math-block">$$A_\varepsilon^{(n)} \;=\; \left\{ x^n \in \mathcal{X}^n :\; \left|-\tfrac{1}{n}\log p(x^n) - H(X)\right| \le \varepsilon \right\}.$$</div>
+    <p>Equivalently, $x^n\in A_\varepsilon^{(n)}$ iff</p>
+    <div class="math-block">$$2^{-n(H(X)+\varepsilon)} \;\le\; p(x^n) \;\le\; 2^{-n(H(X)-\varepsilon)}.$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Three Properties of $A_\varepsilon^{(n)}$</h2><div class="divider"></div>
+  <ol>
+    <li><strong>High probability.</strong> $\Pr(X^n\in A_\varepsilon^{(n)})\to 1$ as $n\to\infty$.</li>
+    <li><strong>Bounded size.</strong>
+      <div class="math-block">$$|A_\varepsilon^{(n)}| \;\le\; 2^{n(H(X)+\varepsilon)}.$$</div>
+    </li>
+    <li><strong>Lower bound on size</strong> (for $n$ large enough):
+      <div class="math-block">$$|A_\varepsilon^{(n)}| \;\ge\; (1-\varepsilon)\,2^{n(H(X)-\varepsilon)}.$$</div>
+    </li>
+  </ol>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Property 1</h2><div class="divider"></div>
+  <p>By AEP, $-\tfrac{1}{n}\log p(X^n) \to H(X)$ in probability. Equivalently:</p>
+  <div class="math-block">$$\Pr\!\left\{\left|-\tfrac{1}{n}\log p(X^n) - H(X)\right| > \varepsilon\right\} \;\to\; 0.$$</div>
+  <p>The complement of this event is exactly $\{X^n\in A_\varepsilon^{(n)}\}$, so $\Pr(X^n\in A_\varepsilon^{(n)}) \to 1$. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Property 2 (Upper Bound)</h2><div class="divider"></div>
+  <p>Each typical sequence has $p(x^n) \ge 2^{-n(H+\varepsilon)}$, so</p>
+  <div class="math-block">$$1 \;\ge\; \Pr(X^n\in A_\varepsilon^{(n)}) \;=\; \sum_{x^n\in A_\varepsilon^{(n)}} p(x^n) \;\ge\; |A_\varepsilon^{(n)}|\,2^{-n(H+\varepsilon)}.$$</div>
+  <p>Solving:</p>
+  <div class="math-block">$$|A_\varepsilon^{(n)}| \;\le\; 2^{n(H+\varepsilon)}. \qquad\square$$</div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Property 3 (Lower Bound)</h2><div class="divider"></div>
+  <p>Each typical sequence has $p(x^n) \le 2^{-n(H-\varepsilon)}$, so for $n$ large enough that $\Pr(A_\varepsilon^{(n)}) \ge 1-\varepsilon$:</p>
+  <div class="math-block">$$1-\varepsilon \;\le\; \Pr(X^n\in A_\varepsilon^{(n)}) \;\le\; |A_\varepsilon^{(n)}|\,2^{-n(H-\varepsilon)}.$$</div>
+  <p>Hence</p>
+  <div class="math-block">$$|A_\varepsilon^{(n)}| \;\ge\; (1-\varepsilon)\,2^{n(H-\varepsilon)}. \qquad\square$$</div>
+</div>
+
+<div class="slide">
+  <h2>Picture &mdash; Volume Counting</h2><div class="divider"></div>
+  <div class="cols">
+    <div>
+      <p>The full space $\mathcal{X}^n$ has $|\mathcal{X}|^n = 2^{n\log|\mathcal{X}|}$ sequences.</p>
+      <p>The typical set has $\approx 2^{nH(X)}$ sequences and probability $\to 1$.</p>
+      <p>Atypical sequences vastly outnumber typical ones (when $p$ is non-uniform), but their <em>total</em> probability vanishes.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 280 220" width="100%" style="background:var(--light); border-radius:8px;">
+        <rect x="20" y="20" width="240" height="180" fill="none" stroke="#666" stroke-width="2"/>
+        <ellipse cx="140" cy="110" rx="80" ry="50" fill="#003876" fill-opacity="0.3" stroke="#003876" stroke-width="2"/>
+        <text x="140" y="115" font-size="13" fill="#003876" font-weight="700" text-anchor="middle">$\sim 2^{nH}$ sequences</text>
+        <text x="140" y="190" font-size="11" fill="#666" text-anchor="middle">$|\mathcal{X}|^n = 2^{n\log|\mathcal{X}|}$ total</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Bernoulli Source</h2><div class="divider"></div>
+  <p>$X_i\sim\mathrm{Bern}(0.1)$. $H(X) = H_b(0.1) \approx 0.469$ bits. $n = 100$.</p>
+  <ul>
+    <li>Total sequences: $2^{100} \approx 1.27\times 10^{30}$.</li>
+    <li>Typical set size: $\approx 2^{nH} = 2^{46.9} \approx 1.3\times 10^{14}$.</li>
+    <li>Typical sequences have between $\approx 7$ and $\approx 13$ ones (heuristic; exact range depends on $\varepsilon$).</li>
+  </ul>
+  <p>Compression ratio $\approx 100/47 \approx 2.13\times$.</p>
+</div>
+
+
+<!-- ════ PART 02 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">02</div>
+  <h1>Source Coding Theorem</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Bits per symbol $\to H(X)$, no lower</p>
+</div>
+
+<div class="slide">
+  <h2>Block Code &mdash; Setup</h2><div class="divider"></div>
+  <ul>
+    <li>Encoder $f_n: \mathcal{X}^n \to \{0,1\}^*$ &middot; rate $R = \log|\mathrm{range}(f_n)| / n$.</li>
+    <li>Decoder $g_n: \{0,1\}^* \to \mathcal{X}^n$.</li>
+    <li>Error: $P_e^{(n)} = \Pr(g_n(f_n(X^n)) \ne X^n)$.</li>
+  </ul>
+  <p>$R$ is <strong>achievable</strong> if there is a sequence of codes with</p>
+  <div class="math-block">$$\frac{|f_n|_{\max}}{n} \le R, \qquad P_e^{(n)} \to 0.$$</div>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Shannon's Source Coding</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem (Shannon, 1948).</h3>
+    <p>For an i.i.d. source with entropy $H(X)$:</p>
+    <ul>
+      <li><strong>Achievability:</strong> any rate $R > H(X)$ is achievable.</li>
+      <li><strong>Converse:</strong> any rate $R < H(X)$ is not achievable.</li>
+    </ul>
+    <p>Hence the operational compression limit equals the entropy.</p>
+  </div>
+  <div class="cite">Shannon, "A Mathematical Theory of Communication", BSTJ 1948.</div>
+</div>
+
+<div class="slide">
+  <h2>Achievability &mdash; Idea</h2><div class="divider"></div>
+  <p>Pick $\varepsilon$ with $H(X) + \varepsilon < R$. Build the code:</p>
+  <ol>
+    <li>Enumerate the typical set $A_\varepsilon^{(n)}$. Need at most $2^{n(H+\varepsilon)} \le 2^{nR}$ indices.</li>
+    <li><strong>Encoder.</strong> If $x^n\in A_\varepsilon^{(n)}$, output its index padded to $\lceil nR\rceil$ bits prepended with a $0$. Else output $\texttt{1}\,\underbrace{00\cdots 0}_{\lceil nR\rceil}$.</li>
+    <li><strong>Decoder.</strong> Strip leading bit; if $0$, look up index in the typical set; else declare error.</li>
+  </ol>
+</div>
+
+<div class="slide">
+  <h2>Achievability &mdash; Error Goes to Zero</h2><div class="divider"></div>
+  <p>Error happens only on the atypical set:</p>
+  <div class="math-block">$$P_e^{(n)} \;=\; \Pr(X^n\notin A_\varepsilon^{(n)}) \;\to\; 0$$</div>
+  <p>by AEP (Property 1). Rate is</p>
+  <div class="math-block">$$\frac{1 + \lceil nR\rceil}{n} \;\to\; R.$$</div>
+  <p>Hence any $R > H(X)$ is achievable. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Converse &mdash; $R < H(X)$ Fails</h2><div class="divider"></div>
+  <p>Fix $R < H(X) - \delta$. Code maps $X^n$ to one of $\le 2^{nR}$ outputs &middot; only $\le 2^{nR}$ sequences are decodable correctly. Call this set $B$.</p>
+  <p>For any $\eta > 0$, the typical set $A_\eta^{(n)}$ has $|A_\eta^{(n)}|\ge (1-\eta) 2^{n(H - \eta)}$. Pick $\eta < \delta/2$:</p>
+  <div class="math-block">$$|B| \;\le\; 2^{nR} \;\le\; 2^{n(H-\delta)} \;\ll\; |A_\eta^{(n)}|.$$</div>
+  <p>Most typical sequences are not in $B$. Continue on next slide.</p>
+</div>
+
+<div class="slide">
+  <h2>Converse &mdash; Continued</h2><div class="divider"></div>
+  <div class="math-block">$$\begin{aligned}
+    P_e^{(n)} &\;\ge\; \Pr(X^n\in A_\eta^{(n)}\setminus B) \\
+              &\;=\; \sum_{x^n\in A_\eta^{(n)}\setminus B} p(x^n) \\
+              &\;\ge\; (|A_\eta^{(n)}| - |B|)\,2^{-n(H+\eta)} \\
+              &\;\ge\; \bigl((1-\eta) 2^{n(H-\eta)} - 2^{nR}\bigr)\,2^{-n(H+\eta)} \\
+              &\;\to\; 1.
+  \end{aligned}$$</div>
+  <p>$P_e^{(n)} \not\to 0$. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>What If We Want Zero Error?</h2><div class="divider"></div>
+  <p>Allow only <strong>uniquely decodable</strong> codes (no error). Block lengths must satisfy</p>
+  <div class="math-block">$$\mathbb{E}[\ell(X^n)] \;\ge\; H(X^n) \;=\; n H(X).$$</div>
+  <p>Achievable: Shannon code on $X^n$ gives $L(X^n) < H(X^n) + 1 = nH(X) + 1$.</p>
+  <p>Per-symbol rate $\le H(X) + 1/n \to H(X)$. <strong>Zero-error compression also approaches $H$.</strong></p>
+</div>
+
+
+<!-- ════ PART 03 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
+  <h1>Arithmetic Coding</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Encode the entire sequence as one number</p>
+</div>
+
+<div class="slide">
+  <h2>Why Arithmetic Coding?</h2><div class="divider"></div>
+  <p>Block Shannon/Huffman on $X^n$ achieves $L \le H(X^n) + 1$. But the codebook has $|\mathcal{X}|^n$ entries &mdash; <strong>exponential storage</strong>.</p>
+  <p>Arithmetic coding achieves the same bound with $O(n)$ time and $O(1)$ working memory:</p>
+  <ul>
+    <li>Map $x^n$ to a sub-interval of $[0,1)$ of length $p(x^n)$.</li>
+    <li>Send a binary expansion identifying that interval.</li>
+    <li>Length of that expansion $\le \log\tfrac{1}{p(x^n)} + 2$ bits.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Construction &mdash; Recursive Subdivision</h2><div class="divider"></div>
+  <p>Order the alphabet $\mathcal{X} = \{a_1 < a_2 < \dots\}$. Cumulative distribution $F(a_k) = \sum_{j\le k} p(a_j)$.</p>
+  <p>Start with $[L_0, H_0) = [0, 1)$. Read symbol $x_t$:</p>
+  <div class="math-block">$$\begin{aligned}
+    L_t &= L_{t-1} + (H_{t-1} - L_{t-1}) F(x_t^-) \\
+    H_t &= L_{t-1} + (H_{t-1} - L_{t-1}) F(x_t).
+  \end{aligned}$$</div>
+  <p>$F(x_t^-)$ is cumulative just before $x_t$. After $n$ symbols: interval $[L_n, H_n)$ has length $H_n - L_n = p(x^n)$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Encoding "AB"</h2><div class="divider"></div>
+  <p>$\mathcal{X} = \{A, B, C\}$ with $p = (0.25, 0.15, 0.6)$. Cumulative: $F(A) = 0.25$, $F(B) = 0.40$.</p>
+  <p>Step 0: $[0, 1)$.</p>
+  <p>Read $A$: subdivide $[0, 1) \to [0, 0.25)$.</p>
+  <p>Read $B$: within $[0, 0.25)$, subdivide proportionally to $p$:</p>
+  <div class="math-block">$$[\,0,\;0.0625)\;[\,0.0625,\;0.10)\;[\,0.10,\;0.25\,).$$</div>
+  <p>$B$ corresponds to the middle: $[0.0625, 0.10)$. Length $= 0.0375 = 0.25 \cdot 0.15 = p(AB)$. $\;\checkmark$</p>
+</div>
+
+<div class="slide">
+  <h2>From Interval to Bits</h2><div class="divider"></div>
+  <p>Pick any $z\in[L_n, H_n)$, e.g. $z = (L_n + H_n)/2$. Truncate its binary expansion to $K$ bits, $\hat z = 0.b_1 b_2\cdots b_K$, choosing $K$ so that</p>
+  <div class="math-block">$$L_n \;\le\; \hat z \;<\; \hat z + 2^{-K} \;<\; H_n.$$</div>
+  <p>The truncated $\hat z$ uniquely identifies the interval $[L_n, H_n)$.</p>
+  <p>Decoder: given $\hat z$, retrace the subdivisions to recover $x^n$.</p>
+</div>
+
+<div class="slide">
+  <h2>Example &mdash; Decoding</h2><div class="divider"></div>
+  <p>Continuing: $[L_n, H_n) = [0.0625, 0.10)$. Midpoint $z = 0.08125$.</p>
+  <p>Binary: $0.08125 \approx 0.00010100\ldots_{(2)}$. Try $K = 4$: $\hat z = 0.0001_{(2)} = 0.0625$. Then $\hat z + 2^{-4} = 0.0625 + 0.0625 = 0.125 \not< 0.10$.</p>
+  <p>$K = 5$: $\hat z = 0.00010_{(2)} = 0.0625$. $\hat z + 2^{-5} = 0.09375 < 0.10$. $\checkmark$ Send $\texttt{00010}$ (5 bits).</p>
+  <p>$\log\tfrac{1}{p(AB)} = \log\tfrac{1}{0.0375} \approx 4.74$, so we paid $\le \log\tfrac{1}{p} + 2 = 6.74$ bits. We used 5. $\checkmark$</p>
+</div>
+
+
+<!-- ════ PART 04 ════ -->
+<div class="slide section-slide left">
+  <div class="section-num">04</div>
+  <h1>Arithmetic Coding &mdash; Optimality</h1>
+  <div class="divider"></div>
+  <p class="subtitle">$L(X^n) \le H(X^n) + 2$</p>
+</div>
+
+<div class="slide">
+  <h2>Lemma &mdash; Truncation Length</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Lemma.</h3>
+    <p>Let $\hat z$ be the binary truncation chosen by the procedure. Then</p>
+    <div class="math-block">$$2^{-K} \;\ge\; \tfrac{1}{4}(H_n - L_n) \;=\; \tfrac{1}{4} p(x^n).$$</div>
+    <p>Hence $K \le \log\tfrac{4}{p(x^n)} = \log\tfrac{1}{p(x^n)} + 2$.</p>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Proof &mdash; Truncation Length</h2><div class="divider"></div>
+  <p>$K$ is the <em>smallest</em> integer satisfying $L_n\le \hat z < \hat z + 2^{-K} < H_n$. So with $K-1$ bits, the condition fails: either $\tilde z < L_n$ or $\tilde z + 2^{-(K-1)} > H_n$.</p>
+  <p>Case 1: $\tilde z < L_n$. Since the smaller truncation $\tilde z$ is at distance $\le 2^{-(K-1)}$ from valid $\hat z$, and $\hat z\ge L_n$, we have $\tilde z + 2^{-(K-1)} > L_n$. Combined with $\tilde z + 2^{-(K-1)} > (L_n + H_n)/2$ (from failing the right side), we get</p>
+  <div class="math-block">$$2^{-(K-1)} \;>\; \tfrac{1}{2}(H_n - L_n) \;\Rightarrow\; 2^{-K} \;>\; \tfrac{1}{4}(H_n - L_n).$$</div>
+  <p>Case 2 ($\tilde z + 2^{-(K-1)} > H_n$) is symmetric. $\square$</p>
+</div>
+
+<div class="slide">
+  <h2>Theorem &mdash; Arithmetic Coding Bound</h2><div class="divider"></div>
+  <div class="card">
+    <h3>Theorem.</h3>
+    <p>For an i.i.d. (or any product-distributed) source, arithmetic coding produces a codeword of length</p>
+    <div class="math-block">$$\ell(x^n) \;\le\; \log\tfrac{1}{p(x^n)} + 2.$$</div>
+    <p>Hence</p>
+    <div class="math-block">$$\mathbb{E}[\ell(X^n)] \;\le\; H(X^n) + 2,\qquad \frac{\mathbb{E}[\ell(X^n)]}{n} \;\le\; H(X) + \frac{2}{n}.$$</div>
+  </div>
+</div>
+
+<div class="slide">
+  <h2>Comparison &mdash; Three Codes</h2><div class="divider"></div>
+  <table class="la-table">
+    <tr><th>code</th><th>per-block bound</th><th>codebook</th><th>complexity</th></tr>
+    <tr><td>Shannon ($n=1$)</td><td>$\le H + 1$</td><td>$|\mathcal{X}|$</td><td>$O(1)$</td></tr>
+    <tr><td>Huffman block ($n$)</td><td>$\le H + 1$</td><td>$|\mathcal{X}|^n$</td><td>exponential</td></tr>
+    <tr><td>Arithmetic ($n$)</td><td>$\le H + 2$</td><td>none</td><td>$O(n)$</td></tr>
+  </table>
+  <p>Arithmetic coding pays one extra bit per block to avoid the codebook entirely.</p>
+  <div class="highlight">In practice arithmetic coding is the workhorse: gzip, JPEG, modern LLM tokenizers' compression layers.</div>
+</div>
+
+<div class="slide">
+  <h2>Recap</h2><div class="divider"></div>
+  <ul>
+    <li><strong>AEP:</strong> $-\tfrac{1}{n}\log p(X^n)\to H(X)$ in probability.</li>
+    <li><strong>Typical set:</strong> $\approx 2^{nH}$ sequences with total probability $\to 1$.</li>
+    <li><strong>Source coding theorem:</strong> $R > H$ achievable, $R < H$ impossible.</li>
+    <li><strong>Arithmetic coding:</strong> length $\le \log(1/p) + 2$, no codebook.</li>
+    <li><strong>Per-symbol rate $\to H(X)$</strong> for any practical scheme.</li>
+  </ul>
+</div>
+
+<div class="slide">
+  <h2>Next Lecture</h2><div class="divider"></div>
+  <p>Drop the i.i.d. assumption. Real sources have memory:</p>
+  <ul>
+    <li>Markov models &middot; entropy rate $H(\mathscr{X})$</li>
+    <li>Arithmetic coding extends seamlessly to Markov sources</li>
+    <li>What if the source distribution is unknown? &middot; <strong>universal coding</strong></li>
+    <li>Lempel&ndash;Ziv &middot; learn-as-you-encode</li>
+  </ul>
+</div>
+
+<div class="slide end-slide no-footer">
+  <div class="big-word">Q&amp;A</div>
+  <p class="big-word-sub">Thank you.</p>
+</div>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<div class="slide-num" id="slideNum">1 / 1</div>
+
+</div><!-- end deck -->
+
+<script src="../../reference/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diff Entropy 1 — Notes</title>
+<link rel="stylesheet" href="../../reference/colors_and_type.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<style>
+body { max-width: 880px; margin: 40px auto; padding: 0 28px; color: var(--charcoal); font-family: 'Yonsei','Noto Sans',Arial,sans-serif; line-height: 1.65; }
+h1 { color: var(--yonsei-blue); border-bottom: 3px solid var(--yonsei-blue); padding-bottom: 8px; }
+h2 { color: var(--yonsei-blue); margin-top: 36px; }
+article { border-bottom: 1px solid var(--slate); padding-bottom: 20px; margin-bottom: 20px; }
+article h2 { font-size: 1.55rem; }
+.math-block { background: var(--light); border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Differential Entropy 1 &mdash; Companion Notes</h1>
+
+<article>
+<h2>Discretization Bridge — Detail</h2>
+<p>Let $f$ be Riemann-integrable. By the mean-value theorem, for each bin $[i\Delta, (i+1)\Delta)$ there exists $x_i$ such that $\Pr(X^\Delta = i) = \Delta f(x_i)$. Then</p>
+<div class="math-block">$$H(X^\Delta) = -\sum_i \Delta f(x_i) \log(\Delta f(x_i)) = -\Delta\sum_i f(x_i)\log f(x_i) - \log\Delta\sum_i \Delta f(x_i).$$</div>
+<p>The first sum approaches $\int f\log f\,dx = -h(X)$ as $\Delta\to 0$ (Riemann sum); the second sum approaches $\log(1/\Delta)$ since $\sum \Delta f(x_i) \to 1$. Hence $H(X^\Delta) = h(X) + \log(1/\Delta) + o(1)$.</p>
+<p>This justifies the slogan "differential entropy is discrete entropy minus the resolution".</p>
+</article>
+
+<article>
+<h2>Why $h$ Can Be Negative — Reading the Bridge</h2>
+<p>Both $h(X)$ and $\log(1/\Delta)$ contribute to $H(X^\Delta)$. The discrete $H \ge 0$ always, but the split is not constrained — $h$ alone can be very negative as long as $\log(1/\Delta)$ is large enough to keep $H \ge 0$.</p>
+<p>Example: $\mathrm{Unif}[0, 2^{-100}]$ has $h = -100$ bits. Discretizing to $\Delta = 2^{-200}$ gives $H(X^\Delta) = -100 + 200 = 100$ bits — perfectly reasonable: 100 bits of resolution about a tiny number.</p>
+</article>
+
+<article>
+<h2>Cauchy Distribution &mdash; Computation</h2>
+<p>$f(x) = \tfrac{1}{\pi}\tfrac{\gamma}{x^2+\gamma^2}$. Differential entropy:</p>
+<div class="math-block">$$h(X) = \int f(x)\log\bigl(\pi(x^2+\gamma^2)/\gamma\bigr)\,dx.$$</div>
+<p>Substitute $u = x/\gamma$: $f = (1/(\pi\gamma)) \cdot 1/(1+u^2)$, $dx = \gamma\,du$. The integral becomes</p>
+<div class="math-block">$$h(X) = \log(\pi\gamma) + \frac{1}{\pi}\int_{-\infty}^{\infty}\frac{\log(1 + u^2)}{1 + u^2}\,du = \log(\pi\gamma) + \log 4 = \log(4\pi\gamma).$$</div>
+<p>The integral $\int (\log(1+u^2))/(1+u^2)\,du = 2\pi\log 2$ is a standard result (residues, or differentiation under the integral).</p>
+</article>
+
+<article>
+<h2>Multivariate Gaussian Entropy &mdash; Derivation</h2>
+<p>For $\mathbf{X}\sim\mathcal{N}(\boldsymbol{\mu}, K)$, density</p>
+<div class="math-block">$$f(\mathbf{x}) = \frac{1}{(2\pi)^{d/2}\sqrt{\det K}}\exp\!\left(-\tfrac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^\top K^{-1}(\mathbf{x}-\boldsymbol{\mu})\right).$$</div>
+<p>Entropy:</p>
+<div class="math-block">$$\begin{aligned}
+h(\mathbf{X}) &= -\mathbb{E}[\log f(\mathbf{X})] \\
+              &= \tfrac{1}{2}\log((2\pi)^d\det K) + \tfrac{1}{2}\,\mathbb{E}[(\mathbf{X}-\boldsymbol{\mu})^\top K^{-1}(\mathbf{X}-\boldsymbol{\mu})]\log e \\
+              &= \tfrac{1}{2}\log((2\pi)^d\det K) + \tfrac{d}{2}\log e \\
+              &= \tfrac{1}{2}\log((2\pi e)^d \det K).
+\end{aligned}$$</div>
+<p>Used $\mathbb{E}[(\mathbf{X}-\boldsymbol{\mu})^\top K^{-1}(\mathbf{X}-\boldsymbol{\mu})] = \mathrm{tr}(K^{-1} K) = d$.</p>
+</article>
+
+<article>
+<h2>Linear Transformation — General Form</h2>
+<p>For $Y = AX + b$ with invertible $A$, density transforms as $f_Y(y) = f_X(A^{-1}(y-b))/|\det A|$. Then</p>
+<div class="math-block">$$h(Y) = -\int f_Y(y)\log f_Y(y)\,dy = h(X) + \log|\det A|.$$</div>
+<p>For singular $A$, $h(AX) = -\infty$ (the distribution lives on a lower-dimensional subspace, density is degenerate).</p>
+</article>
+
+<article>
+<h2>KL Continuous &mdash; Convexity, Pinsker, etc.</h2>
+<p>Every property from the discrete case carries over verbatim:</p>
+<ul>
+  <li><strong>Gibbs:</strong> $D(f\|g)\ge 0$, equality iff $f=g$ a.e.</li>
+  <li><strong>Joint convexity:</strong> $(f, g)\mapsto D(f\|g)$ jointly convex.</li>
+  <li><strong>Pinsker:</strong> $D(f\|g)\ge 2(\ln 2)\|f-g\|_{TV}^2$, where $\|f-g\|_{TV} = \tfrac{1}{2}\int|f-g|$.</li>
+  <li><strong>Data processing:</strong> $D(P_X\circ T\,\|\,Q_X\circ T)\le D(P_X\,\|\,Q_X)$ for any (measurable) $T$.</li>
+</ul>
+<p>Continuous KL is also <em>insensitive to reparameterization</em>: change of variables on both $f$ and $g$ leaves $D$ unchanged.</p>
+</article>
+
+<article>
+<h2>Conditional Differential Entropy — Mixed Case</h2>
+<p>If $Y$ is discrete and $X$ is continuous (e.g., a label and a feature), $h(X\mid Y) = \sum_y p_Y(y) h(X\mid Y=y)$ is well-defined and behaves like the continuous version: chain rule, conditioning reduces entropy, etc.</p>
+<p>Conversely, $H(Y\mid X) = -\int f_X(x)\sum_y p_{Y\mid X}(y\mid x)\log p_{Y\mid X}(y\mid x)\,dx$ stays bounded.</p>
+<p>Mixed MI: $I(X; Y) = h(X) - h(X\mid Y) = H(Y) - H(Y\mid X)$ &mdash; both forms valid simultaneously.</p>
+</article>
+
+</body>
+</html>
