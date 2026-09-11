@@ -16,11 +16,6 @@
 .def-card h3 { color: var(--yonsei-blue); margin-bottom: 6px; }
 .demo-card { background: #f0f7f0; border-left: 5px solid var(--success); border-radius: 0 10px 10px 0; padding: 14px 22px; }
 .demo-card h3 { color: var(--success); margin-bottom: 4px; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.ta-algo { background: var(--light); border-left: 3px solid var(--yonsei-blue); border-radius: 0 10px 10px 0; padding: 16px 22px; }
-.ta-algo ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; }
-.ta-algo ol li { counter-increment: step; padding: 8px 0 8px 56px; position: relative; line-height: 1.45; }
-.ta-algo ol li::before { content: counter(step) "."; position: absolute; left: 12px; top: 8px; font-weight: 700; color: var(--yonsei-blue); width: 36px; text-align: right; }
-.ta-algo ol li + li { border-top: 1px solid var(--slate); }
 .cite-left { max-width: 92% !important; left: 28px !important; transform: none !important; text-align: left !important; bottom: 48px !important; }
 </style>
 </head>
@@ -44,33 +39,37 @@
 <div class="slide">
   <h2>Contents</h2>
   <div class="divider"></div>
-  <div class="toc-list" style="gap:13px;margin-top:6px;">
+  <div class="toc-list" style="display:grid;grid-template-columns:1fr 1fr;gap:26px 40px;margin-top:14px;">
     <div class="toc-item">
       <div class="toc-num">01</div><div class="toc-rule"></div>
       <div><div class="toc-label">The Question</div><div class="toc-sub">Was your record in the training set?</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">02</div><div class="toc-rule"></div>
-      <div><div class="toc-label">The Basic Attack</div><div class="toc-sub">Overfitting leaves a fingerprint</div></div>
+      <div><div class="toc-label">The First Attack</div><div class="toc-sub">Genome averages leaked membership in 2008</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">03</div><div class="toc-rule"></div>
-      <div><div class="toc-label">Shadow Models</div><div class="toc-sub">Train copycats, learn the signal</div></div>
+      <div><div class="toc-label">The Basic Attack</div><div class="toc-sub">Overfitting leaves a fingerprint</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">04</div><div class="toc-rule"></div>
-      <div><div class="toc-label">Stronger Attacks</div><div class="toc-sub">Calibrate per-example difficulty</div></div>
+      <div><div class="toc-label">Shadow Models</div><div class="toc-sub">Train copycats, learn the signal</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">05</div><div class="toc-rule"></div>
-      <div><div class="toc-label">What It Means</div><div class="toc-sub">MIA audits differential privacy</div></div>
+      <div><div class="toc-label">Stronger Attacks</div><div class="toc-sub">Calibrate per-example difficulty</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">06</div><div class="toc-rule"></div>
-      <div><div class="toc-label">Modern Models</div><div class="toc-sub">LLMs, diffusion, web-scale doubt</div></div>
+      <div><div class="toc-label">What It Means</div><div class="toc-sub">MIA audits differential privacy</div></div>
     </div>
     <div class="toc-item">
       <div class="toc-num">07</div><div class="toc-rule"></div>
+      <div><div class="toc-label">Modern Models</div><div class="toc-sub">LLMs, diffusion, web-scale doubt</div></div>
+    </div>
+    <div class="toc-item">
+      <div class="toc-num">08</div><div class="toc-rule"></div>
       <div><div class="toc-label">Defenses</div><div class="toc-sub">The privacy-utility price</div></div>
     </div>
   </div>
@@ -89,12 +88,18 @@
 <div class="slide">
   <h2>One Yes-or-No Question</h2>
   <div class="divider"></div>
-  <p>A trained model sits in front of you. Pick a record.</p>
+  <p>A trained model sits in front of you. Pick a record $x$.</p>
   <div class="def-card">
     <h3>Membership Inference Attack (MIA)</h3>
-    <p>Decide whether <strong>one specific record</strong> was part of the training set.</p>
+    <p>Decide whether <strong>one specific record</strong> $x$ was part of the training set.</p>
   </div>
-  <p class="muted">Not "what did it learn", just "was this person in".</p>
+  <div class="diagram-flow" style="margin:22px 0;">
+    <div class="diagram-box"><strong>Member:</strong> $x$ in training</div>
+    <div class="diagram-box">Model $f_\theta$</div>
+    <div class="diagram-box"><strong>Non-member:</strong> $x$ held out</div>
+  </div>
+  <p>The attacker sees only $f_\theta$ and must guess which world.</p>
+  <p class="muted">One bit. The whole lecture is about how loudly it leaks.</p>
 </div>
 
 <!-- 5. The Simplest Leak -->
@@ -127,20 +132,7 @@
   </div>
 </div>
 
-<!-- 6. Member vs Non-Member -->
-<div class="slide">
-  <h2>Member vs Non-Member</h2>
-  <div class="divider"></div>
-  <p>Two worlds for one record $x$.</p>
-  <div class="diagram-flow" style="margin:24px 0;">
-    <div class="diagram-box"><strong>Member:</strong> $x$ in training</div>
-    <div class="diagram-box">Model $f_\theta$</div>
-    <div class="diagram-box"><strong>Non-member:</strong> $x$ held out</div>
-  </div>
-  <p>The attacker sees only $f_\theta$ and must guess which world.</p>
-</div>
-
-<!-- 7. Why Membership Alone Hurts -->
+<!-- 6. Why Membership Alone Hurts -->
 <div class="slide">
   <h2>Why Membership Alone Hurts</h2>
   <div class="divider"></div>
@@ -149,20 +141,32 @@
   <p>No record reconstructed, yet a diagnosis leaks.</p>
 </div>
 
-<!-- 8. Where It Bites -->
+<!-- 7. When Membership Is the Secret -->
 <div class="slide">
-  <h2>Where It Bites</h2>
+  <h2>When Membership Is the Secret</h2>
   <div class="divider"></div>
-  <p>Any model trained on a <strong>sensitive cohort</strong>.</p>
-  <div class="grid-3" style="margin-top:16px;">
-    <div class="card"><h3>Patients</h3><p>One disease, one study cohort.</p></div>
-    <div class="card"><h3>App users</h3><p>Dating, addiction, or health apps.</p></div>
-    <div class="card"><h3>Demographics</h3><p>A location or an income bracket.</p></div>
+  <p>Often the dataset's <strong>name</strong> already tells you the sensitive fact.</p>
+  <div style="display:flex;justify-content:center;margin:6px 0;">
+    <svg viewBox="0 0 640 200" style="width:100%;max-width:960px;">
+      <line x1="20" y1="70" x2="620" y2="70" stroke="#c9d3de" stroke-width="2"/>
+      <g font-size="14" text-anchor="middle" fill="#003876" font-weight="700">
+        <text x="90" y="42">Disease study</text><text x="243" y="42">Clinical trial</text><text x="397" y="42">Chat-log corpus</text><text x="550" y="42">Pirated-book set</text>
+      </g>
+      <g fill="#ffffff" stroke="#003876" stroke-width="2"><circle cx="90" cy="70" r="7"/><circle cx="243" cy="70" r="7"/><circle cx="397" cy="70" r="7"/><circle cx="550" cy="70" r="7"/></g>
+      <g stroke="#d94040" stroke-width="2"><line x1="90" y1="77" x2="90" y2="104"/><line x1="243" y1="77" x2="243" y2="104"/><line x1="397" y1="77" x2="397" y2="104"/><line x1="550" y1="77" x2="550" y2="104"/></g>
+      <g fill="#fbeaea" stroke="#d94040" stroke-width="1.5">
+        <rect x="22" y="106" width="136" height="50" rx="8"/><rect x="175" y="106" width="136" height="50" rx="8"/><rect x="329" y="106" width="136" height="50" rx="8"/><rect x="482" y="106" width="136" height="50" rx="8"/>
+      </g>
+      <g font-size="14" text-anchor="middle" fill="#d94040" font-weight="700">
+        <text x="90" y="136">has the disease</text><text x="243" y="136">has the diagnosis</text><text x="397" y="136">wrote that message</text><text x="550" y="136">was copied</text>
+      </g>
+      <text x="320" y="190" font-size="14" text-anchor="middle" fill="#6b7280">"in the dataset" = the secret itself</text>
+    </svg>
   </div>
-  <p class="muted">Membership in the cohort is itself private.</p>
+  <p class="muted">No reconstruction needed. One bit is the whole leak.</p>
 </div>
 
-<!-- 9. Who Asks, and Why -->
+<!-- 8. Who Asks, and Why -->
 <div class="slide">
   <h2>Who Asks, and Why</h2>
   <div class="divider"></div>
@@ -175,7 +179,7 @@
   <p class="muted">Privacy audit, litigation, extraction pre-step.</p>
 </div>
 
-<!-- 10. The Threat Model -->
+<!-- 9. The Threat Model -->
 <div class="slide">
   <h2>The Threat Model</h2>
   <div class="divider"></div>
@@ -189,7 +193,7 @@
   <p class="muted">Most attacks need only black-box access.</p>
 </div>
 
-<!-- 11. A Score and a Threshold -->
+<!-- 10. A Score and a Threshold -->
 <div class="slide">
   <h2>A Score and a Threshold</h2>
   <div class="divider"></div>
@@ -218,15 +222,257 @@
 </div>
 
 <!-- ============ SECTION 02 ============ -->
-<!-- 12. Divider 02 -->
+<!-- 11. Divider 02 -->
 <div class="slide section-slide left">
   <div class="section-num">02</div>
+  <h1>The First Attack</h1>
+  <div class="divider"></div>
+  <p class="subtitle">Genome averages leaked membership in 2008</p>
+</div>
+
+<!-- 12. Before Neural Nets: The Genome Leak -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>Before Neural Nets: The Genome Leak</h2>
+  <div class="divider"></div>
+  <ul>
+    <li>2008: genome studies published <strong>per-SNP averages</strong> openly</li>
+    <li>Belief: averaging 1,000 people hides each one</li>
+  </ul>
+  <div style="display:flex;justify-content:center;margin:6px 0;">
+    <svg viewBox="0 0 960 160" style="width:100%;max-width:1060px;">
+      <defs>
+        <marker id="hm-ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7280"/></marker>
+        <marker id="hm-ar-red" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d94040"/></marker>
+      </defs>
+      <rect x="10" y="30" width="250" height="100" rx="12" fill="#e8ecf0" stroke="#003876" stroke-width="2"/>
+      <text x="135" y="72" font-size="22" text-anchor="middle" fill="#003876" font-weight="700">1,000 participants</text>
+      <text x="135" y="104" font-size="18" text-anchor="middle" fill="#1a1a1a">each genome: 500,000 SNPs</text>
+      <text x="315" y="56" font-size="17" text-anchor="middle" fill="#6b7280">average</text>
+      <text x="315" y="76" font-size="17" text-anchor="middle" fill="#6b7280">per SNP</text>
+      <line x1="262" y1="90" x2="360" y2="90" stroke="#6b7280" stroke-width="3" marker-end="url(#hm-ar)"/>
+      <rect x="370" y="30" width="250" height="100" rx="12" fill="#f4f6f9" stroke="#6b7280" stroke-width="2"/>
+      <text x="495" y="72" font-size="22" text-anchor="middle" fill="#1a1a1a" font-weight="700">public table</text>
+      <text x="495" y="104" font-size="18" text-anchor="middle" fill="#1a1a1a">500,000 frequencies</text>
+      <line x1="622" y1="90" x2="696" y2="90" stroke="#d94040" stroke-width="3" marker-end="url(#hm-ar-red)"/>
+      <rect x="705" y="20" width="245" height="120" rx="12" fill="#fbeaea" stroke="#d94040" stroke-width="2"/>
+      <text x="827" y="56" font-size="22" text-anchor="middle" fill="#d94040" font-weight="700">attacker</text>
+      <text x="827" y="88" font-size="18" text-anchor="middle" fill="#1a1a1a">has Alice's genome</text>
+      <text x="827" y="118" font-size="18" text-anchor="middle" fill="#1a1a1a">"Was Alice in the study?"</text>
+    </svg>
+  </div>
+  <div class="highlight"><p>A forensics paper broke it by accident: the first <strong>membership inference</strong> attack. Public averages reveal whether <em>you</em> were in the study.</p></div>
+  <div class="cite cite-left">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 4(8), 2008.</div>
+</div>
+
+
+<!-- 13. Genomics in 60 Seconds -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>Genomics in 60 Seconds</h2>
+  <div class="divider"></div>
+  <p>A <strong>SNP</strong> is one letter of DNA that differs between people. An array reads about 500,000 of them.</p>
+  <div style="display:flex;justify-content:center;margin:4px 0;">
+    <svg viewBox="0 0 640 210" style="width:100%;max-width:900px;">
+      <text x="14" y="26" font-size="13" fill="#6b7280">SNP index</text>
+      <g font-size="13" fill="#6b7280" text-anchor="middle">
+        <text x="170" y="26">1</text><text x="240" y="26">2</text><text x="310" y="26">3</text><text x="380" y="26">4</text><text x="450" y="26">5</text><text x="520" y="26">…</text><text x="590" y="26">500,000</text>
+      </g>
+      <rect x="290" y="34" width="40" height="122" rx="6" fill="#d94040" fill-opacity="0.10" stroke="#d94040" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <g stroke="#c9d3de" stroke-width="1.2"><line x1="130" y1="60" x2="620" y2="60"/><line x1="130" y1="98" x2="620" y2="98"/><line x1="130" y1="136" x2="620" y2="136"/></g>
+      <g font-size="14" fill="#1a1a1a" text-anchor="end">
+        <text x="118" y="64">person 1</text><text x="118" y="102">person 2</text><text x="118" y="140">person 1,000</text>
+      </g>
+      <g font-size="16" text-anchor="middle" fill="#003876" font-weight="700">
+        <text x="170" y="64">A</text><text x="240" y="64">G</text><text x="310" y="64">A</text><text x="380" y="64">A</text><text x="450" y="64">G</text><text x="520" y="64">…</text><text x="590" y="64">T</text>
+        <text x="170" y="102">A</text><text x="240" y="102">G</text><text x="310" y="102">G</text><text x="380" y="102">A</text><text x="450" y="102">G</text><text x="520" y="102">…</text><text x="590" y="102">C</text>
+        <text x="170" y="140">G</text><text x="240" y="140">G</text><text x="310" y="140">A</text><text x="380" y="140">A</text><text x="450" y="140">A</text><text x="520" y="140">…</text><text x="590" y="140">T</text>
+      </g>
+      <line x1="310" y1="156" x2="310" y2="178" stroke="#d94040" stroke-width="2"/>
+      <text x="310" y="196" font-size="14" fill="#d94040" text-anchor="middle" font-weight="700">column average = "allele frequency" at SNP 3 (e.g. 0.62)</text>
+    </svg>
+  </div>
+  <p class="muted">Studies published <em>only</em> these column averages. Rows stayed secret.</p>
+</div>
+
+
+<!-- 14. Homer's Statistic -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>Homer's Statistic</h2>
+  <div class="divider"></div>
+  <p>Per SNP: Alice's letter $Y_j$, the study average $M_j$, the population average $\mathrm{Pop}_j$.</p>
+  <div class="math-block">$$D_j \;=\; \underbrace{\lvert Y_j - \mathrm{Pop}_j\rvert}_{\text{distance to everyone}} \;-\; \underbrace{\lvert Y_j - M_j\rvert}_{\text{distance to the study}}$$</div>
+  <div style="display:flex;justify-content:center;margin:2px 0;">
+    <svg viewBox="0 0 640 134" style="width:100%;max-width:720px;">
+      <line x1="40" y1="70" x2="600" y2="70" stroke="#1a1a1a" stroke-width="2"/>
+      <g stroke="#1a1a1a" stroke-width="2"><line x1="40" y1="62" x2="40" y2="78"/><line x1="600" y1="62" x2="600" y2="78"/></g>
+      <text x="40" y="98" font-size="14" text-anchor="middle" fill="#1a1a1a">0</text>
+      <text x="600" y="98" font-size="14" text-anchor="middle" fill="#1a1a1a">1</text>
+      <circle cx="208" cy="70" r="8" fill="#6b7280"/>
+      <text x="208" y="98" font-size="15" text-anchor="middle" fill="#6b7280" font-weight="700">Pop_j = 0.30</text>
+      <circle cx="264" cy="70" r="8" fill="#003876"/>
+      <text x="264" y="52" font-size="15" text-anchor="middle" fill="#003876" font-weight="700">M_j = 0.40</text>
+      <circle cx="600" cy="70" r="8" fill="#d94040"/>
+      <text x="560" y="52" font-size="15" text-anchor="middle" fill="#d94040" font-weight="700">Y_j = 1 (Alice)</text>
+      <path d="M216 22 L216 30 L592 30 L592 22" fill="none" stroke="#6b7280" stroke-width="1.5"/>
+      <text x="404" y="18" font-size="14" text-anchor="middle" fill="#6b7280">to everyone: 0.70</text>
+      <path d="M272 112 L272 106 L592 106 L592 112" fill="none" stroke="#003876" stroke-width="1.5"/>
+      <text x="432" y="128" font-size="14" text-anchor="middle" fill="#003876">to the study: 0.60</text>
+    </svg>
+  </div>
+  <p class="muted">Here $D_j = 0.70 - 0.60 = +0.10$: Alice sits closer to the study. Negative: closer to everyone.</p>
+</div>
+
+
+<!-- 15. Why One SNP Says Nothing -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>Why One SNP Says Nothing</h2>
+  <div class="divider"></div>
+  <p>For a 0/1 letter, $D_j$ factors into <strong>the study's drift</strong> times Alice's sign.</p>
+  <div class="math-block">$$D_j \;=\; (M_j - \mathrm{Pop}_j)\,(2Y_j - 1)$$</div>
+  <table>
+    <tr><th></th><th>Alice outside</th><th>Alice inside</th></tr>
+    <tr><td>Mean of $D_j$</td><td>$0$</td><td>$2p(1-p)/n \approx 0.0004$</td></tr>
+    <tr><td>Noise (std. dev.)</td><td>$\sqrt{p(1-p)/n} \approx 0.014$</td><td>same</td></tr>
+  </table>
+  <p class="muted">Outside: independent of the average. Inside: she is $1/n$ of it. Signal-to-noise $\approx 0.03$ at $n = 1{,}000$.</p>
+</div>
+
+<!-- 16. One SNP Whispers, 500,000 Shout -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>One SNP Whispers, 500,000 Shout</h2>
+  <div class="divider"></div>
+  <p><strong>In the study:</strong> Alice is $1/n$ of $M_j$, so $D_j$ tilts positive. <strong>Outside:</strong> it averages $0$.</p>
+  <div style="display:flex;justify-content:center;margin:2px 0;">
+    <svg viewBox="0 0 640 196" style="width:100%;max-width:900px;">
+      <text x="140" y="20" font-size="16" fill="#1a1a1a" text-anchor="middle" font-weight="700">one SNP: D_j</text>
+      <line x1="20" y1="140" x2="260" y2="140" stroke="#999" stroke-width="1.5"/>
+      <path d="M40,140 C90,140 100,40 140,40 C180,40 190,140 240,140 Z" fill="#9aa3ad" fill-opacity="0.28" stroke="#6b7280" stroke-width="2.5"/>
+      <path d="M43,140 C93,140 103,40 143,40 C183,40 193,140 243,140" fill="none" stroke="#d94040" stroke-width="2.5" stroke-dasharray="7 5"/>
+      <text x="140" y="160" font-size="14" fill="#1a1a1a" text-anchor="middle">tilt 0.0004 vs noise 0.014</text>
+      <text x="140" y="180" font-size="14" fill="#6b7280" text-anchor="middle">signal-to-noise 0.03: nothing</text>
+      <line x1="285" y1="90" x2="345" y2="90" stroke="#003876" stroke-width="3" marker-end="url(#hm-sum)"/>
+      <text x="315" y="76" font-size="15" fill="#003876" text-anchor="middle" font-weight="700">sum</text>
+      <text x="500" y="20" font-size="16" fill="#1a1a1a" text-anchor="middle" font-weight="700">500,000 SNPs: sum of D_j</text>
+      <line x1="370" y1="140" x2="630" y2="140" stroke="#999" stroke-width="1.5"/>
+      <path d="M380,140 C420,140 430,40 465,40 C500,40 510,140 550,140 Z" fill="#9aa3ad" fill-opacity="0.28" stroke="#6b7280" stroke-width="2.5"/>
+      <path d="M462,140 C502,140 512,40 547,40 C582,40 592,140 632,140" fill="none" stroke="#d94040" stroke-width="2.5" stroke-dasharray="7 5"/>
+      <text x="440" y="34" font-size="14" fill="#6b7280" text-anchor="middle">not in</text>
+      <text x="586" y="34" font-size="14" fill="#d94040" text-anchor="middle">in</text>
+      <text x="500" y="160" font-size="14" fill="#1a1a1a" text-anchor="middle">tilt grows like m, noise like √m</text>
+      <text x="500" y="180" font-size="14" fill="#003876" text-anchor="middle" font-weight="700">gap grows like √(m / n)</text>
+      <defs><marker id="hm-sum" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#003876"/></marker></defs>
+    </svg>
+  </div>
+  <div class="cite cite-left">Idealized model ($n = 1{,}000$ people, $m$ SNPs, $p(1-p) \approx 0.2$); analysis after Sankararaman, Obozinski, Jordan, and Halperin, Nature Genetics 2009.</div>
+</div>
+
+
+<!-- 17. How Many SNPs Are Enough? -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>How Many SNPs Are Enough?</h2>
+  <div class="divider"></div>
+  <p>Gap between the bells in null-noise units: $\mu = 2\sqrt{m\bar v/n}$, so it grows like $\sqrt{m/n}$.</p>
+  <div class="grid-2" style="grid-template-columns:1fr 1fr;gap:36px;align-items:start;">
+    <table>
+      <tr><th>Cohort $n$</th><th>Power</th><th>SNPs needed</th></tr>
+      <tr><td>1,000</td><td>0.5</td><td>$\approx 28{,}000$</td></tr>
+      <tr><td>1,000</td><td>0.8</td><td>$\approx 39{,}000$</td></tr>
+      <tr><td>10,000</td><td>0.8</td><td>$\approx 390{,}000$</td></tr>
+    </table>
+    <div>
+      <div class="highlight"><p>A cohort <strong>10× larger</strong> needs 10× more SNPs. Arrays already read 500,000.</p></div>
+      <p class="muted">Level $10^{-6}$; $\bar v$ = mean of $p_j(1-p_j)$, taken as $0.2$.</p>
+    </div>
+  </div>
+  <div class="cite cite-left">Idealized model (independent SNPs, known population frequencies). Power analysis after Sankararaman, Obozinski, Jordan, and Halperin, "Genomic privacy and limits of individual detection in a pool", Nature Genetics 2009.</div>
+</div>
+
+<!-- 18. What the Paper Reported -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>What the Paper Reported</h2>
+  <div class="divider"></div>
+  <div class="grid-2" style="grid-template-columns:1fr 1fr;gap:36px;align-items:start;">
+    <div>
+      <ul class="check">
+        <li>Real DNA mixtures, three array platforms</li>
+        <li>Mixtures of 40+ people: <strong>zero false positives</strong></li>
+        <li>Found a <strong>0.1%</strong> contributor</li>
+        <li>$p \lt 10^{-6}$ with 10,000–25,000 SNPs</li>
+      </ul>
+    </div>
+    <table>
+      <tr><th>SNPs used</th><th>Smallest share detected</th></tr>
+      <tr><td>10,000–25,000</td><td>below 1%</td></tr>
+      <tr><td>50,000</td><td>0.1% (low noise)</td></tr>
+      <tr><td>all 500,000</td><td>below 0.1%</td></tr>
+    </table>
+  </div>
+  <p class="muted">Share = one person's fraction of the pooled DNA. In a 1,000-person cohort: 0.1%.</p>
+  <div class="cite cite-left">Homer et al., PLoS Genetics 4(8), 2008 (Results: simulations, Fig. 2; real mixtures, Fig. 3).</div>
+</div>
+
+
+<!-- 19. Impact: NIH Pulled the Data -->
+<div class="slide">
+  <div class="pill">Homer et al. 2008</div>
+  <h2>Impact: NIH Pulled the Data</h2>
+  <div class="divider"></div>
+  <div style="display:flex;justify-content:center;margin:6px 0;">
+    <svg viewBox="0 0 640 150" style="width:100%;max-width:960px;">
+      <line x1="30" y1="60" x2="610" y2="60" stroke="#c9d3de" stroke-width="3"/>
+      <g fill="#ffffff" stroke="#003876" stroke-width="2.5"><circle cx="110" cy="60" r="9"/><circle cx="320" cy="60" r="9"/><circle cx="530" cy="60" r="9"/></g>
+      <g font-size="14" text-anchor="middle" fill="#003876" font-weight="700">
+        <text x="110" y="34">Aug 29, 2008</text><text x="320" y="34">days later</text><text x="530" y="34">since then</text>
+      </g>
+      <g font-size="14" text-anchor="middle" fill="#1a1a1a">
+        <text x="110" y="92">paper published</text><text x="320" y="92">NIH removes open</text><text x="320" y="112">aggregate GWAS data</text>
+        <text x="530" y="92">controlled access,</text><text x="530" y="112">data-use agreements</text>
+      </g>
+      <text x="110" y="112" font-size="14" text-anchor="middle" fill="#1a1a1a">in PLoS Genetics</text>
+    </svg>
+  </div>
+  <ul>
+    <li>Allele-frequency tables came down from public portals</li>
+    <li>Precedent: <strong>aggregation is not anonymization</strong></li>
+  </ul>
+  <p class="muted">The first policy change driven by a membership inference attack.</p>
+  <div class="cite cite-left">Zerhouni and Nabel, "Protecting Aggregate Genomic Data", Science 322, 2008.</div>
+</div>
+
+
+<!-- 20. Same Attack, New Target -->
+<div class="slide">
+  <h2>Same Attack, New Target</h2>
+  <div class="divider"></div>
+  <p>Swap the words and Homer's 2008 attack is the 2017 attack on neural networks.</p>
+  <table>
+    <tr><th>Homer 2008</th><th>Machine learning</th></tr>
+    <tr><td>Study cohort</td><td>Training set</td></tr>
+    <tr><td>Published allele frequencies</td><td>The trained model (or its outputs)</td></tr>
+    <tr><td>Reference population</td><td>Public data of the same kind</td></tr>
+    <tr><td>Alice's genome</td><td>Alice's record</td></tr>
+    <tr><td>Distance statistic $D$</td><td>The model's <strong>loss</strong> on the record</td></tr>
+  </table>
+  <p class="muted" style="margin-top:14px;">Next: what "loss" gives away.</p>
+</div>
+
+
+<!-- ============ SECTION 03 ============ -->
+<!-- 21. Divider 03 -->
+<div class="slide section-slide left">
+  <div class="section-num">03</div>
   <h1>The Basic Attack</h1>
   <div class="divider"></div>
   <p class="subtitle">Overfitting leaves a fingerprint</p>
 </div>
 
-<!-- 13. Models Fit What They Saw -->
+<!-- 22. Models Fit What They Saw -->
 <div class="slide">
   <h2>Models Fit What They Saw</h2>
   <div class="divider"></div>
@@ -252,17 +498,20 @@
   </div>
 </div>
 
-<!-- 14. Loss Is the Score -->
+<!-- 23. Loss Is the Score -->
 <div class="slide">
   <h2>Loss Is the Score</h2>
   <div class="divider"></div>
   <p>Use the per-example loss as the membership score.</p>
-  <div class="math-block">$$\text{score}(x) = \ell\!\left(f_\theta, x\right).$$</div>
+  <div class="code-block"><span class="cm"># member if loss is small</span>
+<span class="kw">def</span> <span class="fn">attack</span>(model, x, &tau;):
+    return model.<span class="fn">loss</span>(x) <span class="kw">&lt;</span> &tau;</div>
   <p>Low loss ⇒ guess <strong>member</strong>. High loss ⇒ guess non-member.</p>
+  <p class="muted">No training, no internals: one query and a threshold.</p>
   <div class="cite cite-left">Yeom, Giacomelli, Fredrikson, and Jha, "Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting", IEEE CSF 2018.</div>
 </div>
 
-<!-- 15. The Two Bells -->
+<!-- 24. The Two Bells -->
 <div class="slide">
   <h2>The Two Bells</h2>
   <div class="divider"></div>
@@ -284,40 +533,28 @@
   <p class="muted">The overlap is the attacker's error rate.</p>
 </div>
 
-<!-- 16. Overfitting Drives MIA -->
+<!-- 25. Overfitting Drives MIA -->
 <div class="slide">
   <h2>Overfitting Drives MIA</h2>
   <div class="divider"></div>
   <p>The bigger the train-test gap, the easier this attack.</p>
-  <div class="highlight"><p>Overfitting <strong>separates the bells</strong>. Shrinking the gap pulls them back together.</p></div>
+  <div class="highlight"><p>Overfitting <strong>separates the bells</strong>; shrinking the gap pulls them back together.</p></div>
   <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 200" style="width:100%;max-width:700px;">
-      <text x="115" y="22" font-size="15" fill="#003876" text-anchor="middle" font-weight="700">small gap</text>
+      <text x="115" y="22" font-size="17" fill="#003876" text-anchor="middle" font-weight="700">small gap</text>
       <line x1="20" y1="170" x2="210" y2="170" stroke="#999" stroke-width="1.5"/>
       <path d="M40,170 C70,170 75,70 100,70 C125,70 130,170 160,170 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2.5"/>
       <path d="M70,170 C100,170 105,78 130,78 C155,78 160,170 190,170 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
-      <text x="115" y="192" font-size="13" fill="#666" text-anchor="middle">overlap ⇒ weak attack</text>
+      <text x="115" y="192" font-size="15" fill="#666" text-anchor="middle">overlap ⇒ weak attack</text>
       <line x1="230" y1="15" x2="230" y2="195" stroke="#ccc" stroke-width="1.5" stroke-dasharray="4 4"/>
-      <text x="345" y="22" font-size="15" fill="#003876" text-anchor="middle" font-weight="700">large gap</text>
+      <text x="345" y="22" font-size="17" fill="#003876" text-anchor="middle" font-weight="700">large gap</text>
       <line x1="250" y1="170" x2="450" y2="170" stroke="#999" stroke-width="1.5"/>
       <path d="M255,170 C275,170 280,70 300,70 C320,70 325,170 345,170 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2.5"/>
       <path d="M365,170 C385,170 390,78 410,78 C430,78 435,170 455,170 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
-      <text x="350" y="192" font-size="13" fill="#666" text-anchor="middle">separated ⇒ easy attack</text></svg></div>
-  <p class="muted">Caveat: a small gap weakens the loss attack, but it is not a guarantee (§04).</p>
+      <text x="350" y="192" font-size="15" fill="#666" text-anchor="middle">separated ⇒ easy attack</text></svg></div>
+  <p class="muted">Caveat: a small gap weakens the loss attack, but it is not a guarantee.</p>
 </div>
 
-<!-- 17. The Threshold Attack -->
-<div class="slide">
-  <h2>The Threshold Attack</h2>
-  <div class="divider"></div>
-  <p>The simplest MIA, in three lines.</p>
-  <div class="code-block"><span class="cm"># member if loss is small</span>
-<span class="kw">def</span> <span class="fn">attack</span>(model, x, &tau;):
-    return model.<span class="fn">loss</span>(x) <span class="kw">&lt;</span> &tau;
-</div>
-  <p class="muted">No training, no internals: one query and a threshold.</p>
-</div>
-
-<!-- 18. Confidence Works Too -->
+<!-- 26. Confidence Works Too -->
 <div class="slide">
   <h2>Confidence Works Too</h2>
   <div class="divider"></div>
@@ -335,7 +572,7 @@
   <div class="cite cite-left">Salem et al., "ML-Leaks: Model and Data Independent Membership Inference Attacks and Defenses on Machine Learning Models", NDSS 2019 — Fig. 11 (CIFAR-100 left, News right).</div>
 </div>
 
-<!-- 19. A Theory Anchor -->
+<!-- 27. A Theory Anchor -->
 <div class="slide">
   <h2>A Theory Anchor</h2>
   <div class="divider"></div>
@@ -350,7 +587,7 @@
   <div class="cite cite-left">Yeom, Giacomelli, Fredrikson, and Jha, "Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting", IEEE CSF 2018 — Fig. 2 (advantage vs. generalization ratio).</div>
 </div>
 
-<!-- 20. Demo: Threshold Attack -->
+<!-- 28. Demo: Threshold Attack -->
 <div class="slide">
   <h2>Try It Yourself</h2>
   <div class="divider"></div>
@@ -365,16 +602,16 @@
   <p class="muted">A single Colab cell shows the two bells.</p>
 </div>
 
-<!-- ============ SECTION 03 ============ -->
-<!-- 21. Divider 03 -->
+<!-- ============ SECTION 04 ============ -->
+<!-- 29. Divider 04 -->
 <div class="slide section-slide left">
-  <div class="section-num">03</div>
+  <div class="section-num">04</div>
   <h1>Shadow Models</h1>
   <div class="divider"></div>
   <p class="subtitle">Train copycats, learn the signal</p>
 </div>
 
-<!-- 22. One Threshold Is Crude -->
+<!-- 30. One Threshold Is Crude -->
 <div class="slide">
   <h2>One Threshold Is Crude</h2>
   <div class="divider"></div>
@@ -402,7 +639,7 @@
   </div>
 </div>
 
-<!-- 23. The Shadow Idea -->
+<!-- 31. The Shadow Idea -->
 <div class="slide">
   <h2>The Shadow Idea</h2>
   <div class="divider"></div>
@@ -417,7 +654,7 @@
   <div class="cite cite-left">Shokri, Stronati, Song, and Shmatikov, "Membership Inference Attacks Against Machine Learning Models", IEEE S&amp;P 2017 — Fig. 2 (shadow models trained on the same ML platform).</div>
 </div>
 
-<!-- 24. The Pipeline -->
+<!-- 32. The Pipeline -->
 <div class="slide">
   <h2>The Shadow Pipeline</h2>
   <div class="divider"></div>
@@ -441,85 +678,55 @@
       <line x1="300" y1="113" x2="334" y2="113" stroke="#6b7280" stroke-width="2.5" marker-end="url(#sar)"/>
     </svg>
   </div>
-  <p class="muted">Train shadows, collect their outputs, train an attack model on the labels.</p>
+  <p class="muted">Labeled in/out outputs from shadows train the attack, no target data needed.</p>
 </div>
 
-<!-- 25. Learn the Member Signal -->
-<div class="slide">
-  <h2>Learn the Member Signal</h2>
-  <div class="divider"></div>
-  <p>The attack classifier reads an output and predicts in or out.</p>
-  <div class="grid-2" style="align-items:center;gap:30px;">
-    <div>
-      <ul class="num">
-        <li>Feed shadow outputs labeled <strong>in / out</strong>.</li>
-        <li>It learns what a member's output looks like.</li>
-        <li>Apply that learned signal to the target.</li>
-      </ul>
-      <p class="muted">The attacker never needed the target's data.</p>
-    </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 200" style="width:100%;max-width:520px;"><defs><marker id="ar25" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker></defs>
-      <text x="85" y="48" font-size="14" fill="#003876" text-anchor="middle" font-weight="700">output vector</text>
-      <rect x="30" y="58" width="110" height="80" rx="6" fill="#e8ecf0" stroke="#1a5296" stroke-width="2"/>
-      <rect x="40" y="66" width="90" height="10" fill="#003876"/>
-      <rect x="40" y="82" width="30" height="10" fill="#1a5296"/>
-      <rect x="40" y="98" width="15" height="10" fill="#1a5296"/>
-      <rect x="40" y="114" width="8" height="10" fill="#1a5296"/>
-      <line x1="140" y1="98" x2="196" y2="98" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar25)"/>
-      <rect x="200" y="72" width="130" height="52" rx="8" fill="#2e8b57"/>
-      <text x="265" y="94" font-size="15" fill="#fff" text-anchor="middle" font-weight="700">attack</text>
-      <text x="265" y="112" font-size="14" fill="#d9efe1" text-anchor="middle">classifier</text>
-      <line x1="330" y1="90" x2="366" y2="66" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar25)"/>
-      <line x1="330" y1="106" x2="366" y2="130" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar25)"/>
-      <rect x="370" y="44" width="60" height="34" rx="8" fill="#003876"/>
-      <text x="400" y="66" font-size="15" fill="#fff" text-anchor="middle" font-weight="700">in</text>
-      <rect x="370" y="118" width="60" height="34" rx="8" fill="#9aa3ad"/>
-      <text x="400" y="140" font-size="15" fill="#fff" text-anchor="middle" font-weight="700">out</text>
-      <text x="230" y="184" font-size="13" fill="#666" text-anchor="middle">trained on shadow outputs with known labels</text></svg></div>
-  </div>
-</div>
-
-<!-- 26. Why It Transfers -->
+<!-- 33. Why It Transfers -->
 <div class="slide">
   <h2>Why It Transfers</h2>
   <div class="divider"></div>
   <p>Same architecture and task ⇒ <strong>same memorization habits</strong>.</p>
-  <div class="grid-2" style="align-items:center;gap:30px;">
-    <div>
-      <ul class="arrow">
-        <li>Shadows overfit the way the target overfits</li>
-        <li>The in-vs-out pattern carries across</li>
-        <li>Even with only similar, not identical, data</li>
-      </ul>
-      <p class="muted">2017: the attack that opened the field.</p>
-    </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 220" style="width:100%;max-width:520px;">
-      <text x="20" y="72" font-size="15" fill="#003876" font-weight="700">target</text>
-      <line x1="100" y1="90" x2="330" y2="90" stroke="#999" stroke-width="1.5"/>
-      <path d="M120,90 C150,90 155,35 180,35 C205,35 210,90 240,90 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2.5"/>
-      <path d="M200,90 C230,90 235,42 260,42 C285,42 290,90 320,90 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
-      <text x="20" y="182" font-size="15" fill="#2e8b57" font-weight="700">shadow</text>
-      <line x1="100" y1="200" x2="330" y2="200" stroke="#999" stroke-width="1.5"/>
-      <path d="M122,200 C152,200 157,145 182,145 C207,145 212,200 242,200 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2.5"/>
-      <path d="M198,200 C228,200 233,152 258,152 C283,152 288,200 318,200 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
-      <text x="350" y="60" font-size="14" fill="#003876" font-weight="700">in</text>
-      <text x="350" y="80" font-size="14" fill="#6b7280" font-weight="700">out</text>
-      <text x="350" y="130" font-size="13" fill="#666">same</text>
-      <text x="350" y="148" font-size="13" fill="#666">pattern</text>
-      <line x1="345" y1="100" x2="345" y2="200" stroke="#ccc" stroke-width="1.5" stroke-dasharray="4 4"/></svg></div>
+  <div style="display:flex;justify-content:center;margin:4px 0;">
+    <svg viewBox="0 0 960 230" style="width:100%;max-width:1060px;">
+      <defs><marker id="ar-tr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7280"/></marker></defs>
+      <text x="210" y="30" font-size="22" fill="#003876" font-weight="700" text-anchor="middle">target model</text>
+      <line x1="30" y1="180" x2="400" y2="180" stroke="#999" stroke-width="2"/>
+      <path d="M50,180 C110,180 120,60 170,60 C220,60 230,180 290,180 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="3"/>
+      <path d="M170,180 C230,180 240,72 290,72 C340,72 350,180 410,180 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="3"/>
+      <text x="120" y="120" font-size="19" fill="#003876" font-weight="700" text-anchor="middle">in</text>
+      <text x="345" y="130" font-size="19" fill="#6b7280" font-weight="700" text-anchor="middle">out</text>
+      <text x="215" y="208" font-size="17" fill="#666" text-anchor="middle">loss →</text>
+
+      <line x1="430" y1="120" x2="520" y2="120" stroke="#6b7280" stroke-width="3" marker-end="url(#ar-tr)"/>
+      <text x="475" y="100" font-size="18" fill="#6b7280" text-anchor="middle" font-weight="700">same</text>
+      <text x="475" y="150" font-size="18" fill="#6b7280" text-anchor="middle" font-weight="700">pattern</text>
+
+      <text x="750" y="30" font-size="22" fill="#2e8b57" font-weight="700" text-anchor="middle">shadow model</text>
+      <line x1="560" y1="180" x2="930" y2="180" stroke="#999" stroke-width="2"/>
+      <path d="M582,180 C642,180 652,60 702,60 C752,60 762,180 822,180 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="3"/>
+      <path d="M698,180 C758,180 768,72 818,72 C868,72 878,180 938,180 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="3"/>
+      <text x="652" y="120" font-size="19" fill="#003876" font-weight="700" text-anchor="middle">in</text>
+      <text x="875" y="130" font-size="19" fill="#6b7280" font-weight="700" text-anchor="middle">out</text>
+      <text x="750" y="208" font-size="17" fill="#666" text-anchor="middle">loss →</text>
+    </svg>
   </div>
+  <ul class="arrow">
+    <li>Shadows overfit the way the target overfits, so the in-vs-out pattern carries across</li>
+    <li>Even with only similar, not identical, data</li>
+  </ul>
+  <p class="muted">2017: the attack that opened the field.</p>
 </div>
 
-<!-- ============ SECTION 04 ============ -->
-<!-- 27. Divider 04 -->
+<!-- ============ SECTION 05 ============ -->
+<!-- 34. Divider 05 -->
 <div class="slide section-slide left">
-  <div class="section-num">04</div>
+  <div class="section-num">05</div>
   <h1>Stronger Attacks</h1>
   <div class="divider"></div>
   <p class="subtitle">Calibrate per-example difficulty</p>
 </div>
 
-<!-- 28. Not All Records Are Equal -->
+<!-- 35. Not All Records Are Equal -->
 <div class="slide">
   <h2>Not All Records Are Equal</h2>
   <div class="divider"></div>
@@ -539,59 +746,21 @@
   <div class="cite cite-left">Carlini et al., "Membership Inference Attacks From First Principles", IEEE S&amp;P 2022 — Fig. 3 (four CIFAR-10 examples, in vs. out).</div>
 </div>
 
-<!-- 29. Calibrate Per Example -->
-<div class="slide">
-  <h2>Calibrate Per Example</h2>
-  <div class="divider"></div>
-  <p>Ask one sharper question for record $x$.</p>
-  <div class="grid-2" style="align-items:center;gap:30px;">
-    <div>
-      <div class="highlight"><p>Is the loss low <strong>for this specific $x$</strong>, versus models that never saw it?</p></div>
-      <p>Compare against $x$'s own baseline, not a global one.</p>
-    </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 200" style="width:100%;max-width:520px;">
-      <line x1="30" y1="160" x2="440" y2="160" stroke="#999" stroke-width="1.5"/>
-      <path d="M60,160 C100,160 105,60 130,60 C155,60 160,160 200,160 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
-      <text x="130" y="50" font-size="14" fill="#6b7280" text-anchor="middle" font-weight="700">models that never saw x</text>
-      <line x1="150" y1="70" x2="150" y2="172" stroke="#2e8b57" stroke-width="2.5" stroke-dasharray="5 4"/>
-      <text x="158" y="92" font-size="14" fill="#2e8b57" font-weight="700">observed loss</text>
-      <line x1="290" y1="40" x2="290" y2="172" stroke="#d94040" stroke-width="2" stroke-dasharray="5 4"/>
-      <text x="298" y="48" font-size="14" fill="#d94040" font-weight="700">global threshold</text>
-      <text x="440" y="180" font-size="13" fill="#666" text-anchor="end">loss →</text>
-      <text x="235" y="196" font-size="13" fill="#666" text-anchor="middle">global says "member"; x's own baseline says "typical"</text></svg></div>
-  </div>
-</div>
-
-<!-- 30. The Likelihood Ratio -->
-<div class="slide">
-  <h2>The Likelihood Ratio</h2>
-  <div class="divider"></div>
-  <p>Model two worlds for the loss of $x$, then compare them.</p>
-  <ul class="arrow">
-    <li>How likely is this loss if $x$ was <strong>in</strong> training?</li>
-    <li>How likely if $x$ was <strong>out</strong>?</li>
-    <li>Their ratio is the membership signal</li>
-  </ul>
-  <div class="math-block">$$\Lambda(x) = \frac{p\bigl(\ell(f_\theta,x) \mid x \in D\bigr)}{p\bigl(\ell(f_\theta,x) \mid x \notin D\bigr)}$$</div>
-  <p class="muted">Estimate both, then judge which world the loss favors.</p>
-  <div class="cite cite-left">Sablayrolles et al., "White-box vs Black-box: Bayes Optimal Strategies for Membership Inference", ICML 2019.</div>
-</div>
-
-<!-- 31. LiRA -->
+<!-- 36. LiRA -->
 <div class="slide">
   <h2>LiRA: Likelihood Ratio Attack</h2>
   <div class="divider"></div>
-  <p>The strong, practical recipe.</p>
+  <p>Is the loss low <strong>for this specific $x$</strong>, versus models that never saw it?</p>
   <ul class="num">
     <li>Train many shadows with $x$ <strong>in</strong>, many with $x$ <strong>out</strong>.</li>
     <li>Model each group's loss as a bell curve.</li>
     <li>Score the target by which bell its loss fits better.</li>
   </ul>
-  <p class="muted">Per-example bells, not one global threshold.</p>
-  <div class="cite cite-left">Carlini et al., "Membership Inference Attacks From First Principles", IEEE S&amp;P 2022.</div>
+  <div class="math-block">$$\Lambda(x) = \frac{p\bigl(\ell(f_\theta,x) \mid x \in D\bigr)}{p\bigl(\ell(f_\theta,x) \mid x \notin D\bigr)}$$</div>
+  <div class="cite cite-left">Carlini et al., "Membership Inference Attacks From First Principles", IEEE S&amp;P 2022; Sablayrolles et al., "White-box vs Black-box: Bayes Optimal Strategies for Membership Inference", ICML 2019.</div>
 </div>
 
-<!-- 32. Two In-vs-Out Bells -->
+<!-- 37. Two In-vs-Out Bells -->
 <div class="slide">
   <h2>Two In-vs-Out Bells</h2>
   <div class="divider"></div>
@@ -611,7 +780,7 @@
   <p class="muted">Closer to the in-bell ⇒ likely a member.</p>
 </div>
 
-<!-- 33. Label-Only Attacks -->
+<!-- 38. Label-Only Attacks -->
 <div class="slide">
   <h2>Label-Only Attacks</h2>
   <div class="divider"></div>
@@ -630,7 +799,7 @@
   <div class="cite cite-left">Choquette-Choo, Tramèr, Carlini, and Papernot, "Label-Only Membership Inference Attacks", ICML 2021 — Fig. 1 (CIFAR-10, accuracy vs. training-set size).</div>
 </div>
 
-<!-- 34. Average Accuracy Lies -->
+<!-- 39. Average Accuracy Lies -->
 <div class="slide">
   <h2>Average Accuracy Lies</h2>
   <div class="divider"></div>
@@ -645,7 +814,7 @@
   <div class="cite cite-left">Carlini et al., "Membership Inference Attacks From First Principles", IEEE S&amp;P 2022 — Fig. 2 (LOSS baseline, linear vs. log-log).</div>
 </div>
 
-<!-- 35. TPR at Low FPR -->
+<!-- 40. TPR at Low FPR -->
 <div class="slide">
   <h2>TPR at Low FPR</h2>
   <div class="divider"></div>
@@ -657,143 +826,99 @@
         <li>Measure the TPR: how many true members we still catch</li>
         <li>Confident, correct hits are what matter</li>
       </ul>
-      <p class="muted">LiRA wins exactly in this low-FPR regime.</p>
+      <p class="muted">Judge the left edge of the log-log ROC, where LiRA wins.</p>
     </div>
     <div style="display:flex;justify-content:center;"><img src="figs/carlini-lira-fig1-tpr-fpr.png" alt="Log-log ROC curves of nine membership inference attacks on a CIFAR-10 model: similar average accuracy near 59 percent, but true-positive rates at low false-positive rate differ by orders of magnitude" style="max-height:380px;width:auto;display:block;"></div>
   </div>
   <div class="cite cite-left">Carlini et al., "Membership Inference Attacks From First Principles", IEEE S&amp;P 2022 — Fig. 1 (prior attacks vs. LiRA, non-overfit CIFAR-10 model).</div>
 </div>
 
-<!-- 36. Reading the ROC Tail -->
-<div class="slide">
-  <h2>Reading the ROC Tail</h2>
-  <div class="divider"></div>
-  <p>Plot true positives against false positives, log scale.</p>
-  <div style="display:flex;justify-content:center;margin:4px 0;">
-    <svg viewBox="0 0 460 220" style="width:100%;max-width:820px;">
-      <line x1="55" y1="185" x2="430" y2="185" stroke="#999" stroke-width="1.5"/>
-      <line x1="55" y1="185" x2="55" y2="25" stroke="#999" stroke-width="1.5"/>
-      <line x1="55" y1="185" x2="430" y2="25" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4"/>
-      <path d="M55,185 C75,120 110,70 200,55 C300,40 400,30 430,28" fill="none" stroke="#003876" stroke-width="3"/>
-      <text x="240" y="205" font-size="15" fill="#666" text-anchor="middle">false positive rate (log)</text>
-      <text x="30" y="105" font-size="15" fill="#666" text-anchor="middle" transform="rotate(-90 30 105)">true positives</text>
-      <text x="150" y="50" font-size="15" fill="#003876" font-weight="700">LiRA</text>
-      <text x="330" y="95" font-size="15" fill="#6b7280">chance line</text>
-    </svg>
-  </div>
-  <p class="muted">Judge the <strong>left edge</strong>, where false positives are rare.</p>
-</div>
-
-<!-- ============ SECTION 05 ============ -->
-<!-- 37. Divider 05 -->
+<!-- ============ SECTION 06 ============ -->
+<!-- 41. Divider 06 -->
 <div class="slide section-slide left">
-  <div class="section-num">05</div>
+  <div class="section-num">06</div>
   <h1>What It Means</h1>
   <div class="divider"></div>
   <p class="subtitle">MIA audits differential privacy</p>
 </div>
 
-<!-- 38. Recall: Differential Privacy -->
-<div class="slide">
-  <h2>Differential Privacy in One Line</h2>
-  <div class="divider"></div>
-  <p>DP (Differential Privacy) bounds how much one record can change the output.</p>
-  <div class="def-card">
-    <h3>$(\varepsilon, \delta)$-DP</h3>
-    <p>Datasets differing in one person: every outcome shifts by at most $e^{\varepsilon}$, plus slack $\delta$.</p>
-  </div>
-  <div class="cite cite-left">Dwork, Kenthapadi, McSherry, Mironov, and Naor, "Our Data, Ourselves: Privacy via Distributed Noise Generation", EUROCRYPT 2006.</div>
-</div>
-
-<!-- 39. DP Caps the Attacker -->
+<!-- 42. DP Caps the Attacker -->
 <div class="slide">
   <h2>DP Caps the Attacker</h2>
   <div class="divider"></div>
-  <p>The same record-swap that DP bounds is what MIA exploits.</p>
-  <div class="grid-2" style="align-items:center;gap:30px;">
-    <div>
-      <div class="highlight"><p>A real $\varepsilon$ bound <strong>limits any MIA's success</strong>, attacker unknown.</p></div>
-      <p>DP and membership inference are two sides of one coin.</p>
-    </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 200" style="width:100%;max-width:520px;"><defs><marker id="ar39" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker></defs>
-      <rect x="20" y="40" width="130" height="46" rx="8" fill="#e8ecf0" stroke="#1a5296" stroke-width="2"/>
-      <text x="85" y="59" font-size="14" fill="#003876" text-anchor="middle" font-weight="700">data with Alice</text>
-      <text x="85" y="77" font-size="12" fill="#6b7280" text-anchor="middle">member world</text>
-      <rect x="20" y="120" width="130" height="46" rx="8" fill="#e8ecf0" stroke="#6b7280" stroke-width="2"/>
-      <text x="85" y="139" font-size="14" fill="#6b7280" text-anchor="middle" font-weight="700">data without Alice</text>
-      <text x="85" y="157" font-size="12" fill="#6b7280" text-anchor="middle">non-member world</text>
-      <rect x="190" y="80" width="110" height="46" rx="8" fill="#003876"/>
-      <text x="245" y="99" font-size="14" fill="#fff" text-anchor="middle" font-weight="700">DP training</text>
-      <text x="245" y="117" font-size="12" fill="#cdd8e6" text-anchor="middle">clip + noise</text>
-      <line x1="150" y1="66" x2="186" y2="92" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar39)"/>
-      <line x1="150" y1="140" x2="186" y2="114" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar39)"/>
-      <line x1="300" y1="94" x2="336" y2="68" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar39)"/>
-      <line x1="300" y1="112" x2="336" y2="138" stroke="#6b7280" stroke-width="2.5" marker-end="url(#ar39)"/>
-      <path d="M345,86 C362,86 365,46 385,46 C405,46 408,86 425,86 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2"/>
-      <path d="M345,166 C362,166 365,126 385,126 C405,126 408,166 425,166 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2"/>
-      <text x="385" y="110" font-size="14" fill="#d94040" text-anchor="middle" font-weight="700">ratio ≤ e<tspan dy="-6" font-size="11">ε</tspan></text>
-      <text x="230" y="190" font-size="13" fill="#666" text-anchor="middle">every output is nearly as likely in both worlds</text></svg></div>
+  <p>DP (Differential Privacy): one record shifts any outcome by at most $e^{\varepsilon}$, plus $\delta$.</p>
+  <div style="display:flex;justify-content:center;margin:4px 0;">
+    <svg viewBox="0 0 960 210" style="width:100%;max-width:1060px;">
+      <defs><marker id="ar-dp" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7280"/></marker></defs>
+      <rect x="20" y="20" width="270" height="70" rx="12" fill="#e8ecf0" stroke="#1a5296" stroke-width="2.5"/>
+      <text x="155" y="50" font-size="21" fill="#003876" text-anchor="middle" font-weight="700">data with Alice</text>
+      <text x="155" y="76" font-size="17" fill="#6b7280" text-anchor="middle">member world</text>
+      <rect x="20" y="120" width="270" height="70" rx="12" fill="#e8ecf0" stroke="#6b7280" stroke-width="2.5"/>
+      <text x="155" y="150" font-size="21" fill="#6b7280" text-anchor="middle" font-weight="700">data without Alice</text>
+      <text x="155" y="176" font-size="17" fill="#6b7280" text-anchor="middle">non-member world</text>
+      <rect x="380" y="70" width="220" height="70" rx="12" fill="#003876"/>
+      <text x="490" y="100" font-size="21" fill="#fff" text-anchor="middle" font-weight="700">DP training</text>
+      <text x="490" y="126" font-size="17" fill="#cdd8e6" text-anchor="middle">clip + noise</text>
+      <line x1="292" y1="60" x2="372" y2="92" stroke="#6b7280" stroke-width="3" marker-end="url(#ar-dp)"/>
+      <line x1="292" y1="150" x2="372" y2="118" stroke="#6b7280" stroke-width="3" marker-end="url(#ar-dp)"/>
+      <line x1="602" y1="92" x2="680" y2="60" stroke="#6b7280" stroke-width="3" marker-end="url(#ar-dp)"/>
+      <line x1="602" y1="118" x2="680" y2="150" stroke="#6b7280" stroke-width="3" marker-end="url(#ar-dp)"/>
+      <path d="M700,90 C735,90 740,18 780,18 C820,18 825,90 860,90 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2.5"/>
+      <path d="M700,190 C735,190 740,118 780,118 C820,118 825,190 860,190 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
+      <text x="905" y="60" font-size="18" fill="#003876" text-anchor="middle" font-weight="700">outputs</text>
+      <text x="905" y="160" font-size="18" fill="#6b7280" text-anchor="middle" font-weight="700">outputs</text>
+      <text x="780" y="112" font-size="20" fill="#d94040" text-anchor="middle" font-weight="700">ratio ≤ e<tspan dy="-8" font-size="15">ε</tspan></text>
+    </svg>
   </div>
+  <div class="highlight"><p>A real $\varepsilon$ bound <strong>limits any MIA's success</strong>, attacker unknown: every output is nearly as likely in both worlds.</p></div>
+  <div class="cite cite-left">Dwork, Kenthapadi, McSherry, Mironov, and Naor, "Our Data, Ourselves: Privacy via Distributed Noise Generation", EUROCRYPT 2006.</div>
 </div>
 
-<!-- 40. A Concrete Bound -->
+<!-- 43. A Concrete Bound -->
 <div class="slide">
   <h2>A Concrete Bound</h2>
   <div class="divider"></div>
   <p>Under $(\varepsilon,\delta)$-DP, the best attacker's edge is capped.</p>
-  <div class="grid-2" style="grid-template-columns:1fr auto;align-items:center;gap:30px;">
+  <div class="grid-2" style="grid-template-columns:1fr auto;align-items:center;gap:40px;">
     <div>
       <div class="highlight"><p>TPR can exceed FPR by at most a factor $e^{\varepsilon}$, plus slack $\delta$.</p></div>
       <p>Small $\varepsilon$ ⇒ true positives stay near false positives.</p>
     </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 300 230" style="width:330px;">
+    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 300 230" style="width:470px;flex:none;">
       <polygon points="50,200 50,191 154,20 270,20" fill="#1a5296" fill-opacity="0.16"/>
       <line x1="50" y1="200" x2="270" y2="200" stroke="#999" stroke-width="1.5"/>
       <line x1="50" y1="200" x2="50" y2="20" stroke="#999" stroke-width="1.5"/>
       <line x1="50" y1="200" x2="270" y2="20" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4"/>
       <polyline points="50,191 154,20 270,20" fill="none" stroke="#d94040" stroke-width="3"/>
-      <text x="165" y="48" font-size="13" fill="#d94040" font-weight="700">DP ceiling</text>
-      <text x="120" y="150" font-size="13" fill="#003876" font-weight="700">attainable</text>
-      <text x="215" y="150" font-size="13" fill="#6b7280">chance</text>
-      <text x="160" y="222" font-size="13" fill="#666" text-anchor="middle">FPR</text>
-      <text x="30" y="110" font-size="13" fill="#666" text-anchor="middle" transform="rotate(-90 30 110)">TPR</text></svg></div>
+      <text x="268" y="46" font-size="15" fill="#d94040" font-weight="700" text-anchor="end">DP ceiling</text>
+      <text x="112" y="150" font-size="15" fill="#003876" font-weight="700">attainable</text>
+      <text x="212" y="150" font-size="15" fill="#6b7280">chance</text>
+      <text x="160" y="224" font-size="15" fill="#666" text-anchor="middle">FPR</text>
+      <text x="26" y="110" font-size="15" fill="#666" text-anchor="middle" transform="rotate(-90 26 110)">TPR</text></svg></div>
   </div>
 </div>
 
-<!-- 41. Auditing Flips the Attack -->
+<!-- 44. Auditing Flips the Attack -->
 <div class="slide">
   <h2>Auditing Flips the Attack</h2>
   <div class="divider"></div>
-  <p>Turn the attack into a <strong>measurement tool</strong>.</p>
-  <ul class="num">
-    <li>Run the strongest MIA you have.</li>
-    <li>Read off its true and false positive rates.</li>
-    <li>Back out an <em>empirical</em> $\varepsilon$.</li>
-  </ul>
+  <p>Run the strongest MIA, read its TPR and FPR, back out an <em>empirical</em> $\varepsilon$.</p>
   <div class="diagram-flow" style="margin:18px 0;">
     <div class="diagram-box">strongest MIA</div>
     <div class="diagram-box">TPR, FPR</div>
     <div class="diagram-box">empirical $\varepsilon$</div>
     <div class="diagram-box">vs. claimed $\varepsilon$</div>
   </div>
-  <p class="muted">Attack success becomes a privacy meter.</p>
-</div>
-
-<!-- 42. Trust but Verify -->
-<div class="slide">
-  <h2>Trust but Verify</h2>
-  <div class="divider"></div>
-  <p>The analysis claims an $\varepsilon$. Auditing checks it.</p>
-  <div class="grid-2" style="margin-top:20px;">
+  <div class="grid-2" style="margin-top:12px;">
     <div><h3>Bug catch</h3>
       <p>Empirical $\varepsilon$ above the claim means a broken implementation.</p></div>
     <div><h3>Looseness</h3>
       <p>Empirical $\varepsilon$ far below means a conservative proof.</p></div>
   </div>
-  <p class="muted">Privacy auditing is now standard practice.</p>
+  <p class="muted" style="margin-top:14px;">Attack success becomes a privacy meter.</p>
 </div>
 
-<!-- 43. Auditing in Practice -->
+<!-- 45. Auditing in Practice -->
 <div class="slide">
   <h2>Auditing in Practice</h2>
   <div class="divider"></div>
@@ -813,43 +938,30 @@
   <div class="cite cite-left">Steinke, Nasr, and Jagielski, "Privacy Auditing with One (1) Training Run", NeurIPS 2023 — Fig. 3 (lower bound on $\varepsilon$ vs. fraction of correct guesses, 1000 examples).</div>
 </div>
 
-<!-- ============ SECTION 06 ============ -->
-<!-- 44. Divider 06 -->
+<!-- ============ SECTION 07 ============ -->
+<!-- 46. Divider 07 -->
 <div class="slide section-slide left">
-  <div class="section-num">06</div>
+  <div class="section-num">07</div>
   <h1>Modern Models</h1>
   <div class="divider"></div>
   <p class="subtitle">LLMs, diffusion, web-scale doubt</p>
 </div>
 
-<!-- 45. MIA Meets Foundation Models -->
-<div class="slide">
-  <h2>MIA Meets Foundation Models</h2>
-  <div class="divider"></div>
-  <p>Since 2023, MIA targets <strong>LLMs and diffusion models</strong>.</p>
-  <div class="grid-2" style="margin-top:16px;">
-    <div class="card"><h3>Language</h3><p>Was this article in the LLM's pretraining corpus?</p></div>
-    <div class="card"><h3>Images</h3><p>Was this photo in the diffusion model's data?</p></div>
-  </div>
-  <p style="margin-top:18px;">High stakes for <strong>copyright</strong> and <strong>privacy</strong>.</p>
-  <p class="muted">LLM = Large Language Model.</p>
-</div>
-
-<!-- 46. Detecting Pretraining Data -->
+<!-- 47. Detecting Pretraining Data -->
 <div class="slide">
   <h2>Detecting Pretraining Data</h2>
   <div class="divider"></div>
-  <p>Min-K%: score text by its <strong>least likely tokens</strong>.</p>
+  <p>Was this text in an LLM's (Large Language Model) pretraining data?</p>
   <ul class="arrow">
+    <li>Min-K%: average the $k\%$ <strong>least likely tokens</strong></li>
     <li>Members have few very-low-probability tokens</li>
-    <li>Average the $k\%$ most surprising tokens</li>
     <li>A high score suggests the text was seen</li>
   </ul>
   <div style="display:flex;justify-content:center;margin-top:10px;"><img src="figs/shi-mink-overview.png" alt="Min-K% Prob overview: get token probabilities from the LLM, select the k percent lowest-probability tokens, average their log-likelihood" style="width:100%;max-width:900px;display:block;"></div>
   <div class="cite cite-left">Shi et al., "Detecting Pretraining Data from Large Language Models", ICLR 2024 — Fig. 1 (Min-K% Prob overview).</div>
 </div>
 
-<!-- 47. Diffusion Models Too -->
+<!-- 48. Diffusion Models Too -->
 <div class="slide">
   <h2>Diffusion Models Too</h2>
   <div class="divider"></div>
@@ -869,7 +981,7 @@
   <div class="cite cite-left">Carlini et al., "Extracting Training Data from Diffusion Models", USENIX Security 2023 — Fig. 5.</div>
 </div>
 
-<!-- 48. Is MIA Well-Posed at Scale? -->
+<!-- 49. Is MIA Well-Posed at Scale? -->
 <div class="slide">
   <h2>Is MIA Well-Posed at Scale?</h2>
   <div class="divider"></div>
@@ -879,7 +991,7 @@
   <div class="cite cite-left">Duan et al., "Do Membership Inference Attacks Work on Large Language Models?", COLM 2024 — Fig. 1 (reference-based attack, Pythia and Pythia-dedup).</div>
 </div>
 
-<!-- 49. Why Scale Breaks It -->
+<!-- 50. Why Scale Breaks It -->
 <div class="slide">
   <h2>Why Scale Breaks It</h2>
   <div class="divider"></div>
@@ -891,7 +1003,7 @@
         <li>Members and non-members overlap in distribution</li>
         <li>"Member" itself gets fuzzy at web scale</li>
       </ul>
-      <p class="muted">Apparent success can be a topic-detector in disguise.</p>
+      <p class="muted">Exceptions: rare, duplicated, or fine-tuning data still leaks.</p>
     </div>
     <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 200" style="width:100%;max-width:520px;">
       <text x="115" y="22" font-size="14" fill="#003876" text-anchor="middle" font-weight="700">small model, many epochs</text>
@@ -908,7 +1020,7 @@
   </div>
 </div>
 
-<!-- 50. The Benchmark Trap -->
+<!-- 51. The Benchmark Trap -->
 <div class="slide">
   <h2>The Benchmark Trap</h2>
   <div class="divider"></div>
@@ -927,7 +1039,7 @@
   <div class="cite cite-left">Das, Zhang, and Tramèr, "Blind Baselines Beat Membership Inference Attacks for Foundation Models", DATA-FM at ICLR 2025 — Fig. 1 (PCA of WikiMIA members vs. non-members, no model needed).</div>
 </div>
 
-<!-- 51. Give the Attack Everything -->
+<!-- 52. Give the Attack Everything -->
 <div class="slide">
   <h2>Give the Attack Everything</h2>
   <div class="divider"></div>
@@ -946,7 +1058,7 @@
   <div class="cite cite-left">Hayes, Shumailov, et al., "Exploring the limits of strong membership inference attacks on large language models", NeurIPS 2025 — Fig. 2(a) (six compute-optimal models, one epoch, 128 references).</div>
 </div>
 
-<!-- 52. Ask About a Dataset -->
+<!-- 53. Ask About a Dataset -->
 <div class="slide">
   <h2>Ask About a Dataset, Not a Record</h2>
   <div class="divider"></div>
@@ -960,7 +1072,7 @@
   <div class="cite cite-left">Maini, Jia, Papernot, and Dziedzic, "LLM Dataset Inference: Did you train on my dataset?", NeurIPS 2024 — Fig. 1 (four stages).</div>
 </div>
 
-<!-- 53. MIA in the Courtroom -->
+<!-- 54. MIA in the Courtroom -->
 <div class="slide">
   <h2>MIA in the Courtroom</h2>
   <div class="divider"></div>
@@ -971,24 +1083,10 @@
   <div class="cite cite-left">Zhang, Das, Kamath, and Tramèr, "Membership Inference Attacks Cannot Prove that a Model Was Trained on Your Data", IEEE SaTML 2025 — Fig. 1 (training data proof).</div>
 </div>
 
-<!-- 54. An Open Debate -->
-<div class="slide">
-  <h2>An Open Debate</h2>
-  <div class="divider"></div>
-  <p>The field has not settled.</p>
-  <div class="grid-2" style="margin-top:20px;">
-    <div><h3>Skeptics</h3>
-      <p>Web-scale MIA mostly measures distribution shift.</p></div>
-    <div><h3>Optimists</h3>
-      <p>Rare, fine-tuned, or duplicated data still leaks.</p></div>
-  </div>
-  <p class="muted">Active, unsettled research as of 2025-26.</p>
-</div>
-
-<!-- ============ SECTION 07 ============ -->
-<!-- 55. Divider 07 -->
+<!-- ============ SECTION 08 ============ -->
+<!-- 55. Divider 08 -->
 <div class="slide section-slide left">
-  <div class="section-num">07</div>
+  <div class="section-num">08</div>
   <h1>Defenses</h1>
   <div class="divider"></div>
   <p class="subtitle">The privacy-utility price</p>
@@ -1038,33 +1136,17 @@
 <div class="slide">
   <h2>DP-SGD: The Principled Defense</h2>
   <div class="divider"></div>
-  <p>Train with a <strong>provable</strong> privacy bound.</p>
-  <div class="ta-algo" style="max-width:900px; margin:18px auto;">
-    <ol>
-      <li>Compute each example's gradient.</li>
-      <li><strong>Clip</strong> it to a maximum length.</li>
-      <li><strong>Add</strong> Gaussian noise to the sum.</li>
-      <li>Step, and track the spent $\varepsilon$.</li>
-    </ol>
-  </div>
-  <div class="cite cite-left">Abadi et al., "Deep Learning with Differential Privacy", ACM CCS 2016.</div>
-</div>
-
-<!-- 59. Why DP-SGD Stops MIA -->
-<div class="slide">
-  <h2>Why DP-SGD Stops MIA</h2>
-  <div class="divider"></div>
-  <p>Clip plus noise <strong>limits one record's footprint</strong>.</p>
+  <p>DP-SGD (Differentially Private Stochastic Gradient Descent) trains with a <strong>provable</strong> bound.</p>
   <div class="grid-2" style="align-items:center;gap:30px;">
     <div>
       <ul>
-        <li>No single example can dominate a step</li>
-        <li>Noise hides whether it was present</li>
-        <li>The two worlds blur, by design</li>
+        <li><strong>Clip:</strong> no single example can dominate a step</li>
+        <li><strong>Noise:</strong> hides whether it was present at all</li>
+        <li>The two worlds blur, so the DP cap binds <em>any</em> attacker</li>
       </ul>
-      <p class="muted">Exactly the indistinguishability MIA tries to break.</p>
+      <p class="muted">The price: accuracy falls as $\varepsilon$ shrinks.</p>
     </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 220" style="width:100%;max-width:520px;"><defs><marker id="ar59" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker></defs>
+    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 220" style="width:100%;max-width:480px;"><defs><marker id="ar59" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7280"/></marker></defs>
       <circle cx="110" cy="105" r="60" fill="none" stroke="#003876" stroke-width="2" stroke-dasharray="6 4"/>
       <line x1="110" y1="105" x2="205" y2="50" stroke="#9aa3ad" stroke-width="2.5" stroke-dasharray="4 3"/>
       <line x1="110" y1="105" x2="160" y2="76" stroke="#003876" stroke-width="3" marker-end="url(#ar59)"/>
@@ -1080,34 +1162,10 @@
       <text x="420" y="100" font-size="14" fill="#2e8b57" text-anchor="middle" font-weight="700">private</text>
       <text x="420" y="118" font-size="14" fill="#2e8b57" text-anchor="middle" font-weight="700">step</text></svg></div>
   </div>
+  <div class="cite cite-left">Abadi et al., "Deep Learning with Differential Privacy", ACM CCS 2016.</div>
 </div>
 
-<!-- 60. The Privacy-Utility Cost -->
-<div class="slide">
-  <h2>The Privacy-Utility Cost</h2>
-  <div class="divider"></div>
-  <div class="grid-2" style="align-items:center;gap:30px;">
-    <div>
-      <div class="highlight"><p>Strong defenses <strong>cost accuracy</strong>. The gap is the price of privacy.</p></div>
-      <p>Smaller $\varepsilon$ ⇒ stronger guarantee, larger gap.</p>
-      <p class="muted">The trade-off keeps narrowing with better methods.</p>
-    </div>
-    <div style="display:flex;justify-content:center;"><svg viewBox="0 0 460 220" style="width:100%;max-width:520px;">
-      <line x1="50" y1="185" x2="430" y2="185" stroke="#999" stroke-width="1.5"/>
-      <line x1="50" y1="185" x2="50" y2="25" stroke="#999" stroke-width="1.5"/>
-      <line x1="50" y1="45" x2="430" y2="45" stroke="#6b7280" stroke-width="2" stroke-dasharray="5 4"/>
-      <text x="430" y="38" font-size="14" fill="#6b7280" text-anchor="end" font-weight="700">non-private accuracy</text>
-      <path d="M60,172 C110,90 190,60 430,50" fill="none" stroke="#003876" stroke-width="3"/>
-      <text x="230" y="100" font-size="14" fill="#003876" font-weight="700">DP-SGD accuracy</text>
-      <line x1="120" y1="47" x2="120" y2="112" stroke="#d94040" stroke-width="2"/>
-      <text x="128" y="84" font-size="13" fill="#d94040" font-weight="700">price</text>
-      <text x="430" y="205" font-size="14" fill="#666" text-anchor="end">ε (privacy budget) →</text>
-      <text x="30" y="105" font-size="14" fill="#666" text-anchor="middle" transform="rotate(-90 30 105)">accuracy</text>
-      <text x="56" y="205" font-size="12" fill="#999">schematic</text></svg></div>
-  </div>
-</div>
-
-<!-- 61. A Defender's Checklist -->
+<!-- 59. A Defender's Checklist -->
 <div class="slide">
   <h2>A Defender's Checklist</h2>
   <div class="divider"></div>
@@ -1121,12 +1179,13 @@
 </div>
 
 <!-- ============ WRAP ============ -->
-<!-- 62. Key Takeaways -->
+<!-- 60. Key Takeaways -->
 <div class="slide">
   <h2>Key Takeaways</h2>
   <div class="divider"></div>
   <ul class="check">
     <li>MIA asks: was this record in training?</li>
+    <li>Homer 2008: published averages already leak it</li>
     <li>Overfitting leaks it; loss is the simplest score</li>
     <li>LiRA calibrates per example; judge TPR at low FPR</li>
     <li>DP bounds MIA; web-scale MIA is debated</li>
@@ -1134,14 +1193,14 @@
   <div class="highlight"><p><strong>Membership inference</strong> is the practical unit test of privacy.</p></div>
 </div>
 
-<!-- 63. Closer -->
+<!-- 61. Closer -->
 <div class="slide end-slide no-footer">
   <div class="big-word">In or out?</div>
   <p class="big-word-sub">One bit that should stay private.</p>
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 63</div>
+<div class="slide-num" id="slideNum">1 / 61</div>
 
 </div><!-- .deck -->
 <script defer src="../../reference/deck.js"></script>

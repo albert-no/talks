@@ -33,8 +33,8 @@ cited) live in `figs/`; `bundle.py` inlines them. Concept diagrams are inline SV
 | Wk | File | Topic | Status |
 |---|---|---|---|
 | 1 | `lec01-introduction.html` | Introduction & threat-model thinking | **revised 2026-09** (44 sl, ~40 min) |
-| 2 | `lec02-privacy-dp.html` | Privacy & differential privacy | **edited 2026-09-10** (77 sl, 11 figs, `demos/rr-simulator.html`) |
-| 3 | `lec03-mia.html` | Membership inference attacks | **revised 2026-08, figure pass 2026-09** (63 sl, 15 real figs) |
+| 2 | `lec02-privacy-dp.html` | Privacy & differential privacy | **edited 2026-09-11** (66 sl, 11 figs, `demos/rr-simulator.html`; MIA detail moved to lec03) |
+| 3 | `lec03-mia.html` | Membership inference attacks | **restructured 2026-09-11** (61 sl, 15 real figs, Homer 2008 block) |
 | 4 | `lec04-memorization.html` | Memorization & training-data extraction | **revised 2026-08, figure pass 2026-09** (60 sl, 26 real figs) |
 | 5 | `lec05-unlearning.html` | Machine unlearning | **figures 2026-09** (67 sl) |
 | 6 | `lec06-hallucination.html` | Hallucination, calibration & reliability | **figures 2026-09** (61 sl) |
@@ -223,37 +223,34 @@ reading $\varepsilon$; randomized response; noise-by-sensitivity; DP-SGD;
 privacy–utility tradeoff; private foundation models (2025–26).
 Intuition pass — points to the privacy course for rigor.
 
-### Sections (77 slides, ~80 min — content-revised 2026-08, figures added 2026-09-04, Homer 2008 block added 2026-09-04, review passes 2026-09-08, edit pass 2026-09-10 (93→77), all citations source-verified)
+### Sections (66 slides, ~70 min — content-revised 2026-08, figures added 2026-09-04, review passes 2026-09-08, edit pass 2026-09-10 (93→77), MIA block moved to lec03 2026-09-11 (77→66), all citations source-verified)
 
 | Section | Slides | Divider line | Notable slides |
 |---|---|---|---|
-| Title / Contents | 1–2 | `:33`, `:45` | |
-| **01 — The Privacy Problem** | 3–15 | `:78` | **GPT-2 extraction image** `:117` · Secret Sharer · "repeat poem" · **diffusion copy image (Ann)** `:178` · Copilot secrets (Huang FSE 2024) `:192` · 3 kinds of leak · **Sweeney 87% Venn (SVG)** `:285` + Golle 63% caveat · Netflix+AOL merged `:303` |
-| **02 — How Leakage Is Measured** | 16–31 | `:334` | membership inference (Shokri Fig 1) `:355` · **membership-is-the-secret examples (SVG)** `:373` (moved 2026-09-10 to sit directly after the MIA slide) · **Homer et al. 2008 block (7 slides, 20–26, no proofs, no paper figures)** `:398`–`:587`: genome leak intro (**full-width averages→attacker flow SVG, redrawn larger 2026-09-10**) `:398` · SNP primer (SVG) `:433` · **Homer's statistic $D_j$ interpreted on a number line (SVG)** `:462` · **one SNP whispers, 500,000 shout (two-bells SVG + mia1 numbers 28k/39k/390k)** `:490` · what the paper reported (check-list + smallest-share-detected table) `:520` · NIH policy impact `:545` · Homer→ML table `:572` · **MIA loss-overlap (SVG)** `:593` · model inversion `:608` · NYT v. OpenAI `:630` · Italy ban `:642` ("Privacy Is a Business Risk" slide deleted 2026-08 — content moved to note's "Regulators Step In" entry) · can we do better `:655` |
-| **03 — Differential Privacy** | 32–50 | `:665` | **two-worlds (full-width with/without-Alice SVG, redrawn larger 2026-09-10)** `:693` · **plausible deniability (with/without-Alice bars SVG + attacker's-odds box)** `:734` · future-proof `:763` · randomness required (SVG) `:776` · **$(\varepsilon,\delta)$-DP definition** `:807` (plain-English lead-in `:821`) · reading $\varepsilon$ (scale bar) `:834` · $\varepsilon$ in the wild: two setups (Apple vs Census table) `:863` + the numbers (bar SVG) `:878` (Apple 4–8/item + audited 16/day, Census $\approx 17$) · what $\varepsilon$ does NOT mean `:909` · post-processing `:922` · **indistinguishability `:952` + heights (SVG)** `:965` · overlap is privacy `:988` · what DP does/doesn't `:1000` · individuals not the crowd `:1012` ("Meet $\delta$" deleted 2026-09-08; "Neighboring Datasets", "Meet $\varepsilon$: The Budget", "Many Samples Break It" deleted 2026-09-10 — $D/D'$ definition now in the note's "Formal Definition" detail, repeated-queries proof in the note's "Overlap Is Privacy" detail) |
-| **04 — Achieving DP: Add Randomness** | 51–59 | `:1021` | **the recipe (full-width compute→noise→release SVG, redrawn larger 2026-09-10)** `:1029` · randomized response `:1053` · **coin protocol, full-width two-coin tree (SVG, redrawn 2026-09-08, enlarged 2026-09-10)** `:1066` · recover-the-rate worked example `:1106` · why it's private `:1115` · **Laplace mechanism + noise bell (SVG)** `:1128` · sensitivity `:1146` · Gaussian mechanism `:1178` ("Local vs Central DP", "Local DP in Products", "Inside Apple's Pipeline", "Noisy Count Example", "More Noise, More Privacy" deleted 2026-09-10 — local/central definitions now in the note's "Why It's Private" detail, the worked noisy count in the note's "Laplace Mechanism" detail) |
-| **05 — Private Machine Learning** | 60–66 | `:1202` | from statistics to models `:1210` · naive hope fails `:1222` · **DP-SGD** `:1231` (clip+noise merged to one slide) · why clip, why noise `:1268` · utility cost (benchmark folded in) `:1281` · more data helps (SVG) `:1293` ("The Privacy Accountant" and the federated-learning quartet — FL, Gboard, FL Still Leaks, secure aggregation — deleted 2026-09-10; accountant theorem + accounting references now in the note's "DP-SGD" detail) |
-| **06 — Frontier 2025–26** | 67–74 | `:1326` | private fine-tuning (Yu, Li 2022) `:1334` · **VaultGemma DP pretraining** `:1346` (added 2026-08) · private synthetic data + Apple Intelligence 2025 `:1367` · privacy auditing `:1381` · unlearning preview `:1394` · **Apple PCC: device→PCC node→answer flow (SVG)** `:1406` (four-promises slide dropped 2026-09-08; its content sits in the note's "Privacy in the Stack" detail) · EU AI Act (GPAI duties since Aug 2025) `:1436` ("The Web-Scale Puzzle", "Open Problems" deleted 2026-09-10) |
-| Wrap (demos / takeaways) | 75–76 | — | demos slide `:1449` links the **randomized-response coin simulator** `demos/rr-simulator.html` (KaTeX formulas; screenshot `figs/rr-simulator.png` `:1465`) · key takeaways `:1472` ("Where to Go Deeper" deleted 2026-09-10 — reading pointers now in the note's "Key Takeaways" detail) |
-| Closer | 77 | — | `$\varepsilon$` `:1485` |
+| Title / Contents | 1–2 | `:36`, `:46` | |
+| **01 — The Privacy Problem** | 3–13 | `:80` | **GPT-2 extraction image** `:117` · Secret Sharer `:133` · "repeat poem" `:153` · **diffusion copy image (Ann)** `:178` · Copilot secrets (Huang FSE 2024) `:193` · anonymization myth (quasi-identifier SVG) `:205` · **Sweeney 87% Venn (SVG)** `:248` + Golle 63% caveat · Netflix+AOL merged `:267` ("Three Kinds of Leak" staircase and "Why Membership Alone Hurts" moved to `lec03-mia.html` §01 on 2026-09-11) |
+| **02 — How Leakage Is Measured** | 14–20 | `:299` | attacker's toolkit `:306` · **membership inference (Shokri Fig 1) — the only MIA slide left; one-line "sensitive cohort ⇒ the bit is the secret" pointer** `:319` · model inversion `:337` · NYT v. OpenAI `:359` · Italy ban `:371` ("Privacy Is a Business Risk" slide deleted 2026-08 — content moved to note's "Regulators Step In" entry) · can we do better `:384` ("When Membership Is the Secret", the 7-slide Homer et al. 2008 block and "The Tell: Lower Loss" moved to `lec03-mia.html` §01–§03 on 2026-09-11; lec02 keeps only the MIA overview) |
+| **03 — Differential Privacy** | 21–39 | `:395` | **two-worlds (full-width with/without-Alice SVG, redrawn larger 2026-09-10)** `:422` · **plausible deniability (with/without-Alice bars SVG + attacker's-odds box)** `:463` · future-proof `:492` · randomness required (SVG) `:505` · **$(\varepsilon,\delta)$-DP definition** `:536` (plain-English lead-in `:550`) · reading $\varepsilon$ (scale bar) `:563` · $\varepsilon$ in the wild: two setups (Apple vs Census table) `:592` + the numbers (bar SVG) `:607` (Apple 4–8/item + audited 16/day, Census $\approx 17$) · what $\varepsilon$ does NOT mean `:638` · post-processing `:651` · **indistinguishability `:681` + heights (SVG)** `:694` · overlap is privacy `:717` · what DP does/doesn't `:729` · individuals not the crowd `:741` ("Meet $\delta$" deleted 2026-09-08; "Neighboring Datasets", "Meet $\varepsilon$: The Budget", "Many Samples Break It" deleted 2026-09-10 — $D/D'$ definition now in the note's "Formal Definition" detail, repeated-queries proof in the note's "Overlap Is Privacy" detail) |
+| **04 — Achieving DP: Add Randomness** | 40–48 | `:751` | **the recipe (full-width compute→noise→release SVG, redrawn larger 2026-09-10)** `:758` · randomized response `:782` · **coin protocol, full-width two-coin tree (SVG, redrawn 2026-09-08, enlarged 2026-09-10)** `:795` · recover-the-rate worked example `:835` · why it's private `:844` · **Laplace mechanism + noise bell (SVG)** `:857` · sensitivity `:875` · Gaussian mechanism `:907` ("Local vs Central DP", "Local DP in Products", "Inside Apple's Pipeline", "Noisy Count Example", "More Noise, More Privacy" deleted 2026-09-10 — local/central definitions now in the note's "Why It's Private" detail, the worked noisy count in the note's "Laplace Mechanism" detail) |
+| **05 — Private Machine Learning** | 49–55 | `:932` | from statistics to models `:939` · naive hope fails `:951` · **DP-SGD** `:960` (clip+noise merged to one slide) · why clip, why noise `:997` · utility cost (benchmark folded in) `:1010` · more data helps (SVG) `:1022` ("The Privacy Accountant" and the federated-learning quartet — FL, Gboard, FL Still Leaks, secure aggregation — deleted 2026-09-10; accountant theorem + accounting references now in the note's "DP-SGD" detail) |
+| **06 — Frontier 2025–26** | 56–63 | `:1056` | private fine-tuning (Yu, Li 2022) `:1063` · **VaultGemma DP pretraining** `:1075` (added 2026-08) · private synthetic data + Apple Intelligence 2025 `:1096` · privacy auditing `:1110` · unlearning preview `:1123` · **Apple PCC: device→PCC node→answer flow (SVG)** `:1135` (four-promises slide dropped 2026-09-08; its content sits in the note's "Privacy in the Stack" detail) · EU AI Act (GPAI duties since Aug 2025) `:1165` ("The Web-Scale Puzzle", "Open Problems" deleted 2026-09-10) |
+| Wrap (demos / takeaways) | 64–65 | — | demos slide `:1178` links the **randomized-response coin simulator** `demos/rr-simulator.html` (KaTeX formulas; screenshot `figs/rr-simulator.png` `:1193`) · key takeaways `:1201` ("Where to Go Deeper" deleted 2026-09-10 — reading pointers now in the note's "Key Takeaways" detail) |
+| Closer | 66 | — | `$\varepsilon$` `:1213` |
 
 **Key definitions / citations (all source-verified 2026-08):**
-- $(\varepsilon,\delta)$-DP — `:807` (display formula `:814`) — relaxation from Dwork, Kenthapadi, McSherry, Mironov,
-  Naor, EUROCRYPT 2006 (fixed 2026-08; was misattributed to TCC 2006). "A 2006 Idea" `:673`
+- $(\varepsilon,\delta)$-DP — `:536` (display formula `:542`) — relaxation from Dwork, Kenthapadi, McSherry, Mironov,
+  Naor, EUROCRYPT 2006 (fixed 2026-08; was misattributed to TCC 2006). "A 2006 Idea" `:402`
   keeps Dwork, McSherry, Nissim, Smith, TCC 2006 for $\varepsilon$-DP — matches `courses/privacy/lectures/01-dp/`.
-- **Statistical indistinguishability** (heights example, Korea/Japan Gaussians) — `:952-:1012` —
-  "Overlap Is Privacy" `:988` carries the composition intuition (repeated-queries proof in the note); warm-up `:965` carries the coin-flip highlight.
-- Randomized response — `:1053` — Warner, JASA 1965. Interactive simulator: `demos/rr-simulator.html` (one respondent · whole survey · $\varepsilon$ vs accuracy; added 2026-09-08).
-- DP-SGD — `:1231` — Abadi et al., ACM CCS 2016.
-- De-anonymization — `:303` — Narayanan & Shmatikov, IEEE S&P 2008.
-- Sweeney 87% (1990 census) — `:280` — Sweeney, Data Privacy WP3, 2000; Golle, WPES 2006 re-estimate (63%) added as caveat.
-- $\varepsilon$ in the wild — `:863`, `:878` — Apple "Learning with Privacy at Scale" 2017; Tang et al. 2017 audit; US Census 2020 ($\varepsilon \approx 17$).
-- VaultGemma DP pretraining ($\varepsilon \le 2$, sequence-level) — `:1346` — Google Research, 2025.
-- Homer et al. 2008 membership inference on GWAS allele frequencies — `:398`–`:587` — Homer et al., PLoS Genetics 4(8) e1000167, 2008
-  (distance statistic $D_j = |Y_j-\mathrm{Pop}_j| - |Y_j-M_j|$ interpreted on `:462`, paper sign; the privacy course mia1 deck uses the opposite sign).
-  Aggregate numbers on `:490` (tilt $2p(1-p)/n \approx 0.0004$ vs noise $\approx 0.014$ at $n=1000$; $\approx 28{,}000$ SNPs for power $0.5$ at $\alpha=10^{-6}$, $39{,}000$ for power $0.8$, $390{,}000$ at $n=10{,}000$)
-  are the idealized model after Sankararaman et al., Nature Genetics 2009, mirrored from mia1 slide 35 — labelled as such, not the paper's; derivations only in the note.
-  What the paper reported `:520` summarises Fig 2/Fig 3 in text (the three cropped paper figures were removed 2026-09-08 per Albert). NIH response `:545` — Zerhouni & Nabel, Science 322:44, 2008. Proof-level version lives in `courses/privacy/lectures/04-mia/mia1-foundations.html`; not duplicated in lec03.
+- **Statistical indistinguishability** (heights example, Korea/Japan Gaussians) — `:681-:741` —
+  "Overlap Is Privacy" `:717` carries the composition intuition (repeated-queries proof in the note); warm-up `:694` carries the coin-flip highlight.
+- Randomized response — `:782` — Warner, JASA 1965. Interactive simulator: `demos/rr-simulator.html` (one respondent · whole survey · $\varepsilon$ vs accuracy; added 2026-09-08).
+- DP-SGD — `:960` — Abadi et al., ACM CCS 2016.
+- De-anonymization — `:267` — Narayanan & Shmatikov, IEEE S&P 2008.
+- Sweeney 87% (1990 census) — `:244` — Sweeney, Data Privacy WP3, 2000; Golle, WPES 2006 re-estimate (63%) added as caveat.
+- $\varepsilon$ in the wild — `:592`, `:607` — Apple "Learning with Privacy at Scale" 2017; Tang et al. 2017 audit; US Census 2020 ($\varepsilon \approx 17$).
+- VaultGemma DP pretraining ($\varepsilon \le 2$, sequence-level) — `:1075` — Google Research, 2025.
+- Membership inference — `:319` — Shokri et al., IEEE S&P 2017 (Fig 1). The Homer et al. 2008 GWAS block (7 slides, Homer PLoS Genetics 2008 ·
+  Sankararaman et al. Nature Genetics 2009 · Zerhouni & Nabel Science 2008) **moved to `lec03-mia.html` §02 on 2026-09-11**; see that leaf.
 
 **Real images** (`figs/`, cropped + cited per GOTCHAS; all captions verified against the source PDF):
 GPT-2 extraction `figs/gpt2-extraction.png` (Carlini et al. 2021, Fig 1) `:117`; Secret Sharer canary
@@ -263,25 +260,30 @@ Stable-Diffusion copy `figs/calrini-ann.png` — **re-attributed 2026-08** to Ca
 Training Data from Diffusion Models", USENIX Security 2023, Fig 1 (Somepalli removed; verified against
 arXiv 2301.13188) `:178`; Copilot credential pipeline `figs/huang-credential-leak.png` (Huang et al.,
 FSE 2024, Fig 1) `:197`; black-box MIA diagram `figs/shokri-mia.png` (Shokri et al., IEEE S&P 2017,
-Fig 1) `:365`; model-inversion face pair `figs/fredrikson-inversion.png` (Fredrikson, Jha, Ristenpart,
-CCS 2015, Fig 1) `:614`; NYT complaint side-by-side `figs/nyt-complaint-p30.png` (NYT v. Microsoft &
-OpenAI, S.D.N.Y. 1:23-cv-11195, complaint p. 30) `:635`; CIFAR-10 /
+Fig 1) `:328`; model-inversion face pair `figs/fredrikson-inversion.png` (Fredrikson, Jha, Ristenpart,
+CCS 2015, Fig 1) `:342`; NYT complaint side-by-side `figs/nyt-complaint-p30.png` (NYT v. Microsoft &
+OpenAI, S.D.N.Y. 1:23-cv-11195, complaint p. 30) `:363`; CIFAR-10 /
 ImageNet accuracy vs $\varepsilon$ `figs/de-cifar-epsilon.png` (De et al. 2022, arXiv:2455.13650, Fig 1)
-`:1286`; VaultGemma memorization bars `figs/vaultgemma-memorization.png` (Google, arXiv:2761.15001, Fig 1) `:1359`;
-randomized-response simulator screenshot `figs/rr-simulator.png` (own render of `demos/rr-simulator.html`, 2026-09-08) `:1465`.
+`:1014`; VaultGemma memorization bars `figs/vaultgemma-memorization.png` (Google, arXiv:2761.15001, Fig 1) `:1087`;
+randomized-response simulator screenshot `figs/rr-simulator.png` (own render of `demos/rr-simulator.html`, 2026-09-08) `:1193`.
 Duplication histogram `figs/carlini_duplicates.png` moved to `lec04-memorization.html`. Apple local-DP overview
 (Apple 2017 Fig 1) and deep-leakage-from-gradients (Zhu, Liu, Han 2019 Fig 1) images deleted from `figs/` 2026-09-10 with their slides.
-**SVG figures:** three-kinds-of-leak staircase `:204`, quasi-identifier table `:241`, Netflix↔IMDb
-linkage `:303`, Sweeney linkage Venn `:285`, membership-secret timeline `:373`, GWAS averages→attacker flow (full-width) `:407`, SNP table `:439`,
-Homer $D_j$ number line `:462`, one-SNP-vs-500k two-bells `:490`, NIH timeline `:545`, MIA loss-overlap `:593`,
-two-worlds with/without-Alice rows (full-width) `:698`, plausible-deniability with/without bars `:734`, deterministic-vs-randomized release `:776`,
-$\varepsilon$ scale bar `:834`, $\varepsilon$-in-the-wild bars `:878`, post-processing pipeline `:922`, height-distribution overlap `:970`,
-recipe compute→noise→release (full-width) `:1034`, randomized-response two-coin tree (full-width) `:1071`, Laplace noise bell `:1133`,
-sensitivity bars `:1146`, Gaussian-vs-Laplace bell `:1178`, DP-SGD pipeline `:1231`, more-data signal/noise bars `:1293`,
-Private Cloud Compute flow `:1406`. Citations use
+**SVG figures (19):** quasi-identifier table `:209`, Sweeney linkage Venn `:248`, Netflix↔IMDb
+linkage `:271`, two-worlds with/without-Alice rows (full-width) `:426`, plausible-deniability with/without bars `:467`, deterministic-vs-randomized release `:515`,
+$\varepsilon$ scale bar `:571`, $\varepsilon$-in-the-wild bars `:610`, post-processing pipeline `:655`, height-distribution overlap `:698`,
+recipe compute→noise→release (full-width) `:762`, randomized-response two-coin tree (full-width) `:799`, Laplace noise bell `:861`,
+sensitivity bars `:885`, Gaussian-vs-Laplace bell `:911`, DP-SGD pipeline `:964`, more-data signal/noise bars `:1032`,
+Private Cloud Compute flow `:1139`. (Eight SVGs — leak staircase, membership-secret timeline, GWAS flow, SNP table, $D_j$ number line,
+one-SNP two-bells, NIH timeline, MIA loss-overlap — moved to `lec03-mia.html` 2026-09-11.) Citations use
 `.cite-left`. Page number: bold `.slide-num` only. Intuition pass — points to
 `courses/privacy/lectures/01-dp/` for rigor.
 
+**2026-09-11 MIA move (77→66, per Albert's Slack request):** 11 slides moved out to `lec03-mia.html` — "Three Kinds of Leak" and
+"Why Membership Alone Hurts" (§01), "When Membership Is the Secret", the seven Homer et al. 2008 slides and "The Tell: Lower Loss"
+(§02). lec02 keeps "The Attacker's Toolkit" + "Membership Inference" (Shokri Fig 1) as its MIA overview; the latter gained the
+one-line "if the cohort is sensitive, that one bit is the whole secret" pointer. Note file re-synced (66 entries, order matches;
+the 11 matching articles moved to the lec03 note verbatim, including the per-SNP and power derivations). `lec02tech.html`
+unchanged (no Homer/MIA content). Render = 66 pages; slide 16 checked at 60 dpi.
 **2026-09-10 edit pass (93→77, per Albert's Slack page list):** 16 slides removed — Neighboring Datasets, Meet $\varepsilon$:
 The Budget, Many Samples Break It (§03); Local vs Central DP, Local DP in Products, Inside Apple's Pipeline, Noisy Count
 Example, More Noise More Privacy (§04); The Privacy Accountant, Federated Learning, FL in Your Pocket, FL Still Leaks,
@@ -366,61 +368,71 @@ MIA on LLMs and diffusion models; DP-vs-MIA in one line; 2025–26 frontier (str
 wall, dataset inference, courtroom use). Intuition pass — the rigorous treatment lives
 in `courses/privacy/lectures/04-mia/` (5-deck series); facts kept consistent with it.
 
-### Sections (63 slides, ~90 min — content-revised 2026-08 from 59, all citations source-verified; figure pass 2026-09)
+### Sections (61 slides, ~95 min — restructured 2026-09-11 (63→47, then +14 moved in from `lec02-privacy-dp.html` the same day); content-revised 2026-08, all citations source-verified; figure pass 2026-09)
 
 | Section | Slides | Divider line | Notable slides |
 |---|---|---|---|
-| Title / Contents | 1–2 | `:31`, `:43` | |
-| **01 — The Question** | 3–11 | `:80` | one yes-or-no question `:88` · member vs non-member worlds `:130` · cancer-cohort harm `:143` · **Who Asks, and Why (audit / courts / extraction; added 2026-08)** `:165` · threat model `:178` · score + threshold `:192` |
-| **02 — The Basic Attack** | 12–20 | `:221` | train loss < test loss `:229` · loss score `:255` · **two-bells overlap (SVG)** `:265` · overfitting drives MIA (caveat: small gap ≠ safe) `:287` · 3-line threshold attack `:308` · confidence baseline (**Salem Fig. 11, real fig**) `:320` · Yeom theory anchor (sufficient, not necessary; **Yeom Fig. 2, real fig**) `:338` · Colab demo `:353` |
-| **03 — Shadow Models** | 21–26 | `:369` | shadow idea (**Shokri Fig. 2, real fig**) `:405` · **shadow pipeline (SVG)** `:420` · learned attack `:447` · why it transfers `:482` |
-| **04 — Stronger Attacks** | 27–36 | `:514` | difficulty vs membership (**Carlini Fig. 3, real fig**) `:522` · per-example calibration `:542` · likelihood ratio `:565` · **LiRA** `:580` · **in-vs-out bells (SVG)** `:594` · label-only (**Choquette-Choo Fig. 1, real fig**) `:614` · average accuracy lies (**Carlini Fig. 2, real fig**) `:633` · **TPR at low FPR** (retitled 2026-08; **Carlini Fig. 1, real fig**) `:648` · **ROC tail (SVG)** `:667` |
-| **05 — What It Means** | 37–43 | `:688` | $(\varepsilon,\delta)$-DP recall `:696` · DP caps the attacker `:708` · TPR $\le e^{\varepsilon}\cdot$FPR$+\delta$ `:739` · empirical $\varepsilon$ auditing `:763` · trust but verify `:782` · canaries + one-run auditing (**Steinke Fig. 3, real fig**) `:796` |
-| **06 — Modern Models** | 44–54 | `:817` | MIA meets foundation models `:825` · Min-K% (**Shi Fig. 1, real fig**) `:838` · **diffusion duplication histogram (real fig)** `:852` · Duan web-scale doubt (**Duan Fig. 1, real fig**) `:872` · why scale breaks it `:882` · benchmark trap (temporal confound, blind baselines; **Das Fig. 1, real fig**) `:911` · **Give the Attack Everything (Hayes wall; added 2026-08; Hayes Fig. 2(a), real fig)** `:930` · **dataset inference (added 2026-08; Maini Fig. 1, real fig)** `:949` · **MIA in the Courtroom (added 2026-08; Zhang Fig. 1, real fig)** `:963` · open debate `:974` |
-| **07 — Defenses** | 55–61 | `:989` | shrink the gap `:997` · heuristics not proof `:1009` · DP-SGD `:1037` · why DP-SGD stops MIA `:1053` · utility cost `:1085` · defender's checklist `:1110` |
-| Takeaways / Closer | 62–63 | — | `:1124`, `:1137` |
+| Title / Contents (8 sections, two-column TOC) | 1–2 | `:30`, `:40` | |
+| **01 — The Question** | 3–10 | `:82` | one yes-or-no question (definition + member/non-member worlds `diagram-flow`) `:89` · **The Simplest Leak (leak-ladder staircase SVG)** `:107` · **Why Membership Alone Hurts (cancer-cohort harm)** `:137` · **When Membership Is the Secret (disease / trial / chat-log / pirated-book timeline SVG, from lec02)** `:146` · **Who Asks, and Why (audit / courts / extraction)** `:171` · threat model `:184` · score + threshold `:198` |
+| **02 — The First Attack** (Homer et al. 2008; 7 slides from lec02 §02 + 2 new) | 11–20 | `:228` | genome leak intro (**full-width averages→attacker flow SVG**) `:236` · SNP primer (SVG) `:272` · **Homer's statistic $D_j$ on a number line (SVG + `math-block`)** `:302` · **NEW Why One SNP Says Nothing ($D_j=(M_j-\mathrm{Pop}_j)(2Y_j-1)$ `math-block` + mean/noise table: $2p(1-p)/n\approx0.0004$ vs $0.014$)** `:331` · one SNP whispers, 500,000 shout (two-bells SVG) `:346` · **NEW How Many SNPs Are Enough? ($\mu=2\sqrt{m\bar v/n}$; power table 28k / 39k / 390k; idealized-model caveat)** `:377` · what the paper reported (check-list + smallest-share table) `:398` · NIH policy impact (timeline SVG) `:424` · Homer→ML table `:451` |
+| **03 — The Basic Attack** | 21–28 | `:470` | train loss < test loss `:477` · loss score + 3-line threshold attack `:503` · **The Two Bells (member/non-member loss overlap SVG + threshold)** `:516` · **Overfitting Drives MIA (small vs large gap SVG; caveat: small gap ≠ safe)** `:538` · confidence baseline (**Salem Fig. 11, real fig**) `:559` · Yeom theory anchor (sufficient, not necessary; **Yeom Fig. 2, real fig**) `:577` · Colab demo `:592` |
+| **04 — Shadow Models** | 29–33 | `:609` | one threshold is crude `:616` · shadow idea (**Shokri Fig. 2, real fig**) `:644` · **shadow pipeline (SVG; labeled in/out outputs train the attack)** `:659` · **why it transfers (full-width target-vs-shadow bells SVG, 17–22 px type, enlarged 2026-09-11)** `:686` |
+| **05 — Stronger Attacks** | 34–40 | `:724` | difficulty vs membership (**Carlini Fig. 3, real fig**) `:731` · **LiRA: likelihood ratio, 3 steps + $\Lambda(x)$ `math-block`** `:751` · **in-vs-out bells (SVG)** `:765` · label-only (**Choquette-Choo Fig. 1, real fig**) `:785` · average accuracy lies (**Carlini Fig. 2, real fig**) `:804` · **TPR at low FPR** (log-log ROC left edge; **Carlini Fig. 1, real fig**) `:819` |
+| **06 — What It Means** | 41–45 | `:840` | DP caps the attacker (one-line DP recall; **full-width two-worlds→DP training→output bells SVG, 17–21 px type, enlarged 2026-09-11**) `:847` · TPR $\le e^{\varepsilon}\cdot$FPR$+\delta$ (**ROC SVG widened to 470 px, 15 px labels**) `:879` · auditing flips the attack (empirical $\varepsilon$ + bug-catch / looseness) `:903` · canaries + one-run auditing (**Steinke Fig. 3, real fig**) `:923` |
+| **07 — Modern Models** | 46–54 | `:945` | Min-K% (**Shi Fig. 1, real fig**) `:952` · **diffusion duplication histogram (real fig)** `:966` · Duan web-scale doubt (**Duan Fig. 1, real fig**) `:986` · why scale breaks it (+ exceptions: rare / duplicated / fine-tuning data) `:996` · benchmark trap (temporal confound, blind baselines; **Das Fig. 1, real fig**) `:1025` · **Give the Attack Everything (Hayes wall; Hayes Fig. 2(a), real fig)** `:1044` · **dataset inference (Maini Fig. 1, real fig)** `:1063` · **MIA in the Courtroom (Zhang Fig. 1, real fig)** `:1077` |
+| **08 — Defenses** | 55–59 | `:1090` | shrink the gap `:1097` · heuristics not proof `:1109` · DP-SGD (clip + noise SVG; MIA-focused) `:1137` · defender's checklist `:1170` |
+| Takeaways / Closer | 60–61 | — | `:1184` (5 check bullets incl. Homer 2008), `:1197` |
 
-**Key definitions / citations (all source-verified 2026-08):**
-- Shadow models — `:405` — Shokri, Stronati, Song, and Shmatikov, IEEE S&P 2017.
-- Loss attack / advantage-vs-gap — `:255`, `:338` — Yeom, Giacomelli, Fredrikson, and Jha,
+**Key definitions / citations (all source-verified 2026-08; Homer block verified 2026-09-04/08 in lec02):**
+- Homer et al. 2008 membership inference on GWAS allele frequencies — `:265`, `:417` — Homer et al., PLoS Genetics 4(8) e1000167, 2008
+  (distance statistic $D_j = |Y_j-\mathrm{Pop}_j| - |Y_j-M_j|$ on `:305`, paper sign; the privacy course mia1 deck uses the opposite sign).
+  Idealized-model numbers on `:331`–`:392` (tilt $2p(1-p)/n \approx 0.0004$ vs noise $\approx 0.014$ at $n=1000$; $\approx 28{,}000$ SNPs for
+  power $0.5$ at $\alpha=10^{-6}$, $39{,}000$ for power $0.8$, $390{,}000$ at $n=10{,}000$) follow Sankararaman, Obozinski, Jordan, and Halperin,
+  Nature Genetics 2009 (`:370`, `:392`) — labelled as such, not the paper's; derivations in the note ("Why One SNP Says Nothing",
+  "How Many SNPs Are Enough?"). NIH response `:445` — Zerhouni & Nabel, Science 322:44, 2008. Proof-level version:
+  `courses/privacy/lectures/04-mia/mia1-foundations.html` §02.
+- Shadow models — `:654` — Shokri, Stronati, Song, and Shmatikov, IEEE S&P 2017.
+- Loss attack / advantage-vs-gap — `:511`, `:587` — Yeom, Giacomelli, Fredrikson, and Jha,
   "Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting", IEEE CSF 2018
   (full title restored 2026-08). Overfitting **sufficient, not necessary** — matches
   `courses/privacy/lectures/04-mia/` (mia3).
-- Confidence baseline — `:320` — Salem et al., "ML-Leaks", NDSS 2019 (re-attributed 2026-08;
+- Confidence baseline — `:572` — Salem et al., "ML-Leaks", NDSS 2019 (re-attributed 2026-08;
   was wrongly cited to Shokri 2017).
-- Likelihood-ratio framing — `:565` — Sablayrolles et al., ICML 2019.
-- LiRA + TPR-at-low-FPR standard — `:580`, `:648` — Carlini et al., "Membership Inference
+- Likelihood-ratio framing — `:760` — Sablayrolles et al., ICML 2019 (shares the LiRA cite line).
+- LiRA + TPR-at-low-FPR standard — `:760`, `:833` — Carlini et al., "Membership Inference
   Attacks From First Principles", IEEE S&P 2022.
-- Label-only — `:614` — Choquette-Choo, Tramèr, Carlini, and Papernot, ICML 2021.
-- $(\varepsilon,\delta)$-DP — `:696` — Dwork, Kenthapadi, McSherry, Mironov, and Naor,
+- Label-only — `:799` — Choquette-Choo, Tramèr, Carlini, and Papernot, ICML 2021.
+- $(\varepsilon,\delta)$-DP — `:874` — Dwork, Kenthapadi, McSherry, Mironov, and Naor,
   EUROCRYPT 2006 (fixed 2026-08; was misattributed to TCC 2006 — same fix as lec02).
-- One-run auditing — `:796` — Steinke, Nasr, and Jagielski, NeurIPS 2023.
-- Min-K% — `:838` — Shi et al., ICLR 2024.
-- Diffusion extraction/duplication — `:852` — Carlini et al., USENIX Security 2023, Fig. 5.
-- Web-scale doubt — `:872` — Duan et al., COLM 2024.
-- Blind baselines / temporal confound — `:911` — Das, Zhang, and Tramèr, DATA-FM at ICLR 2025
+- One-run auditing — `:938` — Steinke, Nasr, and Jagielski, NeurIPS 2023.
+- Min-K% — `:961` — Shi et al., ICLR 2024.
+- Diffusion extraction/duplication — `:981` — Carlini et al., USENIX Security 2023, Fig. 5.
+- Web-scale doubt — `:991` — Duan et al., COLM 2024.
+- Blind baselines / temporal confound — `:1039` — Das, Zhang, and Tramèr, DATA-FM at ICLR 2025
   (direction fixed 2026-08: members are the *older* text, non-members post-cutoff).
-- Strong-attack wall — `:930` — Hayes, Shumailov, et al., NeurIPS 2025.
-- Dataset inference — `:949` — Maini, Jia, Papernot, and Dziedzic, NeurIPS 2024.
-- MIA-as-evidence position — `:963` — Zhang, Das, Kamath, and Tramèr, IEEE SaTML 2025.
-- DP-SGD — `:1037` — Abadi et al., ACM CCS 2016.
+- Strong-attack wall — `:1058` — Hayes, Shumailov, et al., NeurIPS 2025.
+- Dataset inference — `:1072` — Maini, Jia, Papernot, and Dziedzic, NeurIPS 2024.
+- MIA-as-evidence position — `:1083` — Zhang, Das, Kamath, and Tramèr, IEEE SaTML 2025.
+- DP-SGD — `:1165` — Abadi et al., ACM CCS 2016.
 
 **Real images (15, all cropped from the cited PDFs at 150 dpi, figure numbers verified against captions):**
-`figs/salem-max-posterior.png` (ML-Leaks Fig. 11) `:326` · `figs/yeom-advantage-gap.png` (Yeom Fig. 2) `:348` ·
-`figs/shokri-shadow-training.png` (Shokri Fig. 2) `:415` · `figs/carlini-lira-fig3-per-example.png` (Carlini 2022 Fig. 3) `:527` ·
-`figs/choquette-label-only.png` (Choquette-Choo Fig. 1) `:620` · `figs/carlini-lira-fig2-roc-scales.png` (Carlini 2022 Fig. 2) `:643` ·
-`figs/carlini-lira-fig1-tpr-fpr.png` (Carlini 2022 Fig. 1) `:662` · `figs/steinke-one-run-eps.png` (Steinke Fig. 3) `:801` ·
-`figs/shi-mink-overview.png` (Shi Fig. 1) `:848` · `figs/carlini_duplicates.png` (Carlini diffusion, USENIX Security 2023, Fig. 5;
-attribution verified against arXiv 2301.13188; also used by `lec04-memorization.html`) `:858` ·
-`figs/duan-auc-vs-size.png` (Duan Fig. 1) `:878` · `figs/das-wikimia-pca.png` (Das Fig. 1, appendix) `:925` ·
-`figs/hayes-compute-optimal-mia.png` (Hayes Fig. 2(a)) `:935` · `figs/maini-dataset-inference.png` (Maini Fig. 1) `:959` ·
-`figs/zhang-training-data-proof.png` (Zhang Fig. 1) `:970`.
-**SVG figures (20):** leak ladder `:114`, world cards `:130`, score axis + threshold `:206`, train/test loss curves + gap `:239`,
-two-bells loss overlap `:271`, small-gap vs large-gap bells `:293`, one-threshold-two-classes `:391`, shadow pipeline `:425`,
-output vector → attack classifier `:461`, target vs shadow bells `:496`, per-example baseline `:552`, in-vs-out bells `:600`,
-ROC tail `:673`, two neighbouring worlds → DP training `:718`, ROC with DP ceiling `:749`, small-model vs LLM bells `:896`,
-attack-success vs attack-strength (regularization vs DP bound) `:1023`, clip + noise `:1067`, schematic accuracy-vs-ε `:1095`;
-plus the auditing `diagram-flow` `:773`. Citations use `.cite-left` with figure numbers. Page number: bold `.slide-num` only.
+`figs/salem-max-posterior.png` (ML-Leaks Fig. 11) `:563` · `figs/yeom-advantage-gap.png` (Yeom Fig. 2) `:585` ·
+`figs/shokri-shadow-training.png` (Shokri Fig. 2) `:652` · `figs/carlini-lira-fig3-per-example.png` (Carlini 2022 Fig. 3) `:734` ·
+`figs/choquette-label-only.png` (Choquette-Choo Fig. 1) `:789` · `figs/carlini-lira-fig2-roc-scales.png` (Carlini 2022 Fig. 2) `:812` ·
+`figs/carlini-lira-fig1-tpr-fpr.png` (Carlini 2022 Fig. 1) `:831` · `figs/steinke-one-run-eps.png` (Steinke Fig. 3) `:926` ·
+`figs/shi-mink-overview.png` (Shi Fig. 1) `:960` · `figs/carlini_duplicates.png` (Carlini diffusion, USENIX Security 2023, Fig. 5;
+attribution verified against arXiv 2301.13188; also used by `lec04-memorization.html`) `:970` ·
+`figs/duan-auc-vs-size.png` (Duan Fig. 1) `:990` · `figs/das-wikimia-pca.png` (Das Fig. 1, appendix) `:1037` ·
+`figs/hayes-compute-optimal-mia.png` (Hayes Fig. 2(a)) `:1047` · `figs/maini-dataset-inference.png` (Maini Fig. 1) `:1071` ·
+`figs/zhang-training-data-proof.png` (Zhang Fig. 1) `:1082`.
+**SVG figures (20):** leak-ladder staircase `:119`, membership-secret timeline `:150`, score axis + threshold `:210`,
+GWAS averages→attacker flow (full-width) `:243`, SNP table `:276`, Homer $D_j$ number line `:307`, one-SNP-vs-500k two-bells `:350`,
+NIH timeline `:427`, train/test loss curves + gap `:485`, member/non-member loss overlap + threshold `:520`, small-gap vs large-gap bells `:542`,
+one-threshold-two-classes `:628`, shadow pipeline `:662`, target vs shadow bells (full-width) `:690`, in-vs-out bells `:769`,
+two neighbouring worlds → DP training → output bells (full-width) `:851`, ROC with DP ceiling (470 px) `:887`, small-model vs LLM bells `:1008`,
+attack-success vs attack-strength (regularization vs DP bound) `:1121`, clip + noise `:1149`;
+plus two `diagram-flow`s: member/non-member worlds `:96`, auditing `:906`. Other blocks: `math-block` `:305`, `:334`, `:482`, `:759`; `code-block` `:506`.
+Citations use `.cite-left` with figure numbers. Page number: bold `.slide-num` only.
 
 **2026-08 content revision (59→63):** every citation/number fetched and verified (deck is
 nearly number-free; no invented results tables found). Added: "Who Asks, and Why" (§01);
@@ -438,6 +450,34 @@ real cited figure or an inline SVG (14 new PDF crops in `figs/`, 15 new SVGs, on
 Figure slides use the image-beside-text `grid-2` pattern; wide overview figures (Min-K%, Duan, Maini, Zhang) stack
 below the bullets. All 32 edited slides re-rendered at 60 dpi and checked for overflow. Added the LR formula
 $\Lambda(x)$ as a `math-block` `:575`. Note file: one "Slide figure" sentence per new figure (14 articles).
+
+**2026-09-11 structure pass (63→47):** re-read against the updated `lec02-privacy-dp.html` (77 sl) and
+cut what lec02 already teaches — the leak ladder + "Why Membership Alone Hurts" + cancer-cohort harm (lec02 §02–03),
+the identical two-bells-overlap SVG (lec02 :1081), the standalone $(\varepsilon,\delta)$-DP definition slide, and the
+3-slide DP-SGD block (lec02 §07; one MIA-focused DP-SGD slide kept). Merged internal pairs: definition + two-worlds
+→ "One Yes-or-No Question"; loss score + 3-line code; "Overfitting Drives MIA" → "The Two Bells" (small vs large gap);
+"Learn the Member Signal" → pipeline muted line; per-example calibration + likelihood ratio + LiRA → one LiRA slide;
+three ROC slides → two (Average Accuracy Lies, TPR at Low FPR); "Trust but Verify" → "Auditing Flips the Attack";
+"MIA Meets Foundation Models" → Min-K% lead-in; "An Open Debate" → "Why Scale Breaks It" muted line. All 15 real
+figures kept; 7 SVGs dropped (leak ladder, world cards, two-bells overlap, output vector → classifier, per-example
+baseline, ROC tail, schematic accuracy-vs-ε); unused `.ta-algo` CSS removed. Div nesting validated (all slides at
+depth 3), render = 47 pages, 11 edited slides checked at 60 dpi. Note file re-synced (47 entries, donor `.detail`
+sections merged into the surviving articles by h3; order matches). `lec03tech.html` unchanged (no references to cut slides).
+
+**2026-09-11 MIA move (47→61, per Albert's Slack follow-up):** most of lec02's MIA material now lives here. §01 regained
+"The Simplest Leak" (leak ladder) and "Why Membership Alone Hurts" (cancer-cohort harm) from the 63-slide build and took
+"When Membership Is the Secret" (timeline SVG) from lec02; the merged "One Yes-or-No Question" lost its sensitive-cohort line.
+New §02 "The First Attack" = lec02's seven Homer et al. 2008 slides plus two new detail slides, "Why One SNP Says Nothing"
+(factorization $D_j=(M_j-\mathrm{Pop}_j)(2Y_j-1)$, per-SNP mean/noise table) and "How Many SNPs Are Enough?" ($\mu=2\sqrt{m\bar v/n}$,
+power table); sections 02–07 renumbered 03–08 and the Contents slide became a two-column 8-item TOC. §03 split the merged
+two-bells slide back into "The Two Bells" (overlap SVG + threshold, the copy lec02 had) and "Overfitting Drives MIA" (small vs
+large gap). Three diagrams enlarged per Albert's page comments: "Why It Transfers" and "DP Caps the Attacker" redrawn as
+full-width 960-wide SVGs with 17–22 px type, "A Concrete Bound" ROC widened 330→470 px with 15 px labels. Key Takeaways gained
+a Homer bullet. Note file re-synced (61 entries, order matches): the eleven lec02 articles moved verbatim (with "Lecture 4" and
+"below" cross-references replaced by in-deck section pointers), the "One SNP Whispers" derivation split across the two new
+articles, restored articles taken from the 63-slide note, and "One Yes-or-No Question" trimmed back to the MI game +
+TPR/FPR + three-faces proposition. Render = 61 pages; all 25 new/edited slides checked at 60 dpi (Contents, the SNP
+math slide and the ROC label were fixed after the first pass). `lec03tech.html` unchanged.
 
 
 ## lec04-memorization.html

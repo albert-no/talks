@@ -27,19 +27,19 @@ article h2 { color: var(--yonsei-blue); font-size: 1.4rem; margin-bottom: 6px; }
 
 <article>
 <h2>Contents</h2>
-<p>Seven steps: the question, the basic loss-threshold attack, shadow models, stronger likelihood-ratio attacks, what it means for differential privacy, modern foundation models, and defenses.</p>
+<p>Eight steps: the question, the 2008 genome attack that started the field, the basic loss-threshold attack, shadow models, stronger likelihood-ratio attacks, what it means for differential privacy, modern foundation models, and defenses.</p>
 <p><span class="kt">Key takeaway:</span> From one yes-or-no question to a full audit-and-defend toolkit.</p>
 </article>
 
 <article>
 <h2>01 — The Question</h2>
-<p>First section. We frame the single question every membership attack answers and explain why even a yes-or-no answer can be deeply harmful.</p>
+<p>First section. We frame the single question every membership attack answers, who asks it, and what the attacker gets to see.</p>
 <p><span class="kt">Key takeaway:</span> Membership alone can be the secret.</p>
 </article>
 
 <article>
 <h2>One Yes-or-No Question</h2>
-<p>A membership inference attack, or MIA, takes a trained model and one record, and decides whether that record was used during training. Nothing fancier than in-or-out.</p>
+<p>A membership inference attack, or MIA, takes a trained model and one record, and decides whether that record was used during training. Picture two worlds: one where record $x$ was in training, one where it was held out. The attacker sees only the resulting model and must guess which world produced it. Nothing fancier than in-or-out, and the rest of the lecture is about how loudly that one bit leaks.</p>
 <p><span class="kt">Key takeaway:</span> MIA asks only whether a record was in the training set.</p>
 <div class="detail">
 <h3>Definitions</h3>
@@ -50,6 +50,15 @@ article h2 { color: var(--yonsei-blue); font-size: 1.4rem; margin-bottom: 6px; }
 $$\mathrm{Adv}(\mathcal{A}) \;=\; \bigl|\Pr[\mathcal{A}(\theta,x)=1 \mid b=1] \;-\; \Pr[\mathcal{A}(\theta,x)=1 \mid b=0]\bigr|.$$
 $\mathrm{Adv}=0$ means the adversary does no better than a coin flip; $\mathrm{Adv}=1$ means it decides membership perfectly. Every attack in this lecture is an instance of $\mathcal{A}$, and every defense is an attempt to keep $\mathrm{Adv}$ small for <em>all</em> $\mathcal{A}$.</p>
 <p>(Game and definition as in the privacy-course treatment, <code>courses/privacy/lectures/04-mia/mia1-foundations.html</code>, which this lecture follows throughout.)</p>
+<p>Let $P_1$ denote the distribution of the trained model $\theta$ in the world $b=1$ (over the randomness of $\mathcal{M}$), and $P_0$ its distribution in the world $b=0$. The attack is a binary hypothesis test between $H_0: \theta \sim P_0$ and $H_1: \theta \sim P_1$. Define
+$$\mathrm{TPR}(\mathcal{A}) = \Pr[\mathcal{A}=1 \mid b=1], \qquad \mathrm{FPR}(\mathcal{A}) = \Pr[\mathcal{A}=1 \mid b=0].$$</p>
+<h3>Theorem &amp; proof</h3>
+<p><strong>Proposition (three faces of advantage).</strong> For any adversary, with $b$ uniform,
+$$\mathrm{Adv}(\mathcal{A}) = |\mathrm{TPR} - \mathrm{FPR}| = \bigl|2\Pr[\hat b = b] - 1\bigr|.$$</p>
+<p><em>Proof.</em> The first equality is the definition of advantage, since $\Pr[\mathcal{A}=1\mid b=1] = \mathrm{TPR}$ and $\Pr[\mathcal{A}=1\mid b=0] = \mathrm{FPR}$. For the second: with $b$ a fair coin,
+$$\Pr[\hat b = b] = \tfrac12 \Pr[\hat b =1 \mid b=1] + \tfrac12 \Pr[\hat b = 0 \mid b=0] = \tfrac12\bigl(\mathrm{TPR} + 1 - \mathrm{FPR}\bigr),$$
+so $2\Pr[\hat b = b] - 1 = \mathrm{TPR} - \mathrm{FPR}$. $\blacksquare$</p>
+<p>So "guessing accuracy above 50%" and "TPR exceeding FPR" are the same quantity in different units. (Verified against <code>mia1-foundations.html</code>, Proposition 2.)</p>
 </div>
 </article>
 
@@ -70,24 +79,6 @@ The advantage bound follows from $\mathrm{Adv} = |\mathrm{TPR} - \mathrm{FPR}| \
 </article>
 
 <article>
-<h2>Member vs Non-Member</h2>
-<p>Picture two worlds: one where record $x$ was in training, one where it was held out. The attacker sees only the resulting model and must guess which world produced it.</p>
-<p><span class="kt">Key takeaway:</span> The attack is distinguishing two nearly identical worlds.</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p>Let $P_1$ denote the distribution of the trained model $\theta$ in the world $b=1$ (over the randomness of $\mathcal{M}$), and $P_0$ its distribution in the world $b=0$. The attack is a binary hypothesis test between $H_0: \theta \sim P_0$ and $H_1: \theta \sim P_1$. Define
-$$\mathrm{TPR}(\mathcal{A}) = \Pr[\mathcal{A}=1 \mid b=1], \qquad \mathrm{FPR}(\mathcal{A}) = \Pr[\mathcal{A}=1 \mid b=0].$$</p>
-<h3>Theorem &amp; proof</h3>
-<p><strong>Proposition (three faces of advantage).</strong> For any adversary, with $b$ uniform,
-$$\mathrm{Adv}(\mathcal{A}) = |\mathrm{TPR} - \mathrm{FPR}| = \bigl|2\Pr[\hat b = b] - 1\bigr|.$$</p>
-<p><em>Proof.</em> The first equality is the definition of advantage, since $\Pr[\mathcal{A}=1\mid b=1] = \mathrm{TPR}$ and $\Pr[\mathcal{A}=1\mid b=0] = \mathrm{FPR}$. For the second: with $b$ a fair coin,
-$$\Pr[\hat b = b] = \tfrac12 \Pr[\hat b =1 \mid b=1] + \tfrac12 \Pr[\hat b = 0 \mid b=0] = \tfrac12\bigl(\mathrm{TPR} + 1 - \mathrm{FPR}\bigr),$$
-so $2\Pr[\hat b = b] - 1 = \mathrm{TPR} - \mathrm{FPR}$. $\blacksquare$</p>
-<p>So "guessing accuracy above 50%" and "TPR exceeding FPR" are the same quantity in different units. (Verified against <code>mia1-foundations.html</code>, Proposition 2.)</p>
-</div>
-</article>
-
-<article>
 <h2>Why Membership Alone Hurts</h2>
 <p>If a model was trained only on cancer patients, then confirming that Alice is a member directly reveals her diagnosis. No record needs to be reconstructed for real harm.</p>
 <p><span class="kt">Key takeaway:</span> When the cohort is sensitive, membership leaks the secret.</p>
@@ -95,15 +86,21 @@ so $2\Pr[\hat b = b] - 1 = \mathrm{TPR} - \mathrm{FPR}$. $\blacksquare$</p>
 <h3>Definitions</h3>
 <p>Formally: if inclusion in the training cohort is determined by a sensitive predicate — $D$ consists of records of people satisfying $s(\cdot) = 1$ (a diagnosis, an app's user base, a demographic) — then the membership bit $b$ <em>is</em> the value $s(\text{Alice})$. An attack with advantage $\mathrm{Adv}$ against membership is an attack with the same advantage against the sensitive attribute itself. Nothing about Alice's record needs to be reconstructed.</p>
 <h3>Background &amp; further reading</h3>
-<p>This is not hypothetical — the first membership inference attack was exactly this scenario, in genomics. In 2008, Homer and colleagues showed that the <em>aggregate</em> allele frequencies that genome-wide association studies (GWAS) published for replication — tables averaging hundreds of participants, posted publicly by NIH-funded studies — suffice to decide whether a specific person participated in the study cohort. Their signed per-SNP statistic, summed over roughly 500,000 SNPs, detected contributions as small as 0.1% of a DNA mixture with zero false positives across three microarray platforms. Since GWAS cohorts are defined by disease status, membership revealed diagnosis. Within months, the NIH withdrew public aggregate GWAS statistics from open portals and moved them to controlled access — the first major policy change driven by a membership inference attack. (Account and numbers verified against <code>mia1-foundations.html</code>, §02, which derives the attack and its power in full.)</p>
+<p>This is not hypothetical: the first membership inference attack, Homer et al. 2008 on the published averages of genome studies, was exactly this scenario. Since those cohorts were defined by disease status, membership revealed diagnosis. Section 02 walks through the attack, its power, and its policy impact.</p>
 <ul><li><a href="https://doi.org/10.1371/journal.pgen.1000167">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 2008</a> — the original genomic membership inference attack.</li></ul>
 </div>
 </article>
 
 <article>
-<h2>Where It Bites</h2>
-<p>The risk appears wherever a model is trained on a sensitive cohort: one disease, one app's users, one location or income bracket. Belonging to the set is itself private information.</p>
-<p><span class="kt">Key takeaway:</span> Sensitive-cohort models make membership a privacy harm.</p>
+<h2>When Membership Is the Secret</h2>
+<p>Why does a single yes/no bit matter? Because the dataset's name often is the sensitive fact. Being in a disease study means having the disease; being in a trial means having the diagnosis; being in a chat-log corpus means you wrote one of the messages; being in a pirated-book training set is the evidence in a copyright claim.</p>
+<p><span class="kt">Key takeaway:</span> Membership alone can be the whole privacy harm.</p>
+<div class="detail">
+<h3>Background &amp; further reading</h3>
+<ul>
+<li>The copyright instance is live: membership-inference-style evidence has been discussed in training-data litigation against LLM developers; "MIA in the Courtroom" in section 07 returns to it. The genomics instance is the one that actually changed policy: see "Impact: NIH Pulled the Data" in section 02.</li>
+</ul>
+</div>
 </article>
 
 <article>
@@ -154,8 +151,121 @@ whose graph $\{(\mathrm{FPR}(\tau), \mathrm{TPR}(\tau)) : \tau \in \mathbb{R}\}$
 </article>
 
 <article>
-<h2>02 — The Basic Attack</h2>
-<p>Second section. The core mechanism: models fit the points they saw, so overfitting leaves a measurable fingerprint we can threshold on.</p>
+<h2>02 — The First Attack</h2>
+<p>Second section. Before any neural network was attacked, a 2008 genomics paper showed that published cohort averages reveal who was in the study. We walk through that attack in full, because every later membership inference attack is the same template.</p>
+<p><span class="kt">Key takeaway:</span> Membership inference predates deep learning; Homer et al. 2008 is the original.</p>
+</article>
+
+<article>
+<h2>Before Neural Nets: The Genome Leak</h2>
+<p>Before there were neural networks to attack, there were genome-wide association studies. In 2008 they published the average allele frequency of their cohort at every SNP, openly, on the assumption that an average over a thousand people hides each one. A forensics paper by Homer and colleagues showed that assumption was wrong: from those averages plus one person's genome you can tell whether that person was in the study.</p>
+<p><span class="kt">Key takeaway:</span> The first membership inference attack targeted published averages, not a model.</p>
+<div class="detail">
+<h3>Background &amp; further reading</h3>
+<ul>
+<li><a href="https://doi.org/10.1371/journal.pgen.1000167">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 4(8): e1000167 (2008)</a> — open access. The paper is framed as forensics (finding one contributor in a DNA mixture); the GWAS consequence is stated in the abstract: "composite statistics across cohorts, such as allele frequency or genotype counts, do not mask identity within genome-wide association studies."</li>
+<li>The rigorous version of this block, with Lemma/Theorem/proofs, is the Homer section of <code>courses/privacy/lectures/04-mia/mia1-foundations.html</code>.</li>
+</ul>
+</div>
+</article>
+
+<article>
+<h2>Genomics in 60 Seconds</h2>
+<p>All the biology we need: a SNP is a single position in the genome where people differ, an array reads about half a million of them per person, and a study's published "allele frequency" at a SNP is just the column average of that letter across its participants. Individual rows were never released.</p>
+<p><span class="kt">Key takeaway:</span> The study published column averages; the attack works from those alone.</p>
+<div class="detail">
+<h3>Definitions</h3>
+<p>For SNP $j$ and participant $k$ let $Y_{k,j} \in \{0,1\}$ indicate the minor allele (haploid simplification; real genotypes take values in $\{0, \tfrac12, 1\}$). The published statistic is the cohort frequency $M_j = \frac1n \sum_{k=1}^n Y_{k,j}$. The population frequency $\mathrm{Pop}_j$ comes from a public reference panel (HapMap in the paper).</p>
+</div>
+</article>
+
+<article>
+<h2>Homer's Statistic</h2>
+<p>Here is the whole idea in one line. At each SNP put three points on the 0-to-1 axis: the population frequency, the study's frequency, and Alice's own letter. Measure her distance to each. If she sits nearer the study than the population, that SNP whispers "she was in it." The statistic $D_j$ is just that comparison with a sign: positive means "closer to the study", negative means "closer to everyone". Walk through the example on the slide: population 0.30, study 0.40, Alice 1, so distances 0.70 and 0.60 and $D_j = +0.10$.</p>
+<p><span class="kt">Key takeaway:</span> $D_j$ is distance-to-everyone minus distance-to-the-study; positive leans "in".</p>
+<div class="detail">
+<h3>Definitions</h3>
+<p><strong>Homer distance statistic</strong> (paper's sign convention, Fig. 1): $D_j = \lvert Y_j - \mathrm{Pop}_j \rvert - \lvert Y_j - M_j \rvert$, where $Y_j \in \{0, \tfrac12, 1\}$ is Alice's genotype at SNP $j$ (haploid $\{0,1\}$ in the idealized model), $M_j$ the mixture or study allele frequency, and $\mathrm{Pop}_j$ the reference-population frequency. The paper's test is a one-sample $t$-test on $\{D_j\}_{j=1}^m$ against mean zero. (The privacy-course mia1 deck uses the opposite sign, $\lvert Y - M\rvert - \lvert Y - \mathrm{Pop}\rvert$, so its member mean is negative; the two are equivalent.)</p>
+</div>
+</article>
+
+<article>
+<h2>Why One SNP Says Nothing</h2>
+<p>Let us make the whisper precise. For a 0/1 letter the absolute values collapse and $D_j$ factors into two pieces: how far the study average drifted from the population, times the sign of Alice's letter. If Alice is outside the study those two pieces are independent, and the drift is centred, so $D_j$ averages to zero. If she is inside, she is one of the $n$ people in the average, and her own letter drags the drift toward her sign: the mean is $2p(1-p)/n$, about four ten-thousandths at $n = 1{,}000$. The noise is the same in both worlds, about $0.014$. Signal-to-noise of $0.03$: a single SNP tells you nothing.</p>
+<p><span class="kt">Key takeaway:</span> Per SNP, membership shifts the mean by $2p(1-p)/n$ against noise $\sqrt{p(1-p)/n}$: hopeless alone.</p>
+<div class="detail">
+<h3>Theorem &amp; proof</h3>
+<p><strong>Per-SNP mean and variance</strong> (idealized model: independent SNPs, $\mathrm{Pop}_j = p_j$ known exactly, haploid $Y \in \{0,1\}$). Under $H_0$ (Alice not in the cohort), $\mathbb E[D_j] = 0$. Under $H_1$ (Alice one of the $n$), $\mathbb E[D_j] = 2p_j(1-p_j)/n$ in the paper's sign convention. In both cases $\mathrm{Var}(D_j) = p_j(1-p_j)/n$ to leading order. <em>Proof sketch:</em> for $Y \in \{0,1\}$ and $a \in [0,1]$, $\lvert Y - a\rvert = a + Y(1-2a)$, so $D_j = (M_j - p_j)(2Y_j - 1)$; under $H_0$ the two factors are independent and $M_j - p_j$ is centred; under $H_1$ write $M_j = \tfrac1n Y_j + \tfrac{n-1}{n}\bar Y_{-j}$ and use $Y_j^2 = Y_j$. The slide's numbers take $p(1-p) = 0.2$: tilt $2(0.2)/1000 = 4\times10^{-4}$, standard deviation $\sqrt{0.2/1000} \approx 0.014$, ratio $\approx 0.028$.</p>
+</div>
+</article>
+
+<article>
+<h2>One SNP Whispers, 500,000 Shout</h2>
+<p>Why does a single $D_j$ say nothing? If Alice is not in the study, her letter and the study average are independent, and $D_j$ averages to zero. If she is, she is one of the $n$ people inside that average, and her own contribution tilts $D_j$ slightly positive, by about $2p(1-p)/n$. At $n = 1{,}000$ that is four ten-thousandths, against random noise thirty times larger. The left bells on the slide are essentially one bell. Now sum over the array. The tilt adds up linearly in the number of SNPs, the noise only like its square root, so the bells separate. The gap grows like the square root of SNPs over cohort size: a study twice as large is exactly cancelled by an array twice as dense.</p>
+<p><span class="kt">Key takeaway:</span> Each SNP is hopeless alone; 500,000 of them turn a 0.03 signal-to-noise into a clean separation.</p>
+<div class="detail">
+<h3>Background &amp; further reading</h3>
+<p>The per-SNP calculation and the power analysis behind the two bells are spelled out in the next two entries.</p>
+</div>
+</article>
+
+<article>
+<h2>How Many SNPs Are Enough?</h2>
+<p>Now the arithmetic of summing. Add $m$ statistics: the tilt grows like $m$, the noise like $\sqrt{m}$, so the standardized gap between the two bells is $\mu = 2\sqrt{m\bar v/n}$. Read the table: at a false-positive level of one in a million, a thousand-person cohort needs about 28,000 SNPs to catch half its members and about 39,000 to catch eight in ten. Ten times the cohort needs ten times the SNPs, roughly 390,000. A standard array reads 500,000. Stress that these are idealized-model numbers, not the paper's reported values; the next slide has those.</p>
+<p><span class="kt">Key takeaway:</span> The gap grows like $\sqrt{m/n}$; the SNP budget scales linearly with cohort size, and arrays already have enough.</p>
+<div class="detail">
+<h3>Theorem &amp; proof</h3>
+<p><strong>Power of the aggregated test.</strong> With $S = \sum_{j=1}^m D_j$ standardized by its null deviation, the level-$\alpha$ test has asymptotic power $\pi = \Phi(\mu - z_{1-\alpha})$ with $\mu = 2\sqrt{m\bar v/n}$, $\bar v = \frac1m\sum_j p_j(1-p_j)$. <em>Sketch:</em> the Lindeberg CLT applies ($\lvert D_j\rvert \le 1$, $m \to \infty$); null mean 0 and variance $m\bar v/n$; alternative mean $2m\bar v/n$ with variance unchanged to leading order. Corollary: $m \ge n(z_{1-\alpha} + z_{1-\beta})^2/(4\bar v)$ SNPs suffice for power $1-\beta$: about $28{,}000$ at $n = 1{,}000$, $\alpha = 10^{-6}$, power $0.5$, $\bar v = 0.2$; about $39{,}000$ for power $0.8$; about $390{,}000$ at $n = 10{,}000$. Full statements and proofs: privacy course mia1 deck, Lemmas 1–2, Proposition 1, Theorem 1, Corollary 1. These are idealized-model numbers, not values reported by Homer et al.</p>
+<h3>Background &amp; further reading</h3>
+<ul>
+<li><a href="https://doi.org/10.1038/ng.436">Sankararaman, Obozinski, Jordan, Halperin, "Genomic privacy and limits of individual detection in a pool", Nature Genetics 41, 965–967 (2009)</a> — the likelihood-ratio power analysis this idealized model follows.</li>
+</ul>
+</div>
+</article>
+
+<article>
+<h2>What the Paper Reported</h2>
+<p>Homer's group did not stop at simulation. They pooled real DNA into mixtures, ran them on three commercial genotyping arrays, and tested every person in the HapMap reference set against each mixture. Everyone in the mixture scored high, everyone outside scored near zero, with no overlap in mixtures of 40 or more people, including one where a single person contributed a tenth of one percent. Explain the table's second column before reading it: a person's <em>share</em> is the fraction of the pooled DNA that came from them, so in a 1,000-person GWAS cohort every member is a 0.1% share, and in a 100-person study each is 1%. "Smallest share detected" is the smallest such fraction at which the test still separates members from non-members at $p \lt 10^{-6}$. Read the rows as cohort sizes: ten to twenty-five thousand SNPs already detect a member of a cohort of about a hundred; fifty thousand SNPs detect a member of a thousand-person cohort when the array noise is low; the full half-million SNPs go below that. The smaller the detectable share, the larger the study whose published averages leak membership, which is why the standard 500,000-SNP array made every ordinary GWAS vulnerable.</p>
+<p><span class="kt">Key takeaway:</span> "Share" is one person's fraction of the pool; the attack detects a 0.1% share, i.e. one member of a 1,000-person cohort, with zero false positives.</p>
+<div class="detail">
+<h3>Background &amp; further reading</h3>
+<ul>
+<li>Figure 2 caption (verified against the PDF): simulations on 1,423 Wellcome Trust 58C individuals varying the number of SNPs $s$, the mixture fraction $f$, and probe variance $v_p$; "these simulations suggest that we should be able to resolve mixtures where a given individual is 0.1% of the mixture ($f$), probe variance is at most 0.01 ($v_p$) and the number of SNPs probed is 50,000 ($s$)." The slide's "50,000 → 0.1% (low noise)" row is this sentence. The text also states that 10,000 to 50,000 SNPs resolve shares from 10% down to 0.1%.</li>
+<li>Figure 3 caption (verified): mixtures assayed on the Affymetrix GeneChip 5.0, Illumina BeadArray 550 and Illumina 450S Duo; $x$-axis individuals in the CEU HapMap population, left $y$-axis log-scaled $p$-value, right $y$-axis the test statistic; green = in the mixture, red = not. "In all mixtures, the identification of the presence of a person's genomic DNA was possible." Panel D is Mixture G with a 99.9/0.1 split.</li>
+<li>Results text: with 10,000–25,000 SNPs individuals contributing less than 1% are identified at $p \lt 10^{-6}$; using all ~500,000 SNPs, contributors below 0.1%.</li>
+<li><a href="https://doi.org/10.1371/journal.pgen.1000167">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 4(8): e1000167 (2008)</a>.</li>
+</ul>
+</div>
+</article>
+
+<article>
+<h2>Impact: NIH Pulled the Data</h2>
+<p>The consequence was immediate. Within days of publication the NIH removed aggregate genotype data from open access and moved it behind controlled-access agreements; the Wellcome Trust followed. It was the first time a membership inference attack changed policy, and it set the precedent we will keep meeting: aggregation is not anonymization.</p>
+<p><span class="kt">Key takeaway:</span> One paper moved genome-wide summary data from open to controlled access.</p>
+<div class="detail">
+<h3>Background &amp; further reading</h3>
+<ul>
+<li><a href="https://doi.org/10.1126/science.1165490">Zerhouni and Nabel, "Protecting Aggregate Genomic Data", Science 322(5898): 44 (3 Oct 2008)</a> — the NIH director and NHLBI director explain the policy change in response to Homer et al.</li>
+<li>Access to the withdrawn data now runs through dbGaP controlled access under a data-use certification; the individual-level data were never public in the first place.</li>
+</ul>
+</div>
+</article>
+
+<article>
+<h2>Same Attack, New Target</h2>
+<p>Read the two columns side by side. Cohort becomes training set, published frequencies become the trained model, the reference population becomes public data of the same kind, and Homer's distance statistic becomes the model's loss on Alice's record. Shokri's 2017 attack on neural networks is Homer's attack with the words swapped, which is why we now look at what loss gives away.</p>
+<p><span class="kt">Key takeaway:</span> Membership inference is one template; genomics and deep learning are two instances.</p>
+<div class="detail">
+<h3>Background &amp; further reading</h3>
+<ul>
+<li>The privacy course's mia1 deck carries the fuller genomics-to-ML translation table and then shows that every optimal membership attack is a likelihood-ratio test (Neyman–Pearson), which is the abstraction behind both instances.</li>
+</ul>
+</div>
+</article>
+
+<article>
+<h2>03 — The Basic Attack</h2>
+<p>Third section. The core mechanism: models fit the points they saw, so overfitting leaves a measurable fingerprint we can threshold on.</p>
 <p><span class="kt">Key takeaway:</span> Overfitting is the engine that powers membership inference.</p>
 </article>
 
@@ -175,13 +285,20 @@ where $z \sim S$ means a uniformly random training record and $z \sim \mathcal{D
 
 <article>
 <h2>Loss Is the Score</h2>
-<p>The simplest score is the per-example loss itself. Low loss means guess member, high loss means guess non-member.</p>
-<p><span class="kt">Key takeaway:</span> Per-example loss is the first and simplest membership score.</p>
+<p>The simplest score is the per-example loss itself. The whole attack is three lines: query the model for the loss, compare it to a threshold, and return member if it is small. Low loss means guess member, high loss means guess non-member. No training and no internals are required.</p>
+<p><span class="kt">Key takeaway:</span> Per-example loss plus a threshold is already an attack.</p>
 <div class="detail">
 <h3>Definitions</h3>
 <p><strong>Loss-threshold attack.</strong> With score $s(x,\theta) = -\ell(\theta, (x,y))$ (negated so that higher means "more member-like"), the attack is
 $$\mathcal{A}_\tau(x, y) = \mathbf{1}\bigl[\,\ell(\theta,(x,y)) \le \tau\,\bigr].$$
 It requires one query, the true label $y$, and no knowledge of the training pipeline. The threshold $\tau$ can be set to the population average loss, or tuned on models the attacker trains herself (§03).</p>
+<p>Pseudocode made precise: given oracle access to $f_\theta$ and the labeled record $(x,y)$,</p>
+<ol>
+<li>query once: $p \leftarrow f_\theta(x)$;</li>
+<li>compute the loss: $\ell \leftarrow -\log p_y$;</li>
+<li>return "member" iff $\ell \le \tau$.</li>
+</ol>
+<p>This is $\mathcal{A}_\tau$ from "Loss Is the Score". Its ROC curve is exactly the curve traced by sweeping $\tau$; all later attacks change only step 2 — the score.</p>
 </div>
 </article>
 
@@ -203,36 +320,20 @@ $$\mathrm{Adv}(\mathcal{A}) = |P_1(S_{\mathcal{A}}) - P_0(S_{\mathcal{A}})| \le 
 (Achievability.) Take $S^* = \{t : p_1(t) \gt p_0(t)\}$. Then
 $$P_1(S^*) - P_0(S^*) = \int_{S^*} \bigl(p_1(t) - p_0(t)\bigr)\,dt = \mathrm{TV}(P_1, P_0),$$
 the last equality because $\int (p_1 - p_0) = 0$ splits into equal positive and negative parts, and $S^*$ collects the entire positive part. $\blacksquare$</p>
-<p>So "overlap sets the accuracy" is literal: the best achievable guessing accuracy is $\tfrac12(1 + \mathrm{TV}(P_1,P_0))$, by the previous entry's identity. (Verified against <code>mia1-foundations.html</code>, Proposition 3.)</p>
+<p>So "overlap sets the accuracy" is literal: the best achievable guessing accuracy is $\tfrac12(1 + \mathrm{TV}(P_1,P_0))$, by the identity in "One Yes-or-No Question". (Verified against <code>mia1-foundations.html</code>, Proposition 3.)</p>
 </div>
 </article>
 
 <article>
 <h2>Overfitting Drives MIA</h2>
-<p>The wider the train-test gap, the further apart the two bells, and the easier this attack. But note the caveat: a small gap weakens the loss attack without guaranteeing safety — stronger attacks in section four still find members of well-generalizing models.</p>
+<p>The wider the train-test gap, the further apart the two bells, and the easier this attack. But note the caveat: a small gap weakens the loss attack without guaranteeing safety — stronger attacks in section five still find members of well-generalizing models.</p>
 <p><span class="kt">Key takeaway:</span> Overfitting makes the attack easy; its absence is not a guarantee.</p>
 <div class="detail">
 <h3>Theorem &amp; proof</h3>
 <p>The caveat is a theorem, not a hedge. The folklore claim "$\mathrm{Adv} \le \Delta$" (no gap, no leak) is <strong>false</strong>:</p>
 <p><strong>Proposition (zero gap, perfect attack).</strong> There is a loss distribution pair with generalization gap $\Delta = 0$ and $\sup_{\mathcal{A}} \mathrm{Adv}(\mathcal{A}) = 1$.</p>
 <p><em>Proof (explicit construction).</em> Suppose members receive loss $0$ or $1$ with probability $\tfrac12$ each, while non-members always receive loss exactly $\tfrac12$. The average member loss is $\tfrac12$ and the average non-member loss is $\tfrac12$, so $\Delta = \tfrac12 - \tfrac12 = 0$. Yet the test $\hat b = \mathbf{1}[\,\ell \ne \tfrac12\,]$ has $\mathrm{TPR} = 1$ and $\mathrm{FPR} = 0$, hence $\mathrm{Adv} = 1$: membership is decided perfectly while the train-test gap is zero. $\blacksquare$ (derivation: course notes — construction as in <code>mia3-theory.html</code>, which also gives the converse counterexample: positive gap with zero advantage for the threshold attack.)</p>
-<p>What <em>is</em> true is the exact equality of the next section's "A Theory Anchor": the gap governs one particular attack, not the supremum over all attacks. Averages can match while distributions differ — and attacks exploit distributions.</p>
-</div>
-</article>
-
-<article>
-<h2>The Threshold Attack</h2>
-<p>The whole attack is three lines: query the model for the loss, compare to a threshold, return member if it is small. No training and no internals required.</p>
-<p><span class="kt">Key takeaway:</span> One query and a threshold is already an attack.</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p>Pseudocode made precise: given oracle access to $f_\theta$ and the labeled record $(x,y)$,</p>
-<ol>
-<li>query once: $p \leftarrow f_\theta(x)$;</li>
-<li>compute the loss: $\ell \leftarrow -\log p_y$;</li>
-<li>return "member" iff $\ell \le \tau$.</li>
-</ol>
-<p>This is $\mathcal{A}_\tau$ from "Loss Is the Score". Its ROC curve is exactly the curve traced by sweeping $\tau$; all later attacks change only step 2 — the score.</p>
+<p>What <em>is</em> true is the exact equality of this section's "A Theory Anchor": the gap governs one particular attack, not the supremum over all attacks. Averages can match while distributions differ — and attacks exploit distributions.</p>
 </div>
 </article>
 
@@ -278,8 +379,8 @@ Subtracting, $\mathrm{Adv}(\mathcal{A}_1) = \bigl(R_{\mathrm{pop}} - R_{\mathrm{
 </article>
 
 <article>
-<h2>03 — Shadow Models</h2>
-<p>Third section. We upgrade from a hand-picked threshold to a learned attack, using copycat models whose membership labels we control.</p>
+<h2>04 — Shadow Models</h2>
+<p>Fourth section. We upgrade from a hand-picked threshold to a learned attack, using copycat models whose membership labels we control.</p>
 <p><span class="kt">Key takeaway:</span> Build models you understand to learn the membership signal.</p>
 </article>
 
@@ -314,8 +415,8 @@ Subtracting, $\mathrm{Adv}(\mathcal{A}_1) = \bigl(R_{\mathrm{pop}} - R_{\mathrm{
 
 <article>
 <h2>The Shadow Pipeline</h2>
-<p>Train several shadow models, collect their outputs labeled in or out, and train an attack classifier on those labeled outputs. Then apply it to the target model.</p>
-<p><span class="kt">Key takeaway:</span> Shadow outputs become training data for an attack model.</p>
+<p>Train several shadow models, collect their outputs labeled in or out, and train an attack classifier on those labeled outputs. The classifier learns what a member's output looks like, then transfers that judgment to the target model, without ever touching the target's data.</p>
+<p><span class="kt">Key takeaway:</span> Shadow outputs become labeled training data for an attack model that transfers to the target.</p>
 <div class="detail">
 <h3>Theorem &amp; proof</h3>
 <p>The pipeline is statistically sound because shadows <em>simulate the game exactly</em>. Let $\Phi(\theta, z)$ be the feature the attack extracts (confidence vector, loss, …), and let $P_1, P_0$ be the feature's laws for members and non-members of the <em>target</em>.</p>
@@ -324,15 +425,6 @@ $$\Phi(\theta_j, z) \sim P_1, \qquad \Phi(\theta_j, z') \sim P_0,$$
 independently across $j$.</p>
 <p><em>Proof.</em> The feature is a fixed measurable function of the triple (training set, algorithm randomness, probe record). By clauses (1)–(3) of the assumption, this triple has the same joint law for shadow $j$ as for the target — same $\mathcal{D}^n$, same $\mathcal{M}$, same probe law — so the pushforward law of the feature is the same, namely $P_1$ when the probe is in the shadow's training set and $P_0$ when it is out. Independence across $j$ holds because the shadows use disjoint fresh data and independent randomness. $\blacksquare$</p>
 <p>So the labeled dataset $\{(\Phi, \text{in/out})\}$ the pipeline collects is an i.i.d. sample from the very two distributions the attack must distinguish — supervised learning applies off the shelf. (Verified against <code>mia2-shadow.html</code>, Proposition 1.)</p>
-</div>
-</article>
-
-<article>
-<h2>Learn the Member Signal</h2>
-<p>The attack classifier sees an output and predicts in or out. Trained on shadow data, it learns what a member's output looks like, then transfers that judgment to the target.</p>
-<p><span class="kt">Key takeaway:</span> The attacker learns the membership signal without ever seeing target data.</p>
-<div class="detail">
-<h3>Theorem &amp; proof</h3>
 <p>What does the attack classifier converge to? Exactly the optimal test.</p>
 <p><strong>Theorem (the log-loss minimiser is the likelihood ratio in disguise).</strong> Let $p_1, p_0$ be the densities of $P_1, P_0$ and let the membership prior be balanced. The unique minimiser of the population logistic risk
 $$\mathcal{R}(\mathcal{A}) = \mathbb{E}\bigl[-b \log \mathcal{A}(u) - (1-b)\log(1 - \mathcal{A}(u))\bigr]$$
@@ -360,8 +452,8 @@ Setting $r'(a) = -\pi(u)/a + (1-\pi(u))/(1-a) = 0$ gives $a = \pi(u)$, and $r''(
 </article>
 
 <article>
-<h2>04 — Stronger Attacks</h2>
-<p>Fourth section. We move to state-of-the-art attacks that calibrate each record's intrinsic difficulty and we fix how we measure success.</p>
+<h2>05 — Stronger Attacks</h2>
+<p>Fifth section. We move to state-of-the-art attacks that calibrate each record's intrinsic difficulty and we fix how we measure success.</p>
 <p><span class="kt">Key takeaway:</span> Strong attacks ask whether the loss is low for this record specifically.</p>
 </article>
 
@@ -377,23 +469,20 @@ Setting $r'(a) = -\pi(u)/a + (1-\pi(u))/(1-a) = 0$ gives $a = \pi(u)$, and $r''(
 </article>
 
 <article>
-<h2>Calibrate Per Example</h2>
-<p>The sharper question is whether the loss is low for this specific record, relative to models that never saw it. Compare against the record's own baseline, not a global one.</p>
-<p><span class="kt">Key takeaway:</span> Calibration compares each record to its own out-of-training baseline.</p>
+<h2>LiRA: Likelihood Ratio Attack</h2>
+<p>The sharper question is whether the loss is low for this specific record, relative to models that never saw it. Sablayrolles and colleagues show the optimal score is a likelihood ratio between two loss distributions for $x$, in and out. Carlini and colleagues make it practical: train many shadows with the record in and many with it out, fit a Gaussian to each loss distribution, and score by the ratio.</p>
+<p><span class="kt">Key takeaway:</span> LiRA scores each record by a per-example in-versus-out likelihood ratio.</p>
 <div class="detail">
 <h3>Definitions</h3>
+<p><strong>Logit scaling.</strong> LiRA works not with raw confidence $p = f_\theta(x)_y$ but with $\phi(p) = \log\frac{p}{1-p}$, which spreads $(0,1)$ over $\mathbb{R}$ and makes the per-record score distributions approximately Gaussian.</p>
+<p><strong>The LiRA statistic.</strong> For target record $z$ with observed (logit-scaled) score $\ell^*$ on the target model, fit per-record Gaussians to shadow scores and form
+$$\Lambda(z) = \frac{\mathcal{N}\bigl(\ell^*;\ \mu_{\mathrm{in}},\ \sigma^2_{\mathrm{in}}\bigr)}{\mathcal{N}\bigl(\ell^*;\ \mu_{\mathrm{out}},\ \sigma^2_{\mathrm{out}}\bigr)},$$
+where $(\mu_{\mathrm{in}}, \sigma^2_{\mathrm{in}})$ are the mean and variance of the record's score over shadows trained <em>with</em> $z$, and $(\mu_{\mathrm{out}}, \sigma^2_{\mathrm{out}})$ over shadows trained <em>without</em>. Four numbers per record; the Gaussian family is a modelling choice justified by the logit scaling.</p>
+<p><strong>Online LiRA.</strong> (1) Train $N$ shadow models on random datasets, half containing $z$; (2) compute the logit-scaled confidence of $z$ under each; (3) fit the two Gaussians; (4) output $\Lambda(z)$ and threshold. <strong>Offline LiRA</strong> drops the "in" models: score by the one-sided tail $\Lambda_{\mathrm{off}} = \Pr[Z \le \ell^*]$ with $Z \sim \mathcal{N}(\mu_{\mathrm{out}}, \sigma^2_{\mathrm{out}})$, i.e. $\Phi\bigl(z(\ell^*)\bigr)$ — a per-record one-sided $z$-test, which is uniformly most powerful for the one-sided problem by the Karlin–Rubin theorem (statement and proof in <code>mia4-modern.html</code>, Proposition 2). (Definitions verified against <code>mia4-modern.html</code>, Definitions 2–4.)</p>
 <p><strong>Per-record score distributions.</strong> For a fixed record $z$ and score $s$:
 $$Q_{\mathrm{in}}(z) = \mathrm{law}\bigl(s(\theta, z)\bigr) \text{ when } z \in \text{training set of } \theta, \qquad Q_{\mathrm{out}}(z) = \mathrm{law}\bigl(s(\theta, z)\bigr) \text{ when } z \notin,$$
 randomness over the rest of the training set and the training algorithm. (As in <code>mia4-modern.html</code>, Definition 1.)</p>
 <p><strong>Calibrated score.</strong> The simplest per-record correction subtracts the record's own out-baseline: $s(\theta,z) - \mathbb{E}_{\theta' :\, z \notin \mathrm{train}(\theta')}[s(\theta',z)]$. The per-record hypothesis test — is the observed score more consistent with $Q_{\mathrm{in}}(z)$ or $Q_{\mathrm{out}}(z)$? — is the fully calibrated version, and is what LiRA implements.</p>
-</div>
-</article>
-
-<article>
-<h2>The Likelihood Ratio</h2>
-<p>Sablayrolles and colleagues frame this as two distributions for the loss of $x$, in and out, and the optimal score is their likelihood ratio. Estimate both, then divide.</p>
-<p><span class="kt">Key takeaway:</span> The Bayes-optimal membership score is a likelihood ratio.</p>
-<div class="detail">
 <h3>Theorem &amp; proof</h3>
 <p><strong>Theorem (Neyman–Pearson lemma).</strong> Let $P_0, P_1$ have densities $p_0, p_1$ and fix a level $\alpha \in (0,1)$. Among all (possibly randomized) tests $\phi$ with size $\mathbb{E}_0[\phi] \le \alpha$, power $\mathbb{E}_1[\phi]$ is maximised by the likelihood-ratio test
 $$\phi^*(t) = \begin{cases} 1 &amp; p_1(t) \gt \tau\, p_0(t) \\ \gamma &amp; p_1(t) = \tau\, p_0(t) \\ 0 &amp; p_1(t) \lt \tau\, p_0(t) \end{cases}$$
@@ -410,23 +499,8 @@ $$\tau_p(z_1) = -T \log \int e^{-\ell(t, z_1)/T}\, p(t)\, dt$$
 is a per-record threshold; the posterior is a sigmoid-shaped decreasing function of that difference. <em>Consequently the Bayes-optimal membership test is a per-record loss threshold.</em></p>
 <p><em>Proof sketch.</em> Form the ratio of the posteriors of $\theta$ with $\sigma_1 = 1$ versus $\sigma_1 = 0$; the factors from the other records cancel, leaving $e^{-\ell(\theta,z_1)/T}$ against its normalizing integral $e^{-\tau_p(z_1)/T}$; Bayes' rule converts the log-ratio into a sigmoid. (Statement and sketch verified against <code>mia3-theory.html</code>, Theorems 5–6 and corollary; full proof in the paper.)</p>
 <h3>Background &amp; further reading</h3>
-<ul><li><a href="https://arxiv.org/abs/1908.11229">Sablayrolles, Douze, Ollivier, Schmid, Jégou, "White-box vs Black-box: Bayes Optimal Strategies for Membership Inference", ICML 2019</a> — the Bayes-optimality argument; also shows the optimal white-box attack needs nothing beyond the loss, under the posterior model.</li></ul>
-</div>
-</article>
-
-<article>
-<h2>LiRA: Likelihood Ratio Attack</h2>
-<p>Carlini and colleagues make it practical: train many shadows with the record in and many with it out, fit a Gaussian to each loss distribution, and score by the ratio.</p>
-<p><span class="kt">Key takeaway:</span> LiRA is the strong, practical realization of the likelihood-ratio attack.</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p><strong>Logit scaling.</strong> LiRA works not with raw confidence $p = f_\theta(x)_y$ but with $\phi(p) = \log\frac{p}{1-p}$, which spreads $(0,1)$ over $\mathbb{R}$ and makes the per-record score distributions approximately Gaussian.</p>
-<p><strong>The LiRA statistic.</strong> For target record $z$ with observed (logit-scaled) score $\ell^*$ on the target model, fit per-record Gaussians to shadow scores and form
-$$\Lambda(z) = \frac{\mathcal{N}\bigl(\ell^*;\ \mu_{\mathrm{in}},\ \sigma^2_{\mathrm{in}}\bigr)}{\mathcal{N}\bigl(\ell^*;\ \mu_{\mathrm{out}},\ \sigma^2_{\mathrm{out}}\bigr)},$$
-where $(\mu_{\mathrm{in}}, \sigma^2_{\mathrm{in}})$ are the mean and variance of the record's score over shadows trained <em>with</em> $z$, and $(\mu_{\mathrm{out}}, \sigma^2_{\mathrm{out}})$ over shadows trained <em>without</em>. Four numbers per record; the Gaussian family is a modelling choice justified by the logit scaling.</p>
-<p><strong>Online LiRA.</strong> (1) Train $N$ shadow models on random datasets, half containing $z$; (2) compute the logit-scaled confidence of $z$ under each; (3) fit the two Gaussians; (4) output $\Lambda(z)$ and threshold. <strong>Offline LiRA</strong> drops the "in" models: score by the one-sided tail $\Lambda_{\mathrm{off}} = \Pr[Z \le \ell^*]$ with $Z \sim \mathcal{N}(\mu_{\mathrm{out}}, \sigma^2_{\mathrm{out}})$, i.e. $\Phi\bigl(z(\ell^*)\bigr)$ — a per-record one-sided $z$-test, which is uniformly most powerful for the one-sided problem by the Karlin–Rubin theorem (statement and proof in <code>mia4-modern.html</code>, Proposition 2). (Definitions verified against <code>mia4-modern.html</code>, Definitions 2–4.)</p>
-<h3>Background &amp; further reading</h3>
 <ul><li><a href="https://arxiv.org/abs/2112.03570">Carlini, Chien, Nasr, Song, Terzis, Tramèr, "Membership Inference Attacks From First Principles", IEEE S&amp;P 2022</a> — LiRA, plus the methodological argument that attacks must be evaluated by TPR at low FPR (next entries).</li></ul>
+<ul><li><a href="https://arxiv.org/abs/1908.11229">Sablayrolles, Douze, Ollivier, Schmid, Jégou, "White-box vs Black-box: Bayes Optimal Strategies for Membership Inference", ICML 2019</a> — the Bayes-optimality argument; also shows the optimal white-box attack needs nothing beyond the loss, under the posterior model.</li></ul>
 </div>
 </article>
 
@@ -485,53 +559,34 @@ and if confidences follow the logistic model $p(x) = \sigma(h(x))$, then $d_\the
 
 <article>
 <h2>TPR at Low FPR</h2>
-<p>The right metric fixes a tiny false positive rate, such as one in a thousand, and reads off the true positive rate: how many true members are still caught. This is the evaluation standard Carlini and colleagues argued for.</p>
-<p><span class="kt">Key takeaway:</span> Judge attacks by their true positive rate at very low false positive rates.</p>
-<p><span class="kt">Slide figure:</span> The slide reproduces Carlini et al. (2022) Fig. 1: log-log ROC curves of prior attacks and LiRA on a non-overfit CIFAR-10 model. The average accuracies in the legend are all close, yet the true-positive rates at low false-positive rate differ by orders of magnitude.</p>
+<p>The right metric fixes a tiny false positive rate, such as one in a thousand, and reads off the true positive rate: how many true members are still caught. On a log-log ROC curve this is the far left edge, where false positives are rare, and strong attacks like LiRA pull away exactly there. This is the evaluation standard Carlini and colleagues argued for.</p>
+<p><span class="kt">Key takeaway:</span> Judge attacks by their true positive rate at very low false positive rates, the left edge of the ROC curve.</p>
+
 <div class="detail">
 <h3>Definitions</h3>
 <p><strong>The metric.</strong> For an attack with ROC curve $\{(\mathrm{FPR}(\tau), \mathrm{TPR}(\tau))\}$, fix $\alpha$ small (typically $10^{-3}$ or $10^{-5}$) and report
 $$\mathrm{TPR}@\alpha \;=\; \mathrm{TPR}(\tau_\alpha), \qquad \tau_\alpha \text{ such that } \mathrm{FPR}(\tau_\alpha) = \alpha.$$
 The rationale: an attacker who accuses at FPR $10^{-3}$ is <em>credible</em> — accusations are almost never wrong — so every percentage point of TPR there is a real, confident identification. High AUC or accuracy driven by the bulk of the ROC curve can coexist with zero confident identifications; $\mathrm{TPR}@\alpha$ cannot. (Metric and rationale as argued in Carlini et al., linked from the LiRA entry above; the same standard is used for the DP audit bound in §05.)</p>
-</div>
-</article>
-
-<article>
-<h2>Reading the ROC Tail</h2>
-<p>Plot true positives against false positives on a log scale and look at the far left edge, where false positives are rare. Strong attacks like LiRA pull away exactly there.</p>
-<p><span class="kt">Key takeaway:</span> The left edge of the ROC curve is where privacy is won or lost.</p>
-<div class="detail">
-<h3>Definitions</h3>
 <p>On <strong>log-log axes</strong>, random guessing ($\mathrm{TPR} = \mathrm{FPR}$) is the diagonal, and an attack's low-FPR behaviour — invisible in a linear plot, where the region $\mathrm{FPR} \le 10^{-3}$ occupies a thousandth of the axis — becomes the left half of the picture. Two attacks with the same AUC can differ by orders of magnitude in $\mathrm{TPR}@10^{-3}$. A DP guarantee also appears cleanly here: the bound $\mathrm{TPR} \le e^{\varepsilon}\,\mathrm{FPR} + \delta$ of §05 is (for $\delta \approx 0$) a line parallel to the diagonal at vertical offset $\varepsilon$ in log scale — a visual cap on the entire tail.</p>
 </div>
 </article>
 
 <article>
-<h2>05 — What It Means</h2>
-<p>Fifth section. We connect attacks back to differential privacy: a real privacy bound provably limits any membership attack, and attacks let us audit that bound.</p>
+<h2>06 — What It Means</h2>
+<p>Sixth section. We connect attacks back to differential privacy: a real privacy bound provably limits any membership attack, and attacks let us audit that bound.</p>
 <p><span class="kt">Key takeaway:</span> Differential privacy and membership inference are two views of the same thing.</p>
 </article>
 
 <article>
-<h2>Differential Privacy in One Line</h2>
-<p>Differential privacy, or DP, bounds how much one record can change the output. For datasets differing in one person, every outcome shifts by at most a factor $e^{\varepsilon}$ plus slack $\delta$.</p>
-<p><span class="kt">Key takeaway:</span> DP caps the effect of any single record on the model.</p>
+<h2>DP Caps the Attacker</h2>
+<p>Differential privacy, or DP, bounds how much one record can change the output: for datasets differing in one person, every outcome shifts by at most a factor $e^{\varepsilon}$ plus slack $\delta$. That very record-swap is what a membership attack exploits, so a genuine epsilon bound limits the success of any attacker, known or not.</p>
+<p><span class="kt">Key takeaway:</span> A real epsilon bound is a guarantee against every membership attack.</p>
 <div class="detail">
 <h3>Definitions</h3>
 <p><strong>Definition ($(\varepsilon,\delta)$-differential privacy).</strong> Datasets $D, D'$ are <em>neighbouring</em> if they differ in one record. A randomized mechanism $\mathcal{M}$ satisfies $(\varepsilon,\delta)$-DP if
 $$\Pr[\mathcal{M}(D) \in S] \;\le\; e^{\varepsilon}\, \Pr[\mathcal{M}(D') \in S] + \delta \qquad \text{for all neighbouring } D, D' \text{ and all measurable } S.$$
 The quantifiers matter: <em>every</em> pair of neighbouring datasets, <em>every</em> event, both directions (the definition is symmetric in $D, D'$). $\delta = 0$ is <em>pure</em> $\varepsilon$-DP; $\delta \gt 0$ allows a small-probability failure and should be cryptographically small (e.g. $\delta \ll 1/n$).</p>
 <p>Note the fit with this lecture: the two datasets $D$ and $D \cup \{x\}$ of the membership game are precisely a neighbouring pair, so DP is — by construction — a constraint on the two worlds the adversary must distinguish.</p>
-<h3>Background &amp; further reading</h3>
-<ul><li><a href="https://link.springer.com/chapter/10.1007/11761679_29">Dwork, Kenthapadi, McSherry, Mironov, Naor, "Our Data, Ourselves: Privacy via Distributed Noise Generation", EUROCRYPT 2006</a> — where the $(\varepsilon,\delta)$ relaxation was introduced.</li></ul>
-</div>
-</article>
-
-<article>
-<h2>DP Caps the Attacker</h2>
-<p>The very record-swap that DP bounds is what a membership attack exploits. So a genuine epsilon bound limits the success of any attacker, known or not.</p>
-<p><span class="kt">Key takeaway:</span> A real epsilon bound is a guarantee against every membership attack.</p>
-<div class="detail">
 <h3>Theorem &amp; proof</h3>
 <p><strong>Theorem (DP as a hypothesis-testing bound; Wasserman–Zhou 2010, Kairouz–Oh–Viswanath 2015).</strong> Let $\mathcal{M}$ be $(\varepsilon,\delta)$-DP and consider any test of $H_0: \theta \sim \mathcal{M}(D)$ versus $H_1: \theta \sim \mathcal{M}(D \cup \{x\})$ with type-I error $\alpha$ (false positive rate) and type-II error $\beta$ ($= 1 - \mathrm{TPR}$). Then
 $$\alpha + e^{\varepsilon} \beta \;\ge\; 1 - \delta \qquad \text{and} \qquad \beta + e^{\varepsilon} \alpha \;\ge\; 1 - \delta.$$</p>
@@ -545,6 +600,7 @@ $$1 - \alpha = \Pr_0[S^c] \le e^{\varepsilon} \Pr_1[S^c] + \delta = e^{\varepsil
 <li><a href="https://arxiv.org/abs/0811.2501">Wasserman, Zhou, "A statistical framework for differential privacy", JASA 2010</a> — the hypothesis-testing view of DP.</li>
 <li><a href="https://arxiv.org/abs/1311.0776">Kairouz, Oh, Viswanath, "The Composition Theorem for Differential Privacy", ICML 2015</a> — the tight two-inequality characterization used above.</li>
 </ul>
+<ul><li><a href="https://link.springer.com/chapter/10.1007/11761679_29">Dwork, Kenthapadi, McSherry, Mironov, Naor, "Our Data, Ourselves: Privacy via Distributed Noise Generation", EUROCRYPT 2006</a> — where the $(\varepsilon,\delta)$ relaxation was introduced.</li></ul>
 </div>
 </article>
 
@@ -574,22 +630,13 @@ $$\mathrm{TPR} \;\le\; e^{\varepsilon}\, \mathrm{FPR} + \delta.$$
 
 <article>
 <h2>Auditing Flips the Attack</h2>
-<p>Run the strongest attack you have, read its true and false positive rates, and back out an empirical epsilon. The attack becomes a measurement instrument.</p>
-<p><span class="kt">Key takeaway:</span> Attack success can be inverted into an empirical privacy level.</p>
+<p>Run the strongest attack you have, read its true and false positive rates, and back out an empirical epsilon. If it exceeds the claimed epsilon, the implementation is broken; if it sits far below, the proof is just conservative. Either way the attack has become a measurement instrument, and auditing is now standard practice.</p>
+<p><span class="kt">Key takeaway:</span> Attack success inverts into an empirical privacy level that checks the claimed one.</p>
 <div class="detail">
 <h3>Definitions</h3>
 <p><strong>Empirical epsilon.</strong> Invert the ROC ceiling: if the mechanism were $(\varepsilon,\delta)$-DP, then every attack would obey $\mathrm{TPR} \le e^{\varepsilon}\mathrm{FPR} + \delta$. So any <em>measured</em> operating point $(\mathrm{FPR}, \mathrm{TPR})$ with $\mathrm{TPR} \gt \delta$ certifies
 $$\varepsilon \;\ge\; \hat\varepsilon \;=\; \log\!\left(\frac{\mathrm{TPR} - \delta}{\mathrm{FPR}}\right).$$
 (One-line derivation from the corollary above; same formula as the lecture's tech supplement.) $\hat\varepsilon$ is a <em>lower bound</em> on the true privacy loss — an attack can only witness leakage, never certify its absence. In practice TPR and FPR are estimated from finitely many trials, so honest audits report $\hat\varepsilon$ computed from confidence-interval endpoints rather than point estimates.</p>
-</div>
-</article>
-
-<article>
-<h2>Trust but Verify</h2>
-<p>If the empirical epsilon exceeds the claimed one, the implementation is broken; if it sits far below, the proof is just conservative. Either way, auditing is now standard.</p>
-<p><span class="kt">Key takeaway:</span> Auditing catches both bugs and loose privacy proofs.</p>
-<div class="detail">
-<h3>Definitions</h3>
 <p>The logic of the two outcomes, precisely: $\hat\varepsilon$ is a certified lower bound and the claimed $\varepsilon_{\mathrm{claim}}$ an upper bound, so a correct implementation always has $\hat\varepsilon \le \varepsilon_{\mathrm{true}} \le \varepsilon_{\mathrm{claim}}$.</p>
 <ul>
 <li>$\hat\varepsilon \gt \varepsilon_{\mathrm{claim}}$: contradiction — the claimed bound is <em>disproved</em>. The audit is a formal counterexample (a bug certificate), typically pointing to broken clipping, mis-added noise, or accounting errors.</li>
@@ -612,31 +659,22 @@ $$\varepsilon \;\ge\; \hat\varepsilon \;=\; \log\!\left(\frac{\mathrm{TPR} - \de
 </article>
 
 <article>
-<h2>06 — Modern Models</h2>
-<p>Sixth section. We bring membership inference to large language models and diffusion models, and confront the live debate over whether it even makes sense at web scale.</p>
+<h2>07 — Modern Models</h2>
+<p>Seventh section. We bring membership inference to large language models and diffusion models, and confront the live debate over whether it even makes sense at web scale.</p>
 <p><span class="kt">Key takeaway:</span> On foundation models, membership inference is powerful and contested.</p>
 </article>
 
 <article>
-<h2>MIA Meets Foundation Models</h2>
-<p>Since 2023, attacks ask whether an article was in a language model's pretraining or a photo in an image model's data. The stakes are copyright and privacy at once.</p>
-<p><span class="kt">Key takeaway:</span> Membership questions now drive copyright and privacy disputes.</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p><strong>Pretraining-data detection.</strong> The membership game instantiated at web scale: given a text $x$ and (black-box) access to an LLM $\theta$, decide whether $x$ was in the pretraining corpus $D$. Formally identical to the game of §01 — but three parameters have moved by orders of magnitude, and each breaks a tool from §02–§04: $n$ is billions of documents (each record's influence is minute), training is roughly one epoch (little overfitting to threshold on), and retraining even one "shadow" of the target costs millions of dollars (no shadow models, no LiRA at full scale). The rest of this section is about what survives.</p>
-</div>
-</article>
-
-<article>
 <h2>Detecting Pretraining Data</h2>
-<p>Shi and colleagues' Min-K percent scores text by its least likely tokens: members have few very-low-probability tokens, so averaging the most surprising ones flags seen text.</p>
+<p>Since 2023 the membership question is asked of foundation models: was this text in a language model's pretraining corpus? Shi and colleagues' Min-K percent scores text by its least likely tokens: members have few very-low-probability tokens, so averaging the most surprising ones flags seen text. The stakes are copyright and privacy at once.</p>
 <p><span class="kt">Key takeaway:</span> Min-K percent spots pretraining text through its rare, surprising tokens.</p>
-<p><span class="kt">Slide figure:</span> The slide reproduces Shi et al. Fig. 1: the Min-K% Prob pipeline, which reads token probabilities from the LLM, keeps the k% lowest-probability tokens, and averages their log-likelihood.</p>
+
 <div class="detail">
 <h3>Definitions</h3>
 <p><strong>Min-K% Prob.</strong> For a text $x = (x_1, \dots, x_T)$, let $L_t = \log p_\theta(x_t \mid x_{\lt t})$ be the token log-likelihoods. With $\alpha = K/100$ and $k = \lceil \alpha T \rceil$, the score averages the $k$ <em>most surprising</em> tokens:
 $$S_\alpha(x) = \frac{1}{k} \sum_{t \in \mathrm{Min}_k} L_t, \qquad \mathrm{Min}_k = \text{indices of the } k \text{ smallest } L_t.$$
 Declare "member" when $S_\alpha(x)$ is high — seen text should have no very-low-probability tokens. No reference model, no shadow training: one forward pass.</p>
+<p><strong>Pretraining-data detection.</strong> The membership game instantiated at web scale: given a text $x$ and (black-box) access to an LLM $\theta$, decide whether $x$ was in the pretraining corpus $D$. Formally identical to the game of §01 — but three parameters have moved by orders of magnitude, and each breaks a tool from §02–§04: $n$ is billions of documents (each record's influence is minute), training is roughly one epoch (little overfitting to threshold on), and retraining even one "shadow" of the target costs millions of dollars (no shadow models, no LiRA at full scale). The rest of this section is about what survives.</p>
 <h3>Theorem &amp; proof</h3>
 <p><strong>Proposition (what Min-K% converges to).</strong> Treat the token surprisals of $x$ as draws from a document-specific distribution $F_x$. As $T \to \infty$, the Min-K% statistic converges almost surely to the tail functional
 $$S_\alpha(x) \;\longrightarrow\; \mathrm{CTE}_\alpha(F_x) = \frac{1}{\alpha}\int_{0}^{\alpha} F_x^{-1}(u)\, du,$$
@@ -676,8 +714,8 @@ i.e. the model's training loss at noise level $t$ — members are denoised bette
 
 <article>
 <h2>Why Scale Breaks It</h2>
-<p>Two forces blunt the attack: a single pass over trillions of tokens leaves little overfitting, and members and non-members come from overlapping distributions. Apparent success is often just topic detection.</p>
-<p><span class="kt">Key takeaway:</span> Little overfitting plus overlapping data makes membership hard to read.</p>
+<p>Two forces blunt the attack: a single pass over trillions of tokens leaves little overfitting, and members and non-members come from overlapping distributions. Skeptics conclude that web-scale attacks mostly measure distribution shift; the exceptions are rare, duplicated, or fine-tuning data, which still clearly leak. The question is unsettled as of 2025-26.</p>
+<p><span class="kt">Key takeaway:</span> Little overfitting plus overlapping data makes membership hard to read at web scale.</p>
 <div class="detail">
 <h3>Background &amp; further reading</h3>
 <p>Both forces are measured in Duan et al. (link on the previous entry):</p>
@@ -748,14 +786,8 @@ By Neyman–Pearson the maximiser is $S^* = \{x : dQ_1/dQ_0(x) \gt 1\}$ — a fu
 </article>
 
 <article>
-<h2>An Open Debate</h2>
-<p>Skeptics argue web-scale attacks mostly measure distribution shift; optimists point to rare, fine-tuned, or duplicated data that still clearly leaks. The question is unsettled as of 2025-26.</p>
-<p><span class="kt">Key takeaway:</span> Whether web-scale MIA is meaningful is an open research question.</p>
-</article>
-
-<article>
-<h2>07 — Defenses</h2>
-<p>Seventh section. We survey defenses, from cheap regularization to provable DP-SGD, and the accuracy cost each one carries.</p>
+<h2>08 — Defenses</h2>
+<p>Eighth section. We survey defenses, from cheap regularization to provable DP-SGD, and the accuracy cost each one carries.</p>
 <p><span class="kt">Key takeaway:</span> Defenses range from heuristic to provable, and all cost some utility.</p>
 </article>
 
@@ -781,8 +813,8 @@ By Neyman–Pearson the maximiser is $S^* = \{x : dQ_1/dQ_0(x) \gt 1\}$ — a fu
 
 <article>
 <h2>DP-SGD: The Principled Defense</h2>
-<p>For a guarantee, train with DP-SGD: compute each example's gradient, clip it to a maximum length, add Gaussian noise to the sum, take the step, and track the spent epsilon.</p>
-<p><span class="kt">Key takeaway:</span> DP-SGD trains with a provable privacy bound via clip-then-noise.</p>
+<p>For a guarantee, train with DP-SGD: compute each example's gradient, clip it to a maximum length, add Gaussian noise to the sum, take the step, and track the spent epsilon. Clipping caps any single record's footprint and noise hides whether it was present, so the two worlds blur by construction, which is exactly the indistinguishability the attack tries to break. The price is accuracy: a smaller epsilon buys a stronger guarantee at a larger accuracy gap.</p>
+<p><span class="kt">Key takeaway:</span> DP-SGD enforces, by clip-then-noise, the very indistinguishability membership attacks target.</p>
 <div class="detail">
 <h3>Definitions</h3>
 <p><strong>DP-SGD update.</strong> With per-example gradients $g_i = \nabla_\theta \ell(\theta_t, z_i)$ over a batch of size $B$, clipping norm $C$, and noise multiplier $\sigma$:
@@ -790,17 +822,6 @@ $$\mathrm{clip}(g, C) = g \cdot \min\Bigl(1, \frac{C}{\lVert g \rVert_2}\Bigr), 
 Clipping caps each record's contribution to the update at $C$ (its <em>sensitivity</em>); the Gaussian noise is scaled to that cap, making each step a Gaussian mechanism. (Definition as in <code>mia4-modern.html</code>, Definition 10.)</p>
 <h3>Theorem &amp; proof</h3>
 <p><strong>Theorem (privacy of DP-SGD; statement).</strong> Each noisy step is $(\varepsilon_{\mathrm{step}}, \delta_{\mathrm{step}})$-DP by the Gaussian-mechanism analysis, amplified by the random subsampling of the batch; composing across all $T$ steps with the moments-accountant analysis of Abadi et al. yields an overall $(\varepsilon, \delta)$-DP guarantee for the entire training run, with $\varepsilon$ growing like $O\bigl(q\sqrt{T \log(1/\delta)}/\sigma\bigr)$ for sampling rate $q$. <em>The full proof (subsampled Rényi/moment bounds plus composition) is genuinely paper-length; see Abadi et al. below — not reproduced here.</em></p>
-<h3>Background &amp; further reading</h3>
-<ul><li><a href="https://arxiv.org/abs/1607.00133">Abadi, Chu, Goodfellow, McMahan, Mironov, Talwar, et al., "Deep Learning with Differential Privacy", ACM CCS 2016</a> — DP-SGD and the moments accountant.</li></ul>
-</div>
-</article>
-
-<article>
-<h2>Why DP-SGD Stops MIA</h2>
-<p>Clipping caps any single record's footprint and noise hides whether it was present. The two worlds blur by construction, which is exactly the indistinguishability the attack tries to break.</p>
-<p><span class="kt">Key takeaway:</span> DP-SGD enforces the very indistinguishability membership attacks target.</p>
-<div class="detail">
-<h3>Theorem &amp; proof</h3>
 <p>The full chain from mechanism to attacker, each link proved earlier in the lecture:</p>
 <ol>
 <li>DP-SGD makes the training map $(\varepsilon,\delta)$-DP (previous entry), i.e. the two worlds $P_1, P_0$ of the game satisfy the DP inequality for every event;</li>
@@ -811,13 +832,9 @@ Clipping caps each record's contribution to the update at $C$ (its <em>sensitivi
 $$\mathrm{TV}\bigl(h(P_1),\, h(P_0)\bigr) \le \mathrm{TV}(P_1, P_0).$$</p>
 <p><em>Proof.</em> Any event $S$ about $h(\theta)$ is the event $h^{-1}(S)$ about $\theta$: $\Pr[h(\theta) \in S] = \Pr[\theta \in h^{-1}(S)]$ under both laws. The supremum defining the left side therefore ranges over a subset of the events available on the right. $\blacksquare$ (Verified against <code>mia4-modern.html</code>, Proposition 5; the same preimage argument shows the $(\varepsilon,\delta)$ guarantee itself survives post-processing.)</p>
 <p>Since $\sup_{\mathcal{A}}\mathrm{Adv} = \mathrm{TV}(P_1,P_0)$ (§02), steps 1–3 bound every adversary that will ever exist, whatever it computes from the model.</p>
+<h3>Background &amp; further reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1607.00133">Abadi, Chu, Goodfellow, McMahan, Mironov, Talwar, et al., "Deep Learning with Differential Privacy", ACM CCS 2016</a> — DP-SGD and the moments accountant.</li></ul>
 </div>
-</article>
-
-<article>
-<h2>The Privacy-Utility Cost</h2>
-<p>Strong defenses cost accuracy, and that gap is the price of privacy. A smaller epsilon buys a stronger guarantee at the cost of a larger gap, though better methods keep narrowing it.</p>
-<p><span class="kt">Key takeaway:</span> Privacy and accuracy trade off, but the trade keeps improving.</p>
 </article>
 
 <article>
@@ -832,7 +849,7 @@ $$\mathrm{TV}\bigl(h(P_1),\, h(P_0)\bigr) \le \mathrm{TV}(P_1, P_0).$$</p>
 
 <article>
 <h2>Key Takeaways</h2>
-<p>Membership inference asks whether a record was in training; overfitting leaks it and loss is the simplest score; LiRA calibrates per record and we judge it at low false positive rates; DP bounds the attack while web-scale membership remains debated.</p>
+<p>Membership inference asks whether a record was in training; Homer showed in 2008 that published averages already leak it; overfitting leaks it and loss is the simplest score; LiRA calibrates per record and we judge it at low false positive rates; DP bounds the attack while web-scale membership remains debated.</p>
 <p><span class="kt">Key takeaway:</span> Membership inference is the practical unit test of privacy.</p>
 </article>
 

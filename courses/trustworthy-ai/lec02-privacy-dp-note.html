@@ -127,28 +127,6 @@ where $\mathrm{rank}_\theta(s[r])$ is the rank of the inserted canary among all 
 </article>
 
 <article>
-<h2>Three Kinds of Leak</h2>
-<p>Attackers ask escalating questions: membership (was Alice in the data?), attribute (what is Alice's diagnosis?), and reconstruction (rebuild Alice's full record). Each is harder and each is worse.</p>
-<p><span class="kt">Key takeaway:</span> Leakage ranges from "were you here?" to "here is your whole record."</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p>Fix a training set $D$ drawn from a population and a trained model $\theta \sim \mathrm{train}(D)$. The three leak classes, as adversary games (formulation: course notes):</p>
-<ul>
-<li><strong>Membership inference.</strong> Given $\theta$ and a target record $x$, output $\hat b \in \{0,1\}$ guessing whether $x \in D$. Success is measured by the advantage $\mathrm{TPR} - \mathrm{FPR}$ over the two cases.</li>
-<li><strong>Attribute inference.</strong> Given $\theta$ and a partial record $x_{\mathrm{known}}$, output a guess of the hidden sensitive attribute $x_{\mathrm{sens}}$ of that individual's record in $D$.</li>
-<li><strong>Reconstruction.</strong> Given $\theta$ (or a set of released statistics), output entire records of $D$. Classical result: answering too many counting queries too accurately permits reconstruction of almost the whole dataset — the Dinur–Nissim reconstruction attacks (see Dwork &amp; Roth, §8, where blatant non-privacy from accurate query answers is formalized).</li>
-</ul>
-<p>The ordering on the slide is by adversary goal strength: reconstruction success implies attribute disclosure, which implies membership-level information. DP is calibrated to block the weakest goal — membership — and therefore blocks all three.</p>
-</div>
-</article>
-
-<article>
-<h2>Why Membership Alone Hurts</h2>
-<p>Sometimes the set itself is the secret. If a model was trained only on HIV-positive patients, just confirming Alice is a member reveals her diagnosis, with nothing reconstructed.</p>
-<p><span class="kt">Key takeaway:</span> Membership alone can disclose the most sensitive fact.</p>
-</article>
-
-<article>
 <h2>The Anonymization Myth</h2>
 <p>Deleting names does not anonymize data. Quasi-identifiers like ZIP, age, sex, and dates remain, and combining them with a public list re-identifies people.</p>
 <p><span class="kt">Key takeaway:</span> Anonymity is about linkage, not about one missing column.</p>
@@ -224,7 +202,7 @@ where $\mathrm{rank}_\theta(s[r])$ is the rank of the inserted canary among all 
 
 <article>
 <h2>Membership Inference</h2>
-<p>A membership inference attack asks one crisp question: was this specific record used to train the model? It is the unit test of privacy, the simplest leak to measure.</p>
+<p>A membership inference attack asks one crisp question: was this specific record used to train the model? It is the unit test of privacy, the simplest leak to measure. And when the training cohort is defined by something sensitive, a diagnosis or a trial, that single yes-or-no bit is already the whole secret. The mechanics of the attack, from the 2008 genome-study case to likelihood-ratio attacks on neural networks, get a full lecture of their own.</p>
 <p><span class="kt">Key takeaway:</span> Membership inference is the baseline measurable leak.</p>
 <div class="detail">
 <h3>Definitions</h3>
@@ -237,120 +215,6 @@ $$1 \le p + e^{\varepsilon} q \qquad\text{and}\qquad 1 \le q + e^{\varepsilon} p
 <h3>Background &amp; further reading</h3>
 <ul>
 <li><a href="https://arxiv.org/abs/1610.05820">Shokri et al., "Membership Inference Attacks against Machine Learning Models" (IEEE S&amp;P 2017)</a> — the shadow-model attack that started the field.</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>When Membership Is the Secret</h2>
-<p>Why does a single yes/no bit matter? Because the dataset's name often is the sensitive fact. Being in a disease study means having the disease; being in a trial means having the diagnosis; being in a chat-log corpus means you wrote one of the messages; being in a pirated-book training set is the evidence in a copyright claim.</p>
-<p><span class="kt">Key takeaway:</span> Membership alone can be the whole privacy harm.</p>
-<div class="detail">
-<h3>Background &amp; further reading</h3>
-<ul>
-<li>The copyright instance is live: membership-inference-style evidence has been discussed in training-data litigation against LLM developers, and Lecture 4 returns to it under extraction. The genomics instance is the one that actually changed policy (see "Impact" below).</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>Before Neural Nets: The Genome Leak</h2>
-<p>Before there were neural networks to attack, there were genome-wide association studies. In 2008 they published the average allele frequency of their cohort at every SNP, openly, on the assumption that an average over a thousand people hides each one. A forensics paper by Homer and colleagues showed that assumption was wrong: from those averages plus one person's genome you can tell whether that person was in the study.</p>
-<p><span class="kt">Key takeaway:</span> The first membership inference attack targeted published averages, not a model.</p>
-<div class="detail">
-<h3>Background &amp; further reading</h3>
-<ul>
-<li><a href="https://doi.org/10.1371/journal.pgen.1000167">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 4(8): e1000167 (2008)</a> — open access. The paper is framed as forensics (finding one contributor in a DNA mixture); the GWAS consequence is stated in the abstract: "composite statistics across cohorts, such as allele frequency or genotype counts, do not mask identity within genome-wide association studies."</li>
-<li>The rigorous version of this block, with Lemma/Theorem/proofs, is the Homer section of <code>courses/privacy/lectures/04-mia/mia1-foundations.html</code>.</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>Genomics in 60 Seconds</h2>
-<p>All the biology we need: a SNP is a single position in the genome where people differ, an array reads about half a million of them per person, and a study's published "allele frequency" at a SNP is just the column average of that letter across its participants. Individual rows were never released.</p>
-<p><span class="kt">Key takeaway:</span> The study published column averages; the attack works from those alone.</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p>For SNP $j$ and participant $k$ let $Y_{k,j} \in \{0,1\}$ indicate the minor allele (haploid simplification; real genotypes take values in $\{0, \tfrac12, 1\}$). The published statistic is the cohort frequency $M_j = \frac1n \sum_{k=1}^n Y_{k,j}$. The population frequency $\mathrm{Pop}_j$ comes from a public reference panel (HapMap in the paper).</p>
-</div>
-</article>
-
-<article>
-<h2>Homer's Statistic</h2>
-<p>Here is the whole idea in one line. At each SNP put three points on the 0-to-1 axis: the population frequency, the study's frequency, and Alice's own letter. Measure her distance to each. If she sits nearer the study than the population, that SNP whispers "she was in it." The statistic $D_j$ is just that comparison with a sign: positive means "closer to the study", negative means "closer to everyone". Walk through the example on the slide: population 0.30, study 0.40, Alice 1, so distances 0.70 and 0.60 and $D_j = +0.10$.</p>
-<p><span class="kt">Key takeaway:</span> $D_j$ is distance-to-everyone minus distance-to-the-study; positive leans "in".</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p><strong>Homer distance statistic</strong> (paper's sign convention, Fig. 1): $D_j = \lvert Y_j - \mathrm{Pop}_j \rvert - \lvert Y_j - M_j \rvert$, where $Y_j \in \{0, \tfrac12, 1\}$ is Alice's genotype at SNP $j$ (haploid $\{0,1\}$ in the idealized model), $M_j$ the mixture or study allele frequency, and $\mathrm{Pop}_j$ the reference-population frequency. The paper's test is a one-sample $t$-test on $\{D_j\}_{j=1}^m$ against mean zero. (The privacy-course mia1 deck uses the opposite sign, $\lvert Y - M\rvert - \lvert Y - \mathrm{Pop}\rvert$, so its member mean is negative; the two are equivalent.)</p>
-</div>
-</article>
-
-<article>
-<h2>One SNP Whispers, 500,000 Shout</h2>
-<p>Why does a single $D_j$ say nothing? If Alice is not in the study, her letter and the study average are independent, and $D_j$ averages to zero. If she is, she is one of the $n$ people inside that average, and her own contribution tilts $D_j$ slightly positive, by about $2p(1-p)/n$. At $n = 1{,}000$ that is four ten-thousandths, against random noise thirty times larger. The left bells on the slide are essentially one bell. Now sum over the array. The tilt adds up linearly in the number of SNPs, the noise only like its square root, so the bells separate. The gap grows like the square root of SNPs over cohort size: a study twice as large is exactly cancelled by an array twice as dense.</p>
-<p><span class="kt">Key takeaway:</span> Each SNP is hopeless alone; 500,000 of them turn a 0.03 signal-to-noise into a clean separation.</p>
-<div class="detail">
-<h3>Theorem &amp; proof</h3>
-<p><strong>Per-SNP mean and variance</strong> (idealized model: independent SNPs, $\mathrm{Pop}_j = p_j$ known exactly, haploid $Y \in \{0,1\}$). Under $H_0$ (Alice not in the cohort), $\mathbb E[D_j] = 0$. Under $H_1$ (Alice one of the $n$), $\mathbb E[D_j] = 2p_j(1-p_j)/n$ in the paper's sign convention. In both cases $\mathrm{Var}(D_j) = p_j(1-p_j)/n$ to leading order. <em>Proof sketch:</em> for $Y \in \{0,1\}$ and $a \in [0,1]$, $\lvert Y - a\rvert = a + Y(1-2a)$, so $D_j = (M_j - p_j)(2Y_j - 1)$; under $H_0$ the two factors are independent and $M_j - p_j$ is centred; under $H_1$ write $M_j = \tfrac1n Y_j + \tfrac{n-1}{n}\bar Y_{-j}$ and use $Y_j^2 = Y_j$. The slide's numbers take $p(1-p) = 0.2$: tilt $2(0.2)/1000 = 4\times10^{-4}$, standard deviation $\sqrt{0.2/1000} \approx 0.014$, ratio $\approx 0.028$.</p>
-<p><strong>Power of the aggregated test.</strong> With $S = \sum_{j=1}^m D_j$ standardized by its null deviation, the level-$\alpha$ test has asymptotic power $\pi = \Phi(\mu - z_{1-\alpha})$ with $\mu = 2\sqrt{m\bar v/n}$, $\bar v = \frac1m\sum_j p_j(1-p_j)$. <em>Sketch:</em> the Lindeberg CLT applies ($\lvert D_j\rvert \le 1$, $m \to \infty$); null mean 0 and variance $m\bar v/n$; alternative mean $2m\bar v/n$ with variance unchanged to leading order. Corollary: $m \ge n(z_{1-\alpha} + z_{1-\beta})^2/(4\bar v)$ SNPs suffice for power $1-\beta$: about $28{,}000$ at $n = 1{,}000$, $\alpha = 10^{-6}$, power $0.5$, $\bar v = 0.2$; about $39{,}000$ for power $0.8$; about $390{,}000$ at $n = 10{,}000$. Full statements and proofs: privacy course mia1 deck, Lemmas 1–2, Proposition 1, Theorem 1, Corollary 1. These are idealized-model numbers, not values reported by Homer et al.</p>
-<h3>Background &amp; further reading</h3>
-<ul>
-<li><a href="https://doi.org/10.1038/ng.436">Sankararaman, Obozinski, Jordan, Halperin, "Genomic privacy and limits of individual detection in a pool", Nature Genetics 41, 965–967 (2009)</a> — the likelihood-ratio power analysis this idealized model follows.</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>What the Paper Reported</h2>
-<p>Homer's group did not stop at simulation. They pooled real DNA into mixtures, ran them on three commercial genotyping arrays, and tested every person in the HapMap reference set against each mixture. Everyone in the mixture scored high, everyone outside scored near zero, with no overlap in mixtures of 40 or more people, including one where a single person contributed a tenth of one percent. Explain the table's second column before reading it: a person's <em>share</em> is the fraction of the pooled DNA that came from them, so in a 1,000-person GWAS cohort every member is a 0.1% share, and in a 100-person study each is 1%. "Smallest share detected" is the smallest such fraction at which the test still separates members from non-members at $p \lt 10^{-6}$. Read the rows as cohort sizes: ten to twenty-five thousand SNPs already detect a member of a cohort of about a hundred; fifty thousand SNPs detect a member of a thousand-person cohort when the array noise is low; the full half-million SNPs go below that. The smaller the detectable share, the larger the study whose published averages leak membership, which is why the standard 500,000-SNP array made every ordinary GWAS vulnerable.</p>
-<p><span class="kt">Key takeaway:</span> "Share" is one person's fraction of the pool; the attack detects a 0.1% share, i.e. one member of a 1,000-person cohort, with zero false positives.</p>
-<div class="detail">
-<h3>Background &amp; further reading</h3>
-<ul>
-<li>Figure 2 caption (verified against the PDF): simulations on 1,423 Wellcome Trust 58C individuals varying the number of SNPs $s$, the mixture fraction $f$, and probe variance $v_p$; "these simulations suggest that we should be able to resolve mixtures where a given individual is 0.1% of the mixture ($f$), probe variance is at most 0.01 ($v_p$) and the number of SNPs probed is 50,000 ($s$)." The slide's "50,000 → 0.1% (low noise)" row is this sentence. The text also states that 10,000 to 50,000 SNPs resolve shares from 10% down to 0.1%.</li>
-<li>Figure 3 caption (verified): mixtures assayed on the Affymetrix GeneChip 5.0, Illumina BeadArray 550 and Illumina 450S Duo; $x$-axis individuals in the CEU HapMap population, left $y$-axis log-scaled $p$-value, right $y$-axis the test statistic; green = in the mixture, red = not. "In all mixtures, the identification of the presence of a person's genomic DNA was possible." Panel D is Mixture G with a 99.9/0.1 split.</li>
-<li>Results text: with 10,000–25,000 SNPs individuals contributing less than 1% are identified at $p \lt 10^{-6}$; using all ~500,000 SNPs, contributors below 0.1%.</li>
-<li><a href="https://doi.org/10.1371/journal.pgen.1000167">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 4(8): e1000167 (2008)</a>.</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>Impact: NIH Pulled the Data</h2>
-<p>The consequence was immediate. Within days of publication the NIH removed aggregate genotype data from open access and moved it behind controlled-access agreements; the Wellcome Trust followed. It was the first time a membership inference attack changed policy, and it set the precedent we will keep meeting: aggregation is not anonymization.</p>
-<p><span class="kt">Key takeaway:</span> One paper moved genome-wide summary data from open to controlled access.</p>
-<div class="detail">
-<h3>Background &amp; further reading</h3>
-<ul>
-<li><a href="https://doi.org/10.1126/science.1165490">Zerhouni and Nabel, "Protecting Aggregate Genomic Data", Science 322(5898): 44 (3 Oct 2008)</a> — the NIH director and NHLBI director explain the policy change in response to Homer et al.</li>
-<li>Access to the withdrawn data now runs through dbGaP controlled access under a data-use certification; the individual-level data were never public in the first place.</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>Same Attack, New Target</h2>
-<p>Read the two columns side by side. Cohort becomes training set, published frequencies become the trained model, the reference population becomes public data of the same kind, and Homer's distance statistic becomes the model's loss on Alice's record. Shokri's 2017 attack on neural networks is Homer's attack with the words swapped, which is why we now look at what loss gives away.</p>
-<p><span class="kt">Key takeaway:</span> Membership inference is one template; genomics and deep learning are two instances.</p>
-<div class="detail">
-<h3>Background &amp; further reading</h3>
-<ul>
-<li>The privacy course's mia1 deck carries the fuller genomics-to-ML translation table and then shows that every optimal membership attack is a likelihood-ratio test (Neyman–Pearson), which is the abstraction behind both instances.</li>
-</ul>
-</div>
-</article>
-
-<article>
-<h2>The Tell: Lower Loss</h2>
-<p>A model fits points it actually saw with lower loss. But the loss distributions for members and non-members overlap, so any threshold leaves error, and that overlap is the attacker's miss rate.</p>
-<p><span class="kt">Key takeaway:</span> Members have lower loss, but overlap limits how well an attacker can tell.</p>
-<div class="detail">
-<h3>Definitions</h3>
-<p><strong>Loss-threshold attack:</strong> declare "member" iff $\mathcal L(\theta; x, y) \le \tau$ for a threshold $\tau$. Its ROC curve is generated by sweeping $\tau$ over the two loss distributions (members vs non-members); the overlap of those distributions lower-bounds the sum of error rates, exactly as in the two-bells picture later in this lecture. Yeom et al. analyze this attack and tie its advantage to overfitting: the larger the train–test loss gap, the stronger the attack.</p>
-<h3>Background &amp; further reading</h3>
-<ul>
-<li><a href="https://arxiv.org/abs/1709.01604">Yeom, Giacomelli, Fredrikson, Jha, "Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting" (2017)</a> — formalizes loss-based membership inference and its link to the generalization gap.</li>
 </ul>
 </div>
 </article>

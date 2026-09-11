@@ -200,44 +200,7 @@
   <div class="cite cite-left">Figure: Huang, Li, Wu, Zhang, and Lyu, "Your Code Secret Belongs to Me: Neural Code Completion Tools Can Memorize Hard-Coded Credentials", FSE 2024, Fig. 1.</div>
 </div>
 
-<!-- 11. Three Kinds of Leak -->
-<div class="slide">
-  <h2>Three Kinds of Leak</h2>
-  <div class="divider"></div>
-  <p>Escalating questions an attacker can ask.</p>
-  <div class="grid-2" style="grid-template-columns:1fr auto;gap:36px;align-items:center;">
-    <ul class="num">
-      <li><strong>Membership:</strong> was Alice in the training set?</li>
-      <li><strong>Attribute:</strong> what is Alice's diagnosis?</li>
-      <li><strong>Reconstruction:</strong> rebuild Alice's full record.</li>
-    </ul>
-    <div style="display:flex;justify-content:center;">
-      <svg viewBox="0 0 300 200" style="width:460px;max-width:100%;">
-        <rect x="10" y="140" width="90" height="50" fill="#e8ecf0" stroke="#003876" stroke-width="1.5"/>
-        <rect x="100" y="90" width="90" height="100" fill="#9fb4cf" stroke="#003876" stroke-width="1.5"/>
-        <rect x="190" y="40" width="90" height="150" fill="#003876" stroke="#003876" stroke-width="1.5"/>
-        <text x="55" y="130" font-size="15" text-anchor="middle" fill="#6b7280" font-weight="700">membership</text>
-        <text x="145" y="80" font-size="15" text-anchor="middle" fill="#6b7280" font-weight="700">attribute</text>
-        <text x="235" y="30" font-size="15" text-anchor="middle" fill="#6b7280" font-weight="700">reconstruction</text>
-        <text x="55" y="170" font-size="14" text-anchor="middle" fill="#1a1a1a">one bit</text>
-        <text x="145" y="145" font-size="14" text-anchor="middle" fill="#1a1a1a">one field</text>
-        <text x="235" y="120" font-size="14" text-anchor="middle" fill="#fff">the record</text>
-      </svg>
-    </div>
-  </div>
-  <p class="muted">Each one is harder, and each one is worse.</p>
-</div>
-
-<!-- 12. Why Membership Alone Hurts -->
-<div class="slide">
-  <h2>Why Membership Alone Hurts</h2>
-  <div class="divider"></div>
-  <p>The set itself can be the secret.</p>
-  <div class="highlight"><p>Model trained <strong>only on HIV-positive patients</strong>. Confirming Alice is a member reveals her diagnosis.</p></div>
-  <p>Membership leaks even when no record is reconstructed.</p>
-</div>
-
-<!-- 13. The Anonymization Myth -->
+<!-- 11. The Anonymization Myth -->
 <div class="slide">
   <h2>The Anonymization Myth</h2>
   <div class="divider"></div>
@@ -276,7 +239,7 @@
   <p class="muted">Anonymity is a property of <em>linkage</em>, not of one column.</p>
 </div>
 
-<!-- 14. 87% From Three Fields -->
+<!-- 12. 87% From Three Fields -->
 <div class="slide">
   <h2>87% From Three Fields</h2>
   <div class="divider"></div>
@@ -299,7 +262,7 @@
   <div class="cite cite-left">Sweeney, "Simple Demographics Often Identify People Uniquely", Data Privacy WP3, 2000.<br>Golle, "Revisiting the Uniqueness of Simple Demographics in the US Population", WPES 2006.</div>
 </div>
 
-<!-- 15. Netflix and AOL: Linkage Wins -->
+<!-- 13. Netflix and AOL: Linkage Wins -->
 <div class="slide">
   <h2>Netflix and AOL: Linkage Wins</h2>
   <div class="divider"></div>
@@ -330,7 +293,7 @@
 </div>
 
 <!-- ============ SECTION 02 ============ -->
-<!-- 17. Divider 02 -->
+<!-- 14. Divider 02 -->
 <div class="slide section-slide left">
   <div class="section-num">02</div>
   <h1>How Leakage Is Measured</h1>
@@ -338,7 +301,7 @@
   <p class="subtitle">Attacks that turn a hunch into a number</p>
 </div>
 
-<!-- 18. The Attacker's Toolkit -->
+<!-- 15. The Attacker's Toolkit -->
 <div class="slide">
   <h2>The Attacker's Toolkit</h2>
   <div class="divider"></div>
@@ -351,7 +314,7 @@
   </div>
 </div>
 
-<!-- 19. Membership Inference -->
+<!-- 16. Membership Inference -->
 <div class="slide">
   <h2>Membership Inference</h2>
   <div class="divider"></div>
@@ -365,246 +328,11 @@
       <img src="figs/shokri-mia.png" alt="Black-box membership inference: query the target model with a record, feed its prediction vector to an attack model that outputs whether the record was in the training set" style="max-height:260px;width:auto;display:block;border:1px solid var(--slate);border-radius:8px;">
     </div>
   </div>
-  <p class="muted">The <em>unit test</em> of privacy: the simplest leak to measure.</p>
+  <p class="muted">The <em>unit test</em> of privacy: the simplest leak to measure. If the cohort is sensitive, that one bit is the whole secret.</p>
   <div class="cite cite-left">Figure: Shokri, Stronati, Song, and Shmatikov, "Membership Inference Attacks Against Machine Learning Models", IEEE S&amp;P 2017, Fig. 1.</div>
 </div>
 
-<!-- 22. When Membership Is the Secret -->
-<div class="slide">
-  <h2>When Membership Is the Secret</h2>
-  <div class="divider"></div>
-  <p>Often the dataset's <strong>name</strong> already tells you the sensitive fact.</p>
-  <div style="display:flex;justify-content:center;margin:6px 0;">
-    <svg viewBox="0 0 640 200" style="width:100%;max-width:960px;">
-      <line x1="20" y1="70" x2="620" y2="70" stroke="#c9d3de" stroke-width="2"/>
-      <g font-size="14" text-anchor="middle" fill="#003876" font-weight="700">
-        <text x="90" y="42">Disease study</text><text x="243" y="42">Clinical trial</text><text x="397" y="42">Chat-log corpus</text><text x="550" y="42">Pirated-book set</text>
-      </g>
-      <g fill="#ffffff" stroke="#003876" stroke-width="2"><circle cx="90" cy="70" r="7"/><circle cx="243" cy="70" r="7"/><circle cx="397" cy="70" r="7"/><circle cx="550" cy="70" r="7"/></g>
-      <g stroke="#d94040" stroke-width="2"><line x1="90" y1="77" x2="90" y2="104"/><line x1="243" y1="77" x2="243" y2="104"/><line x1="397" y1="77" x2="397" y2="104"/><line x1="550" y1="77" x2="550" y2="104"/></g>
-      <g fill="#fbeaea" stroke="#d94040" stroke-width="1.5">
-        <rect x="22" y="106" width="136" height="50" rx="8"/><rect x="175" y="106" width="136" height="50" rx="8"/><rect x="329" y="106" width="136" height="50" rx="8"/><rect x="482" y="106" width="136" height="50" rx="8"/>
-      </g>
-      <g font-size="14" text-anchor="middle" fill="#d94040" font-weight="700">
-        <text x="90" y="136">has the disease</text><text x="243" y="136">has the diagnosis</text><text x="397" y="136">wrote that message</text><text x="550" y="136">was copied</text>
-      </g>
-      <text x="320" y="190" font-size="14" text-anchor="middle" fill="#6b7280">"in the dataset" = the secret itself</text>
-    </svg>
-  </div>
-  <p class="muted">No reconstruction needed. One bit is the whole leak.</p>
-</div>
-
-<!-- 19. Before Neural Nets: The Genome Leak -->
-<div class="slide">
-  <div class="pill">Homer et al. 2008</div>
-  <h2>Before Neural Nets: The Genome Leak</h2>
-  <div class="divider"></div>
-  <ul>
-    <li>2008: genome studies published <strong>per-SNP averages</strong> openly</li>
-    <li>Belief: averaging 1,000 people hides each one</li>
-  </ul>
-  <div style="display:flex;justify-content:center;margin:6px 0;">
-    <svg viewBox="0 0 960 160" style="width:100%;max-width:1060px;">
-      <defs>
-        <marker id="hm-ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6b7280"/></marker>
-        <marker id="hm-ar-red" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d94040"/></marker>
-      </defs>
-      <rect x="10" y="30" width="250" height="100" rx="12" fill="#e8ecf0" stroke="#003876" stroke-width="2"/>
-      <text x="135" y="72" font-size="22" text-anchor="middle" fill="#003876" font-weight="700">1,000 participants</text>
-      <text x="135" y="104" font-size="18" text-anchor="middle" fill="#1a1a1a">each genome: 500,000 SNPs</text>
-      <text x="315" y="56" font-size="17" text-anchor="middle" fill="#6b7280">average</text>
-      <text x="315" y="76" font-size="17" text-anchor="middle" fill="#6b7280">per SNP</text>
-      <line x1="262" y1="90" x2="360" y2="90" stroke="#6b7280" stroke-width="3" marker-end="url(#hm-ar)"/>
-      <rect x="370" y="30" width="250" height="100" rx="12" fill="#f4f6f9" stroke="#6b7280" stroke-width="2"/>
-      <text x="495" y="72" font-size="22" text-anchor="middle" fill="#1a1a1a" font-weight="700">public table</text>
-      <text x="495" y="104" font-size="18" text-anchor="middle" fill="#1a1a1a">500,000 frequencies</text>
-      <line x1="622" y1="90" x2="696" y2="90" stroke="#d94040" stroke-width="3" marker-end="url(#hm-ar-red)"/>
-      <rect x="705" y="20" width="245" height="120" rx="12" fill="#fbeaea" stroke="#d94040" stroke-width="2"/>
-      <text x="827" y="56" font-size="22" text-anchor="middle" fill="#d94040" font-weight="700">attacker</text>
-      <text x="827" y="88" font-size="18" text-anchor="middle" fill="#1a1a1a">has Alice's genome</text>
-      <text x="827" y="118" font-size="18" text-anchor="middle" fill="#1a1a1a">"Was Alice in the study?"</text>
-    </svg>
-  </div>
-  <div class="highlight"><p>A forensics paper broke it by accident: the first <strong>membership inference</strong> attack. Public averages reveal whether <em>you</em> were in the study.</p></div>
-  <div class="cite cite-left">Homer et al., "Resolving Individuals Contributing Trace Amounts of DNA to Highly Complex Mixtures Using High-Density SNP Genotyping Microarrays", PLoS Genetics 4(8), 2008.</div>
-</div>
-
-<!-- 21. Genomics in 60 Seconds -->
-<div class="slide">
-  <div class="pill">Homer et al. 2008</div>
-  <h2>Genomics in 60 Seconds</h2>
-  <div class="divider"></div>
-  <p>A <strong>SNP</strong> is one letter of DNA that differs between people. An array reads about 500,000 of them.</p>
-  <div style="display:flex;justify-content:center;margin:4px 0;">
-    <svg viewBox="0 0 640 210" style="width:100%;max-width:900px;">
-      <text x="14" y="26" font-size="13" fill="#6b7280">SNP index</text>
-      <g font-size="13" fill="#6b7280" text-anchor="middle">
-        <text x="170" y="26">1</text><text x="240" y="26">2</text><text x="310" y="26">3</text><text x="380" y="26">4</text><text x="450" y="26">5</text><text x="520" y="26">…</text><text x="590" y="26">500,000</text>
-      </g>
-      <rect x="290" y="34" width="40" height="122" rx="6" fill="#d94040" fill-opacity="0.10" stroke="#d94040" stroke-width="1.5" stroke-dasharray="5 4"/>
-      <g stroke="#c9d3de" stroke-width="1.2"><line x1="130" y1="60" x2="620" y2="60"/><line x1="130" y1="98" x2="620" y2="98"/><line x1="130" y1="136" x2="620" y2="136"/></g>
-      <g font-size="14" fill="#1a1a1a" text-anchor="end">
-        <text x="118" y="64">person 1</text><text x="118" y="102">person 2</text><text x="118" y="140">person 1,000</text>
-      </g>
-      <g font-size="16" text-anchor="middle" fill="#003876" font-weight="700">
-        <text x="170" y="64">A</text><text x="240" y="64">G</text><text x="310" y="64">A</text><text x="380" y="64">A</text><text x="450" y="64">G</text><text x="520" y="64">…</text><text x="590" y="64">T</text>
-        <text x="170" y="102">A</text><text x="240" y="102">G</text><text x="310" y="102">G</text><text x="380" y="102">A</text><text x="450" y="102">G</text><text x="520" y="102">…</text><text x="590" y="102">C</text>
-        <text x="170" y="140">G</text><text x="240" y="140">G</text><text x="310" y="140">A</text><text x="380" y="140">A</text><text x="450" y="140">A</text><text x="520" y="140">…</text><text x="590" y="140">T</text>
-      </g>
-      <line x1="310" y1="156" x2="310" y2="178" stroke="#d94040" stroke-width="2"/>
-      <text x="310" y="196" font-size="14" fill="#d94040" text-anchor="middle" font-weight="700">column average = "allele frequency" at SNP 3 (e.g. 0.62)</text>
-    </svg>
-  </div>
-  <p class="muted">Studies published <em>only</em> these column averages. Rows stayed secret.</p>
-</div>
-
-<!-- 23. Homer's Statistic -->
-<div class="slide">
-  <div class="pill">Homer et al. 2008</div>
-  <h2>Homer's Statistic</h2>
-  <div class="divider"></div>
-  <p>Per SNP: Alice's letter $Y_j$, the study average $M_j$, the population average $\mathrm{Pop}_j$.</p>
-  <div class="math-block">$$D_j \;=\; \underbrace{\lvert Y_j - \mathrm{Pop}_j\rvert}_{\text{distance to everyone}} \;-\; \underbrace{\lvert Y_j - M_j\rvert}_{\text{distance to the study}}$$</div>
-  <div style="display:flex;justify-content:center;margin:2px 0;">
-    <svg viewBox="0 0 640 134" style="width:100%;max-width:720px;">
-      <line x1="40" y1="70" x2="600" y2="70" stroke="#1a1a1a" stroke-width="2"/>
-      <g stroke="#1a1a1a" stroke-width="2"><line x1="40" y1="62" x2="40" y2="78"/><line x1="600" y1="62" x2="600" y2="78"/></g>
-      <text x="40" y="98" font-size="14" text-anchor="middle" fill="#1a1a1a">0</text>
-      <text x="600" y="98" font-size="14" text-anchor="middle" fill="#1a1a1a">1</text>
-      <circle cx="208" cy="70" r="8" fill="#6b7280"/>
-      <text x="208" y="98" font-size="15" text-anchor="middle" fill="#6b7280" font-weight="700">Pop_j = 0.30</text>
-      <circle cx="264" cy="70" r="8" fill="#003876"/>
-      <text x="264" y="52" font-size="15" text-anchor="middle" fill="#003876" font-weight="700">M_j = 0.40</text>
-      <circle cx="600" cy="70" r="8" fill="#d94040"/>
-      <text x="560" y="52" font-size="15" text-anchor="middle" fill="#d94040" font-weight="700">Y_j = 1 (Alice)</text>
-      <path d="M216 22 L216 30 L592 30 L592 22" fill="none" stroke="#6b7280" stroke-width="1.5"/>
-      <text x="404" y="18" font-size="14" text-anchor="middle" fill="#6b7280">to everyone: 0.70</text>
-      <path d="M272 112 L272 106 L592 106 L592 112" fill="none" stroke="#003876" stroke-width="1.5"/>
-      <text x="432" y="128" font-size="14" text-anchor="middle" fill="#003876">to the study: 0.60</text>
-    </svg>
-  </div>
-  <p class="muted">Here $D_j = 0.70 - 0.60 = +0.10$: Alice sits closer to the study. Negative: closer to everyone.</p>
-</div>
-
-<!-- 24. One SNP Whispers, 500,000 Shout -->
-<div class="slide">
-  <div class="pill">Homer et al. 2008</div>
-  <h2>One SNP Whispers, 500,000 Shout</h2>
-  <div class="divider"></div>
-  <p><strong>In the study:</strong> Alice is $1/n$ of $M_j$, so $D_j$ tilts positive. <strong>Outside:</strong> it averages $0$.</p>
-  <div style="display:flex;justify-content:center;margin:2px 0;">
-    <svg viewBox="0 0 640 196" style="width:100%;max-width:900px;">
-      <text x="140" y="20" font-size="16" fill="#1a1a1a" text-anchor="middle" font-weight="700">one SNP: D_j</text>
-      <line x1="20" y1="140" x2="260" y2="140" stroke="#999" stroke-width="1.5"/>
-      <path d="M40,140 C90,140 100,40 140,40 C180,40 190,140 240,140 Z" fill="#9aa3ad" fill-opacity="0.28" stroke="#6b7280" stroke-width="2.5"/>
-      <path d="M43,140 C93,140 103,40 143,40 C183,40 193,140 243,140" fill="none" stroke="#d94040" stroke-width="2.5" stroke-dasharray="7 5"/>
-      <text x="140" y="160" font-size="14" fill="#1a1a1a" text-anchor="middle">tilt 0.0004 vs noise 0.014</text>
-      <text x="140" y="180" font-size="14" fill="#6b7280" text-anchor="middle">signal-to-noise 0.03: nothing</text>
-      <line x1="285" y1="90" x2="345" y2="90" stroke="#003876" stroke-width="3" marker-end="url(#hm-sum)"/>
-      <text x="315" y="76" font-size="15" fill="#003876" text-anchor="middle" font-weight="700">sum</text>
-      <text x="500" y="20" font-size="16" fill="#1a1a1a" text-anchor="middle" font-weight="700">500,000 SNPs: sum of D_j</text>
-      <line x1="370" y1="140" x2="630" y2="140" stroke="#999" stroke-width="1.5"/>
-      <path d="M380,140 C420,140 430,40 465,40 C500,40 510,140 550,140 Z" fill="#9aa3ad" fill-opacity="0.28" stroke="#6b7280" stroke-width="2.5"/>
-      <path d="M462,140 C502,140 512,40 547,40 C582,40 592,140 632,140" fill="none" stroke="#d94040" stroke-width="2.5" stroke-dasharray="7 5"/>
-      <text x="440" y="34" font-size="14" fill="#6b7280" text-anchor="middle">not in</text>
-      <text x="586" y="34" font-size="14" fill="#d94040" text-anchor="middle">in</text>
-      <text x="500" y="160" font-size="14" fill="#1a1a1a" text-anchor="middle">tilt grows like m, noise like √m</text>
-      <text x="500" y="180" font-size="14" fill="#003876" text-anchor="middle" font-weight="700">gap grows like √(m / n)</text>
-      <defs><marker id="hm-sum" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="#003876"/></marker></defs>
-    </svg>
-  </div>
-  <div class="cite cite-left">Idealized model ($n = 1{,}000$ people, $m$ SNPs, $p(1-p) \approx 0.2$); analysis after Sankararaman, Obozinski, Jordan, and Halperin, Nature Genetics 2009.</div>
-</div>
-
-<!-- 25. What the Paper Reported -->
-<div class="slide">
-  <div class="pill">Homer et al. 2008</div>
-  <h2>What the Paper Reported</h2>
-  <div class="divider"></div>
-  <div class="grid-2" style="grid-template-columns:1fr 1fr;gap:36px;align-items:start;">
-    <div>
-      <ul class="check">
-        <li>Real DNA mixtures, three array platforms</li>
-        <li>Mixtures of 40+ people: <strong>zero false positives</strong></li>
-        <li>Found a <strong>0.1%</strong> contributor</li>
-        <li>$p \lt 10^{-6}$ with 10,000–25,000 SNPs</li>
-      </ul>
-    </div>
-    <table>
-      <tr><th>SNPs used</th><th>Smallest share detected</th></tr>
-      <tr><td>10,000–25,000</td><td>below 1%</td></tr>
-      <tr><td>50,000</td><td>0.1% (low noise)</td></tr>
-      <tr><td>all 500,000</td><td>below 0.1%</td></tr>
-    </table>
-  </div>
-  <p class="muted">Share = one person's fraction of the pooled DNA. In a 1,000-person cohort: 0.1%.</p>
-  <div class="cite cite-left">Homer et al., PLoS Genetics 4(8), 2008 (Results: simulations, Fig. 2; real mixtures, Fig. 3).</div>
-</div>
-
-<!-- 28. Impact: NIH Pulled the Data -->
-<div class="slide">
-  <div class="pill">Homer et al. 2008</div>
-  <h2>Impact: NIH Pulled the Data</h2>
-  <div class="divider"></div>
-  <div style="display:flex;justify-content:center;margin:6px 0;">
-    <svg viewBox="0 0 640 150" style="width:100%;max-width:960px;">
-      <line x1="30" y1="60" x2="610" y2="60" stroke="#c9d3de" stroke-width="3"/>
-      <g fill="#ffffff" stroke="#003876" stroke-width="2.5"><circle cx="110" cy="60" r="9"/><circle cx="320" cy="60" r="9"/><circle cx="530" cy="60" r="9"/></g>
-      <g font-size="14" text-anchor="middle" fill="#003876" font-weight="700">
-        <text x="110" y="34">Aug 29, 2008</text><text x="320" y="34">days later</text><text x="530" y="34">since then</text>
-      </g>
-      <g font-size="14" text-anchor="middle" fill="#1a1a1a">
-        <text x="110" y="92">paper published</text><text x="320" y="92">NIH removes open</text><text x="320" y="112">aggregate GWAS data</text>
-        <text x="530" y="92">controlled access,</text><text x="530" y="112">data-use agreements</text>
-      </g>
-      <text x="110" y="112" font-size="14" text-anchor="middle" fill="#1a1a1a">in PLoS Genetics</text>
-    </svg>
-  </div>
-  <ul>
-    <li>Allele-frequency tables came down from public portals</li>
-    <li>Precedent: <strong>aggregation is not anonymization</strong></li>
-  </ul>
-  <p class="muted">The first policy change driven by a membership inference attack.</p>
-  <div class="cite cite-left">Zerhouni and Nabel, "Protecting Aggregate Genomic Data", Science 322, 2008.</div>
-</div>
-
-<!-- 29. Same Attack, New Target -->
-<div class="slide">
-  <h2>Same Attack, New Target</h2>
-  <div class="divider"></div>
-  <p>Swap the words and Homer's 2008 attack is the 2017 attack on neural networks.</p>
-  <table>
-    <tr><th>Homer 2008</th><th>Machine learning</th></tr>
-    <tr><td>Study cohort</td><td>Training set</td></tr>
-    <tr><td>Published allele frequencies</td><td>The trained model (or its outputs)</td></tr>
-    <tr><td>Reference population</td><td>Public data of the same kind</td></tr>
-    <tr><td>Alice's genome</td><td>Alice's record</td></tr>
-    <tr><td>Distance statistic $D$</td><td>The model's <strong>loss</strong> on the record</td></tr>
-  </table>
-  <p class="muted" style="margin-top:14px;">Next: what "loss" gives away.</p>
-</div>
-
-<!-- 20. The Tell: Lower Loss -->
-<div class="slide">
-  <h2>The Tell: Lower Loss</h2>
-  <div class="divider"></div>
-  <p>A model fits the points it <strong>saw</strong> better. But the two bells <em>overlap</em>.</p>
-  <div style="display:flex;justify-content:center;margin:6px 0;">
-    <svg viewBox="0 0 460 220" style="width:100%;max-width:880px;">
-      <line x1="40" y1="178" x2="430" y2="178" stroke="#999" stroke-width="1.5"/>
-      <path d="M50,178 C110,178 120,62 165,62 C210,62 220,178 280,178 Z" fill="#1a5296" fill-opacity="0.28" stroke="#003876" stroke-width="2.5"/>
-      <path d="M165,178 C225,178 235,74 280,74 C325,74 335,178 405,178 Z" fill="#9aa3ad" fill-opacity="0.30" stroke="#6b7280" stroke-width="2.5"/>
-      <text x="92" y="112" font-size="18" fill="#003876" font-weight="700">members</text>
-      <text x="98" y="132" font-size="15" fill="#003876">low loss</text>
-      <text x="312" y="120" font-size="18" fill="#6b7280" font-weight="700">non-members</text>
-      <text x="334" y="140" font-size="15" fill="#6b7280">higher loss</text>
-      <text x="366" y="197" font-size="15" fill="#666">loss →</text>
-    </svg>
-  </div>
-  <p class="muted">Pick a threshold; the overlap is the attacker's error rate.</p>
-</div>
-
-<!-- 23. Model Inversion -->
+<!-- 17. Model Inversion -->
 <div class="slide">
   <h2>Model Inversion</h2>
   <div class="divider"></div>
@@ -626,7 +354,7 @@
   <div class="cite cite-left">Figure: Fredrikson, Jha, and Ristenpart, "Model Inversion Attacks that Exploit Confidence Information and Basic Countermeasures", ACM CCS 2015, Fig. 1.</div>
 </div>
 
-<!-- 26. When Leakage Meets Law -->
+<!-- 18. When Leakage Meets Law -->
 <div class="slide">
   <h2>When Leakage Meets Law</h2>
   <div class="divider"></div>
@@ -638,7 +366,7 @@
   <div class="cite cite-left">The New York Times Co. v. Microsoft Corp. and OpenAI, Complaint, S.D.N.Y. No. 1:23-cv-11195 (Dec. 27, 2023), p. 30.</div>
 </div>
 
-<!-- 27. Regulators Step In -->
+<!-- 19. Regulators Step In -->
 <div class="slide">
   <h2>Regulators Step In</h2>
   <div class="divider"></div>
@@ -651,7 +379,7 @@
   <p class="muted">GDPR = the EU's General Data Protection Regulation.</p>
 </div>
 
-<!-- 29. Can We Do Better? -->
+<!-- 20. Can We Do Better? -->
 <div class="slide">
   <h2>Can We Do Better?</h2>
   <div class="divider"></div>
@@ -661,7 +389,7 @@
 </div>
 
 <!-- ============ SECTION 03 ============ -->
-<!-- 30. Divider 03 -->
+<!-- 21. Divider 03 -->
 <div class="slide section-slide left">
   <div class="section-num">03</div>
   <h1>Differential Privacy</h1>
@@ -669,7 +397,7 @@
   <p class="subtitle">A promise made to each individual</p>
 </div>
 
-<!-- 31. A 2006 Idea -->
+<!-- 22. A 2006 Idea -->
 <div class="slide">
   <h2>A 2006 Idea</h2>
   <div class="divider"></div>
@@ -681,7 +409,7 @@
   <div class="cite cite-left">Dwork, McSherry, Nissim, and Smith, "Calibrating Noise to Sensitivity in Private Data Analysis", TCC 2006.</div>
 </div>
 
-<!-- 32. The Core Promise -->
+<!-- 23. The Core Promise -->
 <div class="slide">
   <h2>The Core Promise</h2>
   <div class="divider"></div>
@@ -730,7 +458,7 @@
   <p>Outputs A and B look <strong>alike</strong>.</p>
 </div>
 
-<!-- 34. Plausible Deniability -->
+<!-- 24. Plausible Deniability -->
 <div class="slide">
   <h2>Plausible Deniability</h2>
   <div class="divider"></div>
@@ -759,7 +487,7 @@
   <div class="highlight"><p>Alice: "I was never in that dataset." No output can seriously contradict her.</p></div>
 </div>
 
-<!-- 35. Future-Proof by Design -->
+<!-- 25. Future-Proof by Design -->
 <div class="slide">
   <h2>Future-Proof by Design</h2>
   <div class="divider"></div>
@@ -772,7 +500,7 @@
   <p class="muted">This is what de-anonymization stories lacked.</p>
 </div>
 
-<!-- 36. Randomness Is Required -->
+<!-- 26. Randomness Is Required -->
 <div class="slide">
   <h2>Randomness Is Required</h2>
   <div class="divider"></div>
@@ -803,7 +531,7 @@
   <p class="muted">Randomness is the source of deniability.</p>
 </div>
 
-<!-- 37. Formal Definition -->
+<!-- 27. Formal Definition -->
 <div class="slide">
   <h2>Formal Definition</h2>
   <div class="divider"></div>
@@ -817,7 +545,7 @@
   <div class="cite cite-left">Dwork, Kenthapadi, McSherry, Mironov, and Naor, "Our Data, Ourselves: Privacy via Distributed Noise Generation", EUROCRYPT 2006.</div>
 </div>
 
-<!-- 38. In Plain Words -->
+<!-- 28. In Plain Words -->
 <div class="slide">
   <h2>In Plain Words</h2>
   <div class="divider"></div>
@@ -830,7 +558,7 @@
   <p class="muted">Read $e^{\varepsilon}$ as "a multiplier near 1".</p>
 </div>
 
-<!-- 41. Reading epsilon -->
+<!-- 29. Reading epsilon -->
 <div class="slide">
   <h2>Reading $\varepsilon$</h2>
   <div class="divider"></div>
@@ -905,7 +633,7 @@
   <div class="cite cite-left">Apple, "Learning with Privacy at Scale", 2017. Tang et al., "Privacy Loss in Apple's Implementation of Differential Privacy on MacOS 10.12", 2017.</div>
 </div>
 
-<!-- 44. What epsilon Does NOT Mean -->
+<!-- 30. What epsilon Does NOT Mean -->
 <div class="slide">
   <h2>What $\varepsilon$ Does NOT Mean</h2>
   <div class="divider"></div>
@@ -918,7 +646,7 @@
   <p class="muted">$\varepsilon$ bounds a ratio of probabilities, nothing else.</p>
 </div>
 
-<!-- 45. Superpower 1: Post-Processing -->
+<!-- 31. Superpower 1: Post-Processing -->
 <div class="slide">
   <h2>Superpower 1: Post-Processing</h2>
   <div class="divider"></div>
@@ -1008,7 +736,7 @@
   </div>
 </div>
 
-<!-- 50. Individuals, Not the Crowd -->
+<!-- 32. Individuals, Not the Crowd -->
 <div class="slide">
   <h2>Individuals, Not the Crowd</h2>
   <div class="divider"></div>
@@ -1017,7 +745,7 @@
 </div>
 
 <!-- ============ SECTION 04 ============ -->
-<!-- 51. Divider 04 -->
+<!-- 33. Divider 04 -->
 <div class="slide section-slide left">
   <div class="section-num">04</div>
   <h1>Achieving DP: Add Randomness</h1>
@@ -1049,7 +777,7 @@
   <p>The noise is <strong>calibrated</strong>, not arbitrary.</p>
 </div>
 
-<!-- 53. Randomized Response -->
+<!-- 34. Randomized Response -->
 <div class="slide">
   <h2>Randomized Response</h2>
   <div class="divider"></div>
@@ -1102,7 +830,7 @@
   <p class="muted">Every "yes" might be coin 2. Every answer has deniability.</p>
 </div>
 
-<!-- 55. Recovering the Truth -->
+<!-- 35. Recovering the Truth -->
 <div class="slide">
   <h2>Recovering the Truth</h2>
   <div class="divider"></div>
@@ -1111,7 +839,7 @@
   <p>Observe 70% "yes" ⇒ the true rate $p$ is <strong>90%</strong>.</p>
 </div>
 
-<!-- 56. Why It's Private -->
+<!-- 36. Why It's Private -->
 <div class="slide">
   <h2>Why It's Private</h2>
   <div class="divider"></div>
@@ -1124,7 +852,7 @@
   <p class="muted">Privacy and utility coexist, with a cost.</p>
 </div>
 
-<!-- 59. The Laplace Mechanism -->
+<!-- 37. The Laplace Mechanism -->
 <div class="slide">
   <h2>The Laplace Mechanism</h2>
   <div class="divider"></div>
@@ -1142,7 +870,7 @@
   <p>Smaller $\varepsilon$ or bigger sensitivity $\Delta q$ ⇒ more noise.</p>
 </div>
 
-<!-- 60. Sensitivity -->
+<!-- 38. Sensitivity -->
 <div class="slide">
   <h2>Sensitivity</h2>
   <div class="divider"></div>
@@ -1174,7 +902,7 @@
   <p class="muted">Calibrate the noise to the worst-case one-person change.</p>
 </div>
 
-<!-- 62. Gaussian Mechanism -->
+<!-- 39. Gaussian Mechanism -->
 <div class="slide">
   <h2>Gaussian Mechanism</h2>
   <div class="divider"></div>
@@ -1198,7 +926,7 @@
 </div>
 
 <!-- ============ SECTION 05 ============ -->
-<!-- 64. Divider 05 -->
+<!-- 40. Divider 05 -->
 <div class="slide section-slide left">
   <div class="section-num">05</div>
   <h1>Private Machine Learning</h1>
@@ -1206,7 +934,7 @@
   <p class="subtitle">Training a model under a privacy budget</p>
 </div>
 
-<!-- 65. From Statistics to Models -->
+<!-- 41. From Statistics to Models -->
 <div class="slide">
   <h2>From Statistics to Models</h2>
   <div class="divider"></div>
@@ -1218,7 +946,7 @@
   </ul>
 </div>
 
-<!-- 66. The Naive Hope Fails -->
+<!-- 42. The Naive Hope Fails -->
 <div class="slide">
   <h2>The Naive Hope Fails</h2>
   <div class="divider"></div>
@@ -1227,7 +955,7 @@
   <p>Generalization and memorization happen together.</p>
 </div>
 
-<!-- 67. DP-SGD -->
+<!-- 43. DP-SGD -->
 <div class="slide">
   <h2>DP-SGD</h2>
   <div class="divider"></div>
@@ -1264,7 +992,7 @@
   <div class="cite cite-left">Abadi, Chu, Goodfellow, McMahan, Mironov, Talwar, and Zhang, "Deep Learning with Differential Privacy", ACM CCS 2016.</div>
 </div>
 
-<!-- 68. Why Clip, Why Noise? -->
+<!-- 44. Why Clip, Why Noise? -->
 <div class="slide">
   <h2>Why Clip, Why Noise?</h2>
   <div class="divider"></div>
@@ -1277,7 +1005,7 @@
   <p class="muted">Clip first, then the noise has a known job to do.</p>
 </div>
 
-<!-- 71. The Utility Cost -->
+<!-- 45. The Utility Cost -->
 <div class="slide">
   <h2>The Utility Cost</h2>
   <div class="divider"></div>
@@ -1289,7 +1017,7 @@
   <div class="cite cite-left">Figure: De, Berrada, Hayes, Smith, and Balle, "Unlocking High-Accuracy Differentially Private Image Classification through Scale", 2022 (arXiv:2204.13650), Fig. 1.</div>
 </div>
 
-<!-- 73. More Data Helps -->
+<!-- 46. More Data Helps -->
 <div class="slide">
   <h2>More Data Helps</h2>
   <div class="divider"></div>
@@ -1322,7 +1050,7 @@
 </div>
 
 <!-- ============ SECTION 06 ============ -->
-<!-- 78. Divider 06 -->
+<!-- 47. Divider 06 -->
 <div class="slide section-slide left">
   <div class="section-num">06</div>
   <h1>Frontier 2025–26</h1>
@@ -1330,7 +1058,7 @@
   <p class="subtitle">Can foundation models be private?</p>
 </div>
 
-<!-- 79. Private Fine-Tuning Works -->
+<!-- 48. Private Fine-Tuning Works -->
 <div class="slide">
   <h2>Private Fine-Tuning Works</h2>
   <div class="divider"></div>
@@ -1342,7 +1070,7 @@
   <div class="cite cite-left">Yu et al., "Differentially Private Fine-tuning of Language Models", ICLR 2022.<br>Li, Tramèr, Liang, and Hashimoto, "Large Language Models Can Be Strong Differentially Private Learners", ICLR 2022.</div>
 </div>
 
-<!-- 80. Private Pretraining Arrives -->
+<!-- 49. Private Pretraining Arrives -->
 <div class="slide">
   <h2>Private Pretraining Arrives</h2>
   <div class="divider"></div>
@@ -1363,7 +1091,7 @@
   <div class="cite cite-left">Figure: VaultGemma Team, Google, "VaultGemma: A Differentially Private Gemma Model", 2025 (arXiv:2510.15001), Fig. 1.</div>
 </div>
 
-<!-- 80. Private Synthetic Data -->
+<!-- 50. Private Synthetic Data -->
 <div class="slide">
   <h2>Private Synthetic Data</h2>
   <div class="divider"></div>
@@ -1377,7 +1105,7 @@
   <div class="cite cite-left">Apple ML Research, "Understanding Aggregate Trends for Apple Intelligence Using Differential Privacy", 2025.</div>
 </div>
 
-<!-- 83. Auditing Privacy -->
+<!-- 51. Auditing Privacy -->
 <div class="slide">
   <h2>Auditing Privacy</h2>
   <div class="divider"></div>
@@ -1390,7 +1118,7 @@
   <div class="cite cite-left">Jagielski, Ullman, and Oprea, "Auditing Differentially Private Machine Learning", NeurIPS 2020.</div>
 </div>
 
-<!-- 84. Unlearning as Plan B -->
+<!-- 52. Unlearning as Plan B -->
 <div class="slide">
   <h2>Unlearning as Plan B</h2>
   <div class="divider"></div>
@@ -1432,7 +1160,7 @@
   <p class="muted">Secure hardware bounds <strong>who can look</strong>. DP bounds <strong>what an output reveals</strong>.</p>
 </div>
 
-<!-- 86. The Law Is Catching Up -->
+<!-- 53. The Law Is Catching Up -->
 <div class="slide">
   <h2>The Law Is Catching Up</h2>
   <div class="divider"></div>
@@ -1445,7 +1173,7 @@
 </div>
 
 <!-- ============ WRAP ============ -->
-<!-- 89. Demos to Play With -->
+<!-- 54. Demos to Play With -->
 <div class="slide">
   <h2>Demos to Play With</h2>
   <div class="divider"></div>
@@ -1468,7 +1196,7 @@
   <p class="muted">Play first, then read the proofs.</p>
 </div>
 
-<!-- 90. Key Takeaways -->
+<!-- 55. Key Takeaways -->
 <div class="slide">
   <h2>Key Takeaways</h2>
   <div class="divider"></div>
@@ -1481,14 +1209,14 @@
   <div class="highlight"><p><strong>Membership inference</strong> is the attack DP is built to stop.</p></div>
 </div>
 
-<!-- 91. Closer -->
+<!-- 56. Closer -->
 <div class="slide end-slide no-footer">
   <div class="big-word">$\varepsilon$</div>
   <p class="big-word-sub">One number between privacy and utility.</p>
 </div>
 
 <div class="progress-bar" id="progressBar" style="width:0%"></div>
-<div class="slide-num" id="slideNum">1 / 77</div>
+<div class="slide-num" id="slideNum">1 / 66</div>
 
 </div><!-- .deck -->
 <script defer src="../../reference/deck.js"></script>
